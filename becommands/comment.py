@@ -1,12 +1,21 @@
 """Add a comment to a bug"""
-from libbe import bugdir, cmdutil, names
+from libbe import bugdir, cmdutil, names, utility
 import os
 def execute(args):
     options, args = get_parser().parse_args(args)
-    if len(args) < 2:
+    if len(args) < 1:
         raise cmdutil.UsageError()
     bug = cmdutil.get_bug(args[0])
-    comment = bugdir.new_comment(bug, args[1])
+    if len(args) == 1:
+        body = utility.editor_string()
+        if body is None:
+            raise cmdutil.UserError("No comment entered.")
+    else:
+        body = args[1]
+        if not body.endswith('\n'):
+            body+='\n'
+
+    comment = bugdir.new_comment(bug, body)
     comment.save()
 
 
