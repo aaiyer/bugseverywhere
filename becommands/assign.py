@@ -3,6 +3,24 @@ from libbe import bugdir, cmdutil, names
 __desc__ = __doc__
 
 def execute(args):
+    """
+    >>> from libbe import tests, names
+    >>> import os
+    >>> dir = tests.simple_bug_dir()
+    >>> os.chdir(dir.dir)
+    >>> dir.get_bug("a").assigned is None
+    True
+    >>> execute(("a",))
+    >>> dir.get_bug("a").assigned == names.creator()
+    True
+    >>> execute(("a", "someone"))
+    >>> dir.get_bug("a").assigned
+    'someone'
+    >>> execute(("a","none"))
+    >>> dir.get_bug("a").assigned is None
+    True
+    >>> tests.clean_up()
+    """
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
