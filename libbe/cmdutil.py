@@ -45,7 +45,7 @@ def bug_summary(bug, bugs):
     if target is None:
         target = ""
     else:
-        target = "  target: %s" % target
+        target = "  Target: %s" % target
     if bug.assigned is None:
         assigned = ""
     else:
