@@ -11,6 +11,7 @@ def execute(args):
     >>> execute(("a",))
     >>> dir.get_bug("a").status
     'closed'
+    >>> tests.clean_up()
     """
     assert(len(args) == 1)
     bug = cmdutil.get_bug(args[0])
