@@ -17,6 +17,6 @@ def friendly_name(bugs, ctor):
             num = int(name.split("-")[-1])
             if num > last:
                 last = num
-    return "%s-%i" % (ctor, num+1)
+    return "%s-%i" % (ctor, last+1)
 
 
