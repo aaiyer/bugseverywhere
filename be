@@ -8,21 +8,22 @@ be set-root: assign the root directory for bug tracking
 """
 from libbe.cmdutil import *
 from libbe.bugdir import tree_root
+from libbe import names
 import sys
 import os
 
 def list_bugs(args):
     active = True
-    status = ("minor", "serious", "critical", "fatal")
+    severity = ("minor", "serious", "critical", "fatal")
     def filter(bug):
         if active is not None:
             if bug.active != active:
                 return False
-        if bug.status not in status:
+        if bug.severity not in severity:
             return False
         return True
         
-    bugs = [b for b in tree_root(os.getcwd()).list() ]
+    bugs = [b for b in tree_root(os.getcwd()).list() if filter(b) ]
     if len(bugs) == 0:
         print "No matching bugs found"
     for bug in bugs:
@@ -34,7 +35,25 @@ def list_bugs(args):
         print "id: %s severity: %s%s\n%s\n" % (unique_name(bug, bugs), 
                                              bug.severity, target, bug.summary)
 
-    
+def new_bug(args):
+    if len(args) != 1:
+        raise UserError("Please supply a summary message")
+    dir = tree_root(".")
+    bugs = (dir.list())
+    bug = dir.new_bug()
+    bug.creator = names.creator()
+    bug.name = names.friendly_name(bugs, bug.creator)
+    bug.severity = "minor"
+    bug.status = "open"
+    bug.summary = args[0]
+
+def close_bug(args):
+    assert(len(args) == 1)
+    get_bug(args[0], tree_root('.')).status = "closed"
+
+def open_bug(args):
+    assert(len(args) == 1)
+    get_bug(args[0], tree_root('.')).status = "open"
 
 if len(sys.argv) == 1:
     print __doc__
@@ -42,7 +61,10 @@ else:
     try:
         try:
             cmd = {
-                "list": list_bugs
+                "list": list_bugs,
+                "new": new_bug,
+                "close": close_bug,
+                "open": open_bug,
             }[sys.argv[1]]
         except KeyError, e:
             raise UserError("Unknown command \"%s\"" % e.args[0])

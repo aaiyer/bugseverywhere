@@ -2,7 +2,7 @@ import os
 import os.path
 import cmdutil
 import errno
-
+import names
 
 class NoBugDir(cmdutil.UserError):
     def __init__(self, path):
@@ -38,6 +38,13 @@ class BugDir:
                 continue
             yield Bug(self.bugs_path, uuid)
 
+    def new_bug(self):
+        uuid = names.uuid()
+        path = os.path.join(self.bugs_path, uuid)
+        os.mkdir(path)
+        return Bug(self.bugs_path, uuid)
+
+
 def file_property(name, valid=None):
     def getter(self):
         value = self._get_value(name) 
@@ -68,22 +75,9 @@ class Bug(object):
     summary = file_property("summary")
     creator = file_property("creator")
     target = file_property("target")
+    status = file_property("status", valid=("open", "closed"))
     severity = file_property("severity", valid=("wishlist", "minor", "serious",
                                                 "critical", "fatal"))
-
-    def _check_status(status):
-        assert status in ("open", "closed")
-
-    def _set_status(self, status):
-        self._check_status(status)
-        self._set_value("status", status)
-
-    def _get_status(self):
-        status = self._get_value("status")
-        assert status in ("open", "closed")
-        return status
-
-    status = property(_get_status, _set_status)
 
     def _get_active(self):
         return self.status == "open"
