@@ -27,3 +27,12 @@ def arch_dir():
 def bug_arch_dir():
     dir = arch_dir()
     return bugdir.create_bug_dir(dir.name, arch)
+
+def simple_bug_dir():
+    dir = bug_arch_dir()
+    bug_a = bugdir.new_bug(dir, "a")
+    bug_b = bugdir.new_bug(dir, "b")
+    bug_b.status = "closed"
+    bug_a.save()
+    bug_b.save()
+    return dir

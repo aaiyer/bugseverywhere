@@ -91,7 +91,7 @@ class BugDir:
         map_save(self.rcs, os.path.join(self.dir, "settings"), self.settings)
 
     def get_rcs(self):
-        if self._rcs is not None and self.rcs_name == _rcs.name:
+        if self._rcs is not None and self.rcs_name == self._rcs.name:
             return self._rcs
         self._rcs = rcs_by_name(self.rcs_name)
         return self._rcs
@@ -100,7 +100,10 @@ class BugDir:
 
     def list(self):
         for uuid in self.list_uuids():
-            yield Bug(self.bugs_path, uuid, self.rcs_name)
+            yield self.get_bug(uuid)
+
+    def get_bug(self, uuid):
+        return Bug(self.bugs_path, uuid, self.rcs_name)
 
     def list_uuids(self):
         for uuid in os.listdir(self.bugs_path):
@@ -108,8 +111,9 @@ class BugDir:
                 continue
             yield uuid
 
-    def new_bug(self):
-        uuid = names.uuid()
+    def new_bug(self, uuid=None):
+        if uuid is None:
+            uuid = names.uuid()
         path = os.path.join(self.bugs_path, uuid)
         self.rcs.mkdir(path)
         bug = Bug(self.bugs_path, None, self.rcs_name)
@@ -228,8 +232,8 @@ class Bug(object):
 def cmp_date(comm1, comm2):
     return cmp(comm1.date, comm2.date)
 
-def new_bug(dir):
-    bug = dir.new_bug()
+def new_bug(dir, uuid=None):
+    bug = dir.new_bug(uuid)
     bug.creator = names.creator()
     bug.severity = "minor"
     bug.status = "open"
