@@ -123,5 +123,5 @@ class Bug(object):
         output = file(path, "wb")
         if not os.path.exists(path):
             rcs.add_id(path)
-        mapfile.generate(output, map)
+        mapfile.generate2(output, map)
 

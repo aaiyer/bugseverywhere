@@ -97,3 +97,88 @@ def generate(f, map, context=3):
         f.write(">%s\n" % map[key])
         for i in range(context):
             f.write("%i:%s\n" % (i+context+1, key))
+
+class IllegalKey(Exception):
+    def __init__(self, key):
+        Exception.__init__(self, 'Illegal key "%s"' % key)
+        self.key = key
+
+class IllegalValue(Exception):
+    def __init__(self, value):
+        Exception.__init__(self, 'Illegal value "%s"' % value)
+        self.value = value 
+
+def generate2(f, map, context=3):
+    """Generate a format-2 mapfile.  This is a simpler format, but should merge
+    better, because there's no chance of confusion for appends, and lines
+    are unique for both key and value.
+
+    >>> f = FileString()
+    >>> generate2(f, {"q":"p"})
+    >>> f.str
+    '\\n\\n\\nq=p\\n\\n\\n\\n'
+    >>> generate2(f, {"q=":"p"})
+    Traceback (most recent call last):
+    IllegalKey: Illegal key "q="
+    >>> generate2(f, {"q\\n":"p"})
+    Traceback (most recent call last):
+    IllegalKey: Illegal key "q\\n"
+    >>> generate2(f, {"":"p"})
+    Traceback (most recent call last):
+    IllegalKey: Illegal key ""
+    >>> generate2(f, {">q":"p"})
+    Traceback (most recent call last):
+    IllegalKey: Illegal key ""
+    >>> generate2(f, {"q":"p\\n"})
+    Traceback (most recent call last):
+    IllegalValue: Illegal value "p\\n"
+    """
+    assert(context > 0)
+    keys = map.keys()
+    keys.sort()
+    for key in keys:
+        try:
+            assert not key.startswith('>')
+            assert('\n' not in key)
+            assert('=' not in key)
+            assert(len(key) > 0)
+        except AssertionError:
+            raise IllegalKey(key.encode('string_escape'))
+        if "\n" in map[key]:
+            raise IllegalValue(map[key].encode('string_escape'))
+
+    for key in keys:
+        for i in range(context):
+            f.write("\n")
+        f.write("%s=%s\n" % (key, map[key]))
+        for i in range(context):
+            f.write("\n")
+
+def parse2(f):
+    """
+    Parse a format-2 mapfile.
+    >>> parse2('\\n\\n\\nq=p\\n\\n\\n\\n')['q']
+    'p'
+    >>> parse2('\\n\\nq=\\'p\\'\\n\\n\\n\\n')['q']
+    "\'p\'"
+    >>> f = FileString()
+    >>> generate2(f, {"a":"b", "c":"d", "e":"f"})
+    >>> dict = parse2(f)
+    >>> dict["a"]
+    'b'
+    >>> dict["c"]
+    'd'
+    >>> dict["e"]
+    'f'
+    """
+    if isinstance(f, basestring):
+        f = FileString(f)
+    result = {}
+    for line in f:
+        line = line.rstrip('\n')
+        if len(line) == 0:
+            continue
+        name,value = line.split('=', 1)
+        assert not result.has_key('name')
+        result[name] = value
+    return result
