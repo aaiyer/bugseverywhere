@@ -1,7 +1,8 @@
 """Change tree settings"""
 from libbe import cmdutil 
 def execute(args):
-    assert len(args) in (0, 1, 2)
+    if len(args) > 2:
+        raise cmdutil.UserError("Too many arguments.")
     tree = cmdutil.bug_tree()
     if len(args) == 0:
         keys = tree.settings.keys()
