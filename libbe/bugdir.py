@@ -3,6 +3,7 @@ import os.path
 import cmdutil
 import errno
 import names
+import rcs
 
 class NoBugDir(cmdutil.UserError):
     def __init__(self, path):
@@ -28,10 +29,11 @@ def test_version(path):
 
 def create_bug_dir(path):
     root = os.path.join(path, ".be")
-    os.mkdir(root)
-    os.mkdir(os.path.join(root, "bugs"))
-    f = file(os.path.join(root, "version"), "wb")
-    f.write("Bugs Everywhere Tree 0 0\n")
+    rcs.mkdir(root)
+    rcs.mkdir(os.path.join(root, "bugs"))
+    rcs.set_file_contents(os.path.join(root, "version"), 
+        "Bugs Everywhere Tree 0 0\n")
+
     return BugDir(path)
 
 class BugDir:
@@ -49,7 +51,7 @@ class BugDir:
     def new_bug(self):
         uuid = names.uuid()
         path = os.path.join(self.bugs_path, uuid)
-        os.mkdir(path)
+        rcs.mkdir(path)
         return Bug(self.bugs_path, uuid)
 
 
@@ -101,6 +103,6 @@ class Bug(object):
 
     def _set_value(self, name, value):
         if value is None:
-            os.unlink(self.get_path(name))
-        file(self.get_path(name), "wb").write("%s\n" % value)
+            rcs.unlink(self.get_path(name))
+        rcs.set_file_contents(self.get_path(name), "%s\n" % value)
 
