@@ -4,6 +4,21 @@ from libbe import cmdutil
 __desc__ = __doc__
 
 def execute(args):
+    """
+    >>> from libbe import tests
+    >>> import os
+    >>> dir = tests.simple_bug_dir()
+    >>> os.chdir(dir.dir)
+    >>> execute(("a",))
+    No target assigned.
+    >>> execute(("a", "tomorrow"))
+    >>> execute(("a",))
+    tomorrow
+    >>> execute(("a", "none"))
+    >>> execute(("a",))
+    No target assigned.
+    >>> tests.clean_up()
+    """
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
