@@ -50,7 +50,7 @@ def create_bug_dir(path, rcs):
     rcs.mkdir(os.path.join(root, "bugs"))
     set_version(root, rcs)
     map_save(rcs, os.path.join(root, "settings"), {"rcs_name": rcs.name})
-    return BugDir(path)
+    return BugDir(os.path.join(path, ".be"))
 
 
 def setting_property(name, valid=None):
