@@ -55,6 +55,17 @@ def iter_commands():
         yield name.replace("_", "-"), module
 
 def get_command(command_name):
+    """Retrieves the module for a user command
+
+    >>> get_command("asdf")
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in ?
+    File "/home/abentley/be/libbe/cmdutil.py", line 60, in get_command
+      raise UserError("Unknown command %s" % command_name)
+    UserError: Unknown command asdf
+    >>> get_command("list")
+    <module 'becommands.list' from '/home/abentley/be/becommands/list.pyc'>
+    """
     cmd = plugin.get_plugin("becommands", command_name.replace("-", "_"))
     if cmd is None:
         raise UserError("Unknown command %s" % command_name)
@@ -65,3 +76,11 @@ def execute(cmd, args):
 
 def help(cmd, args):
     return get_command(cmd).help()
+
+def _test():
+    import doctest
+    import sys
+    doctest.testmod()
+
+if __name__ == "__main__":
+    _test()
