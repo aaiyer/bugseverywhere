@@ -10,5 +10,5 @@ def execute(args):
     bug.severity = "minor"
     bug.status = "open"
     bug.summary = args[0]
-
+    bug.save()
 

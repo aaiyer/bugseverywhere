@@ -13,27 +13,40 @@ class NoBugDir(Exception):
         self.path = path
     
 
-def tree_root(dir):
+def tree_root(dir, old_version=False):
     rootdir = os.path.realpath(dir)
     while (True):
         versionfile=os.path.join(rootdir, ".be/version")
         if os.path.exists(versionfile):
-            test_version(versionfile)
+            if not old_version:
+                test_version(versionfile)
             break;
         elif rootdir == "/":
             raise NoBugDir(dir)
         rootdir=os.path.dirname(rootdir)
     return BugDir(os.path.join(rootdir, ".be"))
 
+class BadTreeVersion(Exception):
+    def __init__(self, version):
+        Exception.__init__(self, "Unsupported tree version: %s" % version)
+        self.version = version
+
 def test_version(path):
-    assert (file(path, "rb").read() == "Bugs Everywhere Tree 0 0\n")
+    tree_version = file(path, "rb").read()
+    if tree_version != TREE_VERSION_STRING:
+        raise BadTreeVersion(tree_version)
+
+def set_version(path):
+    rcs.set_file_contents(os.path.join(path, "version"), TREE_VERSION_STRING)
+    
+
+TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
 def create_bug_dir(path):
     root = os.path.join(path, ".be")
     rcs.mkdir(root)
     rcs.mkdir(os.path.join(root, "bugs"))
-    rcs.set_file_contents(os.path.join(root, "version"), 
-        "Bugs Everywhere Tree 0 0\n")
+    set_version(root)
 
     return BugDir(path)
 
@@ -42,18 +55,24 @@ class BugDir:
         self.dir = dir
         self.bugs_path = os.path.join(self.dir, "bugs")
 
-
     def list(self):
+        for uuid in self.list_uuids():
+            yield Bug(self.bugs_path, uuid)
+
+    def list_uuids(self):
         for uuid in os.listdir(self.bugs_path):
             if (uuid.startswith('.')):
                 continue
-            yield Bug(self.bugs_path, uuid)
+            yield uuid
 
     def new_bug(self):
         uuid = names.uuid()
         path = os.path.join(self.bugs_path, uuid)
         rcs.mkdir(path)
-        return Bug(self.bugs_path, uuid)
+        bug = Bug(self.bugs_path, None)
+        bug.uuid = uuid
+        return bug
+
 class InvalidValue(Exception):
     def __init__(self, name, value):
         msg = "Cannot assign value %s to %s" % (value, name)
@@ -61,51 +80,47 @@ class InvalidValue(Exception):
         self.name = name
         self.value = value
 
-def file_property(name, valid=None):
+
+def checked_property(name, valid):
     def getter(self):
-        value = self._get_value(name) 
-        if valid is not None:
-            if value not in valid:
-                raise InvalidValue(name, value)
+        value = self.__getattribute__("_"+name)
+        if value not in valid:
+            raise InvalidValue(name, value)
         return value
+
     def setter(self, value):
-        if valid is not None:
-            if value not in valid:
-                raise InvalidValue(name, value)
-        return self._set_value(name, value)
+        if value not in valid:
+            raise InvalidValue(name, value)
+        return self.__setattr__("_"+name, value)
     return property(getter, setter)
 
+
 class Bug(object):
+    status = checked_property("status", (None, "open", "closed"))
+    severity = checked_property("severity", (None, "wishlist", "minor",
+                                             "serious", "critical", "fatal"))
+
     def __init__(self, path, uuid):
-        self.path = os.path.join(path, uuid)
+        self.path = path
         self.uuid = uuid
+        if uuid is not None:
+            dict = mapfile.parse(file(self.get_path("values")))
+        else:
+            dict = {}
+
+        self.summary = dict.get("summary")
+        self.creator = dict.get("creator")
+        self.target = dict.get("target")
+        self.status = dict.get("status")
+        self.severity = dict.get("severity")
 
     def get_path(self, file):
-        return os.path.join(self.path, file)
-
-    summary = file_property("summary")
-    creator = file_property("creator")
-    target = file_property("target")
-    status = file_property("status", valid=("open", "closed"))
-    severity = file_property("severity", valid=("wishlist", "minor", "serious",
-                                                "critical", "fatal"))
+        return os.path.join(self.path, self.uuid, file)
 
     def _get_active(self):
         return self.status == "open"
 
     active = property(_get_active)
-
-    def _get_value(self, name):
-        try:
-            return file(self.get_path(name), "rb").read().rstrip("\n")
-        except IOError, e:
-            if e.errno == errno.EEXIST:
-                return None
-
-    def _set_value(self, name, value):
-        if value is None:
-            rcs.unlink(self.get_path(name))
-        rcs.set_file_contents(self.get_path(name), "%s\n" % value)
 
     def add_attr(self, map, name):
         value = self.__getattribute__(name)
@@ -120,8 +135,7 @@ class Bug(object):
         self.add_attr(map, "status")
         self.add_attr(map, "severity")
         path = self.get_path("values")
-        output = file(path, "wb")
         if not os.path.exists(path):
             rcs.add_id(path)
-        mapfile.generate2(output, map)
-
+        output = file(path, "wb")
+        mapfile.generate(output, map)

@@ -10,5 +10,9 @@ def set_file_contents(path, contents):
         add_id(path)
 
 def unlink(path):
-    os.unlink(path)
-    delete_id(filename)
+    try:
+        os.unlink(path)
+        delete_id(path)
+    except OSError, e:
+        if e.errno != 2:
+            raise

@@ -4,3 +4,4 @@ def execute(args):
     assert(len(args) == 1)
     bug = cmdutil.get_bug(args[0])
     bug.status = "open"
+    bug.save()

@@ -18,6 +18,7 @@ def execute(args):
             if e.name != "severity":
                 raise
             raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
+        bug.save()
 
 
 def help():
