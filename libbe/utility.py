@@ -70,7 +70,6 @@ def str_to_time(str_time):
     >>> str_to_time("Thu, 01 Jan 1970 00:00:00 +0000")
     0
     >>> q = time.time()
-    # int(q) because the round-trip loses sub-second data
     >>> str_to_time(time_to_str(q)) == int(q)
     True
     """
