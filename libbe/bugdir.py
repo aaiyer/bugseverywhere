@@ -215,7 +215,7 @@ class Bug(object):
                 if (uuid.startswith('.')):
                     continue
                 yield uuid
-        except IOError, e:
+        except OSError, e:
             if e.errno != errno.ENOENT:
                 raise
             return
