@@ -4,6 +4,8 @@ import cmdutil
 import errno
 import names
 import mapfile
+import time
+import utility
 from rcs import rcs_by_name
 
 class NoBugDir(Exception):
@@ -162,6 +164,9 @@ class Bug(object):
         self.status = dict.get("status")
         self.severity = dict.get("severity")
         self.assigned = dict.get("assigned")
+        self.time = dict.get("time")
+        if self.time is not None:
+            self.time = utility.str_to_time(self.time)
 
     def get_path(self, file):
         return os.path.join(self.path, self.uuid, file)
@@ -184,9 +189,20 @@ class Bug(object):
         self.add_attr(map, "target")
         self.add_attr(map, "status")
         self.add_attr(map, "severity")
+        if self.time is not None:
+            map["time"] = utility.time_to_str(self.time)
         path = self.get_path("values")
         map_save(rcs_by_name(self.rcs_name), path, map)
 
+
+def new_bug(dir):
+    bug = dir.new_bug()
+    bug.creator = names.creator()
+    bug.severity = "minor"
+    bug.status = "open"
+    bug.time = time.time()
+    return bug
+ 
 
 def map_save(rcs, path, map):
     """Save the map as a mapfile to the specified path"""

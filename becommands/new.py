@@ -1,13 +1,10 @@
 """Create a new bug"""
-from libbe import bugdir, cmdutil, names
+from libbe import bugdir, cmdutil, names, utility
 def execute(args):
     if len(args) != 1:
         raise cmdutil.UserError("Please supply a summary message")
     dir = cmdutil.bug_tree()
-    bug = dir.new_bug()
-    bug.creator = names.creator()
-    bug.severity = "minor"
-    bug.status = "open"
+    bug = bugdir.new_bug(dir)
     bug.summary = args[0]
     bug.save()
     bugs = (dir.list())

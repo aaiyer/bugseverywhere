@@ -1,10 +1,16 @@
 """Show a particular bug"""
-from libbe import bugdir, cmdutil
+from libbe import bugdir, cmdutil, utility
 import os
 
 def execute(args):
     bug_dir = cmdutil.bug_tree()
     if len(args) !=1:
         raise cmdutil.UserError("Please specify a bug id.")
-    print cmdutil.bug_summary(cmdutil.get_bug(args[0], bug_dir), 
-                              list(bug_dir.list()))
+    bug = cmdutil.get_bug(args[0], bug_dir)
+    print cmdutil.bug_summary(bug, list(bug_dir.list())).rstrip("\n")
+    if bug.time is None:
+        time_str = "(Unknown time)"
+    else:
+        time_str = "%s (%s)" % (utility.handy_time(bug.time), 
+                                utility.time_to_str(bug.time))
+    print "Created: %s\n" % time_str

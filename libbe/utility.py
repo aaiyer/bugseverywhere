@@ -1,3 +1,6 @@
+import calendar
+import time
+
 class FileString(object):
     """Bare-bones pseudo-file class
     
@@ -49,3 +52,28 @@ def get_file(f):
         return f
 
 
+RFC_2822_TIME_FMT = "%a, %d %b %Y %H:%M:%S +0000"
+
+
+def time_to_str(time_val):
+    """Convert a time value into an RFC 2822-formatted string.  This format
+    lacks sub-second data.
+    >>> time_to_str(0)
+    'Thu, 01 Jan 1970 00:00:00 +0000'
+    """
+    return time.strftime(RFC_2822_TIME_FMT, time.gmtime(time_val))
+
+def str_to_time(str_time):
+    """Convert an RFC 2822-fomatted string into a time falue.
+    >>> str_to_time("Thu, 01 Jan 1970 00:00:00 +0000")
+    0
+    >>> q = time.time()
+    # int(q) because the round-trip loses sub-second data
+    >>> str_to_time(time_to_str(q)) == int(q)
+    True
+    """
+    return calendar.timegm(time.strptime(str_time, RFC_2822_TIME_FMT))
+
+def handy_time(time_val):
+    return time.strftime("%a, %d %b %Y %H:%M", time.localtime(time_val))
+    
