@@ -1,4 +1,4 @@
-""" Upgrade the bugs to the latest format """
+"""Upgrade the bugs to the latest format"""
 import os.path
 import errno
 from libbe import bugdir, rcs
