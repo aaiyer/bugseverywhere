@@ -4,6 +4,7 @@ import cmdutil
 import errno
 import names
 import rcs
+import mapfile
 
 class NoBugDir(Exception):
     def __init__(self, path):
@@ -106,5 +107,21 @@ class Bug(object):
             rcs.unlink(self.get_path(name))
         rcs.set_file_contents(self.get_path(name), "%s\n" % value)
 
+    def add_attr(self, map, name):
+        value = self.__getattribute__(name)
+        if value is not None:
+            map[name] = value
+
     def save(self):
-        pass
+        map = {}
+        self.add_attr(map, "summary")
+        self.add_attr(map, "creator")
+        self.add_attr(map, "target")
+        self.add_attr(map, "status")
+        self.add_attr(map, "severity")
+        path = self.get_path("values")
+        output = file(path, "wb")
+        if not os.path.exists(path):
+            rcs.add_id(path)
+        mapfile.generate(output, map)
+
