@@ -83,6 +83,8 @@ class BugDir:
     rcs_name = setting_property("rcs_name", ("None", "Arch"))
     _rcs = None
 
+    target = setting_property("target")
+
     def save_settings(self):
         map_save(self.rcs, os.path.join(self.dir, "settings"), self.settings)
 
