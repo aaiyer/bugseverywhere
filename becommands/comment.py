@@ -2,6 +2,27 @@
 from libbe import bugdir, cmdutil, names, utility
 import os
 def execute(args):
+    """
+    >>> from libbe import tests, names
+    >>> import os, time
+    >>> dir = tests.simple_bug_dir()
+    >>> os.chdir(dir.dir)
+    >>> execute(["a", "This is a comment about a"])
+    >>> comment = dir.get_bug("a").list_comments()[0]
+    >>> comment.body
+    'This is a comment about a\\n'
+    >>> comment.From == names.creator()
+    True
+    >>> comment.date <= int(time.time())
+    True
+    >>> comment.in_reply_to is None
+    True
+    >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
+    >>> execute(["b"])
+    >>> dir.get_bug("b").list_comments()[0].body
+    'I like cheese\\n'
+    >>> tests.clean_up()
+    """
     options, args = get_parser().parse_args(args)
     if len(args) < 1:
         raise cmdutil.UsageError()
