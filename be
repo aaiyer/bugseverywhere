@@ -53,7 +53,6 @@ def new_bug(args):
     bugs = (dir.list())
     bug = dir.new_bug()
     bug.creator = names.creator()
-    bug.name = names.friendly_name(bugs, bug.creator)
     bug.severity = "minor"
     bug.status = "open"
     bug.summary = args[0]

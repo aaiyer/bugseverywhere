@@ -75,13 +75,6 @@ class Bug(object):
     def get_path(self, file):
         return os.path.join(self.path, file)
 
-    def _get_name(self):
-        return self._get_value("name")
-    
-    def _set_name(self, value):
-        return self._set_value("name", value)
-    
-    name = file_property("name")
     summary = file_property("summary")
     creator = file_property("creator")
     target = file_property("target")
