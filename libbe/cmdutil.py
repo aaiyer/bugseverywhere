@@ -81,6 +81,15 @@ def execute(cmd, args):
 def help(cmd, args):
     return get_command(cmd).help()
 
+def underlined(instring):
+    """Produces a version of a string that is underlined with '='
+
+    >>> underlined("Underlined String")
+    'Underlined String\\n================='
+    """
+    
+    return "%s\n%s" % (instring, "="*len(instring))
+
 def _test():
     import doctest
     import sys
