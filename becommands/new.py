@@ -1,3 +1,4 @@
+"""Create a new bug"""
 from libbe import bugdir, cmdutil, names
 def execute(args):
     if len(args) != 1:

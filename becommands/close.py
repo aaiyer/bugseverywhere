@@ -1,3 +1,4 @@
+"""Close a bug"""
 from libbe import cmdutil
 def execute(args):
     assert(len(args) == 1)

@@ -1,3 +1,4 @@
+"""Show a particular bug"""
 from libbe import bugdir, cmdutil
 import os
 

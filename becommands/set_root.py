@@ -1,3 +1,4 @@
+"""Assign the root directory for bug tracking"""
 from libbe import bugdir, cmdutil
 
 def execute(args):

@@ -1,4 +1,5 @@
 import bugdir
+import plugin
 def unique_name(bug, bugs):
     chars = 1
     for some_bug in bugs:
@@ -49,3 +50,11 @@ def bug_summary(bug, bugs):
             (unique_name(bug, bugs), bug.severity, target, bug.creator,
              bug.summary)
 
+def iter_commands():
+    return plugin.iter_plugins("becommands")
+
+def execute(cmd, args):
+    return plugin.get_plugin("becommands", cmd).execute(args)
+
+def help(cmd, args):
+    return plugin.get_plugin("becommands", cmd).help()

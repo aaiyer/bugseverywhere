@@ -1,3 +1,4 @@
+"""List bugs"""
 from libbe import bugdir, cmdutil
 import os
 def execute(args):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from libbe.cmdutil import *
 from libbe.bugdir import tree_root, create_bug_dir
-from libbe import names
+from libbe import names, plugin, cmdutil
 import sys
 import os
 import becommands.severity
@@ -29,7 +29,14 @@ Unimplemented becommands
 
 
 if len(sys.argv) == 1:
-    print __doc__
+    cmdlist = []
+    print """Bugs Everywhere - Distributed bug tracking
+    
+Supported commands"""
+    for name, module in cmdutil.iter_commands():
+        cmdlist.append((name, module.__doc__))
+    for name, desc in cmdlist:
+        print "%s: %s" % (name, desc)
 else:
     try:
         try:
