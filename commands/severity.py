@@ -1,15 +1,14 @@
 """Show or change a bug's severity level"""
-from libbe.bugdir import tree_root
-from libbe.cmdutil import get_bug
 from libbe import bugdir
 from libbe import cmdutil 
 __desc__ = __doc__
+
 def execute(args):
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
         return
-    bug = get_bug(args[0])
+    bug = cmdutil.get_bug(args[0])
     if len(args) == 1:
         print bug.severity
     elif len(args) == 2:
