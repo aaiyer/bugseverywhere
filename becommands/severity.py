@@ -4,6 +4,21 @@ from libbe import cmdutil
 __desc__ = __doc__
 
 def execute(args):
+    """
+    >>> from libbe import tests
+    >>> import os
+    >>> dir = tests.simple_bug_dir()
+    >>> os.chdir(dir.dir)
+    >>> execute(("a",))
+    minor
+    >>> execute(("a", "wishlist"))
+    >>> execute(("a",))
+    wishlist
+    >>> execute(("a", "none"))
+    Traceback (most recent call last):
+    UserError: Invalid severity level: none
+    >>> tests.clean_up()
+    """
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
