@@ -40,9 +40,15 @@ Supported commands"""
 else:
     try:
         try:
-            execute(sys.argv[1], sys.argv[2:])
+            sys.exit(execute(sys.argv[1], sys.argv[2:]))
         except KeyError, e:
             raise UserError("Unknown command \"%s\"" % e.args[0])
+        except cmdutil.GetHelp:
+            print cmdutil.help(sys.argv[1])
+            sys.exit(0)
+        except cmdutil.UsageError:
+            print cmdutil.help(sys.argv[1])
+            sys.exit(1)
     except UserError, e:
         print e
         sys.exit(1)
