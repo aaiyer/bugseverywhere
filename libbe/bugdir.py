@@ -194,6 +194,39 @@ class Bug(object):
         path = self.get_path("values")
         map_save(rcs_by_name(self.rcs_name), path, map)
 
+    def _get_rcs(self):
+        return rcs_by_name(self.rcs_name)
+
+    rcs = property(_get_rcs)
+
+    def new_comment(self):
+        if not os.path.exists(self.get_path("comments")):
+            self.rcs.mkdir(self.get_path("comments"))
+        comm = Comment(None, self)
+        comm.uuid = names.uuid()
+        return comm
+
+    def get_comment(self, uuid):
+        return Comment(uuid, self)
+
+    def iter_comment_ids(self):
+        try:
+            for uuid in os.listdir(self.get_path("comments")):
+                if (uuid.startswith('.')):
+                    continue
+                yield uuid
+        except IOError, e:
+            if e.errno != errno.ENOENT:
+                raise
+            return
+
+    def list_comments(self):
+        comments = [Comment(id, self) for id in self.iter_comment_ids()]
+        comments.sort(cmp_date)
+        return comments
+
+def cmp_date(comm1, comm2):
+    return cmp(comm1.date, comm2.date)
 
 def new_bug(dir):
     bug = dir.new_bug()
@@ -202,8 +235,68 @@ def new_bug(dir):
     bug.status = "open"
     bug.time = time.time()
     return bug
- 
 
+def new_comment(bug, body=None):
+    comm = bug.new_comment()
+    comm.From = names.creator()
+    comm.date = time.time()
+    comm.body = body
+    return comm
+
+def add_headers(obj, map, names):
+    map_names = {}
+    for name in names:
+        map_names[name] = pyname_to_header(name)
+    add_attrs(obj, map, names, map_names)
+
+def add_attrs(obj, map, names, map_names=None):
+    if map_names is None:
+        map_names = {}
+        for name in names:
+            map_names[name] = name 
+        
+    for name in names:
+        value = obj.__getattribute__(name)
+        if value is not None:
+            map[map_names[name]] = value
+
+
+class Comment(object):
+    def __init__(self, uuid, bug):
+        object.__init__(self)
+        self.uuid = uuid 
+        self.bug = bug
+        if self.uuid is not None and self.bug is not None:
+            mapfile = map_load(self.get_path("values"))
+            self.date = utility.str_to_time(mapfile["Date"])
+            self.From = mapfile["From"]
+            self.in_reply_to = mapfile.get("In-reply-to")
+            self.body = file(self.get_path("body")).read()
+        else:
+            self.date = None
+            self.From = None
+            self.in_reply_to = None
+            self.body = None
+
+    def save(self):
+        map_file = {"Date": utility.time_to_str(self.date)}
+        add_headers(self, map_file, ("From", "in_reply_to"))
+        if not os.path.exists(self.get_path(None)):
+            self.bug.rcs.mkdir(self.get_path(None))
+        map_save(self.bug.rcs, self.get_path("values"), map_file)
+        self.bug.rcs.set_file_contents(self.get_path("body"), self.body)
+            
+
+    def get_path(self, name):
+        my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
+        if name is None:
+            return my_dir
+        return os.path.join(my_dir, name)
+        
+def pyname_to_header(name):
+    return name.capitalize().replace('_', '-')
+    
+    
 def map_save(rcs, path, map):
     """Save the map as a mapfile to the specified path"""
     if not os.path.exists(path):
