@@ -37,8 +37,9 @@ def list_bugs(args):
             target = ""
         else:
             target = " target: %s" % target
-        print "id: %s severity: %s%s\n%s\n" % (unique_name(bug, bugs), 
-                                             bug.severity, target, bug.summary)
+        print "id: %s severity: %s%s creator: %s \n%s\n" % \
+            (unique_name(bug, bugs), bug.severity, target, bug.creator,
+             bug.summary)
 def set_root(args):
     if len(args) != 1:
         raise UserError("Please supply a directory path")
