@@ -40,15 +40,7 @@ Supported commands"""
 else:
     try:
         try:
-            cmd = {
-                "list": becommands.list.execute,
-                "show": becommands.show.execute,
-                "set-root": becommands.set_root.execute,
-                "new": becommands.new.execute,
-                "close": becommands.close.execute,
-                "open": becommands.open.execute,
-                "severity": becommands.severity.execute,
-            }[sys.argv[1]]
+            execute(sys.argv[1], sys.argv[2:])
         except KeyError, e:
             raise UserError("Unknown command \"%s\"" % e.args[0])
         cmd(sys.argv[2:])

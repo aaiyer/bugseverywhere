@@ -51,10 +51,17 @@ def bug_summary(bug, bugs):
              bug.summary)
 
 def iter_commands():
-    return plugin.iter_plugins("becommands")
+    for name, module in plugin.iter_plugins("becommands"):
+        yield name.replace("_", "-"), module
+
+def get_command(command_name):
+    cmd = plugin.get_plugin("becommands", command_name.replace("-", "_"))
+    if cmd is None:
+        raise UserError("Unknown command %s" % command_name)
+    return cmd
 
 def execute(cmd, args):
-    return plugin.get_plugin("becommands", cmd).execute(args)
+    return get_command(cmd).execute(args)
 
 def help(cmd, args):
-    return plugin.get_plugin("becommands", cmd).help()
+    return get_command(cmd).help()
