@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-"""Bugs Everywhere - Distributed bug tracking
+from libbe.cmdutil import *
+from libbe.bugdir import tree_root, create_bug_dir
+from libbe import names
+import sys
+import os
+import commands
+import commands.severity
+__doc__ = """Bugs Everywhere - Distributed bug tracking
 
 Supported commands
  set-root: assign the root directory for bug tracking
@@ -8,15 +15,11 @@ Supported commands
      show: show a particular bug
     close: close a bug
      open: re-open a bug
+ severity: %s
 
 Unimplemented commands
   comment: append a comment to a bug
-"""
-from libbe.cmdutil import *
-from libbe.bugdir import tree_root, create_bug_dir
-from libbe import names
-import sys
-import os
+""" % commands.severity.__desc__
 
 def list_bugs(args):
     active = True
@@ -77,6 +80,7 @@ else:
                 "new": new_bug,
                 "close": close_bug,
                 "open": open_bug,
+                "severity": commands.severity.execute,
             }[sys.argv[1]]
         except KeyError, e:
             raise UserError("Unknown command \"%s\"" % e.args[0])

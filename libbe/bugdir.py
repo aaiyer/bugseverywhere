@@ -5,7 +5,7 @@ import errno
 import names
 import rcs
 
-class NoBugDir(cmdutil.UserError):
+class NoBugDir(Exception):
     def __init__(self, path):
         msg = "The directory \"%s\" has no bug directory." % path
         Exception.__init__(self, msg)
@@ -53,17 +53,24 @@ class BugDir:
         path = os.path.join(self.bugs_path, uuid)
         rcs.mkdir(path)
         return Bug(self.bugs_path, uuid)
-
+class InvalidValue(Exception):
+    def __init__(self, name, value):
+        msg = "Cannot assign value %s to %s" % (value, name)
+        Exception.__init__(self, msg)
+        self.name = name
+        self.value = value
 
 def file_property(name, valid=None):
     def getter(self):
         value = self._get_value(name) 
         if valid is not None:
-            assert value in valid
+            if value not in valid:
+                raise InvalidValue(name, value)
         return value
     def setter(self, value):
         if valid is not None:
-            assert value in valid
+            if value not in valid:
+                raise InvalidValue(name, value)
         return self._set_value(name, value)
     return property(getter, setter)
 

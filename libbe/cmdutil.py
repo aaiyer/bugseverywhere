@@ -1,3 +1,4 @@
+import bugdir
 def unique_name(bug, bugs):
     chars = 1
     for some_bug in bugs:
@@ -11,8 +12,18 @@ class UserError(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
-def get_bug(spec, bug_dir):
+class UserErrorWrap(UserError):
+    def __init__(self, exception):
+        UserError.__init__(self, str(exception))
+        self.exception = exception
+
+def get_bug(spec, bug_dir=None):
     matches = []
+    try:
+        if bug_dir is None:
+            bug_dir = bugdir.tree_root('.')
+    except bugdir.NoBugDir, e:
+        raise UserErrorWrap(e)
     bugs = list(bug_dir.list())
     for bug in bugs:
         if bug.uuid.startswith(spec):
