@@ -113,6 +113,7 @@ class Bug(object):
         self.target = dict.get("target")
         self.status = dict.get("status")
         self.severity = dict.get("severity")
+        self.assigned = dict.get("assigned")
 
     def get_path(self, file):
         return os.path.join(self.path, self.uuid, file)
@@ -129,6 +130,7 @@ class Bug(object):
 
     def save(self):
         map = {}
+        self.add_attr(map, "assigned")
         self.add_attr(map, "summary")
         self.add_attr(map, "creator")
         self.add_attr(map, "target")
