@@ -94,6 +94,11 @@ def checked_property(name, valid):
         return self.__setattr__("_"+name, value)
     return property(getter, setter)
 
+severity_levels = ("wishlist", "minor", "serious", "critical", "fatal")
+
+severity_value = {}
+for i in range(len(severity_levels)):
+    severity_value[severity_levels[i]] = i
 
 class Bug(object):
     status = checked_property("status", (None, "open", "closed"))
@@ -141,3 +146,25 @@ class Bug(object):
             rcs.add_id(path)
         output = file(path, "wb")
         mapfile.generate(output, map)
+
+class MockBug:
+    def __init__(self, severity):
+        self.severity = severity
+
+def cmp_severity(bug_1, bug_2):
+    """
+    Compare the severity levels of two bugs, with more sever bugs comparing
+    as less.
+
+    >>> cmp_severity(MockBug(None), MockBug(None))
+    0
+    >>> cmp_severity(MockBug("wishlist"), MockBug(None)) < 0
+    True
+    >>> cmp_severity(MockBug(None), MockBug("wishlist")) > 0
+    True
+    >>> cmp_severity(MockBug("critical"), MockBug("wishlist")) < 0
+    True
+    """
+    val_1 = severity_value.get(bug_1.severity)
+    val_2 = severity_value.get(bug_2.severity)
+    return -cmp(val_1, val_2)

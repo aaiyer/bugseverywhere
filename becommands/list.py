@@ -29,6 +29,7 @@ def execute(args):
             other_bugs.append(bug)
 
     def list_bugs(cur_bugs, title):
+        cur_bugs.sort(bugdir.cmp_severity)
         if len(cur_bugs) > 0:
             print cmdutil.underlined(title)
             for bug in cur_bugs:
