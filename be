@@ -28,12 +28,12 @@ def list_bugs(args):
         if bug.severity not in severity:
             return False
         return True
-        
-    bugs = [b for b in tree_root(os.getcwd()).list() if filter(b) ]
+    all_bugs = list(tree_root(os.getcwd()).list())
+    bugs = [b for b in all_bugs if filter(b) ]
     if len(bugs) == 0:
         print "No matching bugs found"
     for bug in bugs:
-        print bug_summary(bug, bugs)
+        print bug_summary(bug, all_bugs)
 
 def show_bug(args):
     bug_dir = tree_root(os.getcwd())
