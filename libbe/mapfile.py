@@ -128,7 +128,7 @@ def generate2(f, map, context=3):
     IllegalKey: Illegal key ""
     >>> generate2(f, {">q":"p"})
     Traceback (most recent call last):
-    IllegalKey: Illegal key ""
+    IllegalKey: Illegal key ">q"
     >>> generate2(f, {"q":"p\\n"})
     Traceback (most recent call last):
     IllegalValue: Illegal value "p\\n"
