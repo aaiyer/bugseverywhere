@@ -1,6 +1,7 @@
 import bugdir
 import plugin
 import os
+import optparse
 
 def unique_name(bug, bugs):
     chars = 1
@@ -80,8 +81,36 @@ def get_command(command_name):
 def execute(cmd, args):
     return get_command(cmd).execute(args)
 
-def help(cmd, args):
+def help(cmd):
     return get_command(cmd).help()
+
+
+class GetHelp(Exception):
+    pass
+
+
+class UsageError(Exception):
+    pass
+
+
+def raise_get_help(option, opt, value, parser):
+    raise GetHelp
+
+
+class CmdOptionParser(optparse.OptionParser):
+    def __init__(self, usage):
+        optparse.OptionParser.__init__(self, usage)
+        self.remove_option("-h")
+        self.add_option("-h", "--help", action="callback", 
+                        callback=raise_get_help, help="Print a help message")
+
+    def error(self, message):
+        raise UsageError(message)
+
+    def iter_options(self):
+        return iter_combine([self._short_opt.iterkeys(), 
+                            self._long_opt.iterkeys()])
+
 
 def underlined(instring):
     """Produces a version of a string that is underlined with '='
