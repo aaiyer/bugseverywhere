@@ -12,11 +12,27 @@ import sys
 import os
 
 def list_bugs(args):
-    bugs = [b for b in tree_root(os.getcwd()).list() if b.active]
+    active = True
+    status = ("minor", "serious", "critical", "fatal")
+    def filter(bug):
+        if active is not None:
+            if bug.active != active:
+                return False
+        if bug.status not in status:
+            return False
+        return True
+        
+    bugs = [b for b in tree_root(os.getcwd()).list() ]
     if len(bugs) == 0:
         print "No matching bugs found"
     for bug in bugs:
-        print "%s: %s" % (unique_name(bug, bugs), bug.summary)
+        target = bug.target
+        if target is None:
+            target = ""
+        else:
+            target = " target: %s" % target
+        print "id: %s severity: %s%s\n%s\n" % (unique_name(bug, bugs), 
+                                             bug.severity, target, bug.summary)
 
     
 
