@@ -1,6 +1,21 @@
 """Change tree settings"""
 from libbe import cmdutil 
 def execute(args):
+    """
+    >>> from libbe import tests
+    >>> import os
+    >>> dir = tests.simple_bug_dir()
+    >>> os.chdir(dir.dir)
+    >>> execute(("a",))
+    None
+    >>> execute(("a", "tomorrow"))
+    >>> execute(("a",))
+    tomorrow
+    >>> execute(("a", "none"))
+    >>> execute(("a",))
+    None
+    >>> tests.clean_up()
+    """
     if len(args) > 2:
         raise cmdutil.UserError("Too many arguments.")
     tree = cmdutil.bug_tree()
