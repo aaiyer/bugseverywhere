@@ -1,4 +1,4 @@
-"""Assign an indivitual or group to fix a bug"""
+"""Assign an individual or group to fix a bug"""
 from libbe import bugdir, cmdutil, names 
 __desc__ = __doc__
 
