@@ -1,17 +1,4 @@
-class FileString(object):
-    """Bare-bones pseudo-file class"""
-    def __init__(self, str=""):
-        object.__init__(self)
-        self.str = str
-
-    def __iter__(self):
-        for line in self.str.splitlines(True):
-            yield line
-
-    def write(self, line):
-        self.str += line
-
-
+import utility
 class IllegalKey(Exception):
     def __init__(self, key):
         Exception.__init__(self, 'Illegal key "%s"' % key)
@@ -27,7 +14,7 @@ def generate(f, map, context=3):
     better, because there's no chance of confusion for appends, and lines
     are unique for both key and value.
 
-    >>> f = FileString()
+    >>> f = utility.FileString()
     >>> generate(f, {"q":"p"})
     >>> f.str
     '\\n\\n\\nq=p\\n\\n\\n\\n'
@@ -68,12 +55,6 @@ def generate(f, map, context=3):
         for i in range(context):
             f.write("\n")
 
-def get_file(f):
-    if isinstance(f, basestring):
-        return FileString(f)
-    else:
-        return f
-
 def parse(f):
     """
     Parse a format-2 mapfile.
@@ -81,7 +62,7 @@ def parse(f):
     'p'
     >>> parse('\\n\\nq=\\'p\\'\\n\\n\\n\\n')['q']
     "\'p\'"
-    >>> f = FileString()
+    >>> f = utility.FileString()
     >>> generate(f, {"a":"b", "c":"d", "e":"f"})
     >>> dict = parse(f)
     >>> dict["a"]
@@ -91,7 +72,7 @@ def parse(f):
     >>> dict["e"]
     'f'
     """
-    f = get_file(f)
+    f = utility.get_file(f)
     result = {}
     for line in f:
         line = line.rstrip('\n')
@@ -106,15 +87,16 @@ def parse(f):
 def split_diff3(this, other, f):
     """Split a file or string with diff3 conflicts into two files.
 
-    :param this: The THIS file to write.  May be a FileString
-    :param other: The OTHER file to write.  May be a FileString
+    :param this: The THIS file to write.  May be a utility.FileString
+    :param other: The OTHER file to write.  May be a utility.FileString
     :param f: The file or string to split.
     :return: True if there were conflicts
 
-    >>> split_diff3(FileString(), FileString(), "a\\nb\\nc\\nd\\n")
+    >>> split_diff3(utility.FileString(), utility.FileString(), 
+    ...             "a\\nb\\nc\\nd\\n")
     False
-    >>> this = FileString()
-    >>> other = FileString()
+    >>> this = utility.FileString()
+    >>> other = utility.FileString()
     >>> split_diff3(this, other, "<<<<<<< values1\\nstatus=closed\\n=======\\nstatus=closedd\\n>>>>>>> values2\\n")
     True
     >>> this.str
@@ -122,7 +104,7 @@ def split_diff3(this, other, f):
     >>> other.str
     'status=closedd\\n'
     """
-    f = get_file(f)
+    f = utility.get_file(f)
     this_active = True
     other_active = True
     conflicts = False
@@ -164,8 +146,8 @@ def split_diff3_str(f):
     >>> result[0]
     'a\\nb\\nc\\nd\\n'
     """
-    this = FileString()
-    other = FileString()
+    this = utility.FileString()
+    other = utility.FileString()
     if split_diff3(this, other, f):
         return (this.str, other.str)
     else:

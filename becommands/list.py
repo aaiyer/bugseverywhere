@@ -1,6 +1,5 @@
 """List bugs"""
 from libbe import bugdir, cmdutil, names
-from libbe.mapfile import FileString
 import os
 def execute(args):
     options, args = get_parser().parse_args(args)
@@ -98,6 +97,4 @@ closed bugs assigned to you.
 """
 
 def help():
-    fs = FileString()
-    get_parser().print_help(fs)
-    return fs.str + longhelp
+    return get_parser().help_str() + longhelp

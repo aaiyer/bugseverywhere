@@ -2,6 +2,7 @@ import bugdir
 import plugin
 import os
 import optparse
+import utility
 
 def unique_name(bug, bugs):
     chars = 1
@@ -110,6 +111,11 @@ class CmdOptionParser(optparse.OptionParser):
     def iter_options(self):
         return iter_combine([self._short_opt.iterkeys(), 
                             self._long_opt.iterkeys()])
+
+    def help_str(self):
+        fs = utility.FileString()
+        self.print_help(fs)
+        return fs.str
 
 
 def underlined(instring):
