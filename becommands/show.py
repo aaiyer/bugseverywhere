@@ -13,9 +13,9 @@ def execute(args):
     else:
         time_str = "%s (%s)" % (utility.handy_time(bug.time), 
                                 utility.time_to_str(bug.time))
-    print "Created: %s\n" % time_str
+    print "Created: %s" % time_str
     for comment in bug.list_comments():
-        print "---------------------------"
+        print "--------- Comment ---------"
         print "From: %s" % comment.From
         print "Date: %s\n" % utility.time_to_str(comment.date)
-        print comment.body
+        print comment.body.rstrip('\n')
