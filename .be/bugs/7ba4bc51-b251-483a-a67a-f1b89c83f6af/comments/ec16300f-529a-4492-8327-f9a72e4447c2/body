@@ -1,0 +1,4 @@
+We've got coverage of set_root and new.  This leaves
+close, comment, list, open, severity, show, target, upgrade
+
+It's quite nice, though, that doctest captures stdout.

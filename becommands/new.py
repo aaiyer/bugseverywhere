@@ -1,13 +1,24 @@
 """Create a new bug"""
-from libbe import bugdir, cmdutil, names, utility, tests
+from libbe import bugdir, cmdutil, names, utility
 def execute(args):
     """
-    >>> import os
+    >>> import os, time
+    >>> from libbe import tests
     >>> dir = tests.bug_arch_dir()
     >>> os.chdir(dir.dir)
     >>> names.uuid = lambda: "a"
     >>> execute (("this is a test",))
     Created bug with ID a
+    >>> bug = list(dir.list())[0]
+    >>> bug.summary
+    'this is a test'
+    >>> bug.creator = os.environ["LOGNAME"]
+    >>> bug.time <= int(time.time())
+    True
+    >>> bug.severity
+    'minor'
+    >>> bug.target == None
+    True
     >>> tests.clean_up()
     """
     if len(args) != 1:
