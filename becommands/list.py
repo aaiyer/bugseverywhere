@@ -24,15 +24,16 @@ def execute(args):
     my_bugs = []
     other_bugs = []
     unassigned_bugs = []
-    for bug in bugs:
-        if tree.target is not None and bug.target != tree.target:
-            continue
-        if bug.assigned == current_id:
-            my_target_bugs.append(bug)
-        elif bug.assigned is None:
-            unassigned_target_bugs.append(bug)
-        else:
-            other_target_bugs.append(bug)
+    if tree.target is not None:
+        for bug in bugs:
+            if bug.target != tree.target:
+                continue
+            if bug.assigned == current_id:
+                my_target_bugs.append(bug)
+            elif bug.assigned is None:
+                unassigned_target_bugs.append(bug)
+            else:
+                other_target_bugs.append(bug)
 
     for bug in bugs:
         if tree.target is not None and bug.target == tree.target:
