@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 """Bugs Everywhere - Distributed bug tracking
 
-be list: list bugs
-be status: view or set the status of a bug
-be comment: append a comment to a bug
-be set-root: assign the root directory for bug tracking
+Supported commands
+ set-root: assign the root directory for bug tracking
+      new: Create a new bug
+     list: list bugs
+    close: close a bug
+     open: re-open a bug
+
+Unimplemented commands
+  comment: append a comment to a bug
 """
 from libbe.cmdutil import *
 from libbe.bugdir import tree_root, create_bug_dir
