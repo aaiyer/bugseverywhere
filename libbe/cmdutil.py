@@ -40,7 +40,7 @@ def bug_summary(bug, bugs):
         target = ""
     else:
         target = "  target: %s" % target
-    return "Id: %s  Severity: %s%s  Creator: %s \n%s\n" % \
+    return "ID: %s  Severity: %s%s  Creator: %s \n%s\n" % \
             (unique_name(bug, bugs), bug.severity, target, bug.creator,
              bug.summary)
 
