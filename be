@@ -43,7 +43,6 @@ else:
             execute(sys.argv[1], sys.argv[2:])
         except KeyError, e:
             raise UserError("Unknown command \"%s\"" % e.args[0])
-        cmd(sys.argv[2:])
     except UserError, e:
         print e
         sys.exit(1)
