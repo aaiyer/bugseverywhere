@@ -33,3 +33,14 @@ def get_bug(spec, bug_dir):
     if len(matches) == 0:
         raise UserError("No bug has the name %s" % spec)
     return matches[0]
+
+def bug_summary(bug, bugs):
+    target = bug.target
+    if target is None:
+        target = ""
+    else:
+        target = " target: %s" % target
+    return "id: %s severity: %s%s creator: %s \n%s\n" % \
+            (unique_name(bug, bugs), bug.severity, target, bug.creator,
+             bug.summary)
+

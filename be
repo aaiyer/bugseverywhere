@@ -5,6 +5,7 @@ Supported commands
  set-root: assign the root directory for bug tracking
       new: Create a new bug
      list: list bugs
+     show: show a particular bug
     close: close a bug
      open: re-open a bug
 
@@ -32,14 +33,14 @@ def list_bugs(args):
     if len(bugs) == 0:
         print "No matching bugs found"
     for bug in bugs:
-        target = bug.target
-        if target is None:
-            target = ""
-        else:
-            target = " target: %s" % target
-        print "id: %s severity: %s%s creator: %s \n%s\n" % \
-            (unique_name(bug, bugs), bug.severity, target, bug.creator,
-             bug.summary)
+        print bug_summary(bug, bugs)
+
+def show_bug(args):
+    bug_dir = tree_root(os.getcwd())
+    if len(args) !=1:
+        raise UserError("Please specify a bug id.")
+    print bug_summary(get_bug(args[0], bug_dir), list(bug_dir.list()))
+
 def set_root(args):
     if len(args) != 1:
         raise UserError("Please supply a directory path")
@@ -72,6 +73,7 @@ else:
         try:
             cmd = {
                 "list": list_bugs,
+                "show": show_bug,
                 "set-root": set_root,
                 "new": new_bug,
                 "close": close_bug,
