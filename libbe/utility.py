@@ -91,7 +91,8 @@ def editor_string():
         os.close(fhandle)
         oldmtime = os.path.getmtime(fname)
         os.system("%s %s" % (editor, fname))
-        if oldmtime == os.path.getmtime(fname):
+        if oldmtime == os.path.getmtime(fname) and\
+            file(fname, "rb").read() == "":
             output = None
         else:
             output = file(fname, "rb").read()
