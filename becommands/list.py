@@ -11,7 +11,7 @@ def execute(args):
         if bug.severity not in severity:
             return False
         return True
-    all_bugs = list(bugdir.tree_root(os.getcwd()).list())
+    all_bugs = list(cmdutil.bug_tree().list())
     bugs = [b for b in all_bugs if filter(b) ]
     if len(bugs) == 0:
         print "No matching bugs found"

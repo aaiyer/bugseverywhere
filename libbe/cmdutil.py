@@ -1,5 +1,7 @@
 import bugdir
 import plugin
+import os
+
 def unique_name(bug, bugs):
     chars = 1
     for some_bug in bugs:
@@ -89,6 +91,27 @@ def underlined(instring):
     """
     
     return "%s\n%s" % (instring, "="*len(instring))
+
+
+def bug_tree(dir=None):
+    """Retrieve the bug tree specified by the user.  If no directory is
+    specified, the current working directory is used.
+
+    :param dir: The directory to search for the bug tree in.
+
+    >>> bug_tree() is not None
+    True
+    >>> bug_tree("/")
+    Traceback (most recent call last):
+    UserErrorWrap: The directory "/" has no bug directory.
+    """
+    if dir is None:
+        dir = os.getcwd()
+    try:
+        return bugdir.tree_root(dir)
+    except bugdir.NoBugDir, e:
+        raise UserErrorWrap(e)
+
 
 def _test():
     import doctest
