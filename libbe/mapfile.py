@@ -154,6 +154,12 @@ def generate2(f, map, context=3):
         for i in range(context):
             f.write("\n")
 
+def get_file(f):
+    if isinstance(f, basestring):
+        return FileString(f)
+    else:
+        return f
+
 def parse2(f):
     """
     Parse a format-2 mapfile.
@@ -171,8 +177,7 @@ def parse2(f):
     >>> dict["e"]
     'f'
     """
-    if isinstance(f, basestring):
-        f = FileString(f)
+    f = get_file(f)
     result = {}
     for line in f:
         line = line.rstrip('\n')
@@ -182,3 +187,72 @@ def parse2(f):
         assert not result.has_key('name')
         result[name] = value
     return result
+
+
+def split_diff3(this, other, f):
+    """Split a file or string with diff3 conflicts into two files.
+
+    :param this: The THIS file to write.  May be a FileString
+    :param other: The OTHER file to write.  May be a FileString
+    :param f: The file or string to split.
+    :return: True if there were conflicts
+
+    >>> split_diff3(FileString(), FileString(), "a\\nb\\nc\\nd\\n")
+    False
+    >>> this = FileString()
+    >>> other = FileString()
+    >>> split_diff3(this, other, "<<<<<<< values1\\nstatus=closed\\n=======\\nstatus=closedd\\n>>>>>>> values2\\n")
+    True
+    >>> this.str
+    'status=closed\\n'
+    >>> other.str
+    'status=closedd\\n'
+    """
+    f = get_file(f)
+    this_active = True
+    other_active = True
+    conflicts = False
+    for line in f:
+        if line.startswith("<<<<<<<"):
+            conflicts = True
+            this_active = True
+            other_active = False
+        elif line.startswith("======="):
+            this_active = False
+            other_active = True
+        elif line.startswith(">>>>>>>"):
+            this_active = True
+            other_active = True
+        else:
+            if this_active:
+                this.write(line)
+            if other_active:
+                other.write(line)
+    return conflicts
+
+def split_diff3_str(f):
+    """Split a file/string with diff3 conflicts into two strings.  If there
+    were no conflicts, one string is returned.
+
+    >>> result = split_diff3_str("<<<<<<< values1\\nstatus=closed\\n=======\\nstatus=closedd\\n>>>>>>> values2\\n")
+    >>> len(result)
+    2
+    >>> result[0] != result[1]
+    True
+    >>> result = split_diff3_str("<<<<<<< values1\\nstatus=closed\\n=======\\nstatus=closed\\n>>>>>>> values2\\n")
+    >>> len(result)
+    2
+    >>> result[0] == result[1]
+    True
+    >>> result = split_diff3_str("a\\nb\\nc\\nd\\n")
+    >>> len(result)
+    1
+    >>> result[0]
+    'a\\nb\\nc\\nd\\n'
+    """
+    this = FileString()
+    other = FileString()
+    if split_diff3(this, other, f):
+        return (this.str, other.str)
+    else:
+        return (this.str,)
