@@ -22,14 +22,14 @@ status=open
 
 
 
-summary=Support rcs configuration
+summary=Implement bug tree diff
 
 
 
 
 
 
-target=patch-52
+target=0.2
 
 
 
