@@ -45,19 +45,21 @@ def execute(args):
         else:
             other_bugs.append(bug)
 
-    def list_bugs(cur_bugs, title):
+    def list_bugs(cur_bugs, title, no_target=False):
         cur_bugs.sort(bugdir.cmp_severity)
         if len(cur_bugs) > 0:
             print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print cmdutil.bug_summary(bug, all_bugs)
+                print cmdutil.bug_summary(bug, all_bugs, no_target=no_target)
     
     list_bugs(my_target_bugs, 
-              "Bugs assigned to you for target %s" % tree.target)
+              "Bugs assigned to you for target %s" % tree.target, 
+              no_target=True)
     list_bugs(unassigned_target_bugs, 
-              "Unassigned bugs for target %s" % tree.target)
+              "Unassigned bugs for target %s" % tree.target, no_target=True)
     list_bugs(other_target_bugs, 
-              "Bugs assigned to others for target %s" % tree.target)
+              "Bugs assigned to others for target %s" % tree.target, 
+              no_target=True)
     list_bugs(my_bugs, "Bugs assigned to you")
     list_bugs(unassigned_bugs, "Unassigned bugs")
     list_bugs(other_bugs, "Bugs assigned to others")

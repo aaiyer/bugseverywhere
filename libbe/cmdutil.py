@@ -42,9 +42,9 @@ def get_bug(spec, bug_dir=None):
         raise UserError("No bug matches %s" % spec)
     return matches[0]
 
-def bug_summary(bug, bugs):
+def bug_summary(bug, bugs, no_target=False):
     target = bug.target
-    if target is None:
+    if target is None or no_target:
         target = ""
     else:
         target = "  Target: %s" % target
