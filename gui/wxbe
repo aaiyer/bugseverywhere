@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from wxPython.wx import *
 from wxPython.lib.mixins.listctrl import wxListCtrlAutoWidthMixin
+import sys, os.path
+sys.path.append(os.path.realpath(os.path.join".."))
 from libbe import bugdir
 
 class MyApp(wxApp):
@@ -8,13 +10,17 @@ class MyApp(wxApp):
         frame = wxFrame(NULL, -1, "Bug display")
         frame.Show(true)
         self.SetTopWindow(frame)
+        panel = wxPanel(frame, -1, style=(wxVSCROLL | wxHSCROLL))
+        panel.SetSize((500, 400))
         sizer = wxBoxSizer(wxVERTICAL)
-        bugs = BugList(frame)
-        bugs.SetSize((400, 65))
+        sizer.Add(panel, wxGROW)
+        frame.SetSizer(sizer)
+        bugs = BugList(panel)
+        bugs.SetSize((400, -1))
 #        bugs.SetDimensions(-1, -1, -1, -1)
+        sizer = wxBoxSizer(wxVERTICAL)
         sizer.Add(bugs, wxGROW)
         frame.SetSizer(sizer)
-        frame.Layout()
         return true
 
 class BugList(wxListCtrl, wxListCtrlAutoWidthMixin):
