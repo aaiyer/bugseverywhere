@@ -7,7 +7,7 @@ be comment: append a comment to a bug
 be set-root: assign the root directory for bug tracking
 """
 from libbe.cmdutil import *
-from libbe.bugdir import tree_root
+from libbe.bugdir import tree_root, create_bug_dir
 from libbe import names
 import sys
 import os
@@ -34,6 +34,10 @@ def list_bugs(args):
             target = " target: %s" % target
         print "id: %s severity: %s%s\n%s\n" % (unique_name(bug, bugs), 
                                              bug.severity, target, bug.summary)
+def set_root(args):
+    if len(args) != 1:
+        raise UserError("Please supply a directory path")
+    create_bug_dir(args[0])
 
 def new_bug(args):
     if len(args) != 1:
@@ -62,6 +66,7 @@ else:
         try:
             cmd = {
                 "list": list_bugs,
+                "set-root": set_root,
                 "new": new_bug,
                 "close": close_bug,
                 "open": open_bug,

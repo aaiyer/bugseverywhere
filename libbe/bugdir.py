@@ -26,6 +26,14 @@ def tree_root(dir):
 def test_version(path):
     assert (file(path, "rb").read() == "Bugs Everywhere Tree 0 0\n")
 
+def create_bug_dir(path):
+    root = os.path.join(path, ".be")
+    os.mkdir(root)
+    os.mkdir(os.path.join(root, "bugs"))
+    f = file(os.path.join(root, "version"), "wb")
+    f.write("Bugs Everywhere Tree 0 0\n")
+    return BugDir(path)
+
 class BugDir:
     def __init__(self, dir):
         self.dir = dir
