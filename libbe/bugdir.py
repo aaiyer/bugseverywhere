@@ -106,3 +106,5 @@ class Bug(object):
             rcs.unlink(self.get_path(name))
         rcs.set_file_contents(self.get_path(name), "%s\n" % value)
 
+    def save(self):
+        pass
