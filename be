@@ -12,9 +12,9 @@ import sys
 import os
 
 def list_bugs(args):
-    bugs = list(tree_root(os.getcwd()).list())
+    bugs = [b for b in tree_root(os.getcwd()).list() if b.active]
     if len(bugs) == 0:
-        print "No bugs found"
+        print "No matching bugs found"
     for bug in bugs:
         print "%s: %s" % (unique_name(bug, bugs), bug.summary)
 
