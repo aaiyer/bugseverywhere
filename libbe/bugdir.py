@@ -3,8 +3,8 @@ import os.path
 import cmdutil
 import errno
 import names
-import rcs
 import mapfile
+from rcs import rcs_by_name
 
 class NoBugDir(Exception):
     def __init__(self, path):
@@ -36,28 +36,67 @@ def test_version(path):
     if tree_version != TREE_VERSION_STRING:
         raise BadTreeVersion(tree_version)
 
-def set_version(path):
+def set_version(path, rcs):
     rcs.set_file_contents(os.path.join(path, "version"), TREE_VERSION_STRING)
     
 
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
-def create_bug_dir(path):
+def create_bug_dir(path, rcs):
     root = os.path.join(path, ".be")
     rcs.mkdir(root)
     rcs.mkdir(os.path.join(root, "bugs"))
-    set_version(root)
-
+    set_version(root, rcs)
+    map_save(rcs, os.path.join(root, "settings"), {"rcs_name": rcs.name})
     return BugDir(path)
+
+
+def setting_property(name, valid=None):
+    def getter(self):
+        value = self.settings.get(name) 
+        if valid is not None:
+            if value not in valid:
+                raise InvalidValue(name, value)
+        return value
+
+    def setter(self, value):
+        if valid is not None:
+            if value not in valid and value is not None:
+                raise InvalidValue(name, value)
+        if value is None:
+            del self.settings[name]
+        else:
+            self.settings[name] = value
+        self.save_settings()
+    return property(getter, setter)
+
 
 class BugDir:
     def __init__(self, dir):
         self.dir = dir
         self.bugs_path = os.path.join(self.dir, "bugs")
+        try:
+            self.settings = map_load(os.path.join(self.dir, "settings"))
+        except NoSuchFile:
+            self.settings = {"rcs_name": "None"}
+
+    rcs_name = setting_property("rcs_name", ("None", "Arch"))
+    _rcs = None
+
+    def save_settings(self):
+        map_save(self.rcs, os.path.join(self.dir, "settings"), self.settings)
+
+    def get_rcs(self):
+        if self._rcs is not None and self.rcs_name == _rcs.name:
+            return self._rcs
+        self._rcs = rcs_by_name(self.rcs_name)
+        return self._rcs
+
+    rcs = property(get_rcs)
 
     def list(self):
         for uuid in self.list_uuids():
-            yield Bug(self.bugs_path, uuid)
+            yield Bug(self.bugs_path, uuid, self.rcs_name)
 
     def list_uuids(self):
         for uuid in os.listdir(self.bugs_path):
@@ -68,8 +107,8 @@ class BugDir:
     def new_bug(self):
         uuid = names.uuid()
         path = os.path.join(self.bugs_path, uuid)
-        rcs.mkdir(path)
-        bug = Bug(self.bugs_path, None)
+        self.rcs.mkdir(path)
+        bug = Bug(self.bugs_path, None, self.rcs_name)
         bug.uuid = uuid
         return bug
 
@@ -105,13 +144,15 @@ class Bug(object):
     severity = checked_property("severity", (None, "wishlist", "minor",
                                              "serious", "critical", "fatal"))
 
-    def __init__(self, path, uuid):
+    def __init__(self, path, uuid, rcs_name):
         self.path = path
         self.uuid = uuid
         if uuid is not None:
-            dict = mapfile.parse(file(self.get_path("values")))
+            dict = map_load(self.get_path("values"))
         else:
             dict = {}
+
+        self.rcs_name = rcs_name
 
         self.summary = dict.get("summary")
         self.creator = dict.get("creator")
@@ -142,10 +183,29 @@ class Bug(object):
         self.add_attr(map, "status")
         self.add_attr(map, "severity")
         path = self.get_path("values")
-        if not os.path.exists(path):
-            rcs.add_id(path)
-        output = file(path, "wb")
-        mapfile.generate(output, map)
+        map_save(rcs_by_name(self.rcs_name), path, map)
+
+
+def map_save(rcs, path, map):
+    """Save the map as a mapfile to the specified path"""
+    if not os.path.exists(path):
+        rcs.add_id(path)
+    output = file(path, "wb")
+    mapfile.generate(output, map)
+
+class NoSuchFile(Exception):
+    def __init__(self, pathname):
+        Exception.__init__(self, "No such file: %s" % pathname)
+
+
+def map_load(path):
+    try:
+        return mapfile.parse(file(path, "rb"))
+    except IOError, e:
+        if e.errno != errno.ENOENT:
+            raise e
+        raise NoSuchFile(path)
+
 
 class MockBug:
     def __init__(self, severity):
