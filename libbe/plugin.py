@@ -26,8 +26,9 @@ def get_plugin(prefix, name):
     """
     >>> get_plugin("becommands", "asdf") is None
     True
-    >>> get_plugin("becommands", "list")
-    <module 'becommands.list' from '/home/abentley/be/becommands/list.pyc'>
+    >>> q = repr(get_plugin("becommands", "list"))
+    >>> q.startswith("<module 'becommands.list' from ")
+    True
     """
     dirprefix = '/'.join(prefix.split('.'))
     command_path = os.path.join(plugin_path, dirprefix, name+".py")

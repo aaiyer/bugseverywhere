@@ -69,8 +69,8 @@ def get_command(command_name):
     File "/home/abentley/be/libbe/cmdutil.py", line 60, in get_command
       raise UserError("Unknown command %s" % command_name)
     UserError: Unknown command asdf
-    >>> get_command("list")
-    <module 'becommands.list' from '/home/abentley/be/becommands/list.pyc'>
+    >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
+    True
     """
     cmd = plugin.get_plugin("becommands", command_name.replace("-", "_"))
     if cmd is None:
