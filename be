@@ -36,7 +36,7 @@ Supported commands"""
     for name, module in cmdutil.iter_commands():
         cmdlist.append((name, module.__doc__))
     for name, desc in cmdlist:
-        print "%s: %s" % (name, desc)
+        print "be %s\n    %s" % (name, desc)
 else:
     try:
         try:
