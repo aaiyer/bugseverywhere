@@ -59,6 +59,9 @@ def execute(args):
             other_bugs.append(bug)
 
     def list_bugs(cur_bugs, title, no_target=False):
+        def cmp_date(bug1, bug2):
+            return -cmp(bug1.time, bug2.time)
+        cur_bugs.sort(cmp_date)
         cur_bugs.sort(bugdir.cmp_severity)
         if len(cur_bugs) > 0:
             print cmdutil.underlined(title)
