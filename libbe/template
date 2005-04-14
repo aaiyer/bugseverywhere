@@ -1,0 +1,48 @@
+"""Compare two bug trees"""
+from bugdir import cmdutil
+
+def diff(old_tree, new_tree):
+    old_bug_map = old_tree.bug_map()
+    new_bug_map = new_tree.bug_map()
+    added = []
+    removed = []
+    modified = []
+    for old_bug in old_bug_map.itervalues():
+        new_bug = new_bug_map.get(bug.uuid)
+        if new_bug is None :
+            removed.append(old_bug)
+        else:
+            if old_bug != new_bug:
+                modified.append((old_bug, new_bug))
+    for new_bug in new_bug_map.itervalues():
+        if not old_bug_map.haskey(new_bug.id):
+            added.append(new_bug)
+    return (removed, modified, added)
+
+
+def reference_diff(bugdir, spec=None):
+    return diff(bugdir.reference_bugdir(), bugdir)
+    
+def diff_report(diff_data, bugdir)
+    (removed, modified, added) = diff_data
+    def modified_cmp(left, right):
+        return cmp_severity(left[1], right[1])
+
+    added.sort(bugdir.cmp_severity)
+    removed.sort(bugdir.cmp_severity)
+    modified.sort(modified_cmp)
+
+    print "New bug reports:"
+    for bug in added:
+        cmdutil.bug_summary(bug, bugdir, no_target=True)
+
+    print "modified bug reports:"
+    for old_bug, new_bug in modified: 
+        cmdutil.bug_summary(new_bug, bugdir, no_target=True)
+
+    print "Removed bug reports:"
+    for bug in removed:
+        cmdutil.bug_summary(bug, bugdir, no_target=True)
+   
+
+

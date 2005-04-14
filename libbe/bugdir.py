@@ -98,9 +98,18 @@ class BugDir:
 
     rcs = property(get_rcs)
 
+    def get_reference_bugdir(self, spec):
+        return BugDir(self.rcs.path_in_reference(self.dir, spec))
+
     def list(self):
         for uuid in self.list_uuids():
             yield self.get_bug(uuid)
+
+    def bug_map(self):
+        bugs = {}
+        for bug in self.list():
+            bugs[bug.uuid] = bug
+        return bugs
 
     def get_bug(self, uuid):
         return Bug(self.bugs_path, uuid, self.rcs_name)

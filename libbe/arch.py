@@ -1,4 +1,4 @@
-from popen2 import Popen4
+from popen2 import Popen3
 import os
 import config
 client = config.get_val("arch_client")
@@ -7,17 +7,21 @@ if client is None:
     config.set_val("arch_client", client)
 
 def invoke(args):
-    q=Popen4(args)
+    q=Popen3(args, True)
     output = q.fromchild.read()
+    error = q.childerr.read()
     status = q.wait()
     if os.WIFEXITED(status):
-        return os.WEXITSTATUS(status)
-    raise Exception("Command failed")
+        return os.WEXITSTATUS(status), output, error
+    raise Exception("Command failed: %s" % error)
 
 def invoke_client(*args, **kwargs):
-    status = invoke((client,) + args)
+    cl_args = [client]
+    cl_args.extend(args)
+    status,output,error = invoke(cl_args)
     if status not in (0,):
-        raise Exception("Command failed")
+        raise Exception("Command failed: %s" % error)
+    return output
 
 def add_id(filename):
     invoke_client("add-id", filename)
@@ -34,6 +38,13 @@ def set_file_contents(path, contents):
     file(path, "wb").write(contents)
     if add:
         add_id(path)
+
+
+def path_in_reference(bug_dir, spec):
+    if spec is not None:
+        return invoke_client("file-find", bug_dir, spec).rstrip('\n')
+    return invoke_client("file-find", bug_dir).rstrip('\n')
+
 
 def unlink(path):
     try:
