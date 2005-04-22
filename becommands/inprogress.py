@@ -1,4 +1,4 @@
-"""Close a bug"""
+"""Bug fixing in progress"""
 from libbe import cmdutil
 def execute(args):
     """
