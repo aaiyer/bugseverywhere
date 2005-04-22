@@ -148,7 +148,7 @@ for i in range(len(severity_levels)):
     severity_value[severity_levels[i]] = i
 
 class Bug(object):
-    status = checked_property("status", (None, "open", "closed"))
+    status = checked_property("status", (None, "open", "closed", "in-progress"))
     severity = checked_property("severity", (None, "wishlist", "minor",
                                              "serious", "critical", "fatal"))
 
@@ -176,7 +176,7 @@ class Bug(object):
         return os.path.join(self.path, self.uuid, file)
 
     def _get_active(self):
-        return self.status == "open"
+        return self.status in ("open", "in-progress")
 
     active = property(_get_active)
 

@@ -11,6 +11,7 @@ import becommands.set_root
 import becommands.new
 import becommands.close
 import becommands.open
+import becommands.inprogress
 __doc__ = """Bugs Everywhere - Distributed bug tracking
 
 Supported becommands
