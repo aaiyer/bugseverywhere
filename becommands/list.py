@@ -63,7 +63,7 @@ def execute(args):
         if len(cur_bugs) > 0:
             print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print cmdutil.bug_summary(bug, all_bugs, no_target=no_target)
+                print cmdutil.bug_summary(bug, all_bugs, no_target=no_target, shortlist=True)
     
     list_bugs(my_target_bugs, 
               "Bugs assigned to you for target %s" % tree.target, 
