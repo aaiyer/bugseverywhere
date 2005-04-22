@@ -44,7 +44,7 @@ def get_bug(spec, bug_dir=None):
         raise UserError("No bug matches %s" % spec)
     return matches[0]
 
-def bug_summary(bug, bugs, no_target=False):
+def bug_summary(bug, bugs, no_target=False, shortlist=False):
     target = bug.target
     if target is None or no_target:
         target = ""
@@ -54,9 +54,12 @@ def bug_summary(bug, bugs, no_target=False):
         assigned = ""
     else:
         assigned = "  Assigned: %s" % bug.assigned
-    return "ID: %s  Severity: %s%s%s  Creator: %s \n%s\n" % \
+    if shortlist == False:
+       return "  ID: %s\n  Severity: %s\n%s%s\n  Creator: %s \n%s\n" % \
             (unique_name(bug, bugs), bug.severity, assigned, target,
              bug.creator, bug.summary)
+    else:
+       return "%4s: %s\n" % (unique_name(bug, bugs), bug.summary)
 
 def iter_commands():
     for name, module in plugin.iter_plugins("becommands"):
