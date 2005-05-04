@@ -82,7 +82,7 @@ class BugDir:
         except NoSuchFile:
             self.settings = {"rcs_name": "None"}
 
-    rcs_name = setting_property("rcs_name", ("None", "Arch"))
+    rcs_name = setting_property("rcs_name", ("None", "bzr", "Arch"))
     _rcs = None
 
     target = setting_property("target")
@@ -312,10 +312,11 @@ def pyname_to_header(name):
     
 def map_save(rcs, path, map):
     """Save the map as a mapfile to the specified path"""
-    if not os.path.exists(path):
-        rcs.add_id(path)
+    add = not os.path.exists(path)
     output = file(path, "wb")
     mapfile.generate(output, map)
+    if add:
+        rcs.add_id(path)
 
 class NoSuchFile(Exception):
     def __init__(self, pathname):
