@@ -35,11 +35,29 @@ def set_file_contents(path, contents):
     if add:
         add_id(path)
 
+def lookup_revision(revno):
+    return invoke_client("lookup-revision", str(revno)).rstrip('\n')
+
+def export(revno, revision_dir):
+    invoke_client("export", str(revno), revision_dir)
+
+def find_or_make_export(revno):
+    revision_id = lookup_revision(revno)
+    home = os.path.expanduser("~")
+    revision_dir = os.path.join(home, ".bzrrevs", revision_id)
+    if not os.path.exists(revision_dir):
+        export(revno, revision_dir)
+    return revision_dir
+
+def bzr_root(path):
+    return invoke_client("root", path).rstrip('\r')
 
 def path_in_reference(bug_dir, spec):
-    if spec is not None:
-        return invoke_client("file-find", bug_dir, spec).rstrip('\n')
-    return invoke_client("file-find", bug_dir).rstrip('\n')
+    if spec is None:
+        spec = int(invoke_client("revno"))
+    rel_bug_dir = bug_dir[len(bzr_root(bug_dir)):]
+    export_root = find_or_make_export(spec)
+    return os.path.join(export_root, rel_bug_dir)
 
 
 def unlink(path):
