@@ -60,7 +60,7 @@ def change_lines(old, new, attributes):
         old_attr = getattr(old, attr)
         new_attr = getattr(new, attr)
         if old_attr != new_attr:
-            change_list.append("%s: %s -> %s" % (attr, old_attr, new_attr))
+            change_list.append((attr, old_attr, new_attr))
     if len(change_list) >= 0:
         return change_list
     else:
@@ -72,6 +72,6 @@ def bug_changes(old, new, bugs):
     if len(change_list) == 0:
         return None
     return "%s%s\n" % (cmdutil.bug_summary(new, bugs, shortlist=True), 
-                           "\n".join(change_list))
+                       "\n".join(["%s: %s -> %s" % f for f in change_list]))
 
 
