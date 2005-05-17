@@ -27,6 +27,8 @@ def unique_name(bug, bugs):
             continue
         while (bug.uuid[:chars] == some_bug.uuid[:chars]):
             chars+=1
+        if chars < 3:
+            chars = 3
     return bug.uuid[:chars]
 
 class UserError(Exception):
