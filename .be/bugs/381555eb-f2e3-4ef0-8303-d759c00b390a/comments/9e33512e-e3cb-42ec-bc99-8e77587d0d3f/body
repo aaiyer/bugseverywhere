@@ -1,0 +1,4 @@
+Trees created with tla make dotfiles precious by default, so add 
+"source ^\.be$" to the root .arch-inventory.
+
+Optionally, only do this if inventory --source doesn't list .be

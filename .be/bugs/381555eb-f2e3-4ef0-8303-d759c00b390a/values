@@ -22,14 +22,14 @@ status=open
 
 
 
-summary=no tests for missing $EDITOR
+summary=Ensure .be is source in Arch
 
 
 
 
 
 
-time=Tue, 17 May 2005 13:27:33 +0000
+time=Tue, 17 May 2005 13:39:02 +0000
 
 
 
