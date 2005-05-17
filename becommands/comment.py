@@ -33,6 +33,10 @@ def execute(args):
     True
     >>> comment.in_reply_to is None
     True
+    >>> del os.environ["EDITOR"]
+    >>> execute(["b"])
+    Traceback (most recent call last):
+    UserError: No comment supplied, and EDITOR not specified.
     >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
     >>> execute(["b"])
     >>> dir.get_bug("b").list_comments()[0].body
