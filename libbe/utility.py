@@ -94,14 +94,16 @@ def str_to_time(str_time):
 def handy_time(time_val):
     return time.strftime("%a, %d %b %Y %H:%M", time.localtime(time_val))
 
+class CantFindEditor(Exception):
+    def __init__(self):
+        Exception.__init__(self, "Can't find editor to get string from")
+
 def editor_string():
     """Invokes the editor, and returns the user_produced text as a string"""
     try:
         editor = os.environ["EDITOR"]
     except KeyError:
-        raise cmdutil.UserError(
-            "No comment supplied, and EDITOR not specified.")
-
+        raise CantFindEditor()
     fhandle, fname = tempfile.mkstemp()
     try:
         os.close(fhandle)

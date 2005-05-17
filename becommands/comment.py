@@ -44,7 +44,11 @@ def execute(args):
         raise cmdutil.UsageError()
     bug = cmdutil.get_bug(args[0])
     if len(args) == 1:
-        body = utility.editor_string()
+        try:
+            body = utility.editor_string()
+        except utility.CantFindEditor:
+            raise cmdutil.UserError(
+                "No comment supplied, and EDITOR not specified.")
         if body is None:
             raise cmdutil.UserError("No comment entered.")
     else:
