@@ -23,7 +23,7 @@ def execute(args):
     >>> dir = tests.bug_arch_dir()
     >>> os.chdir(dir.dir)
     >>> names.uuid = lambda: "a"
-    >>> execute (("this is a test",))
+    >>> execute (["this is a test",])
     Created bug with ID a
     >>> bug = list(dir.list())[0]
     >>> bug.summary
