@@ -74,6 +74,8 @@ def tree_root(filename):
     return invoke_client("tree-root", dirname).rstrip('\n')
 
 def rel_filename(filename, root):
+    filename = os.path.realpath(filename)
+    root = os.path.realpath(root)
     assert(filename.startswith(root))
     return filename[len(root)+1:]
 

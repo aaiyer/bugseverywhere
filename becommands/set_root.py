@@ -20,6 +20,7 @@ from libbe import bugdir, cmdutil, rcs
 def execute(args):
     """
     >>> from libbe import tests
+    >>> import os
     >>> dir = tests.Dir()
     >>> try:
     ...     bugdir.tree_root(dir.name)
@@ -32,7 +33,8 @@ def execute(args):
     >>> bd = bugdir.tree_root(dir.name)
     >>> bd.root = dir.name
     >>> dir = tests.arch_dir()
-    >>> execute([dir.name])
+    >>> os.chdir(dir.name)
+    >>> execute('.')
     Using Arch for revision control.
     Directory initialized.
     >>> bd = bugdir.tree_root(dir.name+"/{arch}")
