@@ -42,8 +42,7 @@ def execute(args):
     >>> try:
     ...     execute(['.'])
     ... except cmdutil.UserError, e:
-    ...     str(e).startswith("Directory already initialized ")
-    Using Arch for revision control.
+    ...     str(e).startswith("Directory already initialized: ")
     True
     >>> tests.clean_up()
     >>> execute(['/highly-unlikely-to-exist'])
@@ -54,16 +53,16 @@ def execute(args):
     if len(args) != 1:
         raise cmdutil.UsageError
     dir_rcs = rcs.detect(args[0])
-    if dir_rcs.name is not "None":
-        print "Using %s for revision control." % dir_rcs.name
-    else:
-        print "No revision control detected."
     try:
         bugdir.create_bug_dir(args[0], dir_rcs)
     except bugdir.NoRootEntry:
         raise cmdutil.UserError("No such directory: %s" % args[0])
     except bugdir.AlreadyInitialized:
         raise cmdutil.UserError("Directory already initialized: %s" % args[0])
+    if dir_rcs.name is not "None":
+        print "Using %s for revision control." % dir_rcs.name
+    else:
+        print "No revision control detected."
     print "Directory initialized."
 
 def get_parser():
