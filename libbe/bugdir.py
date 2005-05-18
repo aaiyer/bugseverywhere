@@ -60,9 +60,25 @@ def set_version(path, rcs):
 
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
+class NoRootEntry(Exception):
+    def __init__(self, path):
+        self.path = path
+        Exception.__init__(self, "Specified root does not exist: %s" % path)
+
 def create_bug_dir(path, rcs):
+    """
+    >>> import no_rcs
+    >>> create_bug_dir('/highly-unlikely-to-exist', no_rcs)
+    Traceback (most recent call last):
+    NoRootEntry: Specified root does not exist: /highly-unlikely-to-exist
+    """
     root = os.path.join(path, ".be")
-    rcs.mkdir(root)
+    try:
+        rcs.mkdir(root)
+    except OSError, e:
+        if e.errno != errno.ENOENT:
+            raise
+        raise NoRootEntry(path)
     rcs.mkdir(os.path.join(root, "bugs"))
     set_version(root, rcs)
     map_save(rcs, os.path.join(root, "settings"), {"rcs_name": rcs.name})

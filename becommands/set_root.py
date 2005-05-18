@@ -40,6 +40,9 @@ def execute(args):
     >>> bd = bugdir.tree_root(dir.name+"/{arch}")
     >>> bd.root = dir.name
     >>> tests.clean_up()
+    >>> execute(('/highly-unlikely-to-exist',))
+    Traceback (most recent call last):
+    UserError: No such directory: /highly-unlikely-to-exist
     """
     if len(args) != 1:
         raise cmdutil.UserError("Please supply a directory path")
@@ -48,5 +51,8 @@ def execute(args):
         print "Using %s for revision control." % dir_rcs.name
     else:
         print "No revision control detected."
-    bugdir.create_bug_dir(args[0], dir_rcs)
+    try:
+        bugdir.create_bug_dir(args[0], dir_rcs)
+    except bugdir.NoRootEntry:
+        raise cmdutil.UserError("No such directory: %s" % args[0])
     print "Directory initialized."
