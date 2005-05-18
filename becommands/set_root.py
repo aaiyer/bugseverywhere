@@ -34,13 +34,19 @@ def execute(args):
     >>> bd.root = dir.name
     >>> dir = tests.arch_dir()
     >>> os.chdir(dir.name)
-    >>> execute('.')
+    >>> execute(['.'])
     Using Arch for revision control.
     Directory initialized.
     >>> bd = bugdir.tree_root(dir.name+"/{arch}")
     >>> bd.root = dir.name
+    >>> try:
+    ...     execute(['.'])
+    ... except cmdutil.UserError, e:
+    ...     str(e).startswith("Directory already initialized ")
+    Using Arch for revision control.
+    True
     >>> tests.clean_up()
-    >>> execute(('/highly-unlikely-to-exist',))
+    >>> execute(['/highly-unlikely-to-exist'])
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
     """
@@ -56,6 +62,8 @@ def execute(args):
         bugdir.create_bug_dir(args[0], dir_rcs)
     except bugdir.NoRootEntry:
         raise cmdutil.UserError("No such directory: %s" % args[0])
+    except bugdir.AlreadyInitialized:
+        raise cmdutil.UserError("Directory already initialized: %s" % args[0])
     print "Directory initialized."
 
 def get_parser():

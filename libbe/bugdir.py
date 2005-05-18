@@ -65,20 +65,35 @@ class NoRootEntry(Exception):
         self.path = path
         Exception.__init__(self, "Specified root does not exist: %s" % path)
 
+class AlreadyInitialized(Exception):
+    def __init__(self, path):
+        self.path = path
+        Exception.__init__(self, 
+                           "Specified root is already initialized: %s" % path)
+
 def create_bug_dir(path, rcs):
     """
-    >>> import no_rcs
+    >>> import no_rcs, tests
     >>> create_bug_dir('/highly-unlikely-to-exist', no_rcs)
     Traceback (most recent call last):
     NoRootEntry: Specified root does not exist: /highly-unlikely-to-exist
+    >>> test_dir = os.path.dirname(tests.bug_arch_dir().dir)
+    >>> try:
+    ...     create_bug_dir(test_dir, no_rcs)
+    ... except AlreadyInitialized, e:
+    ...     print "Already Initialized"
+    Already Initialized
     """
     root = os.path.join(path, ".be")
     try:
         rcs.mkdir(root)
     except OSError, e:
-        if e.errno != errno.ENOENT:
+        if e.errno == errno.ENOENT:
+            raise NoRootEntry(path)
+        elif e.errno == errno.EEXIST:
+            raise AlreadyInitialized(path)
+        else:
             raise
-        raise NoRootEntry(path)
     rcs.mkdir(os.path.join(root, "bugs"))
     set_version(root, rcs)
     map_save(rcs, os.path.join(root, "settings"), {"rcs_name": rcs.name})
