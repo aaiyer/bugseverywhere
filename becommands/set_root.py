@@ -44,8 +44,9 @@ def execute(args):
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
     """
+    options, args = get_parser().parse_args(args)
     if len(args) != 1:
-        raise cmdutil.UserError("Please supply a directory path")
+        raise cmdutil.UsageError
     dir_rcs = rcs.detect(args[0])
     if dir_rcs.name is not "None":
         print "Using %s for revision control." % dir_rcs.name
@@ -56,3 +57,21 @@ def execute(args):
     except bugdir.NoRootEntry:
         raise cmdutil.UserError("No such directory: %s" % args[0])
     print "Directory initialized."
+
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be set-root DIRECTORY")
+    return parser
+
+longhelp="""
+This command initializes Bugs Everywhere support for the specified directory
+and all its subdirectories.  It will auto-detect any supported revision control
+system.  You can use "be set rcs_name" to change the rcs being used.
+
+It is usually a good idea to put the Bugs Everywhere root at the source code
+root, but you can put it anywhere.  If you run "be set-root" in a subdirectory,
+then only bugs created in that subdirectory (and its children) will appear
+there.
+"""
+
+def help():
+    return get_parser().help_str() + longhelp
