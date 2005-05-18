@@ -37,6 +37,7 @@ def execute(args):
     True
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     if len(args) != 1:
         raise cmdutil.UserError("Please supply a summary message")
     dir = cmdutil.bug_tree()
@@ -46,3 +47,14 @@ def execute(args):
     bugs = (dir.list())
     print "Created bug with ID %s" % cmdutil.unique_name(bug, bugs)
 
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be new SUMMARY")
+    return parser
+
+longhelp="""
+Create a new bug, with a new ID.  The summary specified on the commandline
+is a string that describes the bug briefly.
+"""
+
+def help():
+    return get_parser().help_str() + longhelp
