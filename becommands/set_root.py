@@ -32,7 +32,7 @@ def execute(args):
     >>> bd = bugdir.tree_root(dir.name)
     >>> bd.root = dir.name
     >>> dir = tests.arch_dir()
-    >>> execute([dir.name+"/{arch}"])
+    >>> execute([dir.name])
     Using Arch for revision control.
     Directory initialized.
     >>> bd = bugdir.tree_root(dir.name+"/{arch}")

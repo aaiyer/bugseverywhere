@@ -37,7 +37,7 @@ class Dir:
 
 def arch_dir():
     dir = Dir()
-    os.mkdir(os.path.join(dir.name, "{arch}"))
+    arch.init_tree(dir.name)
     return dir
 
 def bug_arch_dir():

@@ -39,13 +39,98 @@ def invoke_client(*args, **kwargs):
         raise Exception("Command failed: %s" % error)
     return output
 
-def add_id(filename):
+def write_tree_settings(contents, path):
+    file(os.path.join(path, "{arch}", "=tagging-method"), "wb").write(contents)
+
+def init_tree(path):
+    invoke_client("init-tree", "-d", path)
+
+def temp_arch_tree(type="easy"):
+    import tempfile
+    path = tempfile.mkdtemp()
+    init_tree(path)
+    if type=="easy":
+        write_tree_settings("source ^.*$\n", path)
+    elif type=="tricky":
+        write_tree_settings("source ^$\n", path)
+    else:
+        assert (type=="impossible")
+        add_dir_rule("precious ^\.boo$", path, path)
+    return path
+
+def list_added(root):
+    assert os.path.exists(root)
+    assert os.access(root, os.X_OK)
+    root = os.path.realpath(root)
+    inv_str = invoke_client("inventory", "--source", '--both', '--all', root)
+    return [os.path.join(root, p) for p in inv_str.split('\n')]
+
+def tree_root(filename):
+    assert os.path.exists(filename)
+    if not os.path.isdir(filename):
+        dirname = os.path.dirname(filename)
+    else:
+        dirname = filename
+    return invoke_client("tree-root", dirname).rstrip('\n')
+
+def rel_filename(filename, root):
+    assert(filename.startswith(root))
+    return filename[len(root)+1:]
+
+class CantAddFile(Exception):
+    def __init__(self, file):
+        self.file = file
+        Exception.__init__(self, "Can't automatically add file %s" % file)
+    
+
+def add_dir_rule(rule, dirname, root):
+    inv_filename = os.path.join(dirname, '.arch-inventory')
+    file(inv_filename, "ab").write(rule)
+    if os.path.realpath(inv_filename) not in list_added(root):
+        add_id(inv_filename, no_force=True)
+
+def force_source(filename, root):
+    rule = "source %s\n" % rel_filename(filename, root)
+    add_dir_rule(rule, os.path.dirname(filename), root)
+    if os.path.realpath(filename) not in list_added(root):
+        raise CantAddFile(filename)
+
+def add_id(filename, no_force=False):
     invoke_client("add-id", filename)
+    root = tree_root(filename)
+    if os.path.realpath(filename) not in list_added(root) and not no_force:
+        force_source(filename, root)
+
 
 def delete_id(filename):
     invoke_client("delete-id", filename)
 
+def test_helper(type):
+    t = temp_arch_tree(type)
+    dirname = os.path.join(t, ".boo")
+    return dirname, t
+
 def mkdir(path):
+    """
+    >>> import shutil
+    >>> dirname,t = test_helper("easy")
+    >>> mkdir(dirname)
+    >>> assert os.path.realpath(dirname) in list_added(t)
+    >>> assert not os.path.exists(os.path.join(t, ".arch-inventory"))
+    >>> shutil.rmtree(t)
+    >>> dirname,t = test_helper("tricky")
+    >>> mkdir(dirname)
+    >>> assert os.path.realpath(dirname) in list_added(t)
+    >>> assert os.path.exists(os.path.join(t, ".arch-inventory"))
+    >>> shutil.rmtree(t)
+    >>> dirname,t = test_helper("impossible")
+    >>> try:
+    ...     mkdir(dirname)
+    ... except CantAddFile, e:
+    ...     print "Can't add file"
+    Can't add file
+    >>> shutil.rmtree(t)
+    """
     os.mkdir(path)
     add_id(path)
 
