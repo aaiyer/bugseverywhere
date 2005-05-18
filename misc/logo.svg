@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:xml="http://www.w3.org/XML/1998/namespace"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="logo.svg"
+   sodipodi:docbase="/home/abentley/arch/be"
+   inkscape:version="0.41"
+   sodipodi:version="0.32"
+   id="svg2"
+   height="297mm"
+   width="210mm">
+  <defs
+     id="defs3" />
+  <sodipodi:namedview
+     inkscape:window-y="63"
+     inkscape:window-x="22"
+     inkscape:window-height="759"
+     inkscape:window-width="910"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="px"
+     inkscape:cy="836.68762"
+     inkscape:cx="408.57141"
+     inkscape:zoom="0.67765957"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base" />
+  <metadata
+     id="metadata4">
+    <rdf:RDF
+       id="RDF5">
+      <cc:Work
+         id="Work6"
+         rdf:about="">
+        <dc:format
+           id="format7">image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+           id="type9" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <g
+       id="g2065">
+      <text
+         sodipodi:linespacing="100%"
+         id="text1291"
+         y="143.78516"
+         x="36.981991"
+         style="font-size:78.161568;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#000000;fill-opacity:1.0000000;stroke:none;stroke-width:1.0000000pt;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Attic;text-anchor:start;writing-mode:lr;line-height:100%"
+         xml:space="preserve"><tspan
+           y="143.78516"
+           x="36.981991"
+           id="tspan1293"
+           sodipodi:role="line">Bugs Everwhere</tspan></text>
+      <path
+         id="path1299"
+         d="M 435.39129,169.91317 C 435.39129,178.31858 440.70441,153.65014 445.24931,146.30250 C 450.43734,137.91513 453.18058,163.90397 453.46434,166.96184 C 453.55532,167.94222 453.46434,168.92939 453.46434,169.91317"
+         style="fill:none;fill-opacity:0.75000000;fill-rule:evenodd;stroke:#000000;stroke-width:4.2500000;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1.0000000;stroke-dasharray:none;stroke-miterlimit:4.0000000" />
+      <path
+         id="path1303"
+         d="M 440.06423,89.055564 C 440.06423,95.774126 450.18051,79.127074 454.66879,73.752225 C 458.94498,68.631300 461.04359,61.697359 464.40532,56.262692 C 469.05687,48.742525 470.05816,49.640806 479.00985,46.424830"
+         style="stroke-dasharray:none;stroke-opacity:1.0000000;stroke-miterlimit:4.0000000;stroke-linejoin:round;stroke-linecap:round;stroke-width:4.2500000;stroke:#000000;fill-rule:evenodd;fill-opacity:0.75000000;fill:none" />
+      <path
+         id="path1305"
+         d="M 457.10286,68.286745 C 463.68121,65.923450 451.21494,56.705449 448.58360,50.797213"
+         style="stroke-dasharray:none;stroke-opacity:1.0000000;stroke-miterlimit:4.0000000;stroke-linejoin:round;stroke-linecap:round;stroke-width:4.2500000;stroke:#000000;fill-rule:evenodd;fill-opacity:0.75000000;fill:none" />
+    </g>
+  </g>
+</svg>
