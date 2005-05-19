@@ -86,7 +86,7 @@ def create_bug_dir(path, rcs):
     """
     root = os.path.join(path, ".be")
     try:
-        rcs.mkdir(root)
+        rcs.mkdir(root, paranoid=True)
     except OSError, e:
         if e.errno == errno.ENOENT:
             raise NoRootEntry(path)

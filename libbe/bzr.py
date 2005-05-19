@@ -35,13 +35,13 @@ def invoke_client(*args, **kwargs):
         raise Exception("Command failed: %s" % error)
     return output
 
-def add_id(filename):
+def add_id(filename, paranoid=False):
     invoke_client("add", filename)
 
 def delete_id(filename):
     invoke_client("remove", filename)
 
-def mkdir(path):
+def mkdir(path, paranoid=False):
     os.mkdir(path)
     add_id(path)
 

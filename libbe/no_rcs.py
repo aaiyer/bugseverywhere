@@ -17,15 +17,18 @@
 from popen2 import Popen4
 import os
 import config
-from os import mkdir, unlink
+from os import unlink
 
-def add_id(filename):
+def add_id(filename, paranoid=False):
     """Compatibility function"""
     pass
 
 def delete_id(filename):
     """Compatibility function"""
     pass
+
+def mkdir(path, paranoid=False):
+    os.mkdir(path)
 
 def set_file_contents(path, contents):
     add = not os.path.exists(path)

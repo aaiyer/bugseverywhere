@@ -89,7 +89,7 @@ def add_dir_rule(rule, dirname, root):
     inv_filename = os.path.join(dirname, '.arch-inventory')
     file(inv_filename, "ab").write(rule)
     if os.path.realpath(inv_filename) not in list_added(root):
-        add_id(inv_filename, no_force=True)
+        add_id(inv_filename, paranoid=False)
 
 def force_source(filename, root):
     rule = "source %s\n" % rel_filename(filename, root)
@@ -97,10 +97,10 @@ def force_source(filename, root):
     if os.path.realpath(filename) not in list_added(root):
         raise CantAddFile(filename)
 
-def add_id(filename, no_force=False):
+def add_id(filename, paranoid=False):
     invoke_client("add-id", filename)
     root = tree_root(filename)
-    if os.path.realpath(filename) not in list_added(root) and not no_force:
+    if paranoid and os.path.realpath(filename) not in list_added(root):
         force_source(filename, root)
 
 
@@ -112,29 +112,29 @@ def test_helper(type):
     dirname = os.path.join(t, ".boo")
     return dirname, t
 
-def mkdir(path):
+def mkdir(path, paranoid=False):
     """
     >>> import shutil
     >>> dirname,t = test_helper("easy")
-    >>> mkdir(dirname)
+    >>> mkdir(dirname, paranoid=False)
     >>> assert os.path.realpath(dirname) in list_added(t)
     >>> assert not os.path.exists(os.path.join(t, ".arch-inventory"))
     >>> shutil.rmtree(t)
     >>> dirname,t = test_helper("tricky")
-    >>> mkdir(dirname)
+    >>> mkdir(dirname, paranoid=True)
     >>> assert os.path.realpath(dirname) in list_added(t)
     >>> assert os.path.exists(os.path.join(t, ".arch-inventory"))
     >>> shutil.rmtree(t)
     >>> dirname,t = test_helper("impossible")
     >>> try:
-    ...     mkdir(dirname)
+    ...     mkdir(dirname, paranoid=True)
     ... except CantAddFile, e:
     ...     print "Can't add file"
     Can't add file
     >>> shutil.rmtree(t)
     """
     os.mkdir(path)
-    add_id(path)
+    add_id(path, paranoid=paranoid)
 
 def set_file_contents(path, contents):
     add = not os.path.exists(path)
