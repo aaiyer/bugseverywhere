@@ -55,12 +55,15 @@ def lookup_revision(revno):
     return invoke_client("lookup-revision", str(revno)).rstrip('\n')
 
 def export(revno, revision_dir):
-    invoke_client("export", str(revno), revision_dir)
+    invoke_client("export", "-r", str(revno), revision_dir)
 
 def find_or_make_export(revno):
     revision_id = lookup_revision(revno)
     home = os.path.expanduser("~")
-    revision_dir = os.path.join(home, ".bzrrevs", revision_id)
+    revision_root = os.path.join(home, ".bzrrevs")
+    if not os.path.exists(revision_root):
+        os.mkdir(revision_root)
+    revision_dir = os.path.join(revision_root, revision_id)
     if not os.path.exists(revision_dir):
         export(revno, revision_dir)
     return revision_dir
