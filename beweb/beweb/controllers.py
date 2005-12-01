@@ -1,9 +1,7 @@
 import turbogears
 from turbogears import controllers
 from libbe.bugdir import tree_root, cmp_severity
-projects = {"be": ("Bugs Everywhere","/home/abentley/be"),
-            "devel": ("PF devel","/home/abentley/devel"),
-}
+from config import projects
 
 def project_tree(project):
     try:
