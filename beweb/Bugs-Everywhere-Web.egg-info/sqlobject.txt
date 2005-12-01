@@ -1,0 +1,2 @@
+db_module=beweb.model
+history_dir=$base/beweb/sqlobject-history

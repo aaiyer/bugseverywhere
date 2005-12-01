@@ -1,0 +1,51 @@
+table
+{
+    background-color: black;
+}
+td
+{
+    background-color: white;
+}
+h1
+{
+    font-family: "Verdana";
+    font-weight: bold;
+    font-size: 120%;
+    margin-bottom:0;
+    color: #990;
+}
+tr.closed
+{
+    display: none
+}
+tr.closed td
+{
+    background-color: #ccc;
+}
+
+a:visited, a:link
+{
+    color: #990;
+    text-decoration: None;
+}
+td a:visited, td a:link
+{
+    display: block;
+}
+a:visited:hover, a:link:hover
+{
+    text-decoration: underline;
+}
+td a:visited:hover, td a:link:hover
+{
+    color:black;
+    background-color:#dda;
+    text-decoration: None;
+    display: block;
+}
+
+body
+{
+    font-family: "Verdana";
+    font-size:11pt;
+}
