@@ -1,3 +1,4 @@
 projects = {"be": ("Bugs Everywhere","/home/abentley/be"),
-            "devel": ("PF devel","/home/abentley/devel"),
+            "devel": ("PF Devel","/home/abentley/devel"),
+            "release": ("PF Release","/home/abentley/release"),
 }

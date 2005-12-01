@@ -25,7 +25,9 @@ class Root(controllers.Root):
             
 
     @turbogears.expose(html="beweb.templates.bugs")
-    def bugs(self, project_id, sort_by=None):
+    def bugs(self, project_id, sort_by=None, show_closed=False):
+        if show_closed == "False":
+            show_closed = False
         bug_tree = project_tree(project_id)
         bugs = list(bug_tree.list())
         if sort_by is None:
@@ -36,6 +38,7 @@ class Root(controllers.Root):
         return {"project_id"      : project_id,
                 "project_name"    : projects[project_id][0],
                 "bugs"            : bugs,
+                "show_closed"     : show_closed,
                }
 
     @turbogears.expose(html="beweb.templates.edit_bug")

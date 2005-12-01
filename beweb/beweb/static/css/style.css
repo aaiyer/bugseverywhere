@@ -14,10 +14,7 @@ h1
     margin-bottom:0;
     color: #990;
 }
-tr.closed
-{
-    display: none
-}
+
 tr.closed td
 {
     background-color: #ccc;

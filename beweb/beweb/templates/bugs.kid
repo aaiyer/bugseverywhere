@@ -19,9 +19,10 @@ def row_class(bug):
 <h1>Bug list for ${project_name}</h1>
 <table>
 <tr><td>ID</td><td>Status</td><td>Severity</td><td>Assigned To</td><td>Summary</td></tr>
-<div py:for="bug in bugs" py:strip="True"><tr class="${row_class(bug)}"><td><a href="${'/%s/%s' % (project_id, bug.uuid)}">${unique_name(bug, bugs[:])}</a></td><td>${bug.status}</td><td>${bug.severity}</td><td>${bug.assigned}</td><td>${bug.summary}</td></tr>
+<div py:for="bug in bugs" py:strip="True"><tr class="${row_class(bug)}" py:if="bug.status != 'closed' or show_closed"><td><a href="${'/%s/%s/' % (project_id, bug.uuid)}">${unique_name(bug, bugs[:])}</a></td><td>${bug.status}</td><td>${bug.severity}</td><td>${bug.assigned}</td><td>${bug.summary}</td></tr>
 </div>
 </table>
 <a href="/">Project list</a>
+<a href="${'/%s/?show_closed=%s' % (project_id, str(not show_closed))}">Toggle closed</a>
 </body>
 </html>
