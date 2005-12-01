@@ -18,33 +18,6 @@ def select_among(name, options, default):
 <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
     <title>Edit bug</title>
-    <style type="text/css">
-    /*tr, td, table{border: black thin solid}*/
-    table
-    {
-        background-color: black;
-    }
-    td
-    {
-        background-color: white;
-    }
-    h1
-    {
-        font-family: "Verdana";
-        font-weight: bold;
-        font-size: 120%;
-        margin-bottom:0;
-        color: #a07;
-    }
-    tr.closed
-    {
-        display: none
-    }
-    tr.closed td
-    {
-        background-color: #ccc;
-    }
-    </style>
 </head>
 
 <body>
