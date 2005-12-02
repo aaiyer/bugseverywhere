@@ -15,4 +15,20 @@
     
     <div py:replace="item[:]"/>
 </body>
+<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}innerbox'" cellspacing="0" cellpadding="0">
+<tr><td><img src="/static/images/is-tl.png" /></td>
+    <td background="/static/images/is-t.png" />
+    <td><img src="/static/images/is-tr.png"/></td>
+</tr>
+<tr>
+    <td background="/static/images/is-l.png"/>
+    <td py:content="item.text"> Hello, this is some random text</td>
+    <td background="/static/images/is-r.png"/>
+</tr>
+<tr>
+    <td><img src="/static/images/is-bl.png" /></td>
+    <td background="/static/images/is-b.png" />
+    <td><img src="/static/images/is-br.png"/></td>
+</tr>
+</table>
 </html>
