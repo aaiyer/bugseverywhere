@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?python
 from libbe.bugdir import severity_levels
+from libbe.utility import time_to_str 
 def select_among(name, options, default):
     output = ['<select name="%s">' % name]
     for option in options:
@@ -27,7 +28,14 @@ def select_among(name, options, default):
 <tr><td>Status</td><td>Severity</td><td>Assigned To</td><td>Summary</td></tr>
 <tr><td>${select_among("status", ["open", "closed", "in-progress"], bug.status)}</td><td>${select_among("severity", severity_levels, bug.severity)}</td><td>${bug.assigned}</td><td><input name="summary" value="${bug.summary}" size="80" /></td></tr>
 </table>
-<input type="submit" name="action" value="Update"/>
+<div py:for="comment in bug.list_comments()" class="comment">
+    <table>
+        <tr><td>From</td><td>${comment.From}</td></tr>
+        <tr><td>Date</td><td>${time_to_str(comment.date)}</td></tr>
+    </table>
+    <pre>${comment.body}</pre>
+</div>
+<p><input type="submit" name="action" value="Update"/></p>
 </form>
 <a href="/${project_id}/">Bug List</a>
 </body>
