@@ -24,5 +24,8 @@ def row_class(bug):
 </table>
 <a href="/">Project list</a>
 <a href="${'/%s/?show_closed=%s' % (project_id, str(not show_closed))}">Toggle closed</a>
+<form action="/$project_id/new/" method="post">
+<input type="submit" name="action" value="New bug"/>
+</form>
 </body>
 </html>

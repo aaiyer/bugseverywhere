@@ -1,6 +1,8 @@
 import turbogears
 from turbogears import controllers
+import cherrypy
 from libbe.bugdir import tree_root, cmp_severity
+from libbe import names
 from config import projects
 
 def project_tree(project):
@@ -45,10 +47,19 @@ class Root(controllers.Root):
     def bug(self, project_id, bug_uuid, action=None, status=None, 
             severity=None, summary=None):
         bug_tree = project_tree(project_id)
-        bug = bug_tree.get_bug(bug_uuid)
+        if action == "New bug":
+            bug = bug_tree.new_bug()
+            bug.creator = names.creator()
+            bug.severity = "minor"
+            bug.status = "open"
+            bug.save()
+            raise cherrypy.HTTPRedirect(turbogears.url("/%s/%s/" % (project_id, bug.uuid))) 
+        else:
+            bug = bug_tree.get_bug(bug_uuid)
         if action == "Update":
             bug.status = status
             bug.severity = severity
             bug.summary = summary
             bug.save()
-        return {"bug": bug, "project_id": project_id}
+            
+        return {"bug": bug, "project_id": project_id, "new":True}
