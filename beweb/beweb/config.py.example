@@ -1,0 +1,10 @@
+# This is an example beweb configuration file.
+
+# One thing we need is a map of projects.  Projects have a beweb ID, a path,
+# and a display name.
+
+# In this example, the 'be' beweb ID is assigned the display name "Bugs 
+# Everywhere" and the path "/home/abentley/be"
+
+projects = {"be": ("Bugs Everywhere","/home/abentley/be"),
+           }
