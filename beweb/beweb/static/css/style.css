@@ -64,7 +64,6 @@ body
 }
 #header
 {
-    background-color: yellow;
     color: black;
     font-weight: bold;
     background-image: url(/static/images/half-spiral.png);
