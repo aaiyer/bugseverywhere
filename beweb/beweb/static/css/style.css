@@ -76,3 +76,8 @@ table.insetbox
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
+.insetbox tr, .insetbox td
+{
+  margin: 0;
+  padding: 0;
+}

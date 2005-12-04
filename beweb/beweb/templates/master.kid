@@ -15,20 +15,20 @@
     
     <div py:replace="item[:]"/>
 </body>
-<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" cellspacing="0" cellpadding="0" class="insetbox">
-<tr><td><img src="/static/images/is-tl.png" /></td>
+<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" cellspacing="0" cellpadding="0" border="0" class="insetbox">
+<tr height="19"><td background="/static/images/is-tl.png" width="19"/>
     <td background="/static/images/is-t.png" />
-    <td><img src="/static/images/is-tr.png"/></td>
+    <td background="/static/images/is-tr.png" width="11"></td>
 </tr>
 <tr>
     <td background="/static/images/is-l.png"/>
     <td py:content="item[:]"> Hello, this is some random text</td>
     <td background="/static/images/is-r.png"/>
 </tr>
-<tr>
-    <td><img src="/static/images/is-bl.png" /></td>
+<tr height="11">
+    <td background="/static/images/is-bl.png"/>
     <td background="/static/images/is-b.png" />
-    <td><img src="/static/images/is-br.png"/></td>
+    <td background="/static/images/is-br.png"/>
 </tr>
 </table>
 </html>
