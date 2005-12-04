@@ -10,7 +10,7 @@
 </head>
 
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'">
-<div>b u g s   e v e r y w h e r e</div> 
+<div id="header">b u g s   e v r y w h e r e</div> 
     <div py:if="tg_flash" class="flash" py:content="tg_flash"></div>
     
     <div py:replace="item[:]"/>
