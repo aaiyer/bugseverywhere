@@ -29,11 +29,13 @@ def select_among(name, options, default):
 <tr><td>${select_among("status", ["open", "closed", "in-progress"], bug.status)}</td><td>${select_among("severity", severity_levels, bug.severity)}</td><td>${bug.assigned}</td><td><input name="summary" value="${bug.summary}" size="80" /></td></tr>
 </table>
 <div py:for="comment in bug.list_comments()" class="comment">
+    <insetbox>
     <table>
         <tr><td>From</td><td>${comment.From}</td></tr>
         <tr><td>Date</td><td>${time_to_str(comment.date)}</td></tr>
     </table>
     <pre>${comment.body}</pre>
+    </insetbox>
 </div>
 <p><input type="submit" name="action" value="Update"/></p>
 </form>

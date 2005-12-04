@@ -22,7 +22,7 @@ commands, see "be help"
 Using BeWeb, the web UI
 =======================
 BeWeb uses the Turbogears framework: http://www.turbogears.org/
-Please ensure you have Turbogears 0.8a4 or a compatible release installed.
+Please ensure you have Turbogears 0.8a5 or a compatible release installed.
 Because it uses BE data, the web UI does not require a database.
 
 To use BeWeb, first create a configuration file, telling it which projects

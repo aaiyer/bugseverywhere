@@ -45,15 +45,10 @@ body
 {
     font-family: "Verdana";
     font-size:11pt;
+    background-color: white;
 }
 .comment
 {
-    margin-top: 1em;
-    margin-bottom; 60px;
-    padding: 0.5em;
-    border: dashed thin black;
-    background-color: #ffa;
-    width:60%
 }
 .comment table
 {
@@ -76,4 +71,9 @@ body
     background-position: right center;
     background-repeat: no-repeat;
     background-color: #ff0;
+}
+table.insetbox
+{
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
