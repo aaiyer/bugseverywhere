@@ -61,5 +61,6 @@ class Root(controllers.Root):
             bug.severity = severity
             bug.summary = summary
             bug.save()
+            raise cherrypy.HTTPRedirect(turbogears.url("/%s/" % project_id)) 
             
         return {"bug": bug, "project_id": project_id, "new":True}
