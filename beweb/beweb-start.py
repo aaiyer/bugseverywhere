@@ -10,6 +10,7 @@ import sys
 # if it's not on the command line, then
 # look for setup.py in this directory. If it's not there, this script is
 # probably installed
+cherrypy.config.update(file="common.cfg")
 if len(sys.argv) > 1:
     cherrypy.config.update(file=sys.argv[1])
 elif exists(join(dirname(__file__), "setup.py")):
