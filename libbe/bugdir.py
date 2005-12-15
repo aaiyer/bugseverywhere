@@ -41,6 +41,8 @@ def tree_root(dir, old_version=False):
             break;
         elif rootdir == "/":
             raise NoBugDir(dir)
+        elif not os.path.exists(rootdir):
+            raise NoRootEntry(rootdir)
         rootdir=os.path.dirname(rootdir)
     return BugDir(os.path.join(rootdir, ".be"))
 
