@@ -26,7 +26,7 @@ project_triples.sort()
 <body>
 <h1>Project List</h1>
 <table>
-<tr py:for="project_name, project_id, project_loc in project_triples"><td><a href="/${project_id}/">${project_name}</a></td></tr>
+<tr py:for="project_name, project_id, project_loc in project_triples"><td><a href="/project/${project_id}/">${project_name}</a></td></tr>
 </table>
 </body>
 </html>
