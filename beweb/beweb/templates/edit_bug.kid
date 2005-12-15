@@ -2,6 +2,7 @@
 <?python
 from libbe.bugdir import severity_levels
 from libbe.utility import time_to_str 
+from beweb.controllers import bug_list_url
 def select_among(name, options, default):
     output = ['<select name="%s">' % name]
     for option in options:
@@ -39,6 +40,6 @@ def select_among(name, options, default):
 </div>
 <p><input type="submit" name="action" value="Update"/></p>
 </form>
-<a href="/${project_id}/">Bug List</a>
+<a href="${bug_list_url(project_id)}">Bug List</a>
 </body>
 </html>
