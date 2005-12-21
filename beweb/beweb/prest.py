@@ -39,7 +39,7 @@ class PrestHandler(object):
         """Convert the path into a handler, a resource, data, and extra_path"""
         if data is None:
             data = {}
-        if len(path) < 2 or not (path[0] is None or hasattr(self, path[0])):
+        if len(path) < 2 or not (hasattr(self, path[1])):
             if len(path) == 0:
                 resource = None
             else:
@@ -54,9 +54,10 @@ class PrestHandler(object):
         action = child.get_action(**kwargs)
         new_args = ([data, resource]+extra)
         if action is not None:
-            action(*new_args, **kwargs)
+            return action(*new_args, **kwargs)
         else:
-            child.dispatch(*new_args, **kwargs)
+            print child.__class__.__name__
+            return child.dispatch(*new_args, **kwargs)
 
     def get_action(self, **kwargs):
         """Return the action requested by kwargs, if any.
@@ -119,6 +120,36 @@ class PrestTester(TestCase):
                           *['project', '27', 'extra'], 
                           **{'behavior':'Update', 'action':'Save', 'b':'97'})
                 
+        class BugHandler(PrestHandler):
+            actions = {}
+            def dispatch(self, bug_data, bug, *args, **kwargs):
+                self.project_id = project_data['project']
+                self.project_data = project_data
+                self.resource = project
+                self.args = args
+                self.kwargs = kwargs
+
+            def instantiate(self, project, bug):
+                return [project, bug]
+
+            @provide_action('action', 'Save')
+            def save(self, project_data, project, *args, **kwargs):
+                self.action = "save"
+
+            @provide_action('behavior', 'Update')
+            def update(self, project_data, project, *args, **kwargs):
+                self.action = "update"
+
+        foo.project.bug = BugHandler()
+        handler, resource, data, extra = foo.decode([None, 'project', '83', 
+                                                     'bug', '92'])
+        assert handler is foo.project.bug
+        self.assertEqual(resource[0], '83')
+        self.assertEqual(resource[1], '92')
+        self.assertEqual([], extra)
+        self.assertEqual(data['project'], '83')
+        self.assertEqual(data['bug'], '92')
+
 def test():
     patchesTestSuite = unittest.makeSuite(PrestTester,'test')
     runner = unittest.TextTestRunner(verbosity=0)
