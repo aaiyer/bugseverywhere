@@ -1,7 +1,7 @@
 import turbogears
 from turbogears import controllers
 import cherrypy
-from libbe.bugdir import tree_root, cmp_severity
+from libbe.bugdir import tree_root, cmp_severity, new_bug
 from libbe import names
 from config import projects
 from restresource import RESTResource
@@ -44,10 +44,7 @@ class Bug(RESTResource):
                }
 
     def new_bug(self):
-        bug = self.bug_tree().new_bug()
-        bug.creator = names.creator()
-        bug.severity = "minor"
-        bug.status = "open"
+        bug = new_bug(self.bug_tree())
         bug.save()
         raise cherrypy.HTTPRedirect(bug_url(self.parent, bug.uuid))
 
