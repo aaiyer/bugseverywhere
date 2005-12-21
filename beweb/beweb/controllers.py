@@ -1,7 +1,7 @@
 import turbogears
 from turbogears import controllers
 import cherrypy
-from libbe.bugdir import tree_root, cmp_severity, new_bug
+from libbe.bugdir import tree_root, cmp_severity, new_bug, new_comment
 from libbe import names
 from config import projects
 from prest import PrestHandler, provide_action
@@ -19,7 +19,41 @@ def expose_resource(html=None):
         return func
     return exposer 
 
+def comment_url(project, bug, comment):
+    return turbogears.url("/project/%s/bug/%s/comment/%s" %
+                          (project, bug, comment))
+
+class Comment(PrestHandler):
+    @provide_action("action", "New comment")
+    def new_comment(self, comment_data, comment, *args, **kwargs):
+        bug_tree = project_tree(comment_data['project'])
+        bug = bug_tree.get_bug(comment_data['bug'])
+        comment = new_comment(bug, "")
+        comment.save()
+        raise cherrypy.HTTPRedirect(comment_url(comment=comment.uuid, 
+                                    **comment_data))
+
+    @provide_action("action", "Update")
+    def update(self, comment_data, comment, comment_body, *args, **kwargs):
+        comment.body = comment_body
+        comment.save()
+        raise cherrypy.HTTPRedirect(bug_url(comment_data['project'], 
+                                            comment_data['bug']))
+
+    def instantiate(self, project, bug, comment):
+        bug_tree = project_tree(project)
+        bug = bug_tree.get_bug(bug)
+        return bug.get_comment(comment)
+
+    def dispatch(self, comment_data, comment, *args, **kwargs):
+        return self.edit_comment(comment_data['project'], comment)
+
+    @turbogears.expose(html="beweb.templates.edit_comment")
+    def edit_comment(self, project, comment):
+        return {"comment": comment, "project_id": project}
+
 class Bug(PrestHandler):
+    comment = Comment()
     @turbogears.expose(html="beweb.templates.edit_bug")
     def index(self, project, bug):
         return {"bug": bug, "project_id": project}
@@ -65,6 +99,11 @@ class Bug(PrestHandler):
 
     def instantiate(self, project, bug):
         return project_tree(project).get_bug(bug)
+
+    @provide_action("action", "New comment")
+    def new_comment(self, bug_data, bug, *args, **kwargs):
+        return self.comment.new_comment(bug_data, comment=None, *args, 
+                                         **kwargs)
 
 
 def project_url(project_id=None):

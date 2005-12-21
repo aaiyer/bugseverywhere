@@ -2,7 +2,7 @@
 <?python
 from libbe.bugdir import severity_levels
 from libbe.utility import time_to_str 
-from beweb.controllers import bug_list_url
+from beweb.controllers import bug_list_url, comment_url
 def select_among(name, options, default):
     output = ['<select name="%s">' % name]
     for option in options:
@@ -36,9 +36,11 @@ def select_among(name, options, default):
         <tr><td>Date</td><td>${time_to_str(comment.date)}</td></tr>
     </table>
     <pre>${comment.body}</pre>
+    <a href="${comment_url(project_id, bug.uuid, comment.uuid)}">Edit</a>
     </insetbox>
 </div>
 <p><input type="submit" name="action" value="Update"/></p>
+<p><input type="submit" name="action" value="New comment"/></p>
 </form>
 <a href="${bug_list_url(project_id)}">Bug List</a>
 </body>
