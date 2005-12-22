@@ -88,9 +88,6 @@ def get_command(command_name):
 
     >>> get_command("asdf")
     Traceback (most recent call last):
-    File "<stdin>", line 1, in ?
-    File "/home/abentley/be/libbe/cmdutil.py", line 60, in get_command
-      raise UserError("Unknown command %s" % command_name)
     UserError: Unknown command asdf
     >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
     True
