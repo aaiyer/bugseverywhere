@@ -29,22 +29,32 @@ class NoBugDir(Exception):
         msg = "The directory \"%s\" has no bug directory." % path
         Exception.__init__(self, msg)
         self.path = path
-    
+
+ 
+def iter_parent_dirs(cur_dir):
+    cur_dir = os.path.realpath(cur_dir)
+    old_dir = None
+    while True:
+        yield cur_dir
+        old_dir = cur_dir
+        cur_dir = os.path.normpath(os.path.join(cur_dir, '..'))
+        if old_dir == cur_dir:
+            break;
+
 
 def tree_root(dir, old_version=False):
-    rootdir = os.path.realpath(dir)
-    while (True):
-        versionfile=os.path.join(rootdir, ".be/version")
+    for rootdir in iter_parent_dirs(dir):
+        versionfile=os.path.join(rootdir, ".be", "version")
         if os.path.exists(versionfile):
             if not old_version:
                 test_version(versionfile)
-            break;
-        elif rootdir == "/":
-            raise NoBugDir(dir)
+            return BugDir(os.path.join(rootdir, ".be"))
         elif not os.path.exists(rootdir):
             raise NoRootEntry(rootdir)
-        rootdir=os.path.dirname(rootdir)
-    return BugDir(os.path.join(rootdir, ".be"))
+        old_rootdir = rootdir
+        rootdir=os.path.join('..', rootdir)
+    
+    raise NoBugDir(dir)
 
 class BadTreeVersion(Exception):
     def __init__(self, version):

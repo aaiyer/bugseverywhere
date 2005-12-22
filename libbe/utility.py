@@ -102,7 +102,8 @@ def editor_string():
 
     """Invokes the editor, and returns the user_produced text as a string
 
-    >>> del os.environ["EDITOR"]
+    >>> if "EDITOR" in os.environ:
+    ...     del os.environ["EDITOR"]
     >>> editor_string()
     Traceback (most recent call last):
     CantFindEditor: Can't find editor to get string from

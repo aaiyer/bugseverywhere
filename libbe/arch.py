@@ -14,21 +14,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-from popen2 import Popen3
+from subprocess import Popen, PIPE
 import os
 import config
+import errno
 client = config.get_val("arch_client")
 if client is None:
     client = "tla"
     config.set_val("arch_client", client)
 
 def invoke(args):
-    q=Popen3(args, True)
-    output = q.fromchild.read()
-    error = q.childerr.read()
+    q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output = q.stdout.read()
+    error = q.stderr.read()
     status = q.wait()
-    if os.WIFEXITED(status):
-        return os.WEXITSTATUS(status), output, error
+    if status >= 0:
+        return status, output, error
     raise Exception("Command failed: %s" % error)
 
 def invoke_client(*args, **kwargs):
@@ -161,12 +162,14 @@ def unlink(path):
 def detect(path):
     """Detect whether a directory is revision-controlled using Arch"""
     path = os.path.realpath(path)
+    old_path = None
     while True:
         if os.path.exists(os.path.join(path, "{arch}")):
             return True
-        if path == "/":
+        if path == old_path:
             return False
-        path = os.path.dirname(path)
+        old_path = path
+        path = os.path.join('..', path)
 
 
 name = "Arch"

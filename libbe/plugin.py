@@ -46,7 +46,7 @@ def get_plugin(prefix, name):
     >>> q.startswith("<module 'becommands.list' from ")
     True
     """
-    dirprefix = '/'.join(prefix.split('.'))
+    dirprefix = os.path.join(*prefix.split('.'))
     command_path = os.path.join(plugin_path, dirprefix, name+".py")
     if os.path.isfile(command_path):
         return my_import(prefix + "." + name)
