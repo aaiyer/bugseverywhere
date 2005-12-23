@@ -12,13 +12,6 @@ def project_tree(project):
     except KeyError:
         raise Exception("Unknown project %s" % project)
 
-def expose_resource(html=None):
-    def exposer(func):
-        func = turbogears.expose(html=html)(func)
-        func.expose_resource = True
-        return func
-    return exposer 
-
 def comment_url(project, bug, comment):
     return turbogears.url("/project/%s/bug/%s/comment/%s" %
                           (project, bug, comment))
