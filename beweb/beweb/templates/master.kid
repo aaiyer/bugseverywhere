@@ -31,4 +31,21 @@
     <td background="/static/images/is-br.png"/>
 </tr>
 </table>
+<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}dsbox'" cellspacing="0" cellpadding="0" border="0" class="dsbox">
+<tr height="11"><td background="/static/images/ds-tl.png" width="11"/>
+    <td background="/static/images/ds-t.png" />
+    <td background="/static/images/ds-tr.png" width="19"></td>
+</tr>
+<tr>
+    <td background="/static/images/ds-l.png"/>
+    <td py:content="item[:]"> Hello, this is some random text</td>
+    <td background="/static/images/ds2-r.png"/>
+</tr>
+<tr height="19">
+    <td background="/static/images/ds-bl.png"/>
+    <td background="/static/images/ds2-b.png" />
+    <td background="/static/images/ds-br.png"/>
+</tr>
+</table>
+
 </html>
