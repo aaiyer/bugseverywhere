@@ -32,6 +32,7 @@ def invoke(args):
         return status, output, error
     raise Exception("Command failed: %s" % error)
 
+
 def invoke_client(*args, **kwargs):
     cl_args = [client]
     cl_args.extend(args)
