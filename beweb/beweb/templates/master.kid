@@ -15,7 +15,7 @@
     
     <div py:replace="item[:]"/>
 </body>
-<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" ellspacing="0" cellpadding="0" border="0" class="insetbox">
+<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" cellspacing="0" cellpadding="0" border="0" class="insetbox">
 <tr height="19"><td background="/static/images/is-tl.png" width="19"/>
     <td background="/static/images/is-t.png" />
     <td background="/static/images/is-tr.png" width="11"></td>
