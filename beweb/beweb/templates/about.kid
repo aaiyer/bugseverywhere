@@ -12,8 +12,11 @@
     Bentley and Oleg Romanyshyn.
 </p>
 <p>
-    Some of its development was sponsored by 
-    <a href="http://panoramicfeedback.com/">Panoramic Feedback</a>
+    Development was sponsored by 
+    <a href="http://panoramicfeedback.com/">Panoramic Feedback</a>.
+</p>
+<p>
+    Bugs Everywhere <a href="http://panoramicfeedback.com/opensource">web site</a>
 </p>
 <a href="/">Project List</a>
 </body>
