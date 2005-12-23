@@ -71,6 +71,19 @@ body
     background-repeat: no-repeat;
     background-color: #ff0;
 }
+#header ul.navoption
+{
+    display: block;
+    float: right;
+    margin: 0;
+    padding-right: 30px;
+}
+#header li
+{
+    display: inline;
+    margin:0;
+    padding:0;
+}
 table.insetbox
 {
   margin-top: 0.5em;
@@ -80,4 +93,8 @@ table.insetbox
 {
   margin: 0;
   padding: 0;
+}
+pre.traceback
+{
+  font-family: Verdana, Ariel, Helvetica, sanserif;
 }

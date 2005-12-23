@@ -1,7 +1,8 @@
 import turbogears
 from turbogears import controllers
 import cherrypy
-from libbe.bugdir import tree_root, cmp_severity, new_bug, new_comment
+from libbe.bugdir import (tree_root, cmp_severity, new_bug, new_comment, 
+                          NoRootEntry)
 from libbe import names
 from config import projects
 from prest import PrestHandler, provide_action
@@ -136,6 +137,37 @@ class Root(controllers.Root):
     @turbogears.expose()
     def index(self):
         raise cherrypy.HTTPRedirect(project_url()) 
+
+    @turbogears.expose('beweb.templates.about')
+    def about(self, *paths, **kwargs):
+        return {}
+
     @turbogears.expose()
     def default(self, *args, **kwargs):
         return self.prest.default(*args, **kwargs)
+
+    def _cpOnError(self):
+        import traceback, StringIO
+        bodyFile = StringIO.StringIO()
+        traceback.print_exc(file = bodyFile)
+        trace_text = bodyFile.getvalue()
+        try:
+            raise
+        except cherrypy.NotFound:
+            self.handle_error('Not Found', str(e), trace_text, '404 Not Found')
+
+        except NoRootEntry, e:
+            self.handle_error('Project Misconfiguration', str(e), trace_text)
+
+        except Exception, e:
+            self.handle_error('Internal server error', str(e), trace_text)
+
+    def handle_error(self, heading, body, traceback=None, 
+                     status='500 Internal Server Error'):
+        cherrypy.response.headerMap['Status'] = status 
+        cherrypy.response.body = [self.errorpage(heading, body, traceback)]
+        
+
+    @turbogears.expose(html='beweb.templates.error')
+    def errorpage(self, heading, body, traceback):
+        return {'heading': heading, 'body': body, 'traceback': traceback}

@@ -10,12 +10,12 @@
 </head>
 
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'">
-<div id="header">b u g s   e v r y w h e r e</div> 
+<div id="header"><div style="float: left">b u g s   e v r y w h e r e</div><ul class="navoption"><li><a href="/about/">About</a></li></ul>&#160;</div> 
     <div py:if="tg_flash" class="flash" py:content="tg_flash"></div>
     
     <div py:replace="item[:]"/>
 </body>
-<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" cellspacing="0" cellpadding="0" border="0" class="insetbox">
+<table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" ellspacing="0" cellpadding="0" border="0" class="insetbox">
 <tr height="19"><td background="/static/images/is-tl.png" width="19"/>
     <td background="/static/images/is-t.png" />
     <td background="/static/images/is-tr.png" width="11"></td>
