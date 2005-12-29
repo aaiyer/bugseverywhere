@@ -56,7 +56,6 @@ class PrestHandler(object):
         if action is not None:
             return action(*new_args, **kwargs)
         else:
-            print child.__class__.__name__
             return child.dispatch(*new_args, **kwargs)
 
     def get_action(self, **kwargs):
