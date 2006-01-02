@@ -84,10 +84,14 @@ class Bug(PrestHandler):
         raise cherrypy.HTTPRedirect(bug_url(bug_data['project'], bug.uuid))
 
     @provide_action("action", "Update")
-    def update(self, bug_data, bug, status, severity, summary, action):
+    def update(self, bug_data, bug, status, severity, summary, assigned, 
+               action):
         bug.status = status
         bug.severity = severity
         bug.summary = summary
+        if assigned == "":
+            assigned = None
+        bug.assigned = assigned
         bug.save()
         raise cherrypy.HTTPRedirect(bug_list_url(bug_data["project"]))
 

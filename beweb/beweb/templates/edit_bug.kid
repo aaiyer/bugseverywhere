@@ -3,14 +3,28 @@
 from libbe.bugdir import severity_levels
 from libbe.utility import time_to_str 
 from beweb.controllers import bug_list_url, comment_url
-def select_among(name, options, default):
+from beweb.config import people
+def select_among(name, options, default, display_names=None):
     output = ['<select name="%s">' % name]
     for option in options:
         if option == default:
             selected = ' selected="selected"'
         else:
             selected = ""
-        output.append("<option%s>%s</option>" % (selected, option))
+        if display_names is None:
+            display_name = None
+        else:
+            display_name = display_names.get(option)
+
+        if option is None:
+            option = ""
+        if display_name is None:
+            display_name = option
+            value = ""
+        else:
+            value = ' value="%s"' % option
+        output.append("<option%s%s>%s</option>" % (selected, value, 
+                                                   display_name))
     output.append("</select>")
     return XML("".join(output))
 ?>
@@ -27,7 +41,8 @@ def select_among(name, options, default):
 <form method="post">
 <table>
 <tr><td>Status</td><td>Severity</td><td>Assigned To</td><td>Summary</td></tr>
-<tr><td>${select_among("status", ["open", "closed", "in-progress"], bug.status)}</td><td>${select_among("severity", severity_levels, bug.severity)}</td><td>${bug.assigned}</td><td><input name="summary" value="${bug.summary}" size="80" /></td></tr>
+<tr><td>${select_among("status", ["open", "closed", "in-progress"], bug.status)}</td><td>${select_among("severity", severity_levels, bug.severity)}</td>
+<td>${select_among("assigned", people.keys()+[None], bug.assigned, people)}</td><td><input name="summary" value="${bug.summary}" size="80" /></td></tr>
 </table>
 <div py:for="comment in bug.list_comments()" class="comment">
     <insetbox>
