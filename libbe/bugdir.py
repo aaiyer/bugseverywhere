@@ -345,7 +345,7 @@ class Comment(object):
             self.date = utility.str_to_time(mapfile["Date"])
             self.From = mapfile["From"]
             self.in_reply_to = mapfile.get("In-reply-to")
-            self.body = file(self.get_path("body")).read()
+            self.body = file(self.get_path("body")).read().decode("utf-8")
         else:
             self.date = None
             self.From = None
@@ -358,7 +358,8 @@ class Comment(object):
         if not os.path.exists(self.get_path(None)):
             self.bug.rcs.mkdir(self.get_path(None))
         map_save(self.bug.rcs, self.get_path("values"), map_file)
-        self.bug.rcs.set_file_contents(self.get_path("body"), self.body)
+        self.bug.rcs.set_file_contents(self.get_path("body"), 
+                                       self.body.encode('utf-8'))
             
 
     def get_path(self, name):
