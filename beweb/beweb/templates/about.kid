@@ -12,7 +12,7 @@
     Bentley and Oleg Romanyshyn.
 </p>
 <p>
-    Development was sponsored by 
+    Development is sponsored by 
     <a href="http://panoramicfeedback.com/">Panoramic Feedback</a>.
 </p>
 <p>
