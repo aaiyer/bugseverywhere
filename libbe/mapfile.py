@@ -67,7 +67,7 @@ def generate(f, map, context=3):
     for key in keys:
         for i in range(context):
             f.write("\n")
-        f.write("%s=%s\n" % (key, map[key]))
+        f.write("%s=%s\n" % (key.encode("utf-8"), map[key].encode("utf-8")))
         for i in range(context):
             f.write("\n")
 
@@ -94,7 +94,7 @@ def parse(f):
         line = line.rstrip('\n')
         if len(line) == 0:
             continue
-        name,value = line.split('=', 1)
+        name,value = [f.decode('utf-8') for f in line.split('=', 1)]
         assert not result.has_key('name')
         result[name] = value
     return result
