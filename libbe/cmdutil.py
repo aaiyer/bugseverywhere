@@ -16,6 +16,7 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import bugdir
 import plugin
+import locale
 import os
 import optparse
 import utility
@@ -98,7 +99,8 @@ def get_command(command_name):
     return cmd
 
 def execute(cmd, args):
-    return get_command(cmd).execute(args)
+    encoding = locale.getpreferredencoding() or 'ascii'
+    return get_command(cmd).execute([a.decode(encoding) for a in args])
 
 def help(cmd):
     return get_command(cmd).help()
