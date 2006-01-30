@@ -16,9 +16,14 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import commands
 import os
+import sys
+
 
 def uuid():
     return commands.getoutput('uuidgen')
 
 def creator():
-    return os.environ["LOGNAME"]
+    if sys.platform != "win32":
+        return os.environ["LOGNAME"]
+    else:
+        return os.environ["USERNAME"]
