@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+from subprocess import Popen, PIPE
 def rcs_by_name(rcs_name):
     """Return the module for the RCS with the given name"""
     if rcs_name == "Arch":
@@ -36,3 +37,18 @@ def detect(dir):
         return bzr
     import no_rcs
     return no_rcs
+
+class CommandError(Exception):
+    def __init__(self, err_str, status):
+        Exception.__init__(self, "Command failed (%d): %s" % (status, err_str))
+        self.err_str = err_str
+        self.status = status
+
+def invoke(args, expect=(0,)):
+    q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output = q.stdout.read()
+    error = q.stderr.read()
+    status = q.wait()
+    if status not in expect:
+        raise CommandError(error, status)
+    return status, output, error
