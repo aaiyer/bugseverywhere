@@ -172,5 +172,14 @@ def detect(path):
         old_path = path
         path = os.path.join('..', path)
 
+def precommit(directory):
+    pass
+
+def commit(directory, summary, body=None):
+    pass
+
+def postcommit(directory):
+    pass
+
 
 name = "Arch"

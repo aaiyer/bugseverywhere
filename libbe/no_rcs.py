@@ -39,4 +39,13 @@ def detect(path):
     """Compatibility function"""
     return True
 
+def precommit(directory):
+    pass
+
+def commit(directory, summary, body=None):
+    pass
+
+def postcommit(directory):
+    pass
+
 name = "None"
