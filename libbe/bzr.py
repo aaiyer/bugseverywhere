@@ -14,27 +14,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-from subprocess import Popen, PIPE
 import os
+import tempfile
+
 import config
-
-def invoke(args):
-    q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    output = q.stdout.read()
-    error = q.stderr.read()
-    status = q.wait()
-    if status >= 0:
-        return status, output, error
-    raise Exception("Command failed: %s" % error)
-
+from rcs import invoke, CommandError
 
 def invoke_client(*args, **kwargs):
+    directory = kwargs.get('directory')
+    expect = kwargs.get('expect', (0, 1))
     cl_args = ["bzr"]
     cl_args.extend(args)
-    status,output,error = invoke(cl_args)
-    if status not in (0,):
-        raise Exception("Command failed: %s" % error)
-    return output
+    if directory:
+        old_dir = os.getcwd()
+        os.chdir(directory)
+    try:
+        status,output,error = invoke(cl_args, expect)
+    finally:
+        if directory:
+            os.chdir(old_dir)
+    return status, output
 
 def add_id(filename, paranoid=False):
     invoke_client("add", filename)
@@ -101,5 +100,25 @@ def detect(path):
         old_path = path
         path = os.path.dirname(path)
 
+def precommit(directory):
+    pass
 
+def commit(directory, summary, body=None):
+    if body is not None:
+        summary += '\n' + body
+    descriptor, filename = tempfile.mkstemp()
+    try:
+        temp_file = os.fdopen(descriptor, 'wb')
+        temp_file.write(summary)
+        temp_file.close()
+        try:
+            invoke_client('commit', '--unchanged', '--file', filename, 
+                          directory=directory)
+        except:
+            raise invoke_client('status', directory=directory)[1]
+    finally:
+        os.unlink(filename)
+
+def postcommit(directory):
+    pass
 name = "bzr"
