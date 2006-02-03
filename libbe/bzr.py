@@ -52,7 +52,7 @@ def set_file_contents(path, contents):
         add_id(path)
 
 def lookup_revision(revno):
-    return invoke_client("lookup-revision", str(revno)).rstrip('\n')
+    return invoke_client("lookup-revision", str(revno)).rstrip('\n')[1]
 
 def export(revno, revision_dir):
     invoke_client("export", "-r", str(revno), revision_dir)
@@ -69,11 +69,11 @@ def find_or_make_export(revno):
     return revision_dir
 
 def bzr_root(path):
-    return invoke_client("root", path).rstrip('\r')
+    return invoke_client("root", path).rstrip('\r')[1]
 
 def path_in_reference(bug_dir, spec):
     if spec is None:
-        spec = int(invoke_client("revno"))
+        spec = int(invoke_client("revno")[1])
     rel_bug_dir = bug_dir[len(bzr_root(bug_dir)):]
     export_root = find_or_make_export(spec)
     return os.path.join(export_root, rel_bug_dir)
@@ -114,8 +114,6 @@ def commit(directory, summary, body=None):
         try:
             invoke_client('commit', '--unchanged', '--file', filename, 
                           directory=directory)
-        except:
-            raise invoke_client('status', directory=directory)[1]
     finally:
         os.unlink(filename)
 
