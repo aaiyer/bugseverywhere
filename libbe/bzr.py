@@ -118,12 +118,12 @@ def commit(directory, summary, body=None):
 
 def postcommit(directory):
     try:
-        status = invoke_client('merge', directory=directory)
+        invoke_client('merge', directory=directory)
     except CommandError:
         status = invoke_client('revert --no-backup', directory=directory)
         status = invoke_client('resolve --all', directory=directory)
         raise
-    if status == 1:
+    if len(invoke_client('status', directory=directory)[1]) > 0:
         commit(directory, 'Merge from upstream')
     
 name = "bzr"
