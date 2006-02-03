@@ -36,10 +36,10 @@ def invoke_client(*args, **kwargs):
     return status, output
 
 def add_id(filename, paranoid=False):
-    invoke_client("add", filename)
+    invoke_client("add", filename, directory='.')
 
 def delete_id(filename):
-    invoke_client("remove", filename)
+    invoke_client("remove", filename, directory='.')
 
 def mkdir(path, paranoid=False):
     os.mkdir(path)
@@ -51,31 +51,32 @@ def set_file_contents(path, contents):
     if add:
         add_id(path)
 
-def lookup_revision(revno):
-    return invoke_client("lookup-revision", str(revno)).rstrip('\n')[1]
+def lookup_revision(revno, directory):
+    return invoke_client("lookup-revision", str(revno), 
+                         directory=directory).rstrip('\n')[1]
 
-def export(revno, revision_dir):
-    invoke_client("export", "-r", str(revno), revision_dir)
+def export(revno, directory, revision_dir):
+    invoke_client("export", "-r", str(revno), revision_dir, directory=directory)
 
-def find_or_make_export(revno):
-    revision_id = lookup_revision(revno)
+def find_or_make_export(revno, directory):
+    revision_id = lookup_revision(revno, directory)
     home = os.path.expanduser("~")
     revision_root = os.path.join(home, ".bzrrevs")
     if not os.path.exists(revision_root):
         os.mkdir(revision_root)
     revision_dir = os.path.join(revision_root, revision_id)
     if not os.path.exists(revision_dir):
-        export(revno, revision_dir)
+        export(revno, directory, revision_dir)
     return revision_dir
 
 def bzr_root(path):
-    return invoke_client("root", path).rstrip('\r')[1]
+    return invoke_client("root", path, dirctory=None).rstrip('\r')[1]
 
 def path_in_reference(bug_dir, spec):
     if spec is None:
-        spec = int(invoke_client("revno")[1])
+        spec = int(invoke_client("revno", directory=bug_dir)[1])
     rel_bug_dir = bug_dir[len(bzr_root(bug_dir)):]
-    export_root = find_or_make_export(spec)
+    export_root = find_or_make_export(spec, directory=bug_dir)
     return os.path.join(export_root, rel_bug_dir)
 
 
