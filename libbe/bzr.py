@@ -21,7 +21,7 @@ import config
 from rcs import invoke, CommandError
 
 def invoke_client(*args, **kwargs):
-    directory = kwargs.get('directory')
+    directory = kwargs['directory']
     expect = kwargs.get('expect', (0, 1))
     cl_args = ["bzr"]
     cl_args.extend(args)
@@ -111,12 +111,19 @@ def commit(directory, summary, body=None):
         temp_file = os.fdopen(descriptor, 'wb')
         temp_file.write(summary)
         temp_file.close()
-        try:
-            invoke_client('commit', '--unchanged', '--file', filename, 
-                          directory=directory)
+        invoke_client('commit', '--unchanged', '--file', filename, 
+                      directory=directory)
     finally:
         os.unlink(filename)
 
 def postcommit(directory):
-    pass
+    try:
+        status = invoke_client('merge', directory=directory)
+    except CommandError:
+        status = invoke_client('revert --no-backup', directory=directory)
+        status = invoke_client('resolve --all', directory=directory)
+        raise
+    if status == 1:
+        commit(directory, 'Merge from upstream')
+    
 name = "bzr"
