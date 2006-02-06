@@ -27,6 +27,34 @@ def select_among(name, options, default, display_names=None):
                                                    display_name))
     output.append("</select>")
     return XML("".join(output))
+
+def to_unix(text):
+   skip_newline = False
+   for ch in text:
+      if ch not in ('\r', '\n'):
+         yield ch
+      else:
+         if ch == '\n':
+            if skip_newline:
+               continue
+         else:
+            skip_newline = True
+         yield '\n'
+
+def soft_text(text):
+   translations = {'\n': '<br />\n', '&': '&amp;', '\x3c': '&lt;', 
+                   '\x3e': '&gt;'}
+   for ch in to_unix(text):
+      if ch == ' ' and first_space is True:
+            yield '&#160;'
+      first_space = ch in (' ')
+      try:
+         yield translations[ch]
+      except KeyError:
+         yield ch
+def soft_pre(text):
+   return XML('<div style="font-family: monospace">'+
+              ''.join(soft_text(text))+'</div>') 
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#"
     py:extends="'master.kid'">
@@ -50,7 +78,7 @@ def select_among(name, options, default, display_names=None):
         <tr><td>From</td><td>${comment.From}</td></tr>
         <tr><td>Date</td><td>${time_to_str(comment.date)}</td></tr>
     </table>
-    <pre>${comment.body}</pre>
+    <div py:content="soft_pre(comment.body)" py:strip="True"></div>
     <a href="${comment_url(project_id, bug.uuid, comment.uuid)}">Edit</a>
     </insetbox>
 </div>
