@@ -42,6 +42,7 @@ def to_unix(text):
          yield '\n'
 
 def soft_text(text):
+   first_space = False
    translations = {'\n': '<br />\n', '&': '&amp;', '\x3c': '&lt;', 
                    '\x3e': '&gt;'}
    for ch in to_unix(text):
