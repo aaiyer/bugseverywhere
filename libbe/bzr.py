@@ -53,7 +53,7 @@ def set_file_contents(path, contents):
 
 def lookup_revision(revno, directory):
     return invoke_client("lookup-revision", str(revno), 
-                         directory=directory).rstrip('\n')[1]
+                         directory=directory)[1].rstrip('\n')
 
 def export(revno, directory, revision_dir):
     invoke_client("export", "-r", str(revno), revision_dir, directory=directory)
@@ -70,7 +70,7 @@ def find_or_make_export(revno, directory):
     return revision_dir
 
 def bzr_root(path):
-    return invoke_client("root", path, dirctory=None).rstrip('\r')[1]
+    return invoke_client("root", path, directory=None)[1].rstrip('\r')
 
 def path_in_reference(bug_dir, spec):
     if spec is None:
