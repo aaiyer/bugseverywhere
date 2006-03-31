@@ -103,6 +103,10 @@ class Bug(PrestHandler):
 
     @provide_action("action", "New comment")
     def new_comment(self, bug_data, bug, *args, **kwargs):
+        try:
+            self.update(bug_data, bug, *args, **kwargs)
+        except cherrypy.HTTPRedirect:
+            pass
         return self.comment.new_comment(bug_data, comment=None, *args, 
                                          **kwargs)
 

@@ -120,10 +120,14 @@ def commit(directory, summary, body=None):
 def postcommit(directory):
     try:
         invoke_client('merge', directory=directory)
-    except CommandError:
-        status = invoke_client('revert --no-backup', directory=directory)
-        status = invoke_client('resolve --all', directory=directory)
-        raise
+    except CommandError, e:
+        if 'No merge branch known or specified' in e.err_str:
+            pass
+        else:
+            status = invoke_client('revert',  '--no-backup', 
+                                   directory=directory)
+            status = invoke_client('resolve', '--all', directory=directory)
+            raise
     if len(invoke_client('status', directory=directory)[1]) > 0:
         commit(directory, 'Merge from upstream')
     
