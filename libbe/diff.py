@@ -16,6 +16,7 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Compare two bug trees"""
 from libbe import cmdutil, bugdir
+from libbe.utility import time_to_str
 
 def diff(old_tree, new_tree):
     old_bug_map = old_tree.bug_map()
@@ -85,9 +86,25 @@ def change_lines(old, new, attributes):
 def bug_changes(old, new, bugs):
     change_list = change_lines(old, new, ("time", "creator", "severity",
     "target", "summary", "status", "assigned"))
-    if len(change_list) == 0:
+
+    old_comment_ids = list(old.iter_comment_ids())
+    new_comment_ids = list(new.iter_comment_ids())
+    change_strings = ["%s: %s -> %s" % f for f in change_list]
+    for comment_id in new_comment_ids:
+        if comment_id not in old_comment_ids:
+            summary = comment_summary(new.get_comment(comment_id), "new")
+            change_strings.append(summary)
+    for comment_id in old_comment_ids:
+        if comment_id not in new_comment_ids:
+            summary = comment_summary(new.get_comment(comment_id), "removed")
+            change_strings.append(summary)
+
+    if len(change_strings) == 0:
         return None
     return "%s%s\n" % (cmdutil.bug_summary(new, bugs, shortlist=True), 
-                       "\n".join(["%s: %s -> %s" % f for f in change_list]))
+                       "\n".join(change_strings))
 
 
+def comment_summary(comment, status):
+    return "%8s comment from %s on %s" % (status, comment.From, 
+                                          time_to_str(comment.date))
