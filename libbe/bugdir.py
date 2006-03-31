@@ -242,6 +242,9 @@ class Bug(object):
         if self.time is not None:
             self.time = utility.str_to_time(self.time)
 
+    def __repr__(self):
+        return "Bug(uuid=%r)" % self.uuid
+
     def get_path(self, file):
         return os.path.join(self.path, self.uuid, file)
 
