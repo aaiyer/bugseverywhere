@@ -59,7 +59,8 @@ class Bug(PrestHandler):
             return self.index(bug_data['project'], bug)
 
     @turbogears.expose(html="beweb.templates.bugs")
-    def list(self, project, sort_by=None, show_closed=False, action=None):
+    def list(self, project, sort_by=None, show_closed=False, action=None, 
+             search=None):
         if action == "New bug":
             self.new_bug()
         if show_closed == "False":
@@ -75,6 +76,7 @@ class Bug(PrestHandler):
                 "project_name"    : projects[project][0],
                 "bugs"            : bugs,
                 "show_closed"     : show_closed,
+                "search"          : search,
                }
 
     @provide_action("action", "New bug")
@@ -123,10 +125,12 @@ def bug_url(project_id, bug_uuid=None):
         bug_url += "%s/" % bug_uuid
     return turbogears.url(bug_url)
 
-def bug_list_url(project_id, show_closed=False):
+def bug_list_url(project_id, show_closed=False, search=None):
     bug_url = "/project/%s/bug/?show_closed=%s" % (project_id, 
                                                    str(show_closed))
-    return turbogears.url(bug_url)
+    if search is not None:
+        bug_url = "%s&search=%s" % (bug_url, search)
+    return turbogears.url(str(bug_url))
 
 
 class Project(PrestHandler):
