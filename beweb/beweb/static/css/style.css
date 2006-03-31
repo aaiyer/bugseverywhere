@@ -98,3 +98,7 @@ pre.traceback
 {
   font-family: Verdana, Ariel, Helvetica, sanserif;
 }
+tr.even td
+{
+  background-color: #eee;
+}
