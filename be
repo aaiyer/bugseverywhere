@@ -47,7 +47,7 @@ Unimplemented becommands
 
 
 
-if len(sys.argv) == 1 or sys.argv[1] in ('help', '--help', '-h'):
+if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
     cmdlist = []
     print """Bugs Everywhere - Distributed bug tracking
     
