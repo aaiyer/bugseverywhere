@@ -24,8 +24,7 @@ def execute(args):
     if len(args) > 1:
         raise cmdutil.UserError("Too many arguments.")
     if len(args) == 0:
-        for name, module in cmdutil.iter_commands():
-            print "be %s\n     %s" % (name, module.__doc__)
+        print_command_list()
     else:
         print cmdutil.help(args[0])
     return

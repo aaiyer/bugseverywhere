@@ -48,14 +48,7 @@ Unimplemented becommands
 
 
 if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
-    cmdlist = []
-    print """Bugs Everywhere - Distributed bug tracking
-    
-Supported commands"""
-    for name, module in cmdutil.iter_commands():
-        cmdlist.append((name, module.__doc__))
-    for name, desc in cmdlist:
-        print "be %s\n    %s" % (name, desc)
+    print_command_list()
 else:
     try:
         try:

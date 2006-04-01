@@ -167,6 +167,15 @@ def bug_tree(dir=None):
     except bugdir.NoBugDir, e:
         raise UserErrorWrap(e)
 
+def print_command_list():
+    cmdlist = []
+    print """Bugs Everywhere - Distributed bug tracking
+    
+Supported commands"""
+    for name, module in iter_commands():
+        cmdlist.append((name, module.__doc__))
+    for name, desc in cmdlist:
+        print "be %s\n    %s" % (name, desc)
 
 def _test():
     import doctest
