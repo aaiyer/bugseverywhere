@@ -31,7 +31,7 @@ def execute(args):
     True
     >>> execute(("a", "someone"))
     >>> dir.get_bug("a").assigned
-    'someone'
+    u'someone'
     >>> execute(("a","none"))
     >>> dir.get_bug("a").assigned is None
     True

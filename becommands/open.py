@@ -23,10 +23,10 @@ def execute(args):
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("b").status
-    'closed'
+    u'closed'
     >>> execute(("b",))
     >>> dir.get_bug("b").status
-    'open'
+    u'open'
     >>> tests.clean_up()
     """
     assert(len(args) == 1)

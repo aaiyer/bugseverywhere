@@ -26,7 +26,7 @@ def execute(args):
     >>> execute(["a", "This is a comment about a"])
     >>> comment = dir.get_bug("a").list_comments()[0]
     >>> comment.body
-    'This is a comment about a\\n'
+    u'This is a comment about a\\n'
     >>> comment.From == names.creator()
     True
     >>> comment.date <= int(time.time())
@@ -40,7 +40,7 @@ def execute(args):
     >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
     >>> execute(["b"])
     >>> dir.get_bug("b").list_comments()[0].body
-    'I like cheese\\n'
+    u'I like cheese\\n'
     >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)

@@ -27,12 +27,12 @@ def execute(args):
     Created bug with ID a
     >>> bug = list(dir.list())[0]
     >>> bug.summary
-    'this is a test'
+    u'this is a test'
     >>> bug.creator = os.environ["LOGNAME"]
     >>> bug.time <= int(time.time())
     True
     >>> bug.severity
-    'minor'
+    u'minor'
     >>> bug.target == None
     True
     >>> tests.clean_up()

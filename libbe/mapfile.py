@@ -75,18 +75,18 @@ def parse(f):
     """
     Parse a format-2 mapfile.
     >>> parse('\\n\\n\\nq=p\\n\\n\\n\\n')['q']
-    'p'
+    u'p'
     >>> parse('\\n\\nq=\\'p\\'\\n\\n\\n\\n')['q']
-    "\'p\'"
+    u"\'p\'"
     >>> f = utility.FileString()
     >>> generate(f, {"a":"b", "c":"d", "e":"f"})
     >>> dict = parse(f)
     >>> dict["a"]
-    'b'
+    u'b'
     >>> dict["c"]
-    'd'
+    u'd'
     >>> dict["e"]
-    'f'
+    u'f'
     """
     f = utility.get_file(f)
     result = {}
