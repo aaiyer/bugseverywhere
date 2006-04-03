@@ -71,4 +71,3 @@ The value "none" can be used to unset the target.
 
 def help():
     return get_parser().help_str() + longhelp
-

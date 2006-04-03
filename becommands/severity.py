@@ -72,4 +72,3 @@ critical: A bug that prevents some features from working at all.
 
 def help():
     return get_parser().help_str() + longhelp
-

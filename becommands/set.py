@@ -72,4 +72,3 @@ To unset a setting, set it to "none".
 
 def help():
     return get_parser().help_str() + longhelp
-

@@ -104,10 +104,8 @@ def get_parser():
     return parser
 
 longhelp="""
-Upgrades be-database.
+Upgrade the bug storage to the latest format.
 """
 
 def help():
     return get_parser().help_str() + longhelp
-
-

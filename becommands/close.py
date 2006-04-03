@@ -45,4 +45,3 @@ Close the bug identified by bug-id.
 
 def help():
     return get_parser().help_str() + longhelp
-
