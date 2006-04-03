@@ -388,7 +388,6 @@ def thread_comments(comments):
         for child in child_map[comment.uuid]:
             child_list.append(recurse_children(child))
         return (comment, child_list)
-    print top_comments
     return [recurse_children(c) for c in top_comments]
 
 
