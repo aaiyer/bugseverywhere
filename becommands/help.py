@@ -27,7 +27,11 @@ def execute(args):
         for name, module in cmdutil.iter_commands():
             print "be %s\n     %s" % (name, module.__doc__)
     else:
-        print cmdutil.help(args[0])
+        try:
+            print cmdutil.help(args[0])
+        except AttributeError:
+            print "No help available"
+    
     return
 
 
