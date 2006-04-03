@@ -46,7 +46,7 @@ def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) < 1:
         raise cmdutil.UsageError()
-    bug = cmdutil.get_bug(args[0])
+    bug, parent_comment = cmdutil.get_bug_and_comment(args[0])
     if len(args) == 1:
         try:
             body = utility.editor_string()
@@ -61,15 +61,21 @@ def execute(args):
             body+='\n'
 
     comment = bugdir.new_comment(bug, body)
+    if parent_comment is not None:
+        comment.in_reply_to = parent_comment.uuid
     comment.save()
 
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be comment BUG-ID COMMENT")
+    parser = cmdutil.CmdOptionParser("be comment ID COMMENT")
     return parser
 
 longhelp="""
-Add a comment to a bug.
+To add a comment to a bug, use the bug ID as the argument.  To reply to another
+comment, specify the comment name (as shown in "be show" output).
+
+$EDITOR is used to launch an editor.  If unspecified, no comment will be
+created.)
 """
 
 def help():

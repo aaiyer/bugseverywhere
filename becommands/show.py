@@ -30,8 +30,11 @@ def execute(args):
         time_str = "%s (%s)" % (utility.handy_time(bug.time), 
                                 utility.time_to_str(bug.time))
     print "Created: %s" % time_str
-    for comment in bug.list_comments():
-        print "--------- Comment ---------"
-        print "From: %s" % comment.From
-        print "Date: %s\n" % utility.time_to_str(comment.date)
-        print comment.body.rstrip('\n')
+    unique_name = cmdutil.unique_name(bug, bug_dir.list())
+    comments = []
+    name_map = {}
+    for c_name, comment in cmdutil.iter_comment_name(bug, unique_name):
+        name_map[comment.uuid] = c_name
+        comments.append(comment)
+    threaded = bugdir.thread_comments(comments)
+    cmdutil.print_threaded_comments(threaded, name_map)
