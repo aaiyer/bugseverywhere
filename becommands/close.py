@@ -29,7 +29,19 @@ def execute(args):
     u'closed'
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) == 1)
     bug = cmdutil.get_bug(args[0])
     bug.status = "closed"
     bug.save()
+
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be close bug-id")
+    return parser
+
+longhelp="""
+Close the bug identified by bug-id.
+"""
+
+def help():
+    return get_parser().help_str() + longhelp

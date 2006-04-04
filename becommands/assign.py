@@ -37,6 +37,7 @@ def execute(args):
     True
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
@@ -51,10 +52,11 @@ def execute(args):
             bug.assigned = args[1]
     bug.save()
 
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be assign bug-id [assignee]")
+    return parser
 
-def help():
-    return """be assign bug-id [assignee]
-
+longhelp = """
 Assign a person to fix a bug.
 
 By default, the bug is self-assigned.  If an assignee is specified, the bug
@@ -65,3 +67,6 @@ appears in Creator fields.
 
 To un-assign a bug, specify "none" for the assignee.
 """
+
+def help():
+    return get_parser().help_str() + longhelp

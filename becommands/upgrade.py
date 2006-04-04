@@ -17,9 +17,10 @@
 """Upgrade the bugs to the latest format"""
 import os.path
 import errno
-from libbe import bugdir, rcs
+from libbe import bugdir, rcs, cmdutil
 
 def execute(args):
+    options, args = get_parser().parse_args(args)
     root = bugdir.tree_root(".", old_version=True)
     for uuid in root.list_uuids():
         old_bug = OldBug(root.bugs_path, uuid)
@@ -98,5 +99,13 @@ class OldBug(object):
         else:
             rcs.set_file_contents(self.get_path(name), "%s\n" % value)
 
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be upgrade")
+    return parser
 
+longhelp="""
+Upgrade the bug storage to the latest format.
+"""
 
+def help():
+    return get_parser().help_str() + longhelp

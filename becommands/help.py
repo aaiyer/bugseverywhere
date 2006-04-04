@@ -26,7 +26,11 @@ def execute(args):
     if len(args) == 0:
         print_command_list()
     else:
-        print cmdutil.help(args[0])
+        try:
+            print cmdutil.help(args[0])
+        except AttributeError:
+            print "No help available"
+    
     return
 
 

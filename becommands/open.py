@@ -29,7 +29,19 @@ def execute(args):
     u'open'
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) == 1)
     bug = cmdutil.get_bug(args[0])
     bug.status = "open"
     bug.save()
+
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be open BUG-ID")
+    return parser
+
+longhelp="""
+Mark a bug as 'open'.
+"""
+
+def help():
+    return get_parser().help_str() + longhelp

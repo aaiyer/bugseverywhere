@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?python
-from libbe.bugdir import severity_levels, active_status, inactive_status
+from libbe.bugdir import severity_levels, active_status, inactive_status, thread_comments
 from libbe.utility import time_to_str 
 from beweb.controllers import bug_list_url, comment_url
 from beweb.config import people
@@ -67,13 +67,13 @@ def soft_pre(text):
 
 <body>
 <h1>Edit bug</h1>
-<form method="post">
+<form method="post" action=".">
 <table>
 <tr><td>Status</td><td>Severity</td><td>Assigned To</td><td>Summary</td></tr>
 <tr><td>${select_among("status", active_status+inactive_status, bug.status)}</td><td>${select_among("severity", severity_levels, bug.severity)}</td>
 <td>${select_among("assigned", people.keys()+[None], bug.assigned, people)}</td><td><input name="summary" value="${bug.summary}" size="80" /></td></tr>
 </table>
-<div py:for="comment in bug.list_comments()" class="comment">
+<div py:def="show_comment(comment, children)" class="comment">
     <insetbox>
     <table>
         <tr><td>From</td><td>${comment.From}</td></tr>
@@ -81,7 +81,18 @@ def soft_pre(text):
     </table>
     <div py:content="soft_pre(comment.body)" py:strip="True"></div>
     <a href="${comment_url(project_id, bug.uuid, comment.uuid)}">Edit</a>
+    <a href="${comment_url(project_id, bug.uuid, comment.uuid, 
+                           action='Reply')}">Reply</a>
     </insetbox>
+    <div style="margin-left:20px;">
+    <div py:for="child, grandchildren in children" py:strip="True">
+    ${show_comment(child, grandchildren)}
+    </div>
+    </div>
+</div>
+<div py:for="comment, children in thread_comments(bug.list_comments())" 
+     py:strip="True">
+    ${show_comment(comment, children)}
 </div>
 <p><input type="submit" name="action" value="Update"/></p>
 <p><input type="submit" name="action" value="New comment"/></p>
