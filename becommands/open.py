@@ -24,7 +24,7 @@ def execute(args):
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("b").status
     u'closed'
-    >>> execute(("b",))
+    >>> execute(["b"])
     >>> dir.get_bug("b").status
     u'open'
     >>> tests.clean_up()

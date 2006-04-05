@@ -25,12 +25,12 @@ def execute(args):
     >>> import os
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
-    >>> execute(("a",))
+    >>> execute(["a"])
     minor
-    >>> execute(("a", "wishlist"))
-    >>> execute(("a",))
+    >>> execute(["a", "wishlist"])
+    >>> execute(["a"])
     wishlist
-    >>> execute(("a", "none"))
+    >>> execute(["a", "none"])
     Traceback (most recent call last):
     UserError: Invalid severity level: none
     >>> tests.clean_up()

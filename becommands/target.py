@@ -25,13 +25,13 @@ def execute(args):
     >>> import os
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
-    >>> execute(("a",))
+    >>> execute(["a"])
     No target assigned.
-    >>> execute(("a", "tomorrow"))
-    >>> execute(("a",))
+    >>> execute(["a", "tomorrow"])
+    >>> execute(["a"])
     tomorrow
-    >>> execute(("a", "none"))
-    >>> execute(("a",))
+    >>> execute(["a", "none"])
+    >>> execute(["a"])
     No target assigned.
     >>> tests.clean_up()
     """

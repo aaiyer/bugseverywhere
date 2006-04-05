@@ -26,13 +26,13 @@ def execute(args):
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("a").assigned is None
     True
-    >>> execute(("a",))
+    >>> execute(["a"])
     >>> dir.get_bug("a").assigned == names.creator()
     True
-    >>> execute(("a", "someone"))
+    >>> execute(["a", "someone"])
     >>> dir.get_bug("a").assigned
     u'someone'
-    >>> execute(("a","none"))
+    >>> execute(["a","none"])
     >>> dir.get_bug("a").assigned is None
     True
     >>> tests.clean_up()
