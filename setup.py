@@ -8,4 +8,5 @@ setup(
     description='Bugtracker built on distributed revision control',
     url='http://panoramicfeedback.com/opensource/',
     packages=['becommands', 'libbe'],
+    scripts=['be'],
     )
