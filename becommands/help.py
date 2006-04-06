@@ -1,5 +1,5 @@
-# Copyright (C) 2005 Aaron Bentley and Panometrics, Inc.
-# <abentley@panoramicfeedback.com>
+# Copyright (C) 2006 Thomas Gerigk
+# <tgerigk@gmx.de>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -14,33 +14,32 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-"""Bug fixing in progress"""
-from libbe import cmdutil
+"""Print help for given subcommand"""
+from libbe import bugdir, cmdutil, names, utility
 def execute(args):
     """
-    >>> from libbe import tests
-    >>> import os
-    >>> dir = tests.simple_bug_dir()
-    >>> os.chdir(dir.dir)
-    >>> dir.get_bug("a").status
-    u'open'
-    >>> execute(["a",])
-    >>> dir.get_bug("a").status
-    u'in-progress'
-    >>> tests.clean_up()
+    Print help of specified command.
     """
     options, args = get_parser().parse_args(args)
-    assert(len(args) == 1)
-    bug = cmdutil.get_bug(args[0])
-    bug.status = "in-progress"
-    bug.save()
+    if len(args) > 1:
+        raise cmdutil.UserError("Too many arguments.")
+    if len(args) == 0:
+        print_command_list()
+    else:
+        try:
+            print cmdutil.help(args[0])
+        except AttributeError:
+            print "No help available"
+    
+    return
+
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be inprogress BUG-ID")
+    parser = cmdutil.CmdOptionParser("be help [COMMAND]")
     return parser
 
 longhelp="""
-Mark a bug as 'in-progress'.
+Print help for specified command or list of all commands.
 """
 
 def help():

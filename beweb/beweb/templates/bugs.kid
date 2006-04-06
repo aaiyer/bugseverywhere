@@ -3,14 +3,16 @@
 from libbe.cmdutil import unique_name
 from beweb.controllers import bug_url, project_url, bug_list_url
 from beweb.config import people
-def row_class(bug):
+def row_class(bug, num):
     if not bug.active is True:
         return "closed"
+    elif num % 2 == 0:
+        return "even"
     else:
-        return ""
+        return "odd"
 
 
-def match(bug, show_closed=False, search=None):
+def match(bug, show_closed, search):
     if not show_closed and not bug.active:
         return False
     elif search is None:
@@ -30,7 +32,7 @@ def match(bug, show_closed=False, search=None):
 <h1>Bug list for ${project_name}</h1>
 <table>
 <tr><td>ID</td><td>Status</td><td>Severity</td><td>Assigned To</td><td>Comments</td><td>Summary</td></tr>
-<div py:for="bug in bugs" py:strip="True"><tr class="${row_class(bug)}" py:if="match(bug, show_closed, search)"><td><a href="${bug_url(project_id, bug.uuid)}">${unique_name(bug, bugs[:])}</a></td><td>${bug.status}</td><td>${bug.severity}</td><td>${people.get(bug.assigned, bug.assigned)}</td><td>${len(list(bug.iter_comment_ids()))}</td><td>${bug.summary}</td></tr>
+<div py:for="num, bug in enumerate([b for b in bugs if match(b, show_closed, search)])" py:strip="True"><tr class="${row_class(bug, num)}"><td><a href="${bug_url(project_id, bug.uuid)}">${unique_name(bug, bugs[:])}</a></td><td>${bug.status}</td><td>${bug.severity}</td><td>${people.get(bug.assigned, bug.assigned)}</td><td>${len(list(bug.iter_comment_ids()))}</td><td>${bug.summary}</td></tr>
 </div>
 </table>
 <a href="${project_url()}">Project list</a>

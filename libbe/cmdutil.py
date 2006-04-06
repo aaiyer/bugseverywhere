@@ -19,6 +19,8 @@ import plugin
 import locale
 import os
 import optparse
+from textwrap import TextWrapper
+from StringIO import StringIO
 import utility
 
 def unique_name(bug, bugs):
@@ -118,6 +120,34 @@ def raise_get_help(option, opt, value, parser):
     raise GetHelp
 
 
+def iter_comment_name(bug, unique_name):
+    """Iterate through id, comment pairs, in date order.
+    (This is a user-friendly id, not the comment uuid)
+    """
+    def key(comment):
+        return comment.date
+    for num, comment in enumerate(sorted(bug.list_comments(), key=key)):
+        yield ("%s:%d" % (unique_name, num+1), comment)
+
+
+def comment_from_name(bug, unique_name, name):
+    """Use a comment name to look up a comment"""
+    for cur_name, comment in iter_comment_name(bug, unique_name):
+        if name == cur_name:
+            return comment
+    raise KeyError(name)
+
+
+def get_bug_and_comment(identifier, bug_dir=None):
+    ids = identifier.split(':')
+    bug = get_bug(ids[0], bug_dir)
+    if len(ids) == 2:
+        comment = comment_from_name(bug, ids[0], identifier)
+    else:
+        comment = None
+    return bug, comment
+
+        
 class CmdOptionParser(optparse.OptionParser):
     def __init__(self, usage):
         optparse.OptionParser.__init__(self, usage)
@@ -148,6 +178,24 @@ def underlined(instring):
     return "%s\n%s" % (instring, "="*len(instring))
 
 
+def print_threaded_comments(comments, name_map, indent=""):
+    """Print a threaded display of comments"""
+    tw = TextWrapper(initial_indent = indent, subsequent_indent = indent, 
+                     width=80)
+    for comment, children in comments:
+        s = StringIO()
+        print >> s, "--------- Comment ---------"
+        print >> s, "Name: %s" % name_map[comment.uuid]
+        print >> s, "From: %s" % comment.From
+        print >> s, "Date: %s\n" % utility.time_to_str(comment.date)
+        print >> s, comment.body.rstrip('\n')
+
+        s.seek(0)
+        for line in s:
+            print tw.fill(line).rstrip('\n')
+        print_threaded_comments(children, name_map, indent=indent+"    ")
+
+
 def bug_tree(dir=None):
     """Retrieve the bug tree specified by the user.  If no directory is
     specified, the current working directory is used.
@@ -167,6 +215,15 @@ def bug_tree(dir=None):
     except bugdir.NoBugDir, e:
         raise UserErrorWrap(e)
 
+def print_command_list():
+    cmdlist = []
+    print """Bugs Everywhere - Distributed bug tracking
+    
+Supported commands"""
+    for name, module in iter_commands():
+        cmdlist.append((name, module.__doc__))
+    for name, desc in cmdlist:
+        print "be %s\n    %s" % (name, desc)
 
 def _test():
     import doctest

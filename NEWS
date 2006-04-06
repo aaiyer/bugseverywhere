@@ -1,2 +1,16 @@
+April 3, 2006
+ * Handle replying to comments
+ * Better help handling (Thomas Gerigk)
+
+March 3, 2006
+ * Better bzr compatibility
+ * Auto-commit support
+
+Jan 30, 2006
+ * Creator support (Alexander Belchenko)
+
+Jan 26, 2006
+ * Unicode support
+
 December 3, 2005
-* Added new "webbe" web interface
+* Added new "beweb" web interface

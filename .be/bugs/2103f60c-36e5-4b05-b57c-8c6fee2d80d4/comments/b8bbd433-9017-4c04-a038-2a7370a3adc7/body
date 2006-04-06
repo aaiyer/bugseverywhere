@@ -1,0 +1,2 @@
+Target takes no options, so it does no parsing.  Bad.  We should probably
+use a framework more like bzr's.  In any case, EVERY command should accept -h.

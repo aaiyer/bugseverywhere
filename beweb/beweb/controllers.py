@@ -13,9 +13,9 @@ def project_tree(project):
     except KeyError:
         raise Exception("Unknown project %s" % project)
 
-def comment_url(project, bug, comment):
+def comment_url(project, bug, comment, **kwargs):
     return turbogears.url("/project/%s/bug/%s/comment/%s" %
-                          (project, bug, comment))
+                          (project, bug, comment), kwargs)
 
 class Comment(PrestHandler):
     @provide_action("action", "New comment")
@@ -26,6 +26,18 @@ class Comment(PrestHandler):
         comment.save()
         raise cherrypy.HTTPRedirect(comment_url(comment=comment.uuid, 
                                     **comment_data))
+
+    @provide_action("action", "Reply")
+    def reply_comment(self, comment_data, comment, *args, **kwargs):
+        bug_tree = project_tree(comment_data['project'])
+        bug = bug_tree.get_bug(comment_data['bug'])
+        reply_comment = new_comment(bug, "")
+        reply_comment.in_reply_to = comment.uuid
+        reply_comment.save()
+        reply_data = dict(comment_data)
+        del reply_data["comment"]
+        raise cherrypy.HTTPRedirect(comment_url(comment=reply_comment.uuid, 
+                                    **reply_data))
 
     @provide_action("action", "Update")
     def update(self, comment_data, comment, comment_body, *args, **kwargs):

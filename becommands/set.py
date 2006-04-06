@@ -22,16 +22,17 @@ def execute(args):
     >>> import os
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
-    >>> execute(("a",))
+    >>> execute(["a",])
     None
-    >>> execute(("a", "tomorrow"))
-    >>> execute(("a",))
+    >>> execute(["a", "tomorrow"])
+    >>> execute(["a",])
     tomorrow
-    >>> execute(("a", "none"))
-    >>> execute(("a",))
+    >>> execute(["a", "none"])
+    >>> execute(["a",])
     None
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     if len(args) > 2:
         raise cmdutil.UserError("Too many arguments.")
     tree = cmdutil.bug_tree()
@@ -49,9 +50,11 @@ def execute(args):
             del tree.settings[args[0]]
         tree.save_settings()
 
-def help():
-    return """be set [name] [value]
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be set [name] [value]")
+    return parser
 
+longhelp="""
 Show or change per-tree settings. 
 
 If name and value are supplied, the name is set to a new value.
@@ -66,3 +69,6 @@ target
 
 To unset a setting, set it to "none".
 """
+
+def help():
+    return get_parser().help_str() + longhelp

@@ -242,6 +242,9 @@ class Bug(object):
         if self.time is not None:
             self.time = utility.str_to_time(self.time)
 
+    def __repr__(self):
+        return "Bug(uuid=%r)" % self.uuid
+
     def get_path(self, file):
         return os.path.join(self.path, self.uuid, file)
 
@@ -345,16 +348,18 @@ class Comment(object):
             self.date = utility.str_to_time(mapfile["Date"])
             self.From = mapfile["From"]
             self.in_reply_to = mapfile.get("In-reply-to")
+            self.content_type = mapfile.get("Content-type", "text/plain")
             self.body = file(self.get_path("body")).read().decode("utf-8")
         else:
             self.date = None
             self.From = None
             self.in_reply_to = None
+            self.content_type = "text/plain"
             self.body = None
 
     def save(self):
         map_file = {"Date": utility.time_to_str(self.date)}
-        add_headers(self, map_file, ("From", "in_reply_to"))
+        add_headers(self, map_file, ("From", "in_reply_to", "content_type"))
         if not os.path.exists(self.get_path(None)):
             self.bug.rcs.mkdir(self.get_path(None))
         map_save(self.bug.rcs, self.get_path("values"), map_file)
@@ -367,7 +372,27 @@ class Comment(object):
         if name is None:
             return my_dir
         return os.path.join(my_dir, name)
-        
+
+
+def thread_comments(comments):
+    child_map = {}
+    top_comments = []
+    for comment in comments:
+        child_map[comment.uuid] = []
+    for comment in comments:
+        if comment.in_reply_to is None or comment.in_reply_to not in child_map:
+            top_comments.append(comment)
+            continue
+        child_map[comment.in_reply_to].append(comment)
+
+    def recurse_children(comment):
+        child_list = []
+        for child in child_map[comment.uuid]:
+            child_list.append(recurse_children(child))
+        return (comment, child_list)
+    return [recurse_children(c) for c in top_comments]
+
+
 def pyname_to_header(name):
     return name.capitalize().replace('_', '-')
     

@@ -25,16 +25,17 @@ def execute(args):
     >>> import os
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
-    >>> execute(("a",))
+    >>> execute(["a",])
     No target assigned.
-    >>> execute(("a", "tomorrow"))
-    >>> execute(("a",))
+    >>> execute(["a", "tomorrow"])
+    >>> execute(["a",])
     tomorrow
-    >>> execute(("a", "none"))
-    >>> execute(("a",))
+    >>> execute(["a", "none"])
+    >>> execute(["a",])
     No target assigned.
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
@@ -52,10 +53,11 @@ def execute(args):
             bug.target = args[1]
         bug.save()
 
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be target bug-id [target]")
+    return parser
 
-def help():
-    return """be target bug-id [target]
-
+longhelp="""
 Show or change a bug's target for fixing.  
 
 If no target is specified, the current value is printed.  If a target 
@@ -66,3 +68,6 @@ milestone names or release numbers.
 
 The value "none" can be used to unset the target.
 """
+
+def help():
+    return get_parser().help_str() + longhelp

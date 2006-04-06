@@ -25,16 +25,17 @@ def execute(args):
     >>> import os
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
-    >>> execute(("a",))
+    >>> execute(["a",])
     minor
-    >>> execute(("a", "wishlist"))
-    >>> execute(("a",))
+    >>> execute(["a", "wishlist"])
+    >>> execute(["a",])
     wishlist
-    >>> execute(("a", "none"))
+    >>> execute(["a", "none"])
     Traceback (most recent call last):
     UserError: Invalid severity level: none
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
@@ -51,10 +52,11 @@ def execute(args):
             raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
         bug.save()
 
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be severity bug-id [severity]")
+    return parser
 
-def help():
-    return """be severity bug-id [severity]
-
+longhelp="""
 Show or change a bug's severity level.  
 
 If no severity is specified, the current value is printed.  If a severity level
@@ -67,3 +69,6 @@ wishlist: A feature that could improve usefulness, but not a bug.
 critical: A bug that prevents some features from working at all.
    fatal: A bug that makes the package unusable.
 """
+
+def help():
+    return get_parser().help_str() + longhelp

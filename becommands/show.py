@@ -19,9 +19,10 @@ from libbe import bugdir, cmdutil, utility
 import os
 
 def execute(args):
-    bug_dir = cmdutil.bug_tree()
+    options, args = get_parser().parse_args(args)
     if len(args) !=1:
         raise cmdutil.UserError("Please specify a bug id.")
+    bug_dir = cmdutil.bug_tree()
     bug = cmdutil.get_bug(args[0], bug_dir)
     print cmdutil.bug_summary(bug, list(bug_dir.list())).rstrip("\n")
     if bug.time is None:
@@ -30,8 +31,22 @@ def execute(args):
         time_str = "%s (%s)" % (utility.handy_time(bug.time), 
                                 utility.time_to_str(bug.time))
     print "Created: %s" % time_str
-    for comment in bug.list_comments():
-        print "--------- Comment ---------"
-        print "From: %s" % comment.From
-        print "Date: %s\n" % utility.time_to_str(comment.date)
-        print comment.body.rstrip('\n')
+    unique_name = cmdutil.unique_name(bug, bug_dir.list())
+    comments = []
+    name_map = {}
+    for c_name, comment in cmdutil.iter_comment_name(bug, unique_name):
+        name_map[comment.uuid] = c_name
+        comments.append(comment)
+    threaded = bugdir.thread_comments(comments)
+    cmdutil.print_threaded_comments(threaded, name_map)
+
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be show bug-id")
+    return parser
+
+longhelp="""
+Show all information about a bug.
+"""
+
+def help():
+    return get_parser().help_str() + longhelp

@@ -26,17 +26,18 @@ def execute(args):
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("a").assigned is None
     True
-    >>> execute(("a",))
+    >>> execute(["a",])
     >>> dir.get_bug("a").assigned == names.creator()
     True
-    >>> execute(("a", "someone"))
+    >>> execute(["a", "someone"])
     >>> dir.get_bug("a").assigned
-    'someone'
-    >>> execute(("a","none"))
+    u'someone'
+    >>> execute(["a","none"])
     >>> dir.get_bug("a").assigned is None
     True
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         print help()
@@ -51,10 +52,11 @@ def execute(args):
             bug.assigned = args[1]
     bug.save()
 
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be assign bug-id [assignee]")
+    return parser
 
-def help():
-    return """be assign bug-id [assignee]
-
+longhelp = """
 Assign a person to fix a bug.
 
 By default, the bug is self-assigned.  If an assignee is specified, the bug
@@ -65,3 +67,6 @@ appears in Creator fields.
 
 To un-assign a bug, specify "none" for the assignee.
 """
+
+def help():
+    return get_parser().help_str() + longhelp

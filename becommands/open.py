@@ -23,13 +23,25 @@ def execute(args):
     >>> dir = tests.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("b").status
-    'closed'
-    >>> execute(("b",))
+    u'closed'
+    >>> execute(["b",])
     >>> dir.get_bug("b").status
-    'open'
+    u'open'
     >>> tests.clean_up()
     """
+    options, args = get_parser().parse_args(args)
     assert(len(args) == 1)
     bug = cmdutil.get_bug(args[0])
     bug.status = "open"
     bug.save()
+
+def get_parser():
+    parser = cmdutil.CmdOptionParser("be open BUG-ID")
+    return parser
+
+longhelp="""
+Mark a bug as 'open'.
+"""
+
+def help():
+    return get_parser().help_str() + longhelp
