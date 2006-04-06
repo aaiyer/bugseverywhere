@@ -348,16 +348,18 @@ class Comment(object):
             self.date = utility.str_to_time(mapfile["Date"])
             self.From = mapfile["From"]
             self.in_reply_to = mapfile.get("In-reply-to")
+            self.content_type = mapfile.get("Content-type", "text/plain")
             self.body = file(self.get_path("body")).read().decode("utf-8")
         else:
             self.date = None
             self.From = None
             self.in_reply_to = None
+            self.content_type = "text/plain"
             self.body = None
 
     def save(self):
         map_file = {"Date": utility.time_to_str(self.date)}
-        add_headers(self, map_file, ("From", "in_reply_to"))
+        add_headers(self, map_file, ("From", "in_reply_to", "content_type"))
         if not os.path.exists(self.get_path(None)):
             self.bug.rcs.mkdir(self.get_path(None))
         map_save(self.bug.rcs, self.get_path("values"), map_file)
