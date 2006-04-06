@@ -23,6 +23,7 @@ class Comment(PrestHandler):
         bug_tree = project_tree(comment_data['project'])
         bug = bug_tree.get_bug(comment_data['bug'])
         comment = new_comment(bug, "")
+        comment.content_type = "text/restructured"
         comment.save()
         raise cherrypy.HTTPRedirect(comment_url(comment=comment.uuid, 
                                     **comment_data))
