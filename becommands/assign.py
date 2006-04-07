@@ -26,7 +26,7 @@ def execute(args):
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("a").assigned is None
     True
-    >>> execute(["a",])
+    >>> execute(["a"])
     >>> dir.get_bug("a").assigned == names.creator()
     True
     >>> execute(["a", "someone"])

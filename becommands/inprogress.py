@@ -24,7 +24,7 @@ def execute(args):
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("a").status
     u'open'
-    >>> execute(["a",])
+    >>> execute(["a"])
     >>> dir.get_bug("a").status
     u'in-progress'
     >>> tests.clean_up()
