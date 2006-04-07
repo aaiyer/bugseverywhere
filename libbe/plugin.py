@@ -52,9 +52,7 @@ def get_plugin(prefix, name):
         return my_import(prefix + "." + name)
     return None
 
-plugin_path = sys.path[0]
-while not os.path.isfile(os.path.join(plugin_path, "libbe/plugin.py")):
-    plugin_path = os.path.realpath(os.path.dirname(plugin_path))
+plugin_path = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
 if plugin_path not in sys.path:
     sys.path.append(plugin_path)
 def _test():

@@ -121,7 +121,8 @@ def postcommit(directory):
     try:
         invoke_client('merge', directory=directory)
     except CommandError, e:
-        if 'No merge branch known or specified' in e.err_str:
+        if ('No merge branch known or specified' in e.err_str or
+            'No merge location known or specified' in e.err_str):
             pass
         else:
             status = invoke_client('revert',  '--no-backup', 

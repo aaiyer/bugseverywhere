@@ -30,7 +30,8 @@ def execute(args):
     >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
-    assert(len(args) == 1)
+    if len(args) !=1:
+        raise cmdutil.UserError("Please specify a bug id.")
     bug = cmdutil.get_bug(args[0])
     bug.status = "closed"
     bug.save()
