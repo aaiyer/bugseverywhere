@@ -1,0 +1,21 @@
+Err, perhaps we should use revision ids.  Or status.  Or something...
+
+
+$ be diff
+Traceback (most recent call last):
+  File "/usr/bin/be", line 55, in ?
+    sys.exit(execute(sys.argv[1], sys.argv[2:]))
+  File "/usr/lib/python2.4/site-packages/libbe/cmdutil.py", line 105, in execute    return get_command(cmd).execute([a.decode(encoding) for a in args])
+  File "/usr/lib/python2.4/site-packages/becommands/diff.py", line 33, in execute
+    diff.diff_report(diff.reference_diff(tree, spec), tree)
+  File "/usr/lib/python2.4/site-packages/libbe/diff.py", line 41, in reference_diff
+    return diff(bugdir.get_reference_bugdir(spec), bugdir)
+  File "/usr/lib/python2.4/site-packages/libbe/diff.py", line 22, in diff
+    old_bug_map = old_tree.bug_map()
+  File "/usr/lib/python2.4/site-packages/libbe/bugdir.py", line 169, in bug_map
+    for bug in self.list():
+  File "/usr/lib/python2.4/site-packages/libbe/bugdir.py", line 164, in list
+    for uuid in self.list_uuids():
+  File "/usr/lib/python2.4/site-packages/libbe/bugdir.py", line 177, in list_uuids
+    for uuid in os.listdir(self.bugs_path):
+OSError: [Errno 2] No such file or directory: '/home/abentley/.bzrrevs/None/.be/bugs'

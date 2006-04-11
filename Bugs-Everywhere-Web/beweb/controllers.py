@@ -1,5 +1,5 @@
 import turbogears
-from turbogears import controllers
+from turbogears import controllers, expose, redirect, identity
 import cherrypy
 from libbe.bugdir import (tree_root, cmp_severity, new_bug, new_comment, 
                           NoRootEntry)
@@ -166,6 +166,34 @@ class Root(controllers.Root):
     def index(self):
         raise cherrypy.HTTPRedirect(project_url()) 
 
+    @expose(template="beweb.templates.login")
+    def login(self, forward_url=None, previous_url=None, *args, **kw):
+
+        if not identity.current.anonymous and identity.was_login_attempted():
+            raise redirect(forward_url)
+
+        forward_url=None
+        previous_url= cherrypy.request.path
+
+        if identity.was_login_attempted():
+            msg=_("The credentials you supplied were not correct or "\
+                   "did not grant access to this resource.")
+        elif identity.get_identity_errors():
+            msg=_("You must provide your credentials before accessing "\
+                   "this resource.")
+        else:
+            msg=_("Please log in.")
+            forward_url= cherrypy.request.headers.get("Referer", "/")
+        cherrypy.response.status=403
+        return dict(message=msg, previous_url=previous_url, logging_in=True,
+                    original_parameters=cherrypy.request.params,
+                    forward_url=forward_url)
+
+    @expose()
+    def logout(self):
+        identity.current.logout()
+        raise redirect("/")
+
     @turbogears.expose('beweb.templates.about')
     def about(self, *paths, **kwargs):
         return {}
@@ -174,7 +202,7 @@ class Root(controllers.Root):
     def default(self, *args, **kwargs):
         return self.prest.default(*args, **kwargs)
 
-    def _cpOnError(self):
+    def _cp_on_error(self):
         import traceback, StringIO
         bodyFile = StringIO.StringIO()
         traceback.print_exc(file = bodyFile)
