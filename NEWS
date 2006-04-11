@@ -1,10 +1,24 @@
+April 10, 2006
+ * Updated BeWeb to TurboGear 0.9
+
+April 6, 2006
+ * Better diagnostics from Marien Zwart
+ * Fixed installation from Marien Zwart
+ * Support ReST comments
+
 April 3, 2006
  * Handle replying to comments
  * Better help handling (Thomas Gerigk)
 
+March 31, 2006
+ * Changes to comments are shown in bzr diff
+
 March 3, 2006
  * Better bzr compatibility
  * Auto-commit support
+
+Feb 3, 2006
+ * BeWeb can merge, commit, etc.
 
 Jan 30, 2006
  * Creator support (Alexander Belchenko)
