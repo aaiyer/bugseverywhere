@@ -6,5 +6,8 @@ from turbogears.identity.soprovider import TG_User, TG_Group, TG_Permission
 hub = PackageHub("beweb")
 __connection__ = hub
 
+def people_map():
+    return dict([(u.userId, u.displayName) for u in TG_User.select()])
+
 # class YourDataClass(SQLObject):
 #     pass
