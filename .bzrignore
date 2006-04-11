@@ -1,2 +1,4 @@
 Bugs-Everywhere-Web/beweb/config.py
 ./build
+Bugs-Everywhere-Web/database.sqlite
+Bugs-Everywhere-Web/beweb/catwalk-session
