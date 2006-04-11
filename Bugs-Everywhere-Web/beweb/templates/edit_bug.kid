@@ -3,8 +3,9 @@
 from libbe.bugdir import severity_levels, active_status, inactive_status, thread_comments
 from libbe.utility import time_to_str 
 from beweb.controllers import bug_list_url, comment_url
-from beweb.config import people
 from beweb.formatting import comment_body_xhtml, select_among
+from beweb.model import people_map
+people = people_map()
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#"
     py:extends="'master.kid'">

@@ -23,6 +23,7 @@ class Comment(PrestHandler):
         bug_tree = project_tree(comment_data['project'])
         bug = bug_tree.get_bug(comment_data['bug'])
         comment = new_comment(bug, "")
+        comment.From = identity.current.user.userId
         comment.content_type = "text/restructured"
         comment.save()
         raise cherrypy.HTTPRedirect(comment_url(comment=comment.uuid, 
@@ -33,6 +34,7 @@ class Comment(PrestHandler):
         bug_tree = project_tree(comment_data['project'])
         bug = bug_tree.get_bug(comment_data['bug'])
         reply_comment = new_comment(bug, "")
+        reply_comment.From = identity.current.user.userId
         reply_comment.in_reply_to = comment.uuid
         reply_comment.save()
         reply_data = dict(comment_data)
@@ -92,9 +94,11 @@ class Bug(PrestHandler):
                 "search"          : search,
                }
 
+    @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "New bug")
     def new_bug(self, bug_data, bug, **kwargs):
         bug = new_bug(project_tree(bug_data['project']))
+        bug.creator = identity.current.user.userId
         bug.save()
         raise cherrypy.HTTPRedirect(bug_url(bug_data['project'], bug.uuid))
 

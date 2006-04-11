@@ -2,7 +2,8 @@
 <?python
 from libbe.cmdutil import unique_name
 from beweb.controllers import bug_url, project_url, bug_list_url
-from beweb.config import people
+from beweb.model import people_map
+people = people_map()
 def row_class(bug, num):
     if not bug.active is True:
         return "closed"
