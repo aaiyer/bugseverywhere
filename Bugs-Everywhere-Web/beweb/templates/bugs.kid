@@ -45,7 +45,7 @@ def match(bug, show_closed, search):
 </form>
 <form action="${bug_list_url(project_id)}" method="get">
 <input type="hidden" name="show_closed" value="False" />
-<input name="search" />
+<input name="search" value="$search"/>
 <input type="submit" name="action" value="Search" />
 </form>
 </body>
