@@ -1,5 +1,6 @@
 from unittest import TestCase
 import unittest
+from cherrypy import NotFound
 """A pseudo-REST dispatching method in which only the noun comes from the path.
 The action performed will depend on kwargs.
 """
@@ -43,11 +44,19 @@ class PrestHandler(object):
             if len(path) == 0:
                 resource = None
             else:
-                resource = self.instantiate(**data)
+                try:
+                    resource = self.instantiate(**data)
+                except NotImplementedError, e:
+                    if e.args[0] is not PrestHandler.instantiate:
+                        raise NotFound()
+
             return self, resource, data, path[1:] 
         if len(path) > 2:
             data[path[1]] = path[2]
         return getattr(self, path[1]).decode(path[2:], data)
+
+    def instantiate(self, **date):
+        raise NotImplementedError(PrestHandler.instantiate)
 
     def default(self, *args, **kwargs):
         child, resource, data, extra = self.decode([None,] + list(args))
