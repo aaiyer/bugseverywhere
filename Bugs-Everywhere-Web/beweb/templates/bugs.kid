@@ -16,7 +16,9 @@ def row_class(bug, num):
 
 
 def match(bug, show_closed, search):
-    if search is None:
+    if not show_closed and not bug.active:
+        return False
+    elif search is None:
         return True
     else:
         return search.lower() in bug.summary.lower()
@@ -27,12 +29,6 @@ def match(bug, show_closed, search):
 <head>
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
     <title>Bugs for $project_name</title>
-    <style type="text/css" py:if="not show_closed">
-    tr.closedeven, tr.closedodd
-    {
-        display:None
-    }
-    </style>
 </head>
 
 <body>
