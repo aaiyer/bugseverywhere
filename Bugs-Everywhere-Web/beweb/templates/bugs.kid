@@ -6,11 +6,13 @@ from beweb.model import people_map
 people = people_map()
 def row_class(bug, num):
     if not bug.active is True:
-        return "closed"
-    elif num % 2 == 0:
-        return "even"
+        extra = "closed"
     else:
-        return "odd"
+        extra = ""
+    if num % 2 == 0:
+        return extra+"even"
+    else:
+        return extra+"odd"
 
 
 def match(bug, show_closed, search):

@@ -19,6 +19,14 @@ tr.closed td
 {
     background-color: #ccc;
 }
+tr.closedeven td
+{
+    background-color: #ccc;
+}
+tr.closedodd td
+{
+    background-color: #dda;
+}
 
 a:visited, a:link
 {
@@ -101,4 +109,8 @@ pre.traceback
 tr.even td
 {
   background-color: #eee;
+}
+tr.odd td
+{
+  background-color: #ffe;
 }
