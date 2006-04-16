@@ -49,7 +49,7 @@ def execute(args):
     bug, parent_comment = cmdutil.get_bug_and_comment(args[0])
     if len(args) == 1:
         try:
-            body = utility.editor_string()
+            body = utility.editor_string("Please enter your comment above")
         except utility.CantFindEditor:
             raise cmdutil.UserError(
                 "No comment supplied, and EDITOR not specified.")

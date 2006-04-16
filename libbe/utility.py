@@ -98,7 +98,7 @@ class CantFindEditor(Exception):
     def __init__(self):
         Exception.__init__(self, "Can't find editor to get string from")
 
-def editor_string():
+def editor_string(comment=None):
 
     """Invokes the editor, and returns the user_produced text as a string
 
@@ -117,15 +117,37 @@ def editor_string():
         raise CantFindEditor()
     fhandle, fname = tempfile.mkstemp()
     try:
+        if comment is not None:
+            os.write(fhandle, '\n'+comment_string(comment))
         os.close(fhandle)
         oldmtime = os.path.getmtime(fname)
         os.system("%s %s" % (editor, fname))
-        if oldmtime == os.path.getmtime(fname) and\
-            file(fname, "rb").read() == "":
+        output = trimmed_string(file(fname, "rb").read())
+        if output.rstrip('\n') == "":
             output = None
-        else:
-            output = file(fname, "rb").read()
     finally:
         os.unlink(fname)
     return output
 
+
+def comment_string(comment):
+    """
+    >>> comment_string('hello')
+    '== Anything below this line will be ignored ==\\nhello'
+    """
+    return '== Anything below this line will be ignored ==\n' + comment
+
+
+def trimmed_string(instring):
+    """
+    >>> trimmed_string("hello\\n== Anything below this line will be ignored")
+    'hello\\n'
+    >>> trimmed_string("hi!\\n" + comment_string('Booga'))
+    'hi!\\n'
+    """
+    out = []
+    for line in instring.splitlines(True):
+        if line.startswith('== Anything below this line will be ignored'):
+            break
+        out.append(line)
+    return ''.join(out)
