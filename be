@@ -48,7 +48,7 @@ Unimplemented becommands
 
 
 if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
-    print_command_list()
+    cmdutil.print_command_list()
 else:
     try:
         try:
