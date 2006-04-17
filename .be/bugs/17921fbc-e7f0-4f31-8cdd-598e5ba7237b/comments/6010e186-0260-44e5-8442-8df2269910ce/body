@@ -1,0 +1,5 @@
+It's tricky to say whether we should have dependencies or reverse dependencies
+or both.
+
+In the case where a bug is removed, normal dependencies mean that its
+dependencies are erased from this system.
