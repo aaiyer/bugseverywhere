@@ -16,6 +16,7 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Print help for given subcommand"""
 from libbe import bugdir, cmdutil, names, utility
+
 def execute(args):
     """
     Print help of specified command.
@@ -24,7 +25,7 @@ def execute(args):
     if len(args) > 1:
         raise cmdutil.UserError("Too many arguments.")
     if len(args) == 0:
-        print_command_list()
+        cmdutil.print_command_list()
     else:
         try:
             print cmdutil.help(args[0])
