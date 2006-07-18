@@ -2,3 +2,6 @@ Bugs-Everywhere-Web/beweb/config.py
 ./build
 Bugs-Everywhere-Web/beweb/database.sqlite
 Bugs-Everywhere-Web/beweb/catwalk-session
+*.pyc
+fte.dsk
+*~
