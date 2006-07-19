@@ -287,8 +287,11 @@ class Bug(object):
         return Comment(uuid, self)
 
     def iter_comment_ids(self):
+        path = self.get_path("comments")
+        if not os.path.isdir(path):
+            return
         try:
-            for uuid in os.listdir(self.get_path("comments")):
+            for uuid in os.listdir(path):
                 if (uuid.startswith('.')):
                     continue
                 yield uuid
