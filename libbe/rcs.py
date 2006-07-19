@@ -45,9 +45,8 @@ class CommandError(Exception):
         self.status = status
 
 def invoke(args, expect=(0,)):
-    q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    output = q.stdout.read()
-    error = q.stderr.read()
+    q = Popen(args, stdout=PIPE, stderr=PIPE)
+    output, error = q.communicate()
     status = q.wait()
     if status not in expect:
         raise CommandError(error, status)
