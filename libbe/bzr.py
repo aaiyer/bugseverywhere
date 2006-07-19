@@ -25,14 +25,7 @@ def invoke_client(*args, **kwargs):
     expect = kwargs.get('expect', (0, 1))
     cl_args = ["bzr"]
     cl_args.extend(args)
-    if directory:
-        old_dir = os.getcwd()
-        os.chdir(directory)
-    try:
-        status,output,error = invoke(cl_args, expect)
-    finally:
-        if directory:
-            os.chdir(old_dir)
+    status,output,error = invoke(cl_args, expect, cwd=directory)
     return status, output
 
 def add_id(filename, paranoid=False):
