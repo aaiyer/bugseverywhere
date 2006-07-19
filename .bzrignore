@@ -5,3 +5,4 @@ Bugs-Everywhere-Web/beweb/catwalk-session
 *.pyc
 fte.dsk
 *~
+./.shelf
