@@ -15,6 +15,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 from subprocess import Popen, PIPE
+import sys
+
 def rcs_by_name(rcs_name):
     """Return the module for the RCS with the given name"""
     if rcs_name == "Arch":
@@ -46,6 +48,12 @@ class CommandError(Exception):
 
 def invoke(args, expect=(0,), cwd=None):
     q = Popen(args, stdout=PIPE, stderr=PIPE, cwd=cwd)
+    if sys.platform != "win32":
+        q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=cwd)
+    else:
+        # win32 don't have os.execvp() so have to run command in a shell
+        q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, 
+                  cwd=cwd)
     output, error = q.communicate()
     status = q.wait()
     if status not in expect:

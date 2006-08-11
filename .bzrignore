@@ -3,6 +3,7 @@ Bugs-Everywhere-Web/beweb/config.py
 Bugs-Everywhere-Web/beweb/database.sqlite
 Bugs-Everywhere-Web/beweb/catwalk-session
 *.pyc
-*.~1~
 *.sw[pon]
-*.shelf
+fte.dsk
+*~
+./.shelf

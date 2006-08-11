@@ -14,13 +14,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-import commands
+
 import os
 import sys
 
 
 def uuid():
-    return commands.getoutput('uuidgen')
+    # this code borrowed from standard commands module
+    # but adapted to win32
+    pipe = os.popen('uuidgen', 'r')
+    text = pipe.read()
+    sts = pipe.close()
+    if sts not in (0, None):
+        raise "Failed to run uuidgen"
+    if text[-1:] == '\n': text = text[:-1]
+    return text
 
 def creator():
     if sys.platform != "win32":
