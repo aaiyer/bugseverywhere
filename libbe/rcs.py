@@ -47,7 +47,6 @@ class CommandError(Exception):
         self.status = status
 
 def invoke(args, expect=(0,), cwd=None):
-    q = Popen(args, stdout=PIPE, stderr=PIPE, cwd=cwd)
     if sys.platform != "win32":
         q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=cwd)
     else:
