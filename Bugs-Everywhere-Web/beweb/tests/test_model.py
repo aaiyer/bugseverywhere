@@ -4,21 +4,20 @@
 # choice for testing, because you can use an in-memory database
 # which is very fast.
 
-from turbogears import testutil
-#from beweb.model import YourDataClass
-#from turbogears.identity.soprovider import TG_User
+from turbogears import testutil, database
+# from beweb.model import YourDataClass, User
 
 # database.set_db_uri("sqlite:///:memory:")
 
-# class testTG_User(testutil.DBTest):
+# class TestUser(testutil.DBTest):
 #     def get_model(self):
-#         return TG_User
+#         return User
 #
 #     def test_creation(self):
 #         "Object creation should set the name"
-#         obj = TG_User(userId = "creosote",
-#                       emailAddress = "spam@python.not",
-#                       displayName = "Mr Creosote",
+#         obj = User(user_name = "creosote",
+#                       email_address = "spam@python.not",
+#                       display_name = "Mr Creosote",
 #                       password = "Wafer-thin Mint")
-#         assert obj.displayName == "Mr Creosote"
+#         assert obj.display_name == "Mr Creosote"
 

@@ -7,7 +7,7 @@
     <title py:if="False">Your title goes here</title>
     <link rel="stylesheet" type="text/css" href="/static/css/style.css"/>
     <meta py:replace="item[:]"/>
-    <style>
+    <style type="text/css">
         #pageLogin
         {
             font-size: 10px;
@@ -19,22 +19,21 @@
 
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
 <div id="header"><div style="float: left">b u g s   e v r y w h e r e</div><ul class="navoption"><li><a href="/about/">About</a></li></ul>&#160;</div> 
-     <div py:if="tg.config('identity.on',False) and not 'logging_in' in locals()"
+    <div py:if="tg.config('identity.on',False) and not 'logging_in' in locals()"
         id="pageLogin">
         <span py:if="tg.identity.anonymous">
             <a href="/login">Login</a>
         </span>
         <span py:if="not tg.identity.anonymous">
-            Welcome ${tg.identity.user.displayName}.
+            Welcome ${tg.identity.user.display_name}.
             <a href="/logout">Logout</a>
         </span>
     </div>
 
     <div py:if="tg_flash" class="flash" py:content="tg_flash"></div>
 
-    <div py:replace="item[:]"/>
+    <div py:replace="[item.text]+item[:]"/>
 
-</body>
 <table py:match="item.tag=='{http://www.w3.org/1999/xhtml}insetbox'" cellspacing="0" cellpadding="0" border="0" class="insetbox">
 <tr height="19"><td background="/static/images/is-tl.png" width="19"/>
     <td background="/static/images/is-t.png" />
@@ -67,5 +66,6 @@
     <td background="/static/images/ds-br.png"/>
 </tr>
 </table>
+</body>
 
 </html>

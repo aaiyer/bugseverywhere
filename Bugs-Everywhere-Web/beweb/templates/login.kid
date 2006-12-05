@@ -8,7 +8,7 @@
     <meta content="text/html; charset=UTF-8"
         http-equiv="content-type" py:replace="''"/>
     <title>Login</title>
-    <style>
+    <style type="text/css">
         #loginBox
         {
             width: 30%;
@@ -97,7 +97,7 @@
                 </tr>
                 <tr>
                     <td colspan="2" class="buttons">
-                        <input type="submit" value="Login"/>
+                        <input type="submit" name="login" value="Login"/>
                     </td>
                 </tr>
             </table>
