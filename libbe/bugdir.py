@@ -141,7 +141,7 @@ class BugDir:
         except NoSuchFile:
             self.settings = {"rcs_name": "None"}
 
-    rcs_name = setting_property("rcs_name", ("None", "bzr", "Arch"))
+    rcs_name = setting_property("rcs_name", ("None", "bzr", "Arch", "hg"))
     _rcs = None
 
     target = setting_property("target")
