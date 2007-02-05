@@ -47,7 +47,8 @@ def lookup_revision(revno, directory):
                          directory=directory)[1].rstrip('\n')
 
 def export(revno, directory, revision_dir):
-    invoke_client("archive", "--rev", str(revno), revision_dir, directory=directory)
+    invoke_client("archive", "--rev", str(revno), revision_dir,
+                  directory=directory)
 
 def find_or_make_export(revno, directory):
     revision_id = lookup_revision(revno, directory)
@@ -65,7 +66,8 @@ def hg_root(path):
 
 def path_in_reference(bug_dir, spec):
     if spec is None:
-        spec = int(invoke_client('tip', '--template="{rev}"', directory=bug_dir)[1])
+        spec = int(invoke_client('tip', '--template="{rev}"',
+                   directory=bug_dir)[1])
     rel_bug_dir = bug_dir[len(hg_root(bug_dir)):]
     export_root = find_or_make_export(spec, directory=bug_dir)
     return os.path.join(export_root, rel_bug_dir)
