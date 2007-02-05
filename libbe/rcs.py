@@ -25,6 +25,9 @@ def rcs_by_name(rcs_name):
     elif rcs_name == "bzr":
         import bzr
         return bzr
+    elif rcs_name == "hg":
+        import hg
+        return hg
     elif rcs_name == "None":
         import no_rcs
         return no_rcs
@@ -33,10 +36,13 @@ def detect(dir):
     """Return the module for the rcs being used in this directory"""
     import arch
     import bzr
+    import hg
     if arch.detect(dir):
         return arch
     elif bzr.detect(dir):
         return bzr
+    elif hg.detect(dir):
+        return hg
     import no_rcs
     return no_rcs
 
