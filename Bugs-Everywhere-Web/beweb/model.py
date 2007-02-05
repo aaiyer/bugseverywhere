@@ -104,5 +104,4 @@ class Permission(SQLObject):
                          otherColumn="group_id")
 
 def people_map():
-    return dict([(u.userId, u.displayName) for u in User.select() if 
-                "fixbugs" in identity.current.permissions])
+    return dict((u.user_name, u.display_name) for u in User.select())
