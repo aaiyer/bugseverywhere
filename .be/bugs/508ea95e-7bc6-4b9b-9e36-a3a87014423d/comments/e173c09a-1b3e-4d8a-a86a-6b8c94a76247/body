@@ -1,0 +1,2 @@
+the $VISUAL environment variable is common for setting a users preferred 
+editor. It would be nice if this would be supported by be.
