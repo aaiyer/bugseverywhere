@@ -141,7 +141,7 @@ class BugDir:
         except NoSuchFile:
             self.settings = {"rcs_name": "None"}
 
-    rcs_name = setting_property("rcs_name", ("None", "bzr", "Arch"))
+    rcs_name = setting_property("rcs_name", ("None", "bzr", "Arch", "hg"))
     _rcs = None
 
     target = setting_property("target")
@@ -287,8 +287,11 @@ class Bug(object):
         return Comment(uuid, self)
 
     def iter_comment_ids(self):
+        path = self.get_path("comments")
+        if not os.path.isdir(path):
+            return
         try:
-            for uuid in os.listdir(self.get_path("comments")):
+            for uuid in os.listdir(path):
                 if (uuid.startswith('.')):
                     continue
                 yield uuid

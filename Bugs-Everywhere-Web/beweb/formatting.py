@@ -33,7 +33,7 @@ def soft_text(text):
 
 def soft_pre(text):
    return XML('<div style="font-family: monospace">'+
-              ''.join(soft_text(text))+'</div>') 
+              ''.join(soft_text(text)).encode('utf-8')+'</div>') 
 
 
 def get_rest_body(rest):

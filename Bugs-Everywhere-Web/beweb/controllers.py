@@ -1,11 +1,19 @@
-import turbogears
-from turbogears import controllers, expose, redirect, identity
+import logging
+
 import cherrypy
+import turbogears
+from turbogears import controllers, expose, validate, redirect, identity
+
 from libbe.bugdir import (tree_root, cmp_severity, new_bug, new_comment, 
                           NoRootEntry)
 from libbe import names
 from config import projects
 from prest import PrestHandler, provide_action
+
+
+from beweb import json
+
+log = logging.getLogger("beweb.controllers")
 
 def project_tree(project):
     try:
@@ -112,9 +120,9 @@ class Bug(PrestHandler):
             assigned = None
         bug.assigned = assigned
         bug.save()
-        bug.rcs.precommit(bug.path)
-        bug.rcs.commit(bug.path, "Auto-commit")
-        bug.rcs.postcommit(bug.path)
+#        bug.rcs.precommit(bug.path)
+#        bug.rcs.commit(bug.path, "Auto-commit")
+#        bug.rcs.postcommit(bug.path)
         raise cherrypy.HTTPRedirect(bug_list_url(bug_data["project"]))
 
     def instantiate(self, project, bug):

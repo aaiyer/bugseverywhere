@@ -16,7 +16,9 @@ setup(
     #download_url=download_url,
     #license=license,
     
-    install_requires = ["TurboGears >= 0.9a4"],
+    install_requires = [
+        "TurboGears >= 1.0b1",
+    ],
     scripts = ["start-beweb.py"],
     zip_safe=False,
     packages=find_packages(),
