@@ -1,0 +1,2 @@
+Note that VISUAL means interactive editors like vi, emacs.  It compares with
+EDITOR, which originally meant line editors like ex (or edlin?).
