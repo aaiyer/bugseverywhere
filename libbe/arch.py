@@ -41,6 +41,25 @@ def invoke_client(*args, **kwargs):
         raise Exception("Command failed: %s" % error)
     return output
 
+def get_user_id():
+    try:
+        return invoke_client('my-id')
+    except Exception, e:
+        if 'no arch user id set' in e.args[0]:
+            return None
+        else:
+            raise
+
+
+def set_user_id(value):
+    invoke_client('my-id', value)
+
+
+def ensure_user_id():
+    if get_user_id() is None:
+        set_user_id('nobody <nobody@example.com>')
+ 
+
 def write_tree_settings(contents, path):
     file(os.path.join(path, "{arch}", "=tagging-method"), "wb").write(contents)
 
@@ -49,6 +68,7 @@ def init_tree(path):
 
 def temp_arch_tree(type="easy"):
     import tempfile
+    ensure_user_id()
     path = tempfile.mkdtemp()
     init_tree(path)
     if type=="easy":

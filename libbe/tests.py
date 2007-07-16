@@ -36,6 +36,7 @@ class Dir:
         shutil.rmtree(self.name)
 
 def arch_dir():
+    arch.ensure_user_id()
     dir = Dir()
     arch.init_tree(dir.name)
     return dir
