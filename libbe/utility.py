@@ -104,16 +104,27 @@ def editor_string(comment=None):
 
     >>> if "EDITOR" in os.environ:
     ...     del os.environ["EDITOR"]
+    >>> if "VISUAL" in os.environ:
+    ...     del os.environ["VISUAL"]
     >>> editor_string()
     Traceback (most recent call last):
     CantFindEditor: Can't find editor to get string from
     >>> os.environ["EDITOR"] = "echo bar > "
     >>> editor_string()
     'bar\\n'
+    >>> os.environ["VISUAL"] = "echo baz > "
+    >>> editor_string()
+    'baz\\n'
+    >>> del os.environ["EDITOR"]
+    >>> del os.environ["VISUAL"]
     """
-    try:
-        editor = os.environ["EDITOR"]
-    except KeyError:
+    for name in ('VISUAL', 'EDITOR'):
+        try:
+            editor = os.environ[name]
+            break
+        except KeyError:
+            pass
+    else:
         raise CantFindEditor()
     fhandle, fname = tempfile.mkstemp()
     try:

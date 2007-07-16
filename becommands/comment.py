@@ -33,7 +33,8 @@ def execute(args):
     True
     >>> comment.in_reply_to is None
     True
-    >>> del os.environ["EDITOR"]
+    >>> if 'EDITOR' in os.environ:
+    ...     del os.environ["EDITOR"]
     >>> execute(["b"])
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
