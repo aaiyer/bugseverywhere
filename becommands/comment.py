@@ -56,6 +56,7 @@ def execute(args):
                 "No comment supplied, and EDITOR not specified.")
         if body is None:
             raise cmdutil.UserError("No comment entered.")
+        body = body.decode('utf-8')
     else:
         body = args[1]
         if not body.endswith('\n'):
