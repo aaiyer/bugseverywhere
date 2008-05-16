@@ -52,6 +52,7 @@ class Comment(PrestHandler):
         raise cherrypy.HTTPRedirect(comment_url(comment=reply_comment.uuid, 
                                     **reply_data))
 
+    @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "Update")
     def update(self, comment_data, comment, comment_body, *args, **kwargs):
         comment.body = comment_body
