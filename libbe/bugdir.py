@@ -141,11 +141,11 @@ class BugDir:
         except NoSuchFile:
             self.settings = {"rcs_name": "None"}
 
-    rcs_name = setting_property("rcs_name", ("None", "bzr", "Arch", "hg"))
+    rcs_name = setting_property("rcs_name", ("None", "bzr", "git", "Arch", "hg"))
     _rcs = None
 
     target = setting_property("target")
-
+    
     def save_settings(self):
         map_save(self.rcs, os.path.join(self.dir, "settings"), self.settings)
 

@@ -28,6 +28,9 @@ def rcs_by_name(rcs_name):
     elif rcs_name == "hg":
         import hg
         return hg
+    elif rcs_name == "git":
+        import git
+        return git
     elif rcs_name == "None":
         import no_rcs
         return no_rcs
@@ -37,12 +40,15 @@ def detect(dir):
     import arch
     import bzr
     import hg
+    import git
     if arch.detect(dir):
         return arch
     elif bzr.detect(dir):
         return bzr
     elif hg.detect(dir):
         return hg
+    elif git.detect(dir):
+        return git
     import no_rcs
     return no_rcs
 
