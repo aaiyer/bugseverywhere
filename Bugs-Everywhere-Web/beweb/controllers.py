@@ -26,6 +26,7 @@ def comment_url(project, bug, comment, **kwargs):
                           (project, bug, comment), kwargs)
 
 class Comment(PrestHandler):
+    @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "New comment")
     def new_comment(self, comment_data, comment, *args, **kwargs):
         bug_tree = project_tree(comment_data['project'])
@@ -37,6 +38,7 @@ class Comment(PrestHandler):
         raise cherrypy.HTTPRedirect(comment_url(comment=comment.uuid, 
                                     **comment_data))
 
+    @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "Reply")
     def reply_comment(self, comment_data, comment, *args, **kwargs):
         bug_tree = project_tree(comment_data['project'])

@@ -1,7 +1,7 @@
 Bugs Everywhere
 ===============
 This is Bugs Everywhere, a bugtracker built on distributed revision control.
-It works with Bazaar-NG and Arch at the moment, but is easily extensible.  It
+It works with Bazaar and Arch at the moment, but is easily extensible.  It
 can also function with no RCS at all.
 
 The idea is to package the bug information with the source code, so that

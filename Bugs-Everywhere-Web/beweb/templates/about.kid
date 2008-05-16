@@ -8,15 +8,13 @@
 
 <body>
 <h1>About Bugs Everywhere</h1>
-<p>Bug Everywhere was designed by Aaron Bentley and implemented by Aaron
-    Bentley and Oleg Romanyshyn.
+<p>Bugs Everywhere is a "distributed bugtracker", designed to complement distributed revision control systems.
 </p>
 <p>
-    Development is sponsored by 
-    <a href="http://panoramicfeedback.com/">Panoramic Feedback</a>.
+Bugs Everywhere was conceived and written by developers at <a href="http://panoramicfeedback.com/">Panoramic Feedback</a>, primarily Aaron Bentley. <a href="http://panoramicfeedback.com/">Panoramic Feedback</a> is no longer developing BE, and the current maintainer is <a href="http://bugseverywhere.org/be/show/ChrisBall">Chris Ball</a>.
 </p>
 <p>
-    Bugs Everywhere <a href="http://panoramicfeedback.com/opensource">web site</a>
+    Bugs Everywhere <a href="http://bugseverywhere.org/">web site</a>
 </p>
 <a href="/">Project List</a>
 </body>

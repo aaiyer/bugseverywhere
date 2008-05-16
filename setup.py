@@ -9,4 +9,7 @@ setup(
     url='http://panoramicfeedback.com/opensource/',
     packages=['becommands', 'libbe'],
     scripts=['be'],
+    data_files=[
+        ('share/man/man1', ['doc/be.1']),
+        ]
     )
