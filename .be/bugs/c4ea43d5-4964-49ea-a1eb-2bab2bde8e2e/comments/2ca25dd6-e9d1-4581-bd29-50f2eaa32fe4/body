@@ -1,0 +1,7 @@
+When running `python test.py` I recieved lots of errors due to 'tla'
+(the GNU Arch revision control system binary) not being installed.
+I had expected test.py to only test the backends for installed VCSs.
+
+I've added a note saying that `python test.py` tests *all* the
+backends, but someone who understands the usage better can probably
+write a nicer version.
