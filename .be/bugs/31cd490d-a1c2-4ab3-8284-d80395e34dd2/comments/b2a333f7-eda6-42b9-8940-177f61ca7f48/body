@@ -1,0 +1,51 @@
+$ python test.py 
+**********************************************************************
+File "/home/wking/src/fun/be/libbe/plugin.py", line 31, in libbe.plugin.iter_plugins
+Failed example:
+    "plugin" in [n for n,m in iter_plugins("libbe")]
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest libbe.plugin.iter_plugins[1]>", line 1, in <module>
+        "plugin" in [n for n,m in iter_plugins("libbe")]
+      File "/home/wking/src/fun/be/libbe/plugin.py", line 38, in iter_plugins
+        yield modfile[:-3], my_import(prefix+"."+modfile[:-3])
+      File "/home/wking/src/fun/be/libbe/plugin.py", line 21, in my_import
+        module = __import__(mod_name)
+      File "/home/wking/src/fun/be/libbe/restconvert.py", line 27, in <module>
+        from elementtree import ElementTree
+    ImportError: No module named elementtree
+**********************************************************************
+1 items had failures:
+   1 of   2 in libbe.plugin.iter_plugins
+***Test Failed*** 1 failures.
+Traceback (most recent call last):
+  File "test.py", line 32, in <module>
+    for module in plugin.iter_plugins("libbe"):
+  File "/home/wking/src/fun/be/libbe/plugin.py", line 38, in iter_plugins
+    yield modfile[:-3], my_import(prefix+"."+modfile[:-3])
+  File "/home/wking/src/fun/be/libbe/plugin.py", line 21, in my_import
+    module = __import__(mod_name)
+  File "/home/wking/src/fun/be/libbe/restconvert.py", line 27, in <module>
+    from elementtree import ElementTree
+ImportError: No module named elementtree
+
+
+Looking into ElementTree, I found their webpage:
+http://effbot.org/zone/element-index.htm
+
+  It’s common practice to import ElementTree under an alias, both to
+  minimize typing, and to make it easier to switch between different
+  implementations:
+
+  $ python
+  >>> import elementtree.ElementTree as ET
+  >>> import cElementTree as ET
+  >>> import lxml.etree as ET
+  >>> import xml.etree.ElementTree as ET # Python 2.5
+
+Using new import style, fall back to old if that fails.
+Affected files:
+ libbe/restconvert.py
+ Bugs-Everywhere-Web/beweb/formatting.py

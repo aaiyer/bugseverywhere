@@ -1,6 +1,9 @@
 from StringIO import StringIO
 
-from elementtree.ElementTree import XML
+try :
+   from xml.etree.ElementTree import XML # Python 2.5 (and greater?)
+except ImportError :
+   from elementtree.ElementTree import XML
 from libbe.restconvert import rest_xml
 
 def to_unix(text):
