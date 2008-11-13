@@ -102,7 +102,10 @@ def git_repo_for_path(path):
     """Find the root of the deepest repository containing path."""
     # Assume that nothing funny is going on; in particular, that we aren't
     # dealing with a bare repo.
-    return os.path.dirname(git_dir_for_path(path))
+    dirname = os.path.dirname(git_dir_for_path(path))
+    if dirname == '' : # os.path.dirname('filename') == ''
+        dirname = '.'
+    return dirname
 
 def git_dir_for_path(path):
     """Find the git-dir of the deepest repo containing path."""
