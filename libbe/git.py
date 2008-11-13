@@ -22,7 +22,11 @@ def strip_git(filename):
     # Find the base path of the GIT tree, in order to strip that leading
     # path from arguments to git -- it doesn't like absolute paths.
     if os.path.isabs(filename):
-        filename = filename[len(git_repo_for_path('.'))+1:]
+        absRepoDir = os.path.abspath(git_repo_for_path('.'))
+        absRepoSlashedDir = os.path.join(absRepoDir,"")
+        assert filename.startswith(absRepoSlashedDir), \
+            "file %s not in git repo %s" % (filename, absRepoSlashedDir)
+        filename = filename.lstrip(absRepoSlashedDir)
     return filename
 
 def invoke_client(*args, **kwargs):
