@@ -59,12 +59,16 @@ class CommandError(Exception):
         self.status = status
 
 def invoke(args, expect=(0,), cwd=None):
-    if sys.platform != "win32":
-        q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=cwd)
-    else:
-        # win32 don't have os.execvp() so have to run command in a shell
-        q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, 
-                  cwd=cwd)
+    try :
+        if sys.platform != "win32":
+            q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=cwd)
+        else:
+            # win32 don't have os.execvp() so have to run command in a shell
+            q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True, 
+                      cwd=cwd)
+    except OSError, e :
+        strerror = "%s\nwhile executing %s" % (e.args[1], args)
+        raise CommandError(strerror, e.args[0])
     output, error = q.communicate()
     status = q.wait()
     if status not in expect:

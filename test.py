@@ -1,3 +1,13 @@
+"""Usage: python test.py [module]
+
+When called without an optional module name, run the doctests from
+*all* modules.  This may raise lots of errors if you haven't installed
+one of the versioning control systems.
+
+When called with an optional module name, only run the doctests from
+that module.
+"""
+
 from libbe import plugin
 import doctest
 import sys

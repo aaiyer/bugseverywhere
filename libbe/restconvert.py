@@ -23,7 +23,10 @@ from docutils.core import publish_file
 from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from docutils.parsers.rst.states import Inliner, MarkupMismatch, unescape
-from elementtree import ElementTree
+try :
+    from xml.etree import ElementTree # Python 2.5 (and greater?)
+except ImportError :
+    from elementtree import ElementTree
 
 
 def rest_xml(rest):

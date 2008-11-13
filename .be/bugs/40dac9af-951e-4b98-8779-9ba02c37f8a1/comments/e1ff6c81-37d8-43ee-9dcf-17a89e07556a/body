@@ -1,0 +1,3 @@
+Calls to Popen() while running `test.py` raised OSError because of
+missing binaries (tla was not installed).  Added catches to produce
+more useful error messages in the backtrace.

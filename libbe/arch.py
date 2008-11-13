@@ -24,7 +24,11 @@ if client is None:
     config.set_val("arch_client", client)
 
 def invoke(args):
-    q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    try :
+        q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    except OSError, e :
+        strerror = "%s\nwhile executing %s" % (e.args[1], args)
+        raise Exception("Command failed: %s" % strerror)
     output = q.stdout.read()
     error = q.stderr.read()
     status = q.wait()
