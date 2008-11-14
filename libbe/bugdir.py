@@ -198,7 +198,7 @@ class InvalidValue(Exception):
 
 def checked_property(name, valid):
     def getter(self):
-        value = self.__getattribute__("_"+name)
+        value = getattr(self, "_"+name)
         if value not in valid:
             raise InvalidValue(name, value)
         return value
@@ -206,7 +206,7 @@ def checked_property(name, valid):
     def setter(self, value):
         if value not in valid:
             raise InvalidValue(name, value)
-        return self.__setattr__("_"+name, value)
+        return setattr(self, "_"+name, value)
     return property(getter, setter)
 
 severity_levels = ("wishlist", "minor", "serious", "critical", "fatal")
@@ -254,7 +254,7 @@ class Bug(object):
     active = property(_get_active)
 
     def add_attr(self, map, name):
-        value = self.__getattribute__(name)
+        value = getattr(self, name)
         if value is not None:
             map[name] = value
 
@@ -336,7 +336,7 @@ def add_attrs(obj, map, names, map_names=None):
             map_names[name] = name 
         
     for name in names:
-        value = obj.__getattribute__(name)
+        value = getattr(obj, name)
         if value is not None:
             map[map_names[name]] = value
 
