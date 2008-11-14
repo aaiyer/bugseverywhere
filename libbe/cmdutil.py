@@ -28,6 +28,10 @@ def unique_name(bug, bugs):
     Generate short names from uuids.  Picks the minimum number of
     characters (>=3) from the beginning of the uuid such that the
     short names are unique.
+    
+    Obviously, as the number of bugs in the database grows, these
+    short names will cease to be unique.  The complete uuid should be
+    used for long term reference.
     """
     chars = 3
     for some_bug in bugs:
