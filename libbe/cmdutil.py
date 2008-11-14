@@ -24,14 +24,17 @@ from StringIO import StringIO
 import utility
 
 def unique_name(bug, bugs):
-    chars = 1
+    """
+    Generate short names from uuids.  Picks the minimum number of
+    characters (>=3) from the beginning of the uuid such that the
+    short names are unique.
+    """
+    chars = 3
     for some_bug in bugs:
         if bug.uuid == some_bug.uuid:
             continue
         while (bug.uuid[:chars] == some_bug.uuid[:chars]):
             chars+=1
-        if chars < 3:
-            chars = 3
     return bug.uuid[:chars]
 
 class UserError(Exception):
