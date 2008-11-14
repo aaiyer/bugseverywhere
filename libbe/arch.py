@@ -14,27 +14,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-from subprocess import Popen, PIPE
 import os
 import config
 import errno
+
+from rcs import invoke
+
 client = config.get_val("arch_client")
 if client is None:
     client = "tla"
     config.set_val("arch_client", client)
-
-def invoke(args):
-    try :
-        q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    except OSError, e :
-        strerror = "%s\nwhile executing %s" % (e.args[1], args)
-        raise Exception("Command failed: %s" % strerror)
-    output = q.stdout.read()
-    error = q.stderr.read()
-    status = q.wait()
-    if status >= 0:
-        return status, output, error
-    raise Exception("Command failed: %s" % error)
 
 
 def invoke_client(*args, **kwargs):
