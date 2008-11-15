@@ -71,7 +71,7 @@ def execute(args):
             assigned = "all"
     for i in range(len(assigned)):
         if assigned[i] == '-':
-            assigned[i] == names.creator()
+            assigned[i] = names.creator()
     # select target
     if options.target != None:
         if options.target == "all":
