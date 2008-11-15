@@ -18,6 +18,7 @@ import os
 import os.path
 import errno
 import names
+import cmdutil
 import mapfile
 import time
 import utility
@@ -113,18 +114,19 @@ class Bug(object):
         return "Bug(uuid=%r)" % self.uuid
 
     def string(self, bugs=None, shortlist=False):
+        if bugs == None:
+            bugs = list(self.bugdir.list())
+        short_name = cmdutil.unique_name(self, bugs)
         if shortlist == False:
-            if bugs == None:
-                bugs = list(self.bugdir.list())
-            htime = utility.handy_time(bug.time)
-            ftime = utility.time_to_str(bug.time)
-            info = [("ID", bug.uuid),
-                    ("Short name", unique_name(bug, bugs)),
-                    ("Severity", bug.severity),
-                    ("Status", bug.status),
-                    ("Assigned", bug.assigned),
-                    ("Target", bug.target),
-                    ("Creator", bug.creator),
+            htime = utility.handy_time(self.time)
+            ftime = utility.time_to_str(self.time)
+            info = [("ID", self.uuid),
+                    ("Short name", short_name),
+                    ("Severity", self.severity),
+                    ("Status", self.status),
+                    ("Assigned", self.assigned),
+                    ("Target", self.target),
+                    ("Creator", self.creator),
                     ("Created", "%s (%s)" % (htime, ftime))]
             newinfo = []
             for k,v in info:
@@ -135,12 +137,12 @@ class Bug(object):
             info = newinfo
             longest_key_len = max([len(k) for k,v in info])
             infolines = ["  %*s : %s\n" % (longest_key_len,k,v) for k,v in info]
-            return "".join(infolines) + "%s\n" % bug.summary
+            return "".join(infolines) + "%s\n" % self.summary
         else:
-            statuschar = bug.status[0]
-            severitychar = bug.severity[0]
+            statuschar = self.status[0]
+            severitychar = self.severity[0]
             chars = "%c%c" % (statuschar, severitychar)
-            return "%s:%s: %s\n" % (cmdutil.unique_name(bug, bugs), chars, bug.summary)        
+            return "%s:%s: %s\n" % (short_name, chars, self.summary)
     def __str__(self):
         return self.string(shortlist=True)
     def get_path(self, file):
