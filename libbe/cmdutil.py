@@ -72,29 +72,6 @@ def get_bug(spec, bug_dir=None):
         raise UserError("No bug matches %s" % spec)
     return matches[0]
 
-def bug_summary(bug, bugs, no_target=False, shortlist=False):
-    info = [("ID", bug.uuid),
-            ("Short name", unique_name(bug, bugs)),
-            ("Severity", bug.severity),
-            ("Status", bug.status),
-            ("Assigned", bug.assigned),
-            ("Target", bug.target),
-            ("Creator", bug.creator),
-            ("Created", "%s (%s)" % (utility.handy_time(bug.time),utility.time_to_str(bug.time)))]
-    newinfo = []
-    for k,v in info:
-        if v == None:
-            newinfo.append((k,""))
-        else:
-            newinfo.append((k,v))
-    info = newinfo
-    if shortlist == False:
-        longest_key_len = max([len(k) for k,v in info])
-        infolines = ["  %*s : %s\n" % (longest_key_len,k,v) for k,v in info]
-        return "".join(infolines) + "%s\n" % bug.summary
-    else:
-       return "%s: %s\n" % (unique_name(bug, bugs), bug.summary)
-
 def iter_commands():
     for name, module in plugin.iter_plugins("becommands"):
         yield name.replace("_", "-"), module

@@ -25,7 +25,7 @@ def execute(args):
         raise cmdutil.UserError("Please specify a bug id.")
     bug_dir = cmdutil.bug_tree()
     bug = cmdutil.get_bug(args[0], bug_dir)
-    print cmdutil.bug_summary(bug, list(bug_dir.list())).rstrip("\n")
+    print bug.string().rstrip("\n")
     unique_name = cmdutil.unique_name(bug, bug_dir.list())
     comments = []
     name_map = {}

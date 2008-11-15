@@ -174,7 +174,7 @@ class BugDir:
         return bugs
 
     def get_bug(self, uuid):
-        return Bug(self.bugs_path, uuid, self.rcs_name)
+        return Bug(self.bugs_path, uuid, self.rcs_name, self)
 
     def list_uuids(self):
         for uuid in os.listdir(self.bugs_path):
@@ -187,7 +187,7 @@ class BugDir:
             uuid = names.uuid()
         path = os.path.join(self.bugs_path, uuid)
         self.rcs.mkdir(path)
-        bug = Bug(self.bugs_path, None, self.rcs_name)
+        bug = Bug(self.bugs_path, None, self.rcs_name, self)
         bug.uuid = uuid
         return bug
 

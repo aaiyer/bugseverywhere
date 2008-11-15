@@ -107,8 +107,7 @@ def execute(args):
             if title != None:
                 print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print cmdutil.bug_summary(bug, all_bugs, no_target=no_target,
-                                          shortlist=True),
+                print bug.string(all_bugs, shortlist=True),
     
     list_bugs(bugs, no_target=False)
 

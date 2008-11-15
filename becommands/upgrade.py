@@ -18,7 +18,6 @@
 import os.path
 import errno
 from libbe import bugdir, rcs, cmdutil
-from libbe.bug import Bug
 
 def execute(args):
     options, args = get_parser().parse_args(args)
@@ -26,7 +25,7 @@ def execute(args):
     for uuid in root.list_uuids():
         old_bug = OldBug(root.bugs_path, uuid)
         
-        new_bug = Bug(root.bugs_path, None)
+        new_bug = root.get_bug(uuid)
         new_bug.uuid = old_bug.uuid
         new_bug.summary = old_bug.summary
         new_bug.creator = old_bug.creator

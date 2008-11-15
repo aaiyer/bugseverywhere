@@ -88,7 +88,7 @@ class Bug(object):
     severity = checked_property("severity", severity_values)
     status = checked_property("status", status_values)
 
-    def __init__(self, path, uuid, rcs_name):
+    def __init__(self, path, uuid, rcs_name, bugdir):
         self.path = path
         self.uuid = uuid
         if uuid is not None:
@@ -97,7 +97,8 @@ class Bug(object):
             dict = {}
 
         self.rcs_name = rcs_name
-
+        self.bugdir = bugdir
+        
         self.summary = dict.get("summary")
         self.creator = dict.get("creator")
         self.target = dict.get("target")
@@ -111,6 +112,37 @@ class Bug(object):
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
 
+    def string(self, bugs=None, shortlist=False):
+        if shortlist == False:
+            if bugs == None:
+                bugs = list(self.bugdir.list())
+            htime = utility.handy_time(bug.time)
+            ftime = utility.time_to_str(bug.time)
+            info = [("ID", bug.uuid),
+                    ("Short name", unique_name(bug, bugs)),
+                    ("Severity", bug.severity),
+                    ("Status", bug.status),
+                    ("Assigned", bug.assigned),
+                    ("Target", bug.target),
+                    ("Creator", bug.creator),
+                    ("Created", "%s (%s)" % (htime, ftime))]
+            newinfo = []
+            for k,v in info:
+                if v == None:
+                    newinfo.append((k,""))
+                else:
+                    newinfo.append((k,v))
+            info = newinfo
+            longest_key_len = max([len(k) for k,v in info])
+            infolines = ["  %*s : %s\n" % (longest_key_len,k,v) for k,v in info]
+            return "".join(infolines) + "%s\n" % bug.summary
+        else:
+            statuschar = bug.status[0]
+            severitychar = bug.severity[0]
+            chars = "%c%c" % (statuschar, severitychar)
+            return "%s:%s: %s\n" % (cmdutil.unique_name(bug, bugs), chars, bug.summary)        
+    def __str__(self):
+        return self.string(shortlist=True)
     def get_path(self, file):
         return os.path.join(self.path, self.uuid, file)
 

@@ -54,7 +54,7 @@ def diff_report(diff_data, bug_dir):
     if len(added) > 0: 
         print "New bug reports:"
         for bug in added:
-            print cmdutil.bug_summary(bug, bugs, no_target=True)
+            print bug.string(shortlist=True)
 
     if len(modified) > 0:
         printed = False
@@ -70,7 +70,7 @@ def diff_report(diff_data, bug_dir):
     if len(removed) > 0: 
         print "Removed bug reports:"
         for bug in removed:
-            print cmdutil.bug_summary(bug, bugs, no_target=True)
+            print bug.string(bug, bugs, shortlist=True)
    
 def change_lines(old, new, attributes):
     change_list = []    
@@ -102,7 +102,7 @@ def bug_changes(old, new, bugs):
 
     if len(change_strings) == 0:
         return None
-    return "%s%s\n" % (cmdutil.bug_summary(new, bugs, shortlist=True), 
+    return "%s%s\n" % (new.string(bugs, shortlist=True), 
                        "\n".join(change_strings))
 
 
