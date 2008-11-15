@@ -46,7 +46,8 @@ active_status_def = (
 inactive_status_def = (
   ("closed", "The bug is no longer relevant."),
   ("fixed", "The bug should no longer occur."),
-  ("wontfix","It's not a bug, it's a feature."))
+  ("wontfix","It's not a bug, it's a feature."),
+  ("disabled", "?"))
 
 
 ### Convert the description tuples to more useful formats

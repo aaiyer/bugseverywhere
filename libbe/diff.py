@@ -17,6 +17,7 @@
 """Compare two bug trees"""
 from libbe import cmdutil, bugdir
 from libbe.utility import time_to_str
+from libbe.bug import cmp_severity
 
 def diff(old_tree, new_tree):
     old_bug_map = old_tree.bug_map()
@@ -44,10 +45,10 @@ def diff_report(diff_data, bug_dir):
     (removed, modified, added) = diff_data
     bugs = list(bug_dir.list())
     def modified_cmp(left, right):
-        return bugdir.cmp_severity(left[1], right[1])
+        return cmp_severity(left[1], right[1])
 
-    added.sort(bugdir.cmp_severity)
-    removed.sort(bugdir.cmp_severity)
+    added.sort(cmp_severity)
+    removed.sort(cmp_severity)
     modified.sort(modified_cmp)
 
     if len(added) > 0: 
@@ -107,4 +108,4 @@ def bug_changes(old, new, bugs):
 
 def comment_summary(comment, status):
     return "%8s comment from %s on %s" % (status, comment.From, 
-                                          time_to_str(comment.date))
+                                          time_to_str(comment.time))
