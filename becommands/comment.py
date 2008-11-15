@@ -30,7 +30,7 @@ def execute(args):
     u'This is a comment about a\\n'
     >>> comment.From == names.creator()
     True
-    >>> comment.date <= int(time.time())
+    >>> comment.time <= int(time.time())
     True
     >>> comment.in_reply_to is None
     True

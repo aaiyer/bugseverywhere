@@ -182,7 +182,7 @@ def new_bug(dir, uuid=None):
 def new_comment(bug, body=None):
     comm = bug.new_comment()
     comm.From = names.creator()
-    comm.date = time.time()
+    comm.time = time.time()
     comm.body = body
     return comm
 
