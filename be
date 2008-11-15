@@ -23,13 +23,13 @@ from libbe import names, plugin, cmdutil
 import sys
 import os
 import becommands.severity
+import becommands.status
 import becommands.list
 import becommands.show
 import becommands.set_root
 import becommands.new
 import becommands.close
 import becommands.open
-import becommands.inprogress
 __doc__ = """Bugs Everywhere - Distributed bug tracking
 
 Supported becommands
@@ -40,10 +40,12 @@ Supported becommands
     close: close a bug
      open: re-open a bug
  severity: %s
+   status: %s
 
 Unimplemented becommands
   comment: append a comment to a bug
-""" % becommands.severity.__desc__
+""" % (becommands.severity.__desc__,
+       becommands.status.__desc__)
 
 
 

@@ -14,7 +14,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+import os.path
+import errno
 import utility
+
 class IllegalKey(Exception):
     def __init__(self, key):
         Exception.__init__(self, 'Illegal key "%s"' % key)
@@ -98,6 +101,27 @@ def parse(f):
         assert not result.has_key('name')
         result[name] = value
     return result
+
+def map_save(rcs, path, map):
+    """Save the map as a mapfile to the specified path"""
+    add = not os.path.exists(path)
+    output = file(path, "wb")
+    generate(output, map)
+    if add:
+        rcs.add_id(path)
+
+class NoSuchFile(Exception):
+    def __init__(self, pathname):
+        Exception.__init__(self, "No such file: %s" % pathname)
+
+
+def map_load(path):
+    try:
+        return parse(file(path, "rb"))
+    except IOError, e:
+        if e.errno != errno.ENOENT:
+            raise e
+        raise NoSuchFile(path)
 
 
 def split_diff3(this, other, f):

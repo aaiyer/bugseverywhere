@@ -132,7 +132,7 @@ def iter_comment_name(bug, unique_name):
     (This is a user-friendly id, not the comment uuid)
     """
     def key(comment):
-        return comment.date
+        return comment.time
     for num, comment in enumerate(sorted(bug.list_comments(), key=key)):
         yield ("%s:%d" % (unique_name, num+1), comment)
 
@@ -194,7 +194,7 @@ def print_threaded_comments(comments, name_map, indent=""):
         print >> s, "--------- Comment ---------"
         print >> s, "Name: %s" % name_map[comment.uuid]
         print >> s, "From: %s" % comment.From
-        print >> s, "Date: %s\n" % utility.time_to_str(comment.date)
+        print >> s, "Date: %s\n" % utility.time_to_str(comment.time)
         print >> s, comment.body.rstrip('\n')
 
         s.seek(0)

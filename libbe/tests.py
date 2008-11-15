@@ -18,7 +18,7 @@ import tempfile
 import shutil
 import os
 import os.path
-from libbe import bugdir, arch
+from libbe import bugdir, bug, arch
 cleanable = []
 def clean_up():
     global cleanable
@@ -47,8 +47,8 @@ def bug_arch_dir():
 
 def simple_bug_dir():
     dir = bug_arch_dir()
-    bug_a = bugdir.new_bug(dir, "a")
-    bug_b = bugdir.new_bug(dir, "b")
+    bug_a = bug.new_bug(dir, "a")
+    bug_b = bug.new_bug(dir, "b")
     bug_b.status = "closed"
     bug_a.save()
     bug_b.save()

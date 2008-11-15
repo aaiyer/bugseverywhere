@@ -15,7 +15,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Assign an individual or group to fix a bug"""
-from libbe import bugdir, cmdutil, names 
+from libbe import cmdutil, names 
 __desc__ = __doc__
 
 def execute(args):

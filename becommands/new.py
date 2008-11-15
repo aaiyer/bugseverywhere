@@ -15,7 +15,9 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Create a new bug"""
-from libbe import bugdir, cmdutil, names, utility
+from libbe import cmdutil, names, utility
+from libbe.bug import new_bug
+
 def execute(args):
     """
     >>> import os, time
@@ -41,7 +43,7 @@ def execute(args):
     if len(args) != 1:
         raise cmdutil.UserError("Please supply a summary message")
     dir = cmdutil.bug_tree()
-    bug = bugdir.new_bug(dir)
+    bug = new_bug(dir)
     bug.summary = args[0]
     bug.save()
     bugs = (dir.list())

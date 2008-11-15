@@ -15,7 +15,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show a particular bug"""
-from libbe import bugdir, cmdutil, utility
+from libbe import cmdutil, utility
+from libbe.bug import thread_comments
 import os
 
 def execute(args):
@@ -37,7 +38,7 @@ def execute(args):
     for c_name, comment in cmdutil.iter_comment_name(bug, unique_name):
         name_map[comment.uuid] = c_name
         comments.append(comment)
-    threaded = bugdir.thread_comments(comments)
+    threaded = thread_comments(comments)
     cmdutil.print_threaded_comments(threaded, name_map)
 
 def get_parser():

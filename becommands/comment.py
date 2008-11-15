@@ -15,7 +15,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Add a comment to a bug"""
-from libbe import bugdir, cmdutil, names, utility
+from libbe import cmdutil, names, utility
+from libbe.bug import new_comment
 import os
 def execute(args):
     """
@@ -62,7 +63,7 @@ def execute(args):
         if not body.endswith('\n'):
             body+='\n'
 
-    comment = bugdir.new_comment(bug, body)
+    comment = new_comment(bug, body)
     if parent_comment is not None:
         comment.in_reply_to = parent_comment.uuid
     comment.save()

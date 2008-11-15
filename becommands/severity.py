@@ -15,8 +15,9 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show or change a bug's severity level"""
-from libbe import bugdir
 from libbe import cmdutil 
+from libbe.bug import severity_values, severity_description
+
 __desc__ = __doc__
 
 def execute(args):
@@ -46,7 +47,7 @@ def execute(args):
     elif len(args) == 2:
         try:
             bug.severity = args[1]
-        except bugdir.InvalidValue, e:
+        except ValueError, e:
             if e.name != "severity":
                 raise
             raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
@@ -56,19 +57,21 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be severity bug-id [severity]")
     return parser
 
-longhelp="""
-Show or change a bug's severity level.  
+longhelp=["""
+Show or change a bug's severity level.
 
 If no severity is specified, the current value is printed.  If a severity level
 is specified, it will be assigned to the bug.
 
 Severity levels are:
-wishlist: A feature that could improve usefulness, but not a bug. 
-   minor: The standard bug level.
- serious: A bug that requires workarounds.
-critical: A bug that prevents some features from working at all.
-   fatal: A bug that makes the package unusable.
-"""
+"""]
+longest_severity_len = max([len(s) for s in severity_values])
+for severity in severity_values :
+    description = severity_description[severity]
+    s = "%*s : %s\n" % (longest_severity_len, severity, description)
+    longhelp.append(s)
+longhelp = ''.join(longhelp)
+
 
 def help():
     return get_parser().help_str() + longhelp

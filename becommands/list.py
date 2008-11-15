@@ -15,7 +15,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """List bugs"""
-from libbe import bugdir, cmdutil, names
+from libbe import cmdutil, names
+from libbe.bug import cmp_severity, cmp_time
 import os
 def execute(args):
     options, args = get_parser().parse_args(args)
@@ -75,10 +76,8 @@ def execute(args):
             other_bugs.append(bug)
 
     def list_bugs(cur_bugs, title, no_target=False):
-        def cmp_date(bug1, bug2):
-            return -cmp(bug1.time, bug2.time)
-        cur_bugs.sort(cmp_date)
-        cur_bugs.sort(bugdir.cmp_severity)
+        cur_bugs.sort(cmp_time)
+        cur_bugs.sort(cmp_severity)
         if len(cur_bugs) > 0:
             print cmdutil.underlined(title)
             for bug in cur_bugs:
