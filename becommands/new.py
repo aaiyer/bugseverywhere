@@ -17,6 +17,7 @@
 """Create a new bug"""
 from libbe import cmdutil, names, utility
 from libbe.bug import new_bug
+__desc__ = __doc__
 
 def execute(args):
     """
@@ -47,7 +48,7 @@ def execute(args):
     bug.summary = args[0]
     bug.save()
     bugs = (dir.list())
-    print "Created bug with ID %s" % cmdutil.unique_name(bug, bugs)
+    print "Created bug with ID %s" % names.unique_name(bug, bugs)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be new SUMMARY")

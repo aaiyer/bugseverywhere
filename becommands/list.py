@@ -19,6 +19,8 @@ from libbe import cmdutil, names
 from libbe.bug import cmp_full, severity_values, status_values, \
     active_status_values, inactive_status_values
 import os
+__desc__ = __doc__
+
 def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) > 0:

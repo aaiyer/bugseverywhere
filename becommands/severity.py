@@ -17,7 +17,6 @@
 """Show or change a bug's severity level"""
 from libbe import cmdutil 
 from libbe.bug import severity_values, severity_description
-
 __desc__ = __doc__
 
 def execute(args):

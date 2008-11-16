@@ -23,24 +23,6 @@ from textwrap import TextWrapper
 from StringIO import StringIO
 import utility
 
-def unique_name(bug, bugs):
-    """
-    Generate short names from uuids.  Picks the minimum number of
-    characters (>=3) from the beginning of the uuid such that the
-    short names are unique.
-    
-    Obviously, as the number of bugs in the database grows, these
-    short names will cease to be unique.  The complete uuid should be
-    used for long term reference.
-    """
-    chars = 3
-    for some_bug in bugs:
-        if bug.uuid == some_bug.uuid:
-            continue
-        while (bug.uuid[:chars] == some_bug.uuid[:chars]):
-            chars+=1
-    return bug.uuid[:chars]
-
 class UserError(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
@@ -94,9 +76,20 @@ def execute(cmd, args):
     encoding = locale.getpreferredencoding() or 'ascii'
     return get_command(cmd).execute([a.decode(encoding) for a in args])
 
-def help(cmd):
-    return get_command(cmd).help()
-
+def help(cmd=None):
+    if cmd != None:
+        return get_command(cmd).help()
+    else:
+        cmdlist = []
+        for name, module in iter_commands():
+            cmdlist.append((name, module.__desc__))
+        longest_cmd_len = max([len(name) for name,desc in cmdlist])
+        ret = ["Bugs Everywhere - Distributed bug tracking\n",
+               "Supported commands"]
+        for name, desc in cmdlist:
+            numExtraSpaces = longest_cmd_len-len(name)
+            ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
+        return "\n".join(ret)
 
 class GetHelp(Exception):
     pass
@@ -205,15 +198,6 @@ def bug_tree(dir=None):
     except bugdir.NoBugDir, e:
         raise UserErrorWrap(e)
 
-def print_command_list():
-    cmdlist = []
-    print """Bugs Everywhere - Distributed bug tracking
-    
-Supported commands"""
-    for name, module in iter_commands():
-        cmdlist.append((name, module.__doc__))
-    for name, desc in cmdlist:
-        print "be %s\n    %s" % (name, desc)
 
 def _test():
     import doctest

@@ -16,6 +16,8 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Close a bug"""
 from libbe import cmdutil
+__desc__ = __doc__
+
 def execute(args):
     """
     >>> from libbe import tests

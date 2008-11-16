@@ -18,6 +18,8 @@
 """Compare bug reports with older tree"""
 from libbe import bugdir, diff, cmdutil
 import os
+__desc__ = __doc__
+
 def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) == 0:

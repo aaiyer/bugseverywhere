@@ -15,9 +15,10 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show a particular bug"""
-from libbe import cmdutil, utility
+from libbe import cmdutil, names, utility
 from libbe.bug import thread_comments
 import os
+__desc__ = __doc__
 
 def execute(args):
     options, args = get_parser().parse_args(args)
@@ -26,7 +27,7 @@ def execute(args):
     bug_dir = cmdutil.bug_tree()
     bug = cmdutil.get_bug(args[0], bug_dir)
     print bug.string().rstrip("\n")
-    unique_name = cmdutil.unique_name(bug, bug_dir.list())
+    unique_name = names.unique_name(bug, bug_dir.list())
     comments = []
     name_map = {}
     for c_name, comment in cmdutil.iter_comment_name(bug, unique_name):

@@ -22,39 +22,16 @@ from libbe.bugdir import tree_root, create_bug_dir
 from libbe import names, plugin, cmdutil
 import sys
 import os
-import becommands.severity
-import becommands.status
-import becommands.list
-import becommands.show
-import becommands.set_root
-import becommands.new
-import becommands.close
-import becommands.open
-__doc__ = """Bugs Everywhere - Distributed bug tracking
+import becommands
 
-Supported becommands
- set-root: assign the root directory for bug tracking
-      new: Create a new bug
-     list: list bugs
-     show: show a particular bug
-    close: close a bug
-     open: re-open a bug
- severity: %s
-   status: %s
-
-Unimplemented becommands
-  comment: append a comment to a bug
-""" % (becommands.severity.__desc__,
-       becommands.status.__desc__)
-
-
+__doc__ == cmdutil.help()
 
 if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
-    cmdutil.print_command_list()
+    print cmdutil.help()
 else:
     try:
         try:
-            sys.exit(execute(sys.argv[1], sys.argv[2:]))
+            sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
         except KeyError, e:
             raise UserError("Unknown command \"%s\"" % e.args[0])
         except cmdutil.GetHelp:

@@ -16,9 +16,9 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import os
 import os.path
+import shutil
 import errno
 import names
-import cmdutil
 import mapfile
 import time
 import utility
@@ -116,7 +116,7 @@ class Bug(object):
     def string(self, bugs=None, shortlist=False):
         if bugs == None:
             bugs = list(self.bugdir.list())
-        short_name = cmdutil.unique_name(self, bugs)
+        short_name = names.unique_name(self, bugs)
         if shortlist == False:
             htime = utility.handy_time(self.time)
             ftime = utility.time_to_str(self.time)
@@ -136,7 +136,7 @@ class Bug(object):
                     newinfo.append((k,v))
             info = newinfo
             longest_key_len = max([len(k) for k,v in info])
-            infolines = ["  %*s : %s\n" % (longest_key_len,k,v) for k,v in info]
+            infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
             return "".join(infolines) + "%s\n" % self.summary
         else:
             statuschar = self.status[0]
@@ -145,8 +145,11 @@ class Bug(object):
             return "%s:%s: %s\n" % (short_name, chars, self.summary)
     def __str__(self):
         return self.string(shortlist=True)
-    def get_path(self, file):
-        return os.path.join(self.path, self.uuid, file)
+    def get_path(self, file=None):
+        if file == None:
+            return os.path.join(self.path, self.uuid)
+        else:
+            return os.path.join(self.path, self.uuid, file)
 
     def _get_active(self):
         return self.status in active_status_values
@@ -170,7 +173,11 @@ class Bug(object):
             map["time"] = utility.time_to_str(self.time)
         path = self.get_path("values")
         mapfile.map_save(rcs_by_name(self.rcs_name), path, map)
-
+    
+    def remove(self):
+        path = self.get_path()
+        shutil.rmtree(path)
+    
     def _get_rcs(self):
         return rcs_by_name(self.rcs_name)
 
@@ -260,14 +267,14 @@ class Comment(object):
     def save(self):
         map_file = {"Date": utility.time_to_str(self.time)}
         add_headers(self, map_file, ("From", "in_reply_to", "content_type"))
-        if not os.path.exists(self.get_path(None)):
-            self.bug.rcs.mkdir(self.get_path(None))
+        if not os.path.exists(self.get_path()):
+            self.bug.rcs.mkdir(self.get_path())
         mapfile.map_save(self.bug.rcs, self.get_path("values"), map_file)
         self.bug.rcs.set_file_contents(self.get_path("body"), 
                                        self.body.encode('utf-8'))
             
 
-    def get_path(self, name):
+    def get_path(self, name=None):
         my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
         if name is None:
             return my_dir

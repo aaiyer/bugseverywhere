@@ -18,6 +18,8 @@
 from libbe import cmdutil, names, utility
 from libbe.bug import new_comment
 import os
+__desc__ = __doc__
+
 def execute(args):
     """
     >>> from libbe import tests, names

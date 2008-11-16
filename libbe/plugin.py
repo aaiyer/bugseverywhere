@@ -55,6 +55,7 @@ def get_plugin(prefix, name):
 plugin_path = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
 if plugin_path not in sys.path:
     sys.path.append(plugin_path)
+
 def _test():
     import doctest
     doctest.testmod()
