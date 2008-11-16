@@ -1,0 +1,29 @@
+It looks like the problems with the git backend are more than just in the
+site-init command.  It looks like several places expect that git_dir_for_path
+and git_repo_for_path return absolute paths, while in the current
+implementation, it may not be the case.  Here is an updated patch to fix this.
+This replaces the previous patch that I gave in this bug.  It seems to work for
+me, but I haven't heavily tested it.
+
+--- libbe/git.py	2008-06-22 19:52:14.000000000 -0400
++++ /libbe/git.py	2008-06-23 22:39:17.000000000 -0400
+@@ -102,11 +102,16 @@
+     """Find the root of the deepest repository containing path."""
+     # Assume that nothing funny is going on; in particular, that we aren't
+     # dealing with a bare repo.
+-    return os.path.dirname(git_dir_for_path(path))
++    # "git rev-parse --show-cdup" gives the relative path to the top-level
++    # directory of the repository.  We then join that to the requested path,
++    # and then use realpath to turn it into an absolute path and to get rid of
++    # ".." components.
++    return os.path.realpath(os.path.join(path,invoke_client("rev-parse", "--show-cdup", directory=path)[1].rstrip()))
+ 
+ def git_dir_for_path(path):
+     """Find the git-dir of the deepest repo containing path."""
+-    return invoke_client("rev-parse", "--git-dir", directory=path)[1].rstrip()
++    repo = git_repo_for_path(path)
++    return os.path.join(repo,invoke_client("rev-parse", "--git-dir", directory=repo)[1].rstrip())
+ 
+ def export(spec, bug_dir, revision_dir):
+     """Check out commit 'spec' from the git repo containing bug_dir into
+
