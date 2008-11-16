@@ -6,8 +6,7 @@
 #
 # usage: test_usage.sh RCS
 # where RCS is one of:
-#   bzr
-#   git
+#   bzr, git, hg, arch, none
 
 set -e # exit imediately on failed command
 set -o pipefail # pipes fail if any stage fails
@@ -21,7 +20,7 @@ then
     echo "usage: test_usage.sh RCS"
     echo ""
     echo "where RCS is one of"
-    for RCS in bzr git
+    for RCS in bzr git hg arch none
     do
 	echo "  $RCS"
     done
@@ -43,9 +42,24 @@ then
     EMAIL=`git-config user.email`
     ID="$NAME <$EMAIL>"
     git init
+elif [ "$RCS" == "hg" ]
+then
+    ID=`hg showconfig ui.username`
+    hg init
+elif [ "$RCS" == "arch" ]
+then
+    ID=`tla my-id`
+    tla init-tree
+elif [ "$RCS" == "none" ]
+then
+    ID=`id -nu`
 else
     echo "Unrecognized RCS $RCS"
     exit 1
+fi
+if [ -z "$ID" ]
+then # set a default ID
+    ID="John Doe <jdoe@example.com>"
 fi
 echo "I am '$ID'"
 
