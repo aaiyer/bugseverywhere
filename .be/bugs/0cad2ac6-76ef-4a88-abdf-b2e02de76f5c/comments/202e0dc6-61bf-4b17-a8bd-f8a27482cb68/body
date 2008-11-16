@@ -1,0 +1,10 @@
+Fixed another bug in git.strip_git().  lstrip() wasn't what I had thought.
+
+>>> "/a.b/.be/x/y".lstrip("/a.b/")
+'e/x/y'
+
+So I went back to just droping the first N chars
+
+>>> "/a.b/.be/x/y"[len("/a.b/"):]
+'.be/x/y'
+

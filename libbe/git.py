@@ -26,7 +26,7 @@ def strip_git(filename):
         absRepoSlashedDir = os.path.join(absRepoDir,"")
         assert filename.startswith(absRepoSlashedDir), \
             "file %s not in git repo %s" % (filename, absRepoSlashedDir)
-        filename = filename.lstrip(absRepoSlashedDir)
+        filename = filename[len(absRepoSlashedDir):]
     return filename
 
 def invoke_client(*args, **kwargs):
