@@ -70,7 +70,7 @@ def diff_report(diff_data, bug_dir):
     if len(removed) > 0: 
         print "Removed bug reports:"
         for bug in removed:
-            print bug.string(bug, bugs, shortlist=True)
+            print bug.string(bugs, shortlist=True)
    
 def change_lines(old, new, attributes):
     change_list = []    
