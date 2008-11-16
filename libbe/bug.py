@@ -118,8 +118,12 @@ class Bug(object):
             bugs = list(self.bugdir.list())
         short_name = names.unique_name(self, bugs)
         if shortlist == False:
-            htime = utility.handy_time(self.time)
-            ftime = utility.time_to_str(self.time)
+            if self.time == None:
+                timestring = ""
+            else:
+                htime = utility.handy_time(self.time)
+                ftime = utility.time_to_str(self.time)
+                timestring = "%s (%s)" % (htime, ftime)
             info = [("ID", self.uuid),
                     ("Short name", short_name),
                     ("Severity", self.severity),
@@ -127,7 +131,7 @@ class Bug(object):
                     ("Assigned", self.assigned),
                     ("Target", self.target),
                     ("Creator", self.creator),
-                    ("Created", "%s (%s)" % (htime, ftime))]
+                    ("Created", timestring)]
             newinfo = []
             for k,v in info:
                 if v == None:
