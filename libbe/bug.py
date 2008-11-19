@@ -186,12 +186,15 @@ class Bug(object):
         path = self.get_path()
         self.rcs.recursive_remove(path)
     
-    def new_comment(self):
+    def new_comment(self, body=None):
         if not os.path.exists(self.get_path("comments")):
             self.rcs.mkdir(self.get_path("comments"))
         comm = Comment(None, self)
         comm.uuid = names.uuid()
         comm.rcs = self.rcs
+        comm.From = self.rcs.get_user_id()
+        comm.time = time.time()
+        comm.body = body
         return comm
 
     def get_comment(self, uuid):
@@ -215,13 +218,6 @@ class Bug(object):
         comments = [Comment(id, self) for id in self.iter_comment_ids()]
         comments.sort(cmp_time)
         return comments
-
-def new_comment(bug, body=None):
-    comm = bug.new_comment()
-    comm.From = comm.rcs.get_user_id()
-    comm.time = time.time()
-    comm.body = body
-    return comm
 
 def add_headers(obj, map, names):
     map_names = {}

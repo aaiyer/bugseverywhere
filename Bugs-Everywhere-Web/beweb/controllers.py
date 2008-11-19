@@ -4,7 +4,7 @@ import cherrypy
 import turbogears
 from turbogears import controllers, expose, validate, redirect, identity
 
-from libbe.bugdir import tree_root, new_bug, new_comment, NoRootEntry
+from libbe.bugdir import tree_root, new_comment, NoRootEntry
 from config import projects
 from prest import PrestHandler, provide_action
 
@@ -103,7 +103,7 @@ class Bug(PrestHandler):
     @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "New bug")
     def new_bug(self, bug_data, bug, **kwargs):
-        bug = new_bug(project_tree(bug_data['project']))
+        bug = project_tree(bug_data['project']).new_bug()
         bug.creator = identity.current.user.userId
         bug.save()
         raise cherrypy.HTTPRedirect(bug_url(bug_data['project'], bug.uuid))

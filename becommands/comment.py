@@ -16,7 +16,6 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Add a comment to a bug"""
 from libbe import cmdutil, utility
-from libbe.bug import new_comment
 import os
 __desc__ = __doc__
 
@@ -64,7 +63,7 @@ def execute(args):
         if not body.endswith('\n'):
             body+='\n'
 
-    comment = new_comment(bug, body)
+    comment = bug.new_comment(body)
     if parent_comment is not None:
         comment.in_reply_to = parent_comment.uuid
     comment.save()
