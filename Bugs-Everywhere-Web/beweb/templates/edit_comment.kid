@@ -1,6 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?python
-from libbe.bugdir import severity_levels
 from libbe.utility import time_to_str 
 from beweb.controllers import bug_list_url, bug_url
 ?>
@@ -17,7 +16,7 @@ from beweb.controllers import bug_list_url, bug_url
 <form method="post">
 <table>
     <tr><td>From</td><td>${comment.From}</td></tr>
-    <tr><td>Date</td><td>${time_to_str(comment.date)}</td></tr>
+    <tr><td>Date</td><td>${time_to_str(comment.time)}</td></tr>
 </table>
 <insetbox><textarea rows="15" cols="80" py:content="comment.body" name="comment_body" style="border-style: none"/></insetbox>
 <p><input type="submit" name="action" value="Update"/></p>
