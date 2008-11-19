@@ -216,14 +216,6 @@ class Bug(object):
         comments.sort(cmp_time)
         return comments
 
-def new_bug(dir, uuid=None):
-    bug = dir.new_bug(uuid)
-    bug.creator = bug.rcs.get_user_id()
-    bug.severity = "minor"
-    bug.status = "open"
-    bug.time = time.time()
-    return bug
-
 def new_comment(bug, body=None):
     comm = bug.new_comment()
     comm.From = comm.rcs.get_user_id()

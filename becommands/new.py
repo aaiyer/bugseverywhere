@@ -16,7 +16,6 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Create a new bug"""
 from libbe import cmdutil, names
-from libbe.bug import new_bug
 __desc__ = __doc__
 
 def execute(args):
@@ -43,7 +42,7 @@ def execute(args):
     if len(args) != 1:
         raise cmdutil.UserError("Please supply a summary message")
     dir = cmdutil.bug_tree()
-    bug = new_bug(dir)
+    bug = dir.new_bug()
     bug.summary = args[0]
     bug.save()
     bugs = (dir.list())

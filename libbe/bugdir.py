@@ -195,6 +195,10 @@ class BugDir:
         self.rcs.mkdir(path)
         bug = Bug(self.bugs_path, None, self.rcs, self)
         bug.uuid = uuid
+        bug.creator = self.rcs.get_user_id()
+        bug.severity = "minor"
+        bug.status = "open"
+        bug.time = time.time()
         return bug
 
 class InvalidValue(ValueError):
