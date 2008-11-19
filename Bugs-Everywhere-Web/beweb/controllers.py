@@ -108,6 +108,7 @@ class Bug(PrestHandler):
         bug.save()
         raise cherrypy.HTTPRedirect(bug_url(bug_data['project'], bug.uuid))
 
+    @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "Update")
     def update(self, bug_data, bug, status, severity, summary, assigned, 
                action):
