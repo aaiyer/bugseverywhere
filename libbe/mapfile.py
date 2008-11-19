@@ -17,6 +17,7 @@
 import os.path
 import errno
 import utility
+import doctest
 
 class IllegalKey(Exception):
     def __init__(self, key):
@@ -107,8 +108,11 @@ def map_save(rcs, path, map):
     add = not os.path.exists(path)
     output = file(path, "wb")
     generate(output, map)
+    output.close()
     if add:
-        rcs.add_id(path)
+        rcs.add(path)
+    else:
+        rcs.update(path)
 
 class NoSuchFile(Exception):
     def __init__(self, pathname):
@@ -122,3 +126,5 @@ def map_load(path):
         if e.errno != errno.ENOENT:
             raise e
         raise NoSuchFile(path)
+
+suite = doctest.DocTestSuite()

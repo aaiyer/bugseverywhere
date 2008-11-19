@@ -17,7 +17,7 @@
 
 import os
 import sys
-
+import doctest
 
 def uuid():
     # this code borrowed from standard commands module
@@ -53,3 +53,5 @@ def unique_name(bug, bugs):
         while (bug.uuid[:chars] == some_bug.uuid[:chars]):
             chars+=1
     return bug.uuid[:chars]
+
+suite = doctest.DocTestSuite()

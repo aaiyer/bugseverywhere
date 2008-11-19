@@ -21,9 +21,9 @@ __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests
+    >>> from libbe import bugdir
     >>> import os
-    >>> dir = tests.simple_bug_dir()
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> execute(["a"])
     open
@@ -33,7 +33,6 @@ def execute(args):
     >>> execute(["a", "none"])
     Traceback (most recent call last):
     UserError: Invalid status: none
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))

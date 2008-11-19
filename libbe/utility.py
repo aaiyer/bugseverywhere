@@ -18,6 +18,8 @@ import calendar
 import time
 import os
 import tempfile
+import shutil
+import doctest
 
 class FileString(object):
     """Bare-bones pseudo-file class
@@ -69,6 +71,14 @@ def get_file(f):
     else:
         return f
 
+class Dir:
+    "A temporary directory for testing use"
+    def __init__(self):
+        self.path = tempfile.mkdtemp(prefix="BEtest")
+    def __del__(self):
+        shutil.rmtree(self.path)
+    def __call__(self):
+        return self.path
 
 RFC_2822_TIME_FMT = "%a, %d %b %Y %H:%M:%S +0000"
 
@@ -162,3 +172,5 @@ def trimmed_string(instring):
             break
         out.append(line)
     return ''.join(out)
+
+suite = doctest.DocTestSuite()

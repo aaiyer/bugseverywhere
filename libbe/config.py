@@ -16,6 +16,8 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import ConfigParser
 import os.path
+import doctest
+
 def path():
     """Return the path to the per-user config file"""
     return os.path.expanduser("~/.bugs_everywhere")
@@ -58,3 +60,5 @@ def get_val(name, section="DEFAULT"):
         return config.get(section, name)
     except ConfigParser.NoOptionError:
         return None
+
+suite = doctest.DocTestSuite()

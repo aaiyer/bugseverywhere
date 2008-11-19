@@ -109,7 +109,7 @@ def execute(args):
             if title != None:
                 print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print bug.string(all_bugs, shortlist=True),
+                print bug.string(all_bugs, shortlist=True)
     
     list_bugs(bugs, no_target=False)
 
@@ -137,7 +137,8 @@ def get_parser():
         short = "-%c" % s[0]
         long = "--%s" % s[1]
         help = s[2]
-        parser.add_option(short, long, action="store_true", dest=attr, help=help)
+        parser.add_option(short, long, action="store_true",
+                          dest=attr, help=help)
     return parser
 
 longhelp="""

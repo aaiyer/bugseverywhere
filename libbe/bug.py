@@ -16,14 +16,12 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import os
 import os.path
-import shutil
 import errno
 import names
 import mapfile
 import time
 import utility
-from rcs import rcs_by_name
-
+import doctest
 
 ### Define and describe valid bug categories
 # Use a tuple of (category, description) tuples since we don't have
@@ -89,7 +87,7 @@ class Bug(object):
     severity = checked_property("severity", severity_values)
     status = checked_property("status", status_values)
 
-    def __init__(self, path, uuid, rcs_name, bugdir):
+    def __init__(self, path, uuid, rcs, bugdir):
         self.path = path
         self.uuid = uuid
         if uuid is not None:
@@ -97,7 +95,7 @@ class Bug(object):
         else:
             dict = {}
 
-        self.rcs_name = rcs_name
+        self.rcs = rcs
         self.bugdir = bugdir
         
         self.summary = dict.get("summary")
@@ -109,6 +107,17 @@ class Bug(object):
         self.time = dict.get("time")
         if self.time is not None:
             self.time = utility.str_to_time(self.time)
+
+    def get_path(self, file=None):
+        if file == None:
+            return os.path.join(self.path, self.uuid)
+        else:
+            return os.path.join(self.path, self.uuid, file)
+
+    def _get_active(self):
+        return self.status in active_status_values
+
+    active = property(_get_active)
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
@@ -146,19 +155,13 @@ class Bug(object):
             statuschar = self.status[0]
             severitychar = self.severity[0]
             chars = "%c%c" % (statuschar, severitychar)
-            return "%s:%s: %s\n" % (short_name, chars, self.summary)
+            return "%s:%s: %s" % (short_name, chars, self.summary)
+
     def __str__(self):
         return self.string(shortlist=True)
-    def get_path(self, file=None):
-        if file == None:
-            return os.path.join(self.path, self.uuid)
-        else:
-            return os.path.join(self.path, self.uuid, file)
 
-    def _get_active(self):
-        return self.status in active_status_values
-
-    active = property(_get_active)
+    def __cmp__(self, other):
+        return cmp_full(self, other)
 
     def add_attr(self, map, name):
         value = getattr(self, name)
@@ -166,6 +169,7 @@ class Bug(object):
             map[name] = value
 
     def save(self):
+        assert self.summary != None, "Can't save blank bug"
         map = {}
         self.add_attr(map, "assigned")
         self.add_attr(map, "summary")
@@ -176,22 +180,18 @@ class Bug(object):
         if self.time is not None:
             map["time"] = utility.time_to_str(self.time)
         path = self.get_path("values")
-        mapfile.map_save(rcs_by_name(self.rcs_name), path, map)
-    
+        mapfile.map_save(self.rcs, path, map)
+
     def remove(self):
         path = self.get_path()
-        shutil.rmtree(path)
+        self.rcs.recursive_remove(path)
     
-    def _get_rcs(self):
-        return rcs_by_name(self.rcs_name)
-
-    rcs = property(_get_rcs)
-
     def new_comment(self):
         if not os.path.exists(self.get_path("comments")):
             self.rcs.mkdir(self.get_path("comments"))
         comm = Comment(None, self)
         comm.uuid = names.uuid()
+        comm.rcs = self.rcs
         return comm
 
     def get_comment(self, uuid):
@@ -218,7 +218,7 @@ class Bug(object):
 
 def new_bug(dir, uuid=None):
     bug = dir.new_bug(uuid)
-    bug.creator = names.creator()
+    bug.creator = bug.rcs.get_user_id()
     bug.severity = "minor"
     bug.status = "open"
     bug.time = time.time()
@@ -226,7 +226,7 @@ def new_bug(dir, uuid=None):
 
 def new_comment(bug, body=None):
     comm = bug.new_comment()
-    comm.From = names.creator()
+    comm.From = comm.rcs.get_user_id()
     comm.time = time.time()
     comm.body = body
     return comm
@@ -276,7 +276,6 @@ class Comment(object):
         mapfile.map_save(self.bug.rcs, self.get_path("values"), map_file)
         self.bug.rcs.set_file_contents(self.get_path("body"), 
                                        self.body.encode('utf-8'))
-            
 
     def get_path(self, name=None):
         my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
@@ -387,3 +386,5 @@ class InvalidValue(ValueError):
         Exception.__init__(self, msg)
         self.name = name
         self.value = value
+
+suite = doctest.DocTestSuite()

@@ -18,11 +18,13 @@ import os
 import os.path
 import cmdutil
 import errno
+import unittest
+import doctest
 import names
 import mapfile
 import time
 import utility
-from rcs import rcs_by_name
+from rcs import rcs_by_name, installed_rcs
 from bug import Bug
 
 class NoBugDir(Exception):
@@ -84,22 +86,20 @@ class AlreadyInitialized(Exception):
         Exception.__init__(self, 
                            "Specified root is already initialized: %s" % path)
 
+def bugdir_root(versioning_root):
+    return os.path.join(versioning_root, ".be")
+
 def create_bug_dir(path, rcs):
     """
-    >>> import no_rcs, tests
-    >>> create_bug_dir('/highly-unlikely-to-exist', no_rcs)
+    >>> import tests
+    >>> rcs = rcs_by_name("None")
+    >>> create_bug_dir('/highly-unlikely-to-exist', rcs)
     Traceback (most recent call last):
     NoRootEntry: Specified root does not exist: /highly-unlikely-to-exist
-    >>> test_dir = os.path.dirname(tests.bug_arch_dir().dir)
-    >>> try:
-    ...     create_bug_dir(test_dir, no_rcs)
-    ... except AlreadyInitialized, e:
-    ...     print "Already Initialized"
-    Already Initialized
     """
     root = os.path.join(path, ".be")
     try:
-        rcs.mkdir(root, paranoid=True)
+        rcs.mkdir(root)
     except OSError, e:
         if e.errno == errno.ENOENT:
             raise NoRootEntry(path)
@@ -111,7 +111,7 @@ def create_bug_dir(path, rcs):
     set_version(root, rcs)
     mapfile.map_save(rcs,
                      os.path.join(root, "settings"), {"rcs_name": rcs.name})
-    return BugDir(os.path.join(path, ".be"))
+    return BugDir(bugdir_root(path))
 
 
 def setting_property(name, valid=None):
@@ -139,11 +139,12 @@ class BugDir:
         self.dir = dir
         self.bugs_path = os.path.join(self.dir, "bugs")
         try:
-            self.settings = mapfile.map_load(os.path.join(self.dir, "settings"))
+            self.settings = mapfile.map_load(os.path.join(self.dir,"settings"))
         except mapfile.NoSuchFile:
             self.settings = {"rcs_name": "None"}
 
-    rcs_name = setting_property("rcs_name", ("None", "bzr", "git", "Arch", "hg"))
+    rcs_name = setting_property("rcs_name",
+                                ("None", "bzr", "git", "Arch", "hg"))
     _rcs = None
 
     target = setting_property("target")
@@ -152,16 +153,21 @@ class BugDir:
         mapfile.map_save(self.rcs,
                          os.path.join(self.dir, "settings"), self.settings)
 
-    def get_rcs(self):
-        if self._rcs is not None and self.rcs_name == self._rcs.name:
-            return self._rcs
+    def _get_rcs(self):
+        if self._rcs is not None:
+            if self.rcs_name == self._rcs.name:
+                return self._rcs
         self._rcs = rcs_by_name(self.rcs_name)
+        self._rcs.root(self.dir)
         return self._rcs
 
-    rcs = property(get_rcs)
+    rcs = property(_get_rcs)
 
-    def get_reference_bugdir(self, spec):
-        return BugDir(self.rcs.path_in_reference(self.dir, spec))
+    def duplicate_bugdir(self, revision):
+        return BugDir(bugdir_root(self.rcs.duplicate_repo(revision)))
+
+    def remove_duplicate_bugdir(self):
+        self.rcs.remove_duplicate_repo()
 
     def list(self):
         for uuid in self.list_uuids():
@@ -174,7 +180,7 @@ class BugDir:
         return bugs
 
     def get_bug(self, uuid):
-        return Bug(self.bugs_path, uuid, self.rcs_name, self)
+        return Bug(self.bugs_path, uuid, self.rcs, self)
 
     def list_uuids(self):
         for uuid in os.listdir(self.bugs_path):
@@ -187,7 +193,7 @@ class BugDir:
             uuid = names.uuid()
         path = os.path.join(self.bugs_path, uuid)
         self.rcs.mkdir(path)
-        bug = Bug(self.bugs_path, None, self.rcs_name, self)
+        bug = Bug(self.bugs_path, None, self.rcs, self)
         bug.uuid = uuid
         return bug
 
@@ -197,3 +203,52 @@ class InvalidValue(ValueError):
         Exception.__init__(self, msg)
         self.name = name
         self.value = value
+
+def simple_bug_dir():
+    """
+    For testing
+    >>> bugdir = simple_bug_dir()
+    >>> ls = list(bugdir.list_uuids())
+    >>> ls.sort()
+    >>> print ls
+    ['a', 'b']
+    """
+    dir = utility.Dir()
+    rcs = installed_rcs()
+    rcs.init(dir.path)
+    assert os.path.exists(dir.path)
+    bugdir = create_bug_dir(dir.path, rcs)
+    bugdir._dir_ref = dir # postpone cleanup since dir.__del__() removes dir.
+    bug_a = bugdir.new_bug("a")
+    bug_a.summary = "Bug A"
+    bug_a.save()
+    bug_b = bugdir.new_bug("b")
+    bug_b.status = "closed"
+    bug_b.summary = "Bug B"
+    bug_b.save()
+    return bugdir
+
+
+class BugDirTestCase(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+    def setUp(self):
+        self.dir = utility.Dir()
+        self.rcs = installed_rcs()
+        self.rcs.init(self.dir.path)
+        self.bugdir = create_bug_dir(self.dir.path, self.rcs)
+    def tearDown(self):
+        del(self.rcs)
+        del(self.dir)
+    def fullPath(self, path):
+        return os.path.join(self.dir.path, path)
+    def assertPathExists(self, path):
+        fullpath = self.fullPath(path)
+        self.failUnless(os.path.exists(fullpath)==True,
+                        "path %s does not exist" % fullpath)
+    def testBugDirDuplicate(self):
+        self.assertRaises(AlreadyInitialized, create_bug_dir,
+                          self.dir.path, self.rcs)
+
+unitsuite = unittest.TestLoader().loadTestsFromTestCase(BugDirTestCase)
+suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

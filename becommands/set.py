@@ -20,9 +20,9 @@ __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests
+    >>> from libbe import bugdir
     >>> import os
-    >>> dir = tests.simple_bug_dir()
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> execute(["a"])
     None
@@ -32,7 +32,6 @@ def execute(args):
     >>> execute(["a", "none"])
     >>> execute(["a"])
     None
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     if len(args) > 2:

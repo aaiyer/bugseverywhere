@@ -15,20 +15,20 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Create a new bug"""
-from libbe import cmdutil, names, utility
+from libbe import cmdutil, names
 from libbe.bug import new_bug
 __desc__ = __doc__
 
 def execute(args):
     """
     >>> import os, time
-    >>> from libbe import tests
-    >>> dir = tests.bug_arch_dir()
+    >>> from libbe import bugdir
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
-    >>> names.uuid = lambda: "a"
+    >>> names.uuid = lambda: "X"
     >>> execute (["this is a test",])
-    Created bug with ID a
-    >>> bug = list(dir.list())[0]
+    Created bug with ID X
+    >>> bug = cmdutil.get_bug("X", dir)
     >>> bug.summary
     u'this is a test'
     >>> bug.creator = os.environ["LOGNAME"]
@@ -38,7 +38,6 @@ def execute(args):
     u'minor'
     >>> bug.target == None
     True
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     if len(args) != 1:

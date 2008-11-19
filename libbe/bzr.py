@@ -15,114 +15,84 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import os
-import tempfile
+import re
+import unittest
+import doctest
 
-import config
-from rcs import invoke, CommandError
+from rcs import RCS, RCStestCase, CommandError
 
-def invoke_client(*args, **kwargs):
-    directory = kwargs['directory']
-    expect = kwargs.get('expect', (0, 1))
-    cl_args = ["bzr"]
-    cl_args.extend(args)
-    status,output,error = invoke(cl_args, expect, cwd=directory)
-    return status, output
+def new():
+    return Bzr()
 
-def add_id(filename, paranoid=False):
-    invoke_client("add", filename, directory='.')
-
-def delete_id(filename):
-    invoke_client("remove", filename, directory='.')
-
-def mkdir(path, paranoid=False):
-    os.mkdir(path)
-    add_id(path)
-
-def set_file_contents(path, contents):
-    add = not os.path.exists(path)
-    file(path, "wb").write(contents)
-    if add:
-        add_id(path)
-
-def lookup_revision(revno, directory):
-    return invoke_client("lookup-revision", str(revno), 
-                         directory=directory)[1].rstrip('\n')
-
-def export(revno, directory, revision_dir):
-    invoke_client("export", "-r", str(revno), revision_dir, directory=directory)
-
-def find_or_make_export(revno, directory):
-    revision_id = lookup_revision(revno, directory)
-    home = os.path.expanduser("~")
-    revision_root = os.path.join(home, ".bzrrevs")
-    if not os.path.exists(revision_root):
-        os.mkdir(revision_root)
-    revision_dir = os.path.join(revision_root, revision_id)
-    if not os.path.exists(revision_dir):
-        export(revno, directory, revision_dir)
-    return revision_dir
-
-def bzr_root(path):
-    return invoke_client("root", path, directory=None)[1].rstrip('\r')
-
-def path_in_reference(bug_dir, spec):
-    if spec is None:
-        spec = int(invoke_client("revno", directory=bug_dir)[1])
-    rel_bug_dir = bug_dir[len(bzr_root(bug_dir)):]
-    export_root = find_or_make_export(spec, directory=bug_dir)
-    return os.path.join(export_root, rel_bug_dir)
-
-
-def unlink(path):
-    try:
-        os.unlink(path)
-        delete_id(path)
-    except OSError, e:
-        if e.errno != 2:
-            raise
-
-
-def detect(path):
-    """Detect whether a directory is revision-controlled using bzr"""
-    path = os.path.realpath(path)
-    old_path = None
-    while True:
-        if os.path.exists(os.path.join(path, ".bzr")):
+class Bzr(RCS):
+    name = "bzr"
+    client = "bzr"
+    versioned = True
+    def _rcs_help(self):
+        status,output,error = self._u_invoke_client("--help")
+        return output        
+    def _rcs_detect(self, path):
+        if self._u_search_parent_directories(path, ".bzr") != None :
             return True
-        if path == old_path:
-            return False
-        old_path = path
-        path = os.path.dirname(path)
-
-def precommit(directory):
-    pass
-
-def commit(directory, summary, body=None):
-    if body is not None:
-        summary += '\n' + body
-    descriptor, filename = tempfile.mkstemp()
-    try:
-        temp_file = os.fdopen(descriptor, 'wb')
-        temp_file.write(summary)
-        temp_file.close()
-        invoke_client('commit', '--unchanged', '--file', filename, 
-                      directory=directory)
-    finally:
-        os.unlink(filename)
-
-def postcommit(directory):
-    try:
-        invoke_client('merge', directory=directory)
-    except CommandError, e:
-        if ('No merge branch known or specified' in e.err_str or
-            'No merge location known or specified' in e.err_str):
-            pass
+        return False
+    def _rcs_root(self, path):
+        """Find the root of the deepest repository containing path."""
+        status,output,error = self._u_invoke_client("root", path)
+        return output.rstrip('\n')
+    def _rcs_init(self, path):
+        self._u_invoke_client("init", directory=path)
+    def _rcs_get_user_id(self):
+        status,output,error = self._u_invoke_client("whoami")
+        return output.rstrip('\n')
+    def _rcs_set_user_id(self, value):
+        self._u_invoke_client("whoami", value)
+    def _rcs_add(self, path):
+        self._u_invoke_client("add", path)
+    def _rcs_remove(self, path):
+        # --force to also remove unversioned files.
+        self._u_invoke_client("remove", "--force", path)
+    def _rcs_update(self, path):
+        pass
+    def _rcs_get_file_contents(self, path, revision=None):
+        if revision == None:
+            return file(os.path.join(self.rootdir, path), "rb").read()
         else:
-            status = invoke_client('revert',  '--no-backup', 
+            status,output,error = \
+                self._u_invoke_client("cat","-r",revision,path)
+            return output
+    def _rcs_duplicate_repo(self, directory, revision=None):
+        if revision == None:
+            RCS._rcs_duplicate_repo(self, directory, revision)
+        else:
+            self._u_invoke_client("branch", "--revision", revision,
+                                  ".", directory)
+    def _rcs_commit(self, commitfile):
+        status,output,error = self._u_invoke_client("commit", "--unchanged",
+                                                    "--file", commitfile)
+        revision = None
+        revline = re.compile("Committed revision (.*)[.]")
+        match = revline.search(error)
+        assert match != None, output+error
+        assert len(match.groups()) == 1
+        revision = match.groups()[0]
+        return revision
+    def postcommit(self):
+        try:
+            self._u_invoke_client('merge')
+        except CommandError, e:
+            if ('No merge branch known or specified' in e.err_str or
+                'No merge location known or specified' in e.err_str):
+                pass
+            else:
+                self._u_invoke_client('revert',  '--no-backup', 
                                    directory=directory)
-            status = invoke_client('resolve', '--all', directory=directory)
-            raise
-    if len(invoke_client('status', directory=directory)[1]) > 0:
-        commit(directory, 'Merge from upstream')
-    
-name = "bzr"
+                self._u_invoke_client('resolve', '--all', directory=directory)
+                raise
+        if len(self._u_invoke_client('status', directory=directory)[1]) > 0:
+            self.commit('Merge from upstream')
+
+class BzrTestCase(RCStestCase):
+    Class = Bzr
+
+unitsuite = unittest.TestLoader().loadTestsFromTestCase(BzrTestCase)
+suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

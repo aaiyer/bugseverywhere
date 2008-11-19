@@ -21,9 +21,8 @@ __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests
     >>> import os
-    >>> dir = tests.simple_bug_dir()
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> execute(["a"])
     No target assigned.
@@ -33,7 +32,6 @@ def execute(args):
     >>> execute(["a", "none"])
     >>> execute(["a"])
     No target assigned.
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))

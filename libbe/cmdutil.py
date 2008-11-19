@@ -22,6 +22,7 @@ import optparse
 from textwrap import TextWrapper
 from StringIO import StringIO
 import utility
+import doctest
 
 class UserError(Exception):
     def __init__(self, msg):
@@ -33,6 +34,18 @@ class UserErrorWrap(UserError):
         self.exception = exception
 
 def get_bug(spec, bug_dir=None):
+    """
+    >>> bd = bugdir.simple_bug_dir()
+    >>> bug_a = get_bug('a', bd)
+    >>> print type(bug_a)
+    <class 'libbe.bug.Bug'>
+    >>> print bug_a
+    a:om: Bug A
+    >>> print bd.get_bug('a')
+    a:om: Bug A
+    >>> bug_a == bd.get_bug('a')
+    True
+    """
     matches = []
     try:
         if bug_dir is None:
@@ -206,3 +219,5 @@ def _test():
 
 if __name__ == "__main__":
     _test()
+
+suite = doctest.DocTestSuite()

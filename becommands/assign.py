@@ -15,19 +15,19 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Assign an individual or group to fix a bug"""
-from libbe import cmdutil, names 
+from libbe import cmdutil
 __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests, names
+    >>> from libbe import bugdir
     >>> import os
-    >>> dir = tests.simple_bug_dir()
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("a").assigned is None
     True
     >>> execute(["a"])
-    >>> dir.get_bug("a").assigned == names.creator()
+    >>> dir.get_bug("a").assigned == dir.rcs.get_user_id()
     True
     >>> execute(["a", "someone"])
     >>> dir.get_bug("a").assigned
@@ -35,7 +35,6 @@ def execute(args):
     >>> execute(["a","none"])
     >>> dir.get_bug("a").assigned is None
     True
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
@@ -44,7 +43,7 @@ def execute(args):
         return
     bug = cmdutil.get_bug(args[0])
     if len(args) == 1:
-        bug.assigned = names.creator()
+        bug.assigned = bug.rcs.get_user_id()
     elif len(args) == 2:
         if args[1] == "none":
             bug.assigned = None

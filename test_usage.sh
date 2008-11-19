@@ -7,6 +7,9 @@
 # usage: test_usage.sh RCS
 # where RCS is one of:
 #   bzr, git, hg, arch, none
+#
+# Note that this script uses the *installed* version of be, not the
+# one in your working tree.
 
 set -e # exit imediately on failed command
 set -o pipefail # pipes fail if any stage fails
@@ -15,9 +18,9 @@ set -v # verbose, echo commands to stdout
 exec 6>&2 # save stderr to file descriptor 6
 exec 2>&1 # fd 2 now writes to stdout
 
-if [ $# -ne 1 ]
+if [ $# -gt 1 ]
 then
-    echo "usage: test_usage.sh RCS"
+    echo "usage: test_usage.sh [RCS]"
     echo ""
     echo "where RCS is one of"
     for RCS in bzr git hg arch none
@@ -25,6 +28,14 @@ then
 	echo "  $RCS"
     done
     exit 1
+elif [ $# -eq 0 ]
+then
+    for RCS in bzr git hg arch none
+    do
+	echo -e "\n\nTesting $RCS\n\n"
+	$0 "$RCS" || exit 1
+    done
+    exit 0
 fi
 
 RCS="$1"
@@ -54,7 +65,7 @@ elif [ "$RCS" == "none" ]
 then
     ID=`id -nu`
 else
-    echo "Unrecognized RCS $RCS"
+    echo "Unrecognized RCS '$RCS'"
     exit 1
 fi
 if [ -z "$ID" ]
@@ -84,6 +95,7 @@ be list -m -s fixed     # see fixed bugs assigned to you
 be assign $BUG 'Joe'    # assign the bug to Joe
 be list -a Joe -s fixed # list the fixed bugs assigned to Joe
 be assign $BUG none     # assign the bug to noone
+be diff                 # see what has changed
 be remove $BUG # decide that you don't like that bug after all
 cd /
 rm -rf $TESTDIR

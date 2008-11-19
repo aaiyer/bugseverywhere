@@ -16,40 +16,16 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import tempfile
 import shutil
-import os
-import os.path
-from libbe import bugdir, bug, arch
-cleanable = []
-def clean_up():
-    global cleanable
-    tmp = cleanable
-    tmp.reverse()
-    for obj in tmp:
-        obj.clean_up()
-    cleanable = []
+from libbe import utility, names, restconvert, mapfile, config, diff, rcs, \
+    arch, bzr, git, hg, bug, bugdir, plugin, cmdutil
+import unittest
 
-class Dir:
-    def __init__(self):
-        self.name = tempfile.mkdtemp(prefix="testdir")
-        cleanable.append(self)
-    def clean_up(self):
-        shutil.rmtree(self.name)
+# can not use 'suite' or the base test.py file will include these suites twice.
+testsuite = unittest.TestSuite([utility.suite, names.suite, restconvert.suite,
+                                mapfile.suite, config.suite, diff.suite,
+                                rcs.suite, arch.suite, bzr.suite, git.suite,
+                                hg.suite, bug.suite, bugdir.suite,
+                                plugin.suite, cmdutil.suite])
 
-def arch_dir():
-    arch.ensure_user_id()
-    dir = Dir()
-    arch.init_tree(dir.name)
-    return dir
-
-def bug_arch_dir():
-    dir = arch_dir()
-    return bugdir.create_bug_dir(dir.name, arch)
-
-def simple_bug_dir():
-    dir = bug_arch_dir()
-    bug_a = bug.new_bug(dir, "a")
-    bug_b = bug.new_bug(dir, "b")
-    bug_b.status = "closed"
-    bug_a.save()
-    bug_b.save()
-    return dir
+if __name__ == "__main__":
+    unittest.TextTestRunner(verbosity=2).run(testsuite)

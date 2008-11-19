@@ -17,6 +17,8 @@
 import os
 import os.path
 import sys
+import doctest
+
 def my_import(mod_name):
     module = __import__(mod_name)
     components = mod_name.split('.')
@@ -55,6 +57,8 @@ def get_plugin(prefix, name):
 plugin_path = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
 if plugin_path not in sys.path:
     sys.path.append(plugin_path)
+
+suite = doctest.DocTestSuite()
 
 def _test():
     import doctest

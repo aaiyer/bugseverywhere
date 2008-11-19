@@ -15,15 +15,14 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Remove (delete) a bug and its comments"""
-from libbe import cmdutil, names, utility
-from libbe.bug import new_bug
+from libbe import cmdutil
 __desc__ = __doc__
 
 def execute(args):
     """
     >>> import os
-    >>> from libbe import tests, mapfile
-    >>> dir = tests.simple_bug_dir()
+    >>> from libbe import bugdir, mapfile
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("b").status
     u'closed'
@@ -34,7 +33,6 @@ def execute(args):
     ... except mapfile.NoSuchFile:
     ...     print "Bug not found"
     Bug not found
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     if len(args) != 1:

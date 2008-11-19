@@ -15,22 +15,22 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Add a comment to a bug"""
-from libbe import cmdutil, names, utility
+from libbe import cmdutil, utility
 from libbe.bug import new_comment
 import os
 __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests, names
+    >>> from libbe import bugdir
     >>> import os, time
-    >>> dir = tests.simple_bug_dir()
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> execute(["a", "This is a comment about a"])
     >>> comment = dir.get_bug("a").list_comments()[0]
     >>> comment.body
     u'This is a comment about a\\n'
-    >>> comment.From == names.creator()
+    >>> comment.From == dir.rcs.get_user_id()
     True
     >>> comment.time <= int(time.time())
     True
@@ -45,7 +45,6 @@ def execute(args):
     >>> execute(["b"])
     >>> dir.get_bug("b").list_comments()[0].body
     u'I like cheese\\n'
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     if len(args) < 1:

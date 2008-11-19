@@ -20,16 +20,15 @@ __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests
+    >>> from libbe import bugdir
     >>> import os
-    >>> dir = tests.simple_bug_dir()
+    >>> dir = bugdir.simple_bug_dir()
     >>> os.chdir(dir.dir)
     >>> dir.get_bug("a").status
     u'open'
     >>> execute(["a"])
     >>> dir.get_bug("a").status
     u'closed'
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     if len(args) !=1:

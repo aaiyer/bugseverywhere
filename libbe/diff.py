@@ -18,6 +18,7 @@
 from libbe import cmdutil, bugdir
 from libbe.utility import time_to_str
 from libbe.bug import cmp_severity
+import doctest
 
 def diff(old_tree, new_tree):
     old_bug_map = old_tree.bug_map()
@@ -38,9 +39,11 @@ def diff(old_tree, new_tree):
     return (removed, modified, added)
 
 
-def reference_diff(bugdir, spec=None):
-    return diff(bugdir.get_reference_bugdir(spec), bugdir)
-    
+def reference_diff(bugdir, revision=None):
+    d = diff(bugdir.duplicate_bugdir(revision), bugdir)
+    bugdir.remove_duplicate_bugdir()
+    return d
+
 def diff_report(diff_data, bug_dir):
     (removed, modified, added) = diff_data
     bugs = list(bug_dir.list())
@@ -109,3 +112,5 @@ def bug_changes(old, new, bugs):
 def comment_summary(comment, status):
     return "%8s comment from %s on %s" % (status, comment.From, 
                                           time_to_str(comment.time))
+
+suite = doctest.DocTestSuite()
