@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?python
-from libbe.cmdutil import unique_name
+from libbe.names import unique_name
 from beweb.controllers import bug_url, project_url, bug_list_url
 from beweb.model import people_map
 people = people_map()

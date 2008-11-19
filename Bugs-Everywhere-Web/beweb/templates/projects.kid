@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?python
-from libbe.bugdir import severity_levels
+from libbe.bug import severity_values
 def select_among(name, options, default):
     output = ['<select name="%s">' % name]
     for option in options:

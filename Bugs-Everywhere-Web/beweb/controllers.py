@@ -4,7 +4,7 @@ import cherrypy
 import turbogears
 from turbogears import controllers, expose, validate, redirect, identity
 
-from libbe.bugdir import tree_root, new_comment, NoRootEntry
+from libbe.bugdir import tree_root, NoRootEntry
 from config import projects
 from prest import PrestHandler, provide_action
 
