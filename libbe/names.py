@@ -30,12 +30,6 @@ def uuid():
     if text[-1:] == '\n': text = text[:-1]
     return text
 
-def creator():
-    if sys.platform != "win32":
-        return os.environ["LOGNAME"]
-    else:
-        return os.environ["USERNAME"]
-
 def unique_name(bug, bugs):
     """
     Generate short names from uuids.  Picks the minimum number of

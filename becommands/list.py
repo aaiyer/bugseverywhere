@@ -15,7 +15,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """List bugs"""
-from libbe import cmdutil, names
+from libbe import cmdutil
 from libbe.bug import cmp_full, severity_values, status_values, \
     active_status_values, inactive_status_values
 import os
@@ -73,7 +73,7 @@ def execute(args):
             assigned = "all"
     for i in range(len(assigned)):
         if assigned[i] == '-':
-            assigned[i] = names.creator()
+            assigned[i] = tree.rcs.get_user_id()
     # select target
     if options.target != None:
         if options.target == "all":
