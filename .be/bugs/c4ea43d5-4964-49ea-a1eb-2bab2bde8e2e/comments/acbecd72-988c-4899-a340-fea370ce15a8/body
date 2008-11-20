@@ -1,0 +1,5 @@
+I rewrote test.py, so I suppose I'm the person who understands it
+better now ;).  The usage is now documented in the test.py lead
+comment.  The becommand tests now attempt to run with the first
+*installed* versioning system, which should reduce cryptic errors.
+
