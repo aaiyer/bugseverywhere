@@ -17,11 +17,14 @@
 import os
 import os.path
 import errno
-import names
-import mapfile
 import time
-import utility
 import doctest
+
+from beuuid import uuid_gen
+import mapfile
+import comment
+import utility
+
 
 ### Define and describe valid bug categories
 # Use a tuple of (category, description) tuples since we don't have
@@ -87,45 +90,46 @@ class Bug(object):
     severity = checked_property("severity", severity_values)
     status = checked_property("status", status_values)
 
-    def __init__(self, path, uuid, rcs, bugdir):
-        self.path = path
-        self.uuid = uuid
-        if uuid is not None:
-            dict = mapfile.map_load(self.get_path("values"))
-        else:
-            dict = {}
-
-        self.rcs = rcs
-        self.bugdir = bugdir
-        
-        self.summary = dict.get("summary")
-        self.creator = dict.get("creator")
-        self.target = dict.get("target")
-        self.status = dict.get("status", "open")
-        self.severity = dict.get("severity", "minor")
-        self.assigned = dict.get("assigned")
-        self.time = dict.get("time")
-        if self.time is not None:
-            self.time = utility.str_to_time(self.time)
-
-    def get_path(self, file=None):
-        if file == None:
-            return os.path.join(self.path, self.uuid)
-        else:
-            return os.path.join(self.path, self.uuid, file)
-
     def _get_active(self):
         return self.status in active_status_values
 
     active = property(_get_active)
 
+    def __init__(self, bugdir=None, uuid=None, loadNow=False, summary=None):
+        self.bugdir = bugdir
+        if bugdir != None:
+            self.rcs = bugdir.rcs
+        else:
+            self.rcs = None
+        if loadNow == True:
+            self.uuid = uuid
+            self.load()
+        else:
+            # Note: defaults should match those in Bug.load()
+            if uuid != None:
+                self.uuid = uuid
+            else:
+                self.uuid = uuid_gen()
+            self.summary = summary
+            if self.rcs != None:
+                self.creator = self.rcs.get_user_id()
+            else:
+                self.creator = None
+            self.target = None
+            self.status = "open"
+            self.severity = "minor"
+            self.assigned = None
+            self.time = time.time()
+            self.comment_root = comment.Comment(self, uuid=comment.INVALID_UUID)
+
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
 
-    def string(self, bugs=None, shortlist=False):
-        if bugs == None:
-            bugs = list(self.bugdir.list())
-        short_name = names.unique_name(self, bugs)
+    def string(self, shortlist=False, show_comments=False):
+        if self.bugdir == None:
+            shortname = self.uuid
+        else:
+            shortname = self.bugdir.bug_shortname(self)
         if shortlist == False:
             if self.time == None:
                 timestring = ""
@@ -134,7 +138,7 @@ class Bug(object):
                 ftime = utility.time_to_str(self.time)
                 timestring = "%s (%s)" % (htime, ftime)
             info = [("ID", self.uuid),
-                    ("Short name", short_name),
+                    ("Short name", shortname),
                     ("Severity", self.severity),
                     ("Status", self.status),
                     ("Assigned", self.assigned),
@@ -150,12 +154,20 @@ class Bug(object):
             info = newinfo
             longest_key_len = max([len(k) for k,v in info])
             infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
-            return "".join(infolines) + "%s\n" % self.summary
+            bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
         else:
             statuschar = self.status[0]
             severitychar = self.severity[0]
             chars = "%c%c" % (statuschar, severitychar)
-            return "%s:%s: %s" % (short_name, chars, self.summary)
+            bugout = "%s:%s: %s" % (shortname, chars, self.summary.rstrip('\n'))
+        
+        if show_comments == True:
+            comout = self.comment_root.string_thread(auto_name_map=True,
+                                                     bug_shortname=shortname)
+            output = bugout + '\n' + comout.rstrip('\n')
+        else :
+            output = bugout
+        return output
 
     def __str__(self):
         return self.string(shortlist=True)
@@ -163,7 +175,28 @@ class Bug(object):
     def __cmp__(self, other):
         return cmp_full(self, other)
 
-    def add_attr(self, map, name):
+    def get_path(self, name=None):
+        my_dir = os.path.join(self.bugdir.get_path("bugs"), self.uuid)
+        if name is None:
+            return my_dir
+        assert name in ["values", "comments"]
+        return os.path.join(my_dir, name)
+
+    def load(self):
+        map = mapfile.map_load(self.get_path("values"))
+        self.summary = map.get("summary")
+        self.creator = map.get("creator")
+        self.target = map.get("target")
+        self.status = map.get("status", "open")
+        self.severity = map.get("severity", "minor")
+        self.assigned = map.get("assigned")
+        self.time = map.get("time")
+        if self.time is not None:
+            self.time = utility.str_to_time(self.time)
+        
+        self.comment_root = comment.loadComments(self)
+
+    def _add_attr(self, map, name):
         value = getattr(self, name)
         if value is not None:
             map[name] = value
@@ -171,133 +204,38 @@ class Bug(object):
     def save(self):
         assert self.summary != None, "Can't save blank bug"
         map = {}
-        self.add_attr(map, "assigned")
-        self.add_attr(map, "summary")
-        self.add_attr(map, "creator")
-        self.add_attr(map, "target")
-        self.add_attr(map, "status")
-        self.add_attr(map, "severity")
+        self._add_attr(map, "assigned")
+        self._add_attr(map, "summary")
+        self._add_attr(map, "creator")
+        self._add_attr(map, "target")
+        self._add_attr(map, "status")
+        self._add_attr(map, "severity")
         if self.time is not None:
             map["time"] = utility.time_to_str(self.time)
+
+        self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, map)
 
+        if len(self.comment_root) > 0:
+            self.rcs.mkdir(self.get_path("comments"))
+            comment.saveComments(self)
+
     def remove(self):
+        self.comment_root.remove()
         path = self.get_path()
         self.rcs.recursive_remove(path)
     
     def new_comment(self, body=None):
-        if not os.path.exists(self.get_path("comments")):
-            self.rcs.mkdir(self.get_path("comments"))
-        comm = Comment(None, self)
-        comm.uuid = names.uuid()
-        comm.rcs = self.rcs
-        comm.From = self.rcs.get_user_id()
-        comm.time = time.time()
-        comm.body = body
+        comm = comment.comment_root.new_reply(body=body)
         return comm
 
-    def get_comment(self, uuid):
-        return Comment(uuid, self)
+    def comment_from_shortname(self, shortname, *args, **kwargs):
+        return self.comment_root.comment_from_shortname(shortname, *args, **kwargs)
 
-    def iter_comment_ids(self):
-        path = self.get_path("comments")
-        if not os.path.isdir(path):
-            return
-        try:
-            for uuid in os.listdir(path):
-                if (uuid.startswith('.')):
-                    continue
-                yield uuid
-        except OSError, e:
-            if e.errno != errno.ENOENT:
-                raise
-            return
+    def comment_from_uuid(self, uuid):
+        return self.comment_root.comment_from_uuid(uuid)
 
-    def list_comments(self):
-        comments = [Comment(id, self) for id in self.iter_comment_ids()]
-        comments.sort(cmp_time)
-        return comments
-
-def add_headers(obj, map, names):
-    map_names = {}
-    for name in names:
-        map_names[name] = pyname_to_header(name)
-    add_attrs(obj, map, names, map_names)
-
-def add_attrs(obj, map, names, map_names=None):
-    if map_names is None:
-        map_names = {}
-        for name in names:
-            map_names[name] = name 
-        
-    for name in names:
-        value = getattr(obj, name)
-        if value is not None:
-            map[map_names[name]] = value
-
-
-class Comment(object):
-    def __init__(self, uuid, bug):
-        object.__init__(self)
-        self.uuid = uuid 
-        self.bug = bug
-        if self.uuid is not None and self.bug is not None:
-            map = mapfile.map_load(self.get_path("values"))
-            self.time = utility.str_to_time(map["Date"])
-            self.From = map["From"]
-            self.in_reply_to = map.get("In-reply-to")
-            self.content_type = map.get("Content-type", "text/plain")
-            self.body = file(self.get_path("body")).read().decode("utf-8")
-        else:
-            self.time = None
-            self.From = None
-            self.in_reply_to = None
-            self.content_type = "text/plain"
-            self.body = None
-
-    def save(self):
-        map_file = {"Date": utility.time_to_str(self.time)}
-        add_headers(self, map_file, ("From", "in_reply_to", "content_type"))
-        if not os.path.exists(self.get_path()):
-            self.bug.rcs.mkdir(self.get_path())
-        mapfile.map_save(self.bug.rcs, self.get_path("values"), map_file)
-        self.bug.rcs.set_file_contents(self.get_path("body"), 
-                                       self.body.encode('utf-8'))
-
-    def get_path(self, name=None):
-        my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
-        if name is None:
-            return my_dir
-        return os.path.join(my_dir, name)
-
-
-def thread_comments(comments):
-    child_map = {}
-    top_comments = []
-    for comment in comments:
-        child_map[comment.uuid] = []
-    for comment in comments:
-        if comment.in_reply_to is None or comment.in_reply_to not in child_map:
-            top_comments.append(comment)
-            continue
-        child_map[comment.in_reply_to].append(comment)
-
-    def recurse_children(comment):
-        child_list = []
-        for child in child_map[comment.uuid]:
-            child_list.append(recurse_children(child))
-        return (comment, child_list)
-    return [recurse_children(c) for c in top_comments]
-
-def pyname_to_header(name):
-    return name.capitalize().replace('_', '-')
-
-
-
-class MockBug:
-    def __init__(self, attr, value):
-        setattr(self, attr, value)
 
 # the general rule for bug sorting is that "more important" bugs are
 # less than "less important" bugs.  This way sorting a list of bugs
@@ -307,32 +245,42 @@ class MockBug:
 
 def cmp_severity(bug_1, bug_2):
     """
-    Compare the severity levels of two bugs, with more severe bugs comparing
-    as less.
-
-    >>> attr="severity"
-    >>> cmp_severity(MockBug(attr,"wishlist"), MockBug(attr,"wishlist")) == 0
+    Compare the severity levels of two bugs, with more severe bugs
+    comparing as less.
+    >>> bugA = Bug()
+    >>> bugB = Bug()
+    >>> bugA.severity = bugB.severity = "wishlist"
+    >>> cmp_severity(bugA, bugB) == 0
     True
-    >>> cmp_severity(MockBug(attr,"wishlist"), MockBug(attr,"minor")) > 0
+    >>> bugB.severity = "minor"
+    >>> cmp_severity(bugA, bugB) > 0
     True
-    >>> cmp_severity(MockBug(attr,"critical"), MockBug(attr,"wishlist")) < 0
+    >>> bugA.severity = "critical"
+    >>> cmp_severity(bugA, bugB) < 0
     True
     """
+    if not hasattr(bug_2, "severity") :
+        return 1
     return -cmp(severity_index[bug_1.severity], severity_index[bug_2.severity])
 
 def cmp_status(bug_1, bug_2):
     """
     Compare the status levels of two bugs, with more 'open' bugs
     comparing as less.
-
-    >>> attr="status"
-    >>> cmp_status(MockBug(attr,"open"), MockBug(attr,"open")) == 0
+    >>> bugA = Bug()
+    >>> bugB = Bug()
+    >>> bugA.status = bugB.status = "open"
+    >>> cmp_status(bugA, bugB) == 0
     True
-    >>> cmp_status(MockBug(attr,"open"), MockBug(attr,"closed")) < 0
+    >>> bugB.status = "closed"
+    >>> cmp_status(bugA, bugB) < 0
     True
-    >>> cmp_status(MockBug(attr,"closed"), MockBug(attr,"open")) > 0
+    >>> bugA.status = "fixed"
+    >>> cmp_status(bugA, bugB) > 0
     True
     """
+    if not hasattr(bug_2, "status") :
+        return 1
     val_2 = status_index[bug_2.status]
     return cmp(status_index[bug_1.status], status_index[bug_2.status])
 
@@ -342,13 +290,20 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
     comparison rule for that attribute type.  If invert == True, sort
     *against* that convention.
     >>> attr="severity"
-    >>> cmp_attr(MockBug(attr,1), MockBug(attr,2), attr, invert=False) < 0
+    >>> bugA = Bug()
+    >>> bugB = Bug()
+    >>> bugA.severity = "critical"
+    >>> bugB.severity = "wishlist"
+    >>> cmp_attr(bugA, bugB, attr) < 0
     True
-    >>> cmp_attr(MockBug(attr,1), MockBug(attr,2), attr, invert=True) > 0
+    >>> cmp_attr(bugA, bugB, attr, invert=True) > 0
     True
-    >>> cmp_attr(MockBug(attr,1), MockBug(attr,1), attr) == 0
+    >>> bugB.severity = "critical"
+    >>> cmp_attr(bugA, bugB, attr) == 0
     True
     """
+    if not hasattr(bug_2, attr) :
+        return 1
     if invert == True :
         return -cmp(getattr(bug_1, attr), getattr(bug_2, attr))
     else :

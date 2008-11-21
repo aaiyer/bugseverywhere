@@ -50,14 +50,6 @@ class Arch(RCS):
         if self._u_search_parent_directories(path, "{arch}") != None :
             return True
         return False
-    def _rcs_root(self, path):
-        if not os.path.isdir(path):
-            dirname = os.path.dirname(path)
-        else:
-            dirname = path
-        status,output,error = self._u_invoke_client("tree-root", dirname)
-        # get archive name...
-        return output.rstrip('\n')
     def _rcs_init(self, path):
         self._create_archive(path)
         self._create_project(path)
@@ -121,11 +113,35 @@ class Arch(RCS):
         assert self._archive_name != None
         assert self._project_name != None
         return "%s/%s" % (self._archive_name, self._project_name)
+    def _adjust_naming_conventions(self, path):
+        """
+        By default, Arch restricts source code filenames to
+          ^[_=a-zA-Z0-9].*$
+        See
+          http://regexps.srparish.net/tutorial-tla/naming-conventions.html
+        Since our bug directory '.be' doesn't satisfy these conventions,
+        we need to adjust them.
+        
+        The conventions are specified in
+          project-root/{arch}/=tagging-method
+        """
+        tagpath = os.path.join(path, "{arch}", "=tagging-method")
+        lines_out = []
+        for line in file(tagpath, "rb"):
+            line.decode("utf-8")
+            if line.startswith("source "):
+                lines_out.append("source ^[._=a-zA-X0-9].*$\n")
+            else:
+                lines_out.append(line)
+        file(tagpath, "wb").write("".join(lines_out).encode("utf-8"))
+
     def _add_project_code(self, path):
         # http://mwolson.org/projects/GettingStartedWithArch.html
-        # http://regexps.srparish.net/tutorial-tla/importing-first.html#Importing_the_First_Revision
-        self._u_invoke_client("init-tree", self._archive_project_name(),
+        # http://regexps.srparish.net/tutorial-tla/new-source.html
+        # http://regexps.srparish.net/tutorial-tla/importing-first.html
+        self._invoke_client("init-tree", self._project_name,
                               directory=path)
+        self._adjust_naming_conventions(path)
         self._invoke_client("import", "--summary", "Began versioning",
                             directory=path)
     def _rcs_cleanup(self):
@@ -133,6 +149,40 @@ class Arch(RCS):
             self._remove_project()
         if self._tmp_archive == True:
             self._remove_archive()
+
+    def _rcs_root(self, path):
+        if not os.path.isdir(path):
+            dirname = os.path.dirname(path)
+        else:
+            dirname = path
+        status,output,error = self._u_invoke_client("tree-root", dirname)
+        root = output.rstrip('\n')
+        
+        self._get_archive_project_name(root)
+
+        return root
+
+    def _get_archive_name(self, root):
+        status,output,error = self._u_invoke_client("archives")
+        lines = output.split('\n')
+        # e.g. output:
+        # jdoe@example.com--bugs-everywhere-auto-2008.22.24.52
+        #     /tmp/BEtestXXXXXX/rootdir
+        # (+ repeats)
+        for archive,location in zip(lines[::2], lines[1::2]):
+            if os.path.realpath(location) == os.path.realpath(root):
+                self._archive_name = archive
+        assert self._archive_name != None
+
+    def _get_archive_project_name(self, root):
+        # get project names
+        status,output,error = self._u_invoke_client("tree-version", directory=root)
+        # e.g output
+        # jdoe@example.com--bugs-everywhere-auto-2008.22.24.52/be--mainline--0.1
+        archive_name,project_name = output.rstrip('\n').split('/')
+        self._archive_name = archive_name
+        self._project_name = project_name
+
     def _rcs_get_user_id(self):
         try:
             status,output,error = self._u_invoke_client('my-id')

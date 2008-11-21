@@ -15,30 +15,33 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Remove (delete) a bug and its comments"""
-from libbe import cmdutil
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args):
     """
+    >>> from libbe import mapfile
     >>> import os
-    >>> from libbe import bugdir, mapfile
-    >>> dir = bugdir.simple_bug_dir()
-    >>> os.chdir(dir.dir)
-    >>> dir.get_bug("b").status
-    u'closed'
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> print bd.bug_from_shortname("b").status
+    closed
     >>> execute (["b"])
     Removed bug b
+    >>> bd.load()
     >>> try:
-    ...     dir.get_bug("b")
-    ... except mapfile.NoSuchFile:
+    ...     bd.bug_from_shortname("b")
+    ... except KeyError:
     ...     print "Bug not found"
     Bug not found
     """
     options, args = get_parser().parse_args(args)
     if len(args) != 1:
         raise cmdutil.UserError("Please specify a bug id.")
-    bug = cmdutil.get_bug(args[0])
-    bug.remove()
+    bd = bugdir.BugDir(loadNow=True)
+    bug = bd.bug_from_shortname(args[0])
+    bd.remove_bug(bug)
+    bd.save()
     print "Removed bug %s" % bug.uuid
 
 def get_parser():

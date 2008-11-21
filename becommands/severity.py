@@ -15,16 +15,15 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show or change a bug's severity level"""
-from libbe import cmdutil 
+from libbe import cmdutil, bugdir
 from libbe.bug import severity_values, severity_description
 __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import bugdir
     >>> import os
-    >>> dir = bugdir.simple_bug_dir()
-    >>> os.chdir(dir.dir)
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
     >>> execute(["a"])
     minor
     >>> execute(["a", "wishlist"])
@@ -35,11 +34,11 @@ def execute(args):
     UserError: Invalid severity level: none
     """
     options, args = get_parser().parse_args(args)
-    assert(len(args) in (0, 1, 2))
-    if len(args) == 0:
+    if len(args) not in (1,2):
         print help()
         return
-    bug = cmdutil.get_bug(args[0])
+    bd = bugdir.BugDir(loadNow=True)
+    bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         print bug.severity
     elif len(args) == 2:
@@ -49,7 +48,7 @@ def execute(args):
             if e.name != "severity":
                 raise
             raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
-        bug.save()
+        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be severity bug-id [severity]")

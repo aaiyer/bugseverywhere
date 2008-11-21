@@ -15,33 +15,41 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Assign an individual or group to fix a bug"""
-from libbe import cmdutil
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import bugdir
     >>> import os
-    >>> dir = bugdir.simple_bug_dir()
-    >>> os.chdir(dir.dir)
-    >>> dir.get_bug("a").assigned is None
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> bd.bug_from_shortname("a").assigned is None
     True
+
     >>> execute(["a"])
-    >>> dir.get_bug("a").assigned == dir.rcs.get_user_id()
+    >>> bd.load()
+    >>> bd.bug_from_shortname("a").assigned == bd.rcs.get_user_id()
     True
+
     >>> execute(["a", "someone"])
-    >>> dir.get_bug("a").assigned
-    u'someone'
+    >>> bd.load()
+    >>> print bd.bug_from_shortname("a").assigned
+    someone
+
     >>> execute(["a","none"])
-    >>> dir.get_bug("a").assigned is None
+    >>> bd.load()
+    >>> bd.bug_from_shortname("a").assigned is None
     True
     """
     options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
-        print help()
-        return
-    bug = cmdutil.get_bug(args[0])
+        raise cmdutil.UserError("Please specify a bug id.")
+    if len(args) > 2:
+        help()
+        raise cmdutil.UserError("Too many arguments.")
+    bd = bugdir.BugDir(loadNow=True)
+    bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         bug.assigned = bug.rcs.get_user_id()
     elif len(args) == 2:
@@ -49,7 +57,7 @@ def execute(args):
             bug.assigned = None
         else:
             bug.assigned = args[1]
-    bug.save()
+    bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be assign bug-id [assignee]")

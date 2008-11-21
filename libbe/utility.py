@@ -71,6 +71,32 @@ def get_file(f):
     else:
         return f
 
+def search_parent_directories(path, filename):
+    """
+    Find the file (or directory) named filename in path or in any
+    of path's parents.
+    
+    e.g.
+    search_parent_directories("/a/b/c", ".be")
+    will return the path to the first existing file from
+    /a/b/c/.be
+    /a/b/.be
+    /a/.be
+    /.be
+    or None if none of those files exist.
+    """
+    path = os.path.realpath(path)
+    assert os.path.exists(path)
+    old_path = None
+    while True:
+        check_path = os.path.join(path, filename)
+        if os.path.exists(check_path):
+            return check_path
+        if path == old_path:
+            return None
+        old_path = path
+        path = os.path.dirname(path)
+
 class Dir:
     "A temporary directory for testing use"
     def __init__(self):

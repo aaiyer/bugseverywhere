@@ -95,11 +95,11 @@ def parse(f):
     f = utility.get_file(f)
     result = {}
     for line in f:
-        line = line.rstrip('\n')
+        line = line.decode("utf-8").rstrip('\n')
         if len(line) == 0:
             continue
-        name,value = [f.decode('utf-8') for f in line.split('=', 1)]
-        assert not result.has_key('name')
+        name,value = [f for f in line.split('=', 1)]
+        assert not result.has_key(name)
         result[name] = value
     return result
 

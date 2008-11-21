@@ -15,15 +15,14 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show or change a bug's target for fixing"""
-from libbe import bugdir
-from libbe import cmdutil 
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args):
     """
     >>> import os
-    >>> dir = bugdir.simple_bug_dir()
-    >>> os.chdir(dir.dir)
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
     >>> execute(["a"])
     No target assigned.
     >>> execute(["a", "tomorrow"])
@@ -38,7 +37,8 @@ def execute(args):
     if len(args) == 0:
         print help()
         return
-    bug = cmdutil.get_bug(args[0])
+    bd = bugdir.BugDir(loadNow=True)
+    bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         if bug.target is None:
             print "No target assigned."
@@ -49,7 +49,7 @@ def execute(args):
             bug.target = None
         else:
             bug.target = args[1]
-        bug.save()
+        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be target bug-id [target]")

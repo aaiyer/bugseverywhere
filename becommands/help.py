@@ -15,7 +15,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Print help for given subcommand"""
-from libbe import cmdutil, names, utility
+from libbe import cmdutil, utility
 __desc__ = __doc__
 
 def execute(args):

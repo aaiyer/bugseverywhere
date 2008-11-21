@@ -15,17 +15,28 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """List bugs"""
-from libbe import cmdutil
+from libbe import cmdutil, bugdir
 from libbe.bug import cmp_full, severity_values, status_values, \
     active_status_values, inactive_status_values
 import os
 __desc__ = __doc__
 
 def execute(args):
+    """
+    >>> import os
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> execute([])
+    a:om: Bug A
+    >>> execute(["--status", "all"])
+    a:om: Bug A
+    b:cm: Bug B
+    """
     options, args = get_parser().parse_args(args)
     if len(args) > 0:
-        raise cmdutil.UsageError
-    tree = cmdutil.bug_tree()
+        help()
+        raise cmdutil.UserError("Too many arguments.")
+    bd = bugdir.BugDir(loadNow=True)
     # select status
     if options.status != None:
         if options.status == "all":
@@ -73,7 +84,7 @@ def execute(args):
             assigned = "all"
     for i in range(len(assigned)):
         if assigned[i] == '-':
-            assigned[i] = tree.rcs.get_user_id()
+            assigned[i] = bd.rcs.get_user_id()
     # select target
     if options.target != None:
         if options.target == "all":
@@ -83,7 +94,7 @@ def execute(args):
     else:
         target = []
         if options.cur_target == True:
-            target.append(tree.target)
+            target.append(bd.target)
         if target == []: # set the default value
             target = "all"
     
@@ -98,8 +109,7 @@ def execute(args):
             return False
         return True
 
-    all_bugs = list(tree.list())
-    bugs = [b for b in all_bugs if filter(b) ]
+    bugs = [b for b in bd if filter(b) ]
     if len(bugs) == 0:
         print "No matching bugs found"
     
@@ -109,7 +119,7 @@ def execute(args):
             if title != None:
                 print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print bug.string(all_bugs, shortlist=True)
+                print bug.string(shortlist=True)
     
     list_bugs(bugs, no_target=False)
 

@@ -24,7 +24,7 @@ import tempfile
 import shutil
 import unittest
 import doctest
-from utility import Dir
+from utility import Dir, search_parent_directories
 
 def _get_matching_rcs(matchfn):
     """Return the first module for which matchfn(RCS_instance) is true"""
@@ -32,9 +32,9 @@ def _get_matching_rcs(matchfn):
     import bzr
     import hg
     import git
-    for module in [arch, bzr, hg, git]:
+    for module in [git, arch, bzr, hg, git]:
         rcs = module.new()
-        if matchfn(rcs):
+        if matchfn(rcs) == True:
             return rcs
         else:
             del(rcs)
@@ -60,6 +60,9 @@ class CommandError(Exception):
         self.status = status
 
 class SettingIDnotSupported(NotImplementedError):
+    pass
+
+class PathNotInRoot(Exception):
     pass
 
 def new():
@@ -152,7 +155,10 @@ class RCS(object):
         pass
     def _rcs_get_file_contents(self, path, revision=None):
         """
-        Get the file as it was in a given revision.
+        Get the file contents as they were in a given revision.  Don't
+        worry about decoding the contents, the RCS.get_file_contents()
+        method will handle that.
+        
         Revision==None specifies the current revision.
         """
         assert revision == None, \
@@ -180,7 +186,7 @@ class RCS(object):
             if e.errno == errno.ENOENT:
                 return False
             raise e
-    def detect(self, path=None):
+    def detect(self, path="."):
         """
         Detect whether a directory is revision controlled with this RCS.
         """
@@ -264,23 +270,28 @@ class RCS(object):
         Revision==None specifies the current revision.
         """
         relpath = self._u_rel_path(path)
-        return self._rcs_get_file_contents(relpath, revision)
+        return self._rcs_get_file_contents(relpath, revision).decode("utf-8")
     def set_file_contents(self, path, contents):
         """
         Set the file contents under version control.
         """
         add = not os.path.exists(path)
-        file(path, "wb").write(contents)
+        file(path, "wb").write(contents.encode("utf-8"))
         if add:
             self.add(path)
         else:
             self.update(path)
     def mkdir(self, path):
         """
-        Created directory at path under version control.
+        Create (if neccessary) a directory at path under version
+        control.
         """
-        os.mkdir(path)
-        self.add(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
+            self.add(path)
+        else:
+            assert os.path.isdir(path)
+            self.update(path)
     def duplicate_repo(self, revision=None):
         """
         Get the repository as it was in a given revision.
@@ -366,16 +377,7 @@ class RCS(object):
           /.be
         or None if none of those files exist.
         """
-        path = os.path.realpath(path)
-        assert os.path.exists(path)
-        old_path = None
-        while True:
-            if os.path.exists(os.path.join(path, filename)):
-                return os.path.join(path, filename)
-            if path == old_path:
-                return None
-            old_path = path
-            path = os.path.dirname(path)
+        return search_parent_directories(path, filename)
     def _u_rel_path(self, path, root=None):
         """
         Return the relative path to path from root.
@@ -389,8 +391,9 @@ class RCS(object):
         if os.path.isabs(path):
             absRoot = os.path.abspath(root)
             absRootSlashedDir = os.path.join(absRoot,"")
-            assert path.startswith(absRootSlashedDir), \
-                "file %s not in root %s" % (path, absRootSlashedDir)
+            if not path.startswith(absRootSlashedDir):
+                raise PathNotInRoot, \
+                    "file %s not in root %s" % (path, absRootSlashedDir)
             assert path != absRootSlashedDir, \
                 "file %s == root directory %s" % (path, absRootSlashedDir)
             path = path[len(absRootSlashedDir):]

@@ -36,6 +36,8 @@ def iter_plugins(prefix):
     modfiles = os.listdir(os.path.join(plugin_path, prefix))
     modfiles.sort()
     for modfile in modfiles:
+        if modfile.startswith('.'):
+            continue # the occasional emacs temporary file
         if modfile.endswith(".py") and modfile != "__init__.py":
             yield modfile[:-3], my_import(prefix+"."+modfile[:-3])
 

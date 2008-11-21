@@ -15,26 +15,35 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show a particular bug"""
-from libbe import cmdutil, names, utility
-from libbe.bug import thread_comments
-import os
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args):
+    """
+    >>> import os
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> execute (["a",])
+              ID : a
+      Short name : a
+        Severity : minor
+          Status : open
+        Assigned : 
+          Target : 
+         Creator : John Doe <jdoe@example.com>
+         Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
+    Bug A
+    <BLANKLINE>
+    """
     options, args = get_parser().parse_args(args)
-    if len(args) !=1:
+    if len(args) == 0:
         raise cmdutil.UserError("Please specify a bug id.")
-    bug_dir = cmdutil.bug_tree()
-    bug = cmdutil.get_bug(args[0], bug_dir)
-    print bug.string().rstrip("\n")
-    unique_name = names.unique_name(bug, bug_dir.list())
-    comments = []
-    name_map = {}
-    for c_name, comment in cmdutil.iter_comment_name(bug, unique_name):
-        name_map[comment.uuid] = c_name
-        comments.append(comment)
-    threaded = thread_comments(comments)
-    cmdutil.print_threaded_comments(threaded, name_map)
+    if len(args) > 1:
+        help()
+        raise cmdutil.UserError("Too many arguments.")
+    bd = bugdir.BugDir(loadNow=True)
+    bug = bd.bug_from_shortname(args[0])
+    print bug.string(show_comments=True)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show bug-id")

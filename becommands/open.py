@@ -15,27 +15,31 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Re-open a bug"""
-from libbe import cmdutil
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import bugdir
     >>> import os
-    >>> dir = bugdir.simple_bug_dir()
-    >>> os.chdir(dir.dir)
-    >>> dir.get_bug("b").status
-    u'closed'
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> print bd.bug_from_shortname("b").status
+    closed
     >>> execute(["b"])
-    >>> dir.get_bug("b").status
-    u'open'
+    >>> bd.load()
+    >>> print bd.bug_from_shortname("b").status
+    open
     """
     options, args = get_parser().parse_args(args)
-    if len(args) !=1:
+    if len(args) == 0:
         raise cmdutil.UserError("Please specify a bug id.")
-    bug = cmdutil.get_bug(args[0])
+    if len(args) > 1:
+        help()
+        raise cmdutil.UserError("Too many arguments.")
+    bd = bugdir.BugDir(loadNow=True)
+    bug = bd.bug_from_shortname(args[0])
     bug.status = "open"
-    bug.save()
+    bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be open BUG-ID")

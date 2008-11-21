@@ -17,12 +17,8 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-from libbe.cmdutil import *
-from libbe.bugdir import tree_root, create_bug_dir
-from libbe import names, plugin, cmdutil
 import sys
-import os
-import becommands
+from libbe import cmdutil
 
 __doc__ == cmdutil.help()
 
@@ -33,13 +29,13 @@ else:
         try:
             sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
         except KeyError, e:
-            raise UserError("Unknown command \"%s\"" % e.args[0])
+            raise cmdutil.UserError("Unknown command \"%s\"" % e.args[0])
         except cmdutil.GetHelp:
             print cmdutil.help(sys.argv[1])
             sys.exit(0)
         except cmdutil.UsageError:
             print cmdutil.help(sys.argv[1])
             sys.exit(1)
-    except UserError, e:
+    except cmdutil.UserError, e:
         print e
         sys.exit(1)

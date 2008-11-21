@@ -1,11 +1,11 @@
-"""Usage: python test.py [module]
+"""Usage: python test.py [module(s) ...]
 
-When called without an optional module name, run the doctests from
-*all* modules.  This may raise lots of errors if you haven't installed
-one of the versioning control systems.
+When called without optional module names, run the doctests from *all*
+modules.  This may raise lots of errors if you haven't installed one
+of the versioning control systems.
 
-When called with an optional module name, only run the doctests from
-that module.
+When called with module name arguments, only run the doctests from
+those modules.
 """
 
 from libbe import plugin
@@ -16,19 +16,19 @@ import sys
 suite = unittest.TestSuite()
 
 if len(sys.argv) > 1:
-    submodname = sys.argv[1]
-    match = False
-    mod = plugin.get_plugin("libbe", submodname)
-    if mod is not None and hasattr(mod, "suite"):
-        suite.addTest(mod.suite)
-        match = True
-    mod = plugin.get_plugin("becommands", submodname)
-    if mod is not None:
-        suite.addTest(doctest.DocTestSuite(mod))
-        match = True
-    if not match:
-        print "No modules match \"%s\"" % submodname
-        sys.exit(1)
+    for submodname in sys.argv[1:]:
+        match = False
+        mod = plugin.get_plugin("libbe", submodname)
+        if mod is not None and hasattr(mod, "suite"):
+            suite.addTest(mod.suite)
+            match = True
+        mod = plugin.get_plugin("becommands", submodname)
+        if mod is not None:
+            suite.addTest(doctest.DocTestSuite(mod))
+            match = True
+        if not match:
+            print "No modules match \"%s\"" % submodname
+            sys.exit(1)
 else:
     failed = False
     for modname,module in plugin.iter_plugins("libbe"):

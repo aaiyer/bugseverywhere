@@ -2,7 +2,7 @@
 
 __all__ = ["set_root", "set", "new", "remove", "list", "show", "close", "open",
            "assign", "severity", "status", "target", "comment", "diff",
-           "upgrade", "help"]
+           "help"]
 
 def import_all():
     for i in __all__:
