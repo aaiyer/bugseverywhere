@@ -56,14 +56,14 @@ class InvalidValue(ValueError):
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
 
-def setting_property(name, valid=None):
+def setting_property(name, valid=None, doc=None):
     def getter(self):
         value = self.settings.get(name) 
         if valid is not None:
             if value not in valid:
                 raise InvalidValue(name, value)
         return value
-
+    
     def setter(self, value):
         if valid is not None:
             if value not in valid and value is not None:
@@ -72,15 +72,29 @@ def setting_property(name, valid=None):
             del self.settings[name]
         else:
             self.settings[name] = value
-        self.save()
-    return property(getter, setter)
+        self._save_settings(self.get_path("settings"), self.settings)
+    
+    return property(getter, setter, doc=doc)
 
 
 class BugDir (list):
+    """
+    File-system access:
+    When rooted in non-bugdir directory, BugDirs live completely in
+    memory until the first call to .save().  This creates a '.be'
+    sub-directory containing configurations options, bugs, comments,
+    etc.  Once this sub-directory has been created (possibly by
+    another BugDir instance) any changes to the BugDir in memory will
+    be flushed to the file system automatically.  However, the BugDir
+    will only load information from the file system when it loads new
+    bugs/comments that it doesn't already have in memory, or when it
+    explicitly asked to do so (e.g. .load() or __init__(loadNow=True)).
+    """
     def __init__(self, root=None, sink_to_existing_root=True,
                  assert_new_BugDir=False, allow_rcs_init=False,
                  loadNow=False, rcs=None):
         list.__init__(self)
+        self.settings = {}
         if root == None:
             root = os.getcwd()
         if sink_to_existing_root == True:
@@ -92,13 +106,12 @@ class BugDir (list):
         if loadNow == True:
             self.load()
         else:
-            if assert_new_BugDir:
+            if assert_new_BugDir == True:
                 if os.path.exists(self.get_path()):
                     raise AlreadyInitialized, self.get_path()
             if rcs == None:
                 rcs = self.guess_rcs(allow_rcs_init)
-            self.settings = {"rcs_name": self.rcs_name}
-            self.rcs_name = rcs.name
+            self.rcs = rcs
 
     def find_root(self, path):
         """
@@ -132,21 +145,24 @@ class BugDir (list):
         self.rcs.set_file_contents(self.get_path("version"), TREE_VERSION_STRING)
 
     rcs_name = setting_property("rcs_name",
-                                ("None", "bzr", "git", "Arch", "hg"))
+                                ("None", "bzr", "git", "Arch", "hg"),
+                                doc="The name of the current RCS.  Kept seperate to make saving/loading settings easy.  Don't set this attribute.  Set .rcs instead, and .rcs_name will be automatically adjusted.")
 
     _rcs = None
 
     def _get_rcs(self):
-        if self._rcs is not None:
-            if self.rcs_name == self._rcs.name:
-                return self._rcs
-        self._rcs = rcs_by_name(self.rcs_name)
-        self._rcs.root(self.root)
         return self._rcs
 
-    rcs = property(_get_rcs)
+    def _set_rcs(self, rcs):
+        if rcs == None:
+            rcs = rcs_by_name("None")
+        self._rcs = rcs
+        rcs.root(self.root)
+        self.rcs_name = rcs.name
 
-    target = setting_property("target")
+    rcs = property(_get_rcs, _set_rcs, doc="A revision control system (RCS) instance")
+
+    target = setting_property("target", doc="The current project development target")
 
     def get_path(self, *args):
         my_dir = os.path.join(self.root, ".be")
@@ -160,12 +176,12 @@ class BugDir (list):
         if not os.path.exists(deepdir):
             deepdir = os.path.dirname(deepdir)
         rcs = detect_rcs(deepdir)
+        install = False
         if rcs.name == "None":
             if allow_rcs_init == True:
                 rcs = installed_rcs()
                 rcs.init(self.root)
-        self.settings = {"rcs_name": rcs.name}
-        self.rcs_name = rcs.name
+        self.rcs = rcs
         return rcs
 
     def load(self):
@@ -176,6 +192,7 @@ class BugDir (list):
             if not os.path.exists(self.get_path()):
                 raise NoBugDir(self.get_path())
             self.settings = self._get_settings(self.get_path("settings"))
+            self.rcs = rcs_by_name(self.rcs_name)
             self._clear_bugs()
             for uuid in self.list_uuids():
                 self._load_bug(uuid)
@@ -198,10 +215,17 @@ class BugDir (list):
         return settings
 
     def _save_settings(self, settings_path, settings):
+        if not os.path.exists(self.get_path()):
+            # don't save settings until the bug directory has been
+            # initialized.  this initialization happens the first time
+            # a bug directory is saved (BugDir.save()).  If the user
+            # is just working with a BugDir in memory, we don't want
+            # to go cluttering up his file system with settings files.
+            return
         try:
             mapfile.map_save(self.rcs, settings_path, settings)
         except PathNotInRoot, e:
-            # Handling duplicate bugdir settings, special case
+            # Special case for configuring duplicate bugdir settings
             none_rcs = rcs_by_name("None")
             none_rcs.root(settings_path)
             mapfile.map_save(none_rcs, settings_path, settings)
@@ -209,7 +233,7 @@ class BugDir (list):
     def duplicate_bugdir(self, revision):
         duplicate_path = self.rcs.duplicate_repo(revision)
 
-        # setup revision RCS as None, since the duplicate may not be versioned
+        # setup revision RCS as None, since the duplicate may not be initialized for versioning
         duplicate_settings_path = os.path.join(duplicate_path, ".be", "settings")
         duplicate_settings = self._get_settings(duplicate_settings_path)
         if "rcs_name" in duplicate_settings:
@@ -228,10 +252,18 @@ class BugDir (list):
         self.bug_map = map
 
     def list_uuids(self):
-        for uuid in os.listdir(self.get_path("bugs")):
-            if (uuid.startswith('.')):
-                continue
-            yield uuid
+        uuids = []
+        if os.path.exists(self.get_path()):
+            # list the uuids on disk
+            for uuid in os.listdir(self.get_path("bugs")):
+                if not (uuid.startswith('.')):
+                    uuids.append(uuid)
+                    yield uuid
+        # and the ones that are still just in memory
+        for bug in self:
+            if bug.uuid not in uuids:
+                uuids.append(bug.uuid)
+                yield bug.uuid
 
     def _clear_bugs(self):
         while len(self) > 0:
@@ -341,6 +373,41 @@ class BugDirTestCase(unittest.TestCase):
                         "path %s does not exist" % fullpath)
         self.assertRaises(AlreadyInitialized, BugDir,
                           self.dir.path, assertNewBugDir=True)
+    def versionTest(self):
+        if self.rcs.versioned == False:
+            return
+        original = self.bugdir.rcs.commit("Began versioning")
+        bugA = self.bugdir.bug_from_uuid("a")
+        bugA.status = "fixed"
+        self.bugdir.save()
+        new = self.rcs.commit("Fixed bug a")
+        dupdir = self.bugdir.duplicate_bugdir(original)
+        self.failUnless(dupdir.root != self.bugdir.root, "%s, %s" % (dupdir.root, self.bugdir.root))
+        bugAorig = dupdir.bug_from_uuid("a")
+        self.failUnless(bugA != bugAorig, "\n%s\n%s" % (bugA.string(), bugAorig.string()))
+        bugAorig.status = "fixed"
+        self.failUnless(bug.cmp_status(bugA, bugAorig)==0, "%s, %s" % (bugA.status, bugAorig.status))
+        self.failUnless(bug.cmp_severity(bugA, bugAorig)==0, "%s, %s" % (bugA.severity, bugAorig.severity))
+        self.failUnless(bug.cmp_assigned(bugA, bugAorig)==0, "%s, %s" % (bugA.assigned, bugAorig.assigned))
+        self.failUnless(bug.cmp_time(bugA, bugAorig)==0, "%s, %s" % (bugA.time, bugAorig.time))
+        self.failUnless(bug.cmp_creator(bugA, bugAorig)==0, "%s, %s" % (bugA.creator, bugAorig.creator))
+        self.failUnless(bugA == bugAorig, "\n%s\n%s" % (bugA.string(), bugAorig.string()))
+        self.bugdir.remove_duplicate_bugdir()
+        self.failUnless(os.path.exists(dupdir.root)==False, str(dupdir.root))
+    def testRun(self):
+        self.bugdir.new_bug(uuid="a", summary="Ant")
+        self.bugdir.new_bug(uuid="b", summary="Cockroach")
+        self.bugdir.new_bug(uuid="c", summary="Praying mantis")
+        length = len(self.bugdir)
+        self.failUnless(length == 3, "%d != 3 bugs" % length)
+        uuids = list(self.bugdir.list_uuids())
+        self.failUnless(len(uuids) == 3, "%d != 3 uuids" % len(uuids))
+        self.failUnless(uuids == ["a","b","c"], str(uuids))
+        bugA = self.bugdir.bug_from_uuid("a")
+        bugAprime = self.bugdir.bug_from_shortname("a")
+        self.failUnless(bugA == bugAprime, "%s != %s" % (bugA, bugAprime))
+        self.bugdir.save()
+        self.versionTest()
 
 unitsuite = unittest.TestLoader().loadTestsFromTestCase(BugDirTestCase)
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

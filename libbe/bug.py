@@ -119,7 +119,7 @@ class Bug(object):
             self.status = "open"
             self.severity = "minor"
             self.assigned = None
-            self.time = time.time()
+            self.time = int(time.time()) # only save to second precision
             self.comment_root = comment.Comment(self, uuid=comment.INVALID_UUID)
 
     def __repr__(self):

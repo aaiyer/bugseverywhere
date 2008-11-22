@@ -24,7 +24,10 @@ import tempfile
 import shutil
 import unittest
 import doctest
+
+
 from utility import Dir, search_parent_directories
+
 
 def _get_matching_rcs(matchfn):
     """Return the first module for which matchfn(RCS_instance) is true"""
@@ -32,7 +35,7 @@ def _get_matching_rcs(matchfn):
     import bzr
     import hg
     import git
-    for module in [git, arch, bzr, hg, git]:
+    for module in [arch, bzr, hg, git]:
         rcs = module.new()
         if matchfn(rcs) == True:
             return rcs
@@ -70,7 +73,7 @@ def new():
 
 class RCS(object):
     """
-    Implement the 'no-rcs' interface.
+    This class implements a 'no-rcs' interface.
 
     Support for other RCSs can be added by subclassing this class, and
     overriding methods _rcs_*() with code appropriate for your RCS.
@@ -340,9 +343,9 @@ class RCS(object):
     def _u_invoke(self, args, expect=(0,), cwd=None):
         if cwd == None:
             cwd = self.rootdir
+        if self.verboseInvoke == True:
+            print >> sys.stderr, "%s$ %s" % (cwd, " ".join(args))
         try :
-            if self.verboseInvoke == True:
-                print "%s$ %s" % (cwd, " ".join(args))
             if sys.platform != "win32":
                 q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=cwd)
             else:
@@ -354,8 +357,11 @@ class RCS(object):
             raise CommandError(strerror, e.args[0])
         output, error = q.communicate()
         status = q.wait()
+        if self.verboseInvoke == True:
+            print >> sys.stderr, "%d\n%s%s" % (status, output, error)
         if status not in expect:
-            raise CommandError(error, status)
+            strerror = "%s\nwhile executing %s\n%s" % (args[1], args, error)
+            raise CommandError(strerror, status)
         return status, output, error
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)

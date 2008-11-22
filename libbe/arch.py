@@ -21,7 +21,11 @@ import re
 import unittest
 import doctest
 
+import traceback
+import sys
+
 import config
+from beuuid import uuid_gen
 from rcs import RCS, RCStestCase, CommandError
 
 client = config.get_val("arch_client")
@@ -54,6 +58,10 @@ class Arch(RCS):
         self._create_archive(path)
         self._create_project(path)
         self._add_project_code(path)
+        #print "RCSid:", id(self), "init", self._archive_project_name()
+        #print "BEGIN_TRACE"
+        #traceback.print_stack(file=sys.stdout)
+        #print "END_TRACE"
     def _create_archive(self, path):
         # Create a new archive
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
@@ -62,13 +70,13 @@ class Arch(RCS):
         name, email = self._u_parse_id(id)
         if email == None:
             email = "%s@example.com" % name
-        trailer = "%s-%s" % ("bugs-everywhere-auto",
-                             time.strftime("%Y.%H.%M.%S"))
+        trailer = "%s-%s" % ("bugs-everywhere-auto", uuid_gen()[0:8])
         self._archive_name = "%s--%s" % (email, trailer)
         self._archive_dir = "/tmp/%s" % trailer
         self._tmp_archive = True
         self._u_invoke_client("make-archive", self._archive_name,
                               self._archive_dir, directory=path)
+        self._u_invoke_client("archives")
     def _invoke_client(self, *args, **kwargs):
         """
         Invoke the client on our archive.
@@ -145,10 +153,15 @@ class Arch(RCS):
         self._invoke_client("import", "--summary", "Began versioning",
                             directory=path)
     def _rcs_cleanup(self):
+        #print "RCSid:", id(self), "cleaned", self._archive_project_name()
+        #print "BEGIN_TRACE"
+        #traceback.print_stack(file=sys.stdout)
+        #print "END_TRACE"
         if self._tmp_project == True:
             self._remove_project()
         if self._tmp_archive == True:
             self._remove_archive()
+
 
     def _rcs_root(self, path):
         if not os.path.isdir(path):
@@ -185,6 +198,7 @@ class Arch(RCS):
 
     def _rcs_get_user_id(self):
         try:
+            self._u_invoke_client("archives")
             status,output,error = self._u_invoke_client('my-id')
             return output.rstrip('\n')
         except Exception, e:
@@ -195,11 +209,13 @@ class Arch(RCS):
     def _rcs_set_user_id(self, value):
         self._u_invoke_client('my-id', value)
     def _rcs_add(self, path):
+        self._u_invoke_client("archives")
         self._u_invoke_client("add-id", path)
         realpath = os.path.realpath(self._u_abspath(path))
         pathAdded = realpath in self._list_added(self.rootdir)
         if self.paranoid and not pathAdded:
             self._force_source(path)
+        self._u_invoke_client("archives")
     def _list_added(self, root):
         assert os.path.exists(root)
         assert os.access(root, os.X_OK)
@@ -243,13 +259,16 @@ class Arch(RCS):
     def _rcs_commit(self, commitfile):
         summary,body = self._u_parse_commitfile(commitfile)
         #status,output,error = self._invoke_client("make-log")
+        self._u_invoke_client("tree-root")
+        self._u_invoke_client("tree-version")
+        self._u_invoke_client("archives")
         if body == None:
             status,output,error \
-                = self._invoke_client("commit","--summary",summary)
+                = self._u_invoke_client("commit","--summary",summary)
         else:
             status,output,error \
-                = self._invoke_client("commit","--summary",summary,
-                                      "--log-message",body)
+                = self._u_invoke_client("commit","--summary",summary,
+                                        "--log-message",body)
         revision = None
         revline = re.compile("[*] committed (.*)")
         match = revline.search(output)
