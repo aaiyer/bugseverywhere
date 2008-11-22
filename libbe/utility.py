@@ -101,8 +101,9 @@ class Dir:
     "A temporary directory for testing use"
     def __init__(self):
         self.path = tempfile.mkdtemp(prefix="BEtest")
+        self.shutil = shutil # save local reference for __del__
     def __del__(self):
-        shutil.rmtree(self.path)
+        self.shutil.rmtree(self.path)
     def __call__(self):
         return self.path
 
