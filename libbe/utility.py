@@ -101,11 +101,14 @@ class Dir (object):
     "A temporary directory for testing use"
     def __init__(self):
         self.path = tempfile.mkdtemp(prefix="BEtest")
-        self.shutil = shutil # save local reference for __del__
+        self.rmtree = shutil.rmtree # save local reference for __del__
+        self.removed = False
     def __del__(self):
         self.cleanup()
     def cleanup(self):
-        self.shutil.rmtree(self.path)
+        if self.removed == False:
+            self.rmtree(self.path)
+            self.removed = True
     def __call__(self):
         return self.path
 
