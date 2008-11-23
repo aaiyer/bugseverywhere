@@ -168,6 +168,8 @@ class BugDir (list):
     _user_id = setting_property("user-id", doc="The user's prefered name.  Kept seperate to make saving/loading settings easy.  Don't set this attribute.  Set .user_id instead, and ._user_id will be automatically adjusted.  This setting is only saved if ._save_user_id == True")
 
     def _get_user_id(self):
+        if self._user_id == None and self.rcs != None:
+            self._user_id = self.rcs.get_user_id()
         return self._user_id
 
     def _set_user_id(self, user_id):
@@ -181,7 +183,7 @@ class BugDir (list):
 
     def save_user_id(self, user_id=None):
         if user_id == None:
-            user_id = self.rcs.get_user_id()
+            user_id = self.user_id
         self._save_user_id = True
         self.user_id = user_id
 
@@ -215,10 +217,8 @@ class BugDir (list):
             self.settings = self._get_settings(self.get_path("settings"))
             
             self.rcs = rcs_by_name(self.rcs_name)
-            if self.user_id != None: # there was a user name in the settings file
-                self._save_user_id = True
-            else:
-                self.user_id = self.rcs.get_user_id()
+            if self._user_id != None: # there was a user name in the settings file
+                self.save_user_id()
             
             self._clear_bugs()
             for uuid in self.list_uuids():
@@ -242,17 +242,19 @@ class BugDir (list):
         return settings
 
     def _save_settings(self, settings_path, settings):
-        if not os.path.exists(self.get_path()):
-            # don't save settings until the bug directory has been
-            # initialized.  this initialization happens the first time
-            # a bug directory is saved (BugDir.save()).  If the user
-            # is just working with a BugDir in memory, we don't want
-            # to go cluttering up his file system with settings files.
-            return
-        if self._save_user_id == False and settings == self.settings:
-            if "user-id" in settings:
-                settings = copy.copy(settings)
-                del settings["user-id"]
+        this_dir_path = os.path.realpath(self.get_path("settings"))
+        if os.path.realpath(settings_path) == this_dir_path:
+            if not os.path.exists(self.get_path()):
+                # don't save settings until the bug directory has been
+                # initialized.  this initialization happens the first time
+                # a bug directory is saved (BugDir.save()).  If the user
+                # is just working with a BugDir in memory, we don't want
+                # to go cluttering up his file system with settings files.
+                return
+            if self._save_user_id == False:
+                if "user-id" in settings:
+                    settings = copy.copy(settings)
+                    del settings["user-id"]
         try:
             mapfile.map_save(self.rcs, settings_path, settings)
         except PathNotInRoot, e:
@@ -269,6 +271,7 @@ class BugDir (list):
         duplicate_settings = self._get_settings(duplicate_settings_path)
         if "rcs_name" in duplicate_settings:
             duplicate_settings["rcs_name"] = "None"
+            duplicate_settings["user-id"] = self.user_id
             self._save_settings(duplicate_settings_path, duplicate_settings)
 
         return BugDir(duplicate_path, loadNow=True)
