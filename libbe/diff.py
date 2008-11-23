@@ -33,7 +33,7 @@ def diff(old_bugdir, new_bugdir):
         except KeyError:
             removed.append(old_bug)
     for uuid in new_bugdir.list_uuids():
-        if not old_bugdir.bug_map.has_key(new_bug.uuid):
+        if not old_bugdir.bug_map.has_key(uuid):
             new_bug = new_bugdir.bug_from_uuid(uuid)
             added.append(new_bug)
     return (removed, modified, added)
@@ -51,6 +51,7 @@ def diff_report(diff_data, bug_dir):
         print "New bug reports:"
         for bug in added:
             print bug.string(shortlist=True)
+        print ""
 
     if len(modified) > 0:
         printed = False
@@ -62,12 +63,14 @@ def diff_report(diff_data, bug_dir):
                 printed = True
                 print "Modified bug reports:"
             print change_str
+        print ""
 
     if len(removed) > 0: 
         print "Removed bug reports:"
         for bug in removed:
             print bug.string(shortlist=True)
-   
+        print ""
+
 def change_lines(old, new, attributes):
     change_list = []    
     for attr in attributes:

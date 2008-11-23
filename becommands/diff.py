@@ -33,10 +33,11 @@ def execute(args):
     >>> if bd.rcs.versioned == True:
     ...     execute([original])
     ... else:
-    ...     print "a:cm: Bug A\\nstatus: open -> closed"
+    ...     print "a:cm: Bug A\\nstatus: open -> closed\\n"
     Modified bug reports:
     a:cm: Bug A
       status: open -> closed
+    <BLANKLINE>
     """
     options, args = get_parser().parse_args(args)
     if len(args) == 0:
