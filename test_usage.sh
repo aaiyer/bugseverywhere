@@ -60,7 +60,22 @@ then
 elif [ "$RCS" == "arch" ]
 then
     ID=`tla my-id`
-    tla init-tree
+    ARCH_PARAM_DIR="$HOME/.arch-params"
+    ARCH_ARCHIVE_ROOT=`mktemp -d /tmp/BEtest.XXXXXXXXXX`
+    UNIQUE=`echo "$ARCH_ARCHIVE_ROOT" | sed 's/\/tmp\/BEtest.//;s/[0-9]//g'` 
+    ARCH_ARCHIVE="j@x.com--BE-test-usage-$UNIQUE"
+    ARCH_PROJECT="BE-test-usage--twig--99.5"
+    ARCH_ARCHIVE_DIR="$ARCH_ARCHIVE_ROOT/$ARCH_PROJECT"
+    echo "tla make-archive $ARCH_ARCHIVE $ARCH_ARCHIVE_DIR"
+    tla make-archive $ARCH_ARCHIVE $ARCH_ARCHIVE_DIR
+    echo "tla archive-setup -A $ARCH_ARCHIVE $ARCH_PROJECT"
+    tla archive-setup -A $ARCH_ARCHIVE $ARCH_PROJECT
+    echo "tla init-tree -A $ARCH_ARCHIVE $ARCH_PROJECT"
+    tla init-tree -A $ARCH_ARCHIVE $ARCH_PROJECT
+    echo "Adjusing the naming conventions to allow .files"
+    sed -i 's/^source .*/source ^[._=a-zA-X0-9].*$/' '{arch}/=tagging-method'
+    echo "tla import -A $ARCH_ARCHIVE --summary 'Began versioning'"
+    tla import -A $ARCH_ARCHIVE --summary 'Began versioning'
 elif [ "$RCS" == "none" ]
 then
     ID=`id -nu`
@@ -99,5 +114,12 @@ be diff                 # see what has changed
 be remove $BUG # decide that you don't like that bug after all
 cd /
 rm -rf $TESTDIR
+
+if [ "$RCS" == "arch" ]
+then
+    # Cleanup everything outside of TESTDIR
+    rm -rf "$ARCH_ARCHIVE_ROOT"
+    rm -rf "$ARCH_PARAM_DIR/=locations/$ARCH_ARCHIVE"
+fi
 
 exec 2>&6 6>&- # restore stderr and close fd 6

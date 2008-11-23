@@ -218,7 +218,7 @@ class Comment(Tree):
 
     def add_reply(self, reply):
         if reply.time != None and self.time != None:
-            assert reply.time > self.time
+            assert reply.time >= self.time
         if self.uuid != INVALID_UUID:
             reply.in_reply_to = self.uuid
         self.append(reply)

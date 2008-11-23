@@ -69,7 +69,6 @@ class Arch(RCS):
         self._tmp_archive = True
         self._u_invoke_client("make-archive", self._archive_name,
                               self._archive_dir, directory=path)
-        self._u_invoke_client("archives")
     def _invoke_client(self, *args, **kwargs):
         """
         Invoke the client on our archive.
@@ -191,7 +190,6 @@ class Arch(RCS):
         self._project_name = project_name
     def _rcs_get_user_id(self):
         try:
-            self._u_invoke_client("archives")
             status,output,error = self._u_invoke_client('my-id')
             return output.rstrip('\n')
         except Exception, e:
@@ -202,13 +200,11 @@ class Arch(RCS):
     def _rcs_set_user_id(self, value):
         self._u_invoke_client('my-id', value)
     def _rcs_add(self, path):
-        self._u_invoke_client("archives")
         self._u_invoke_client("add-id", path)
         realpath = os.path.realpath(self._u_abspath(path))
         pathAdded = realpath in self._list_added(self.rootdir)
         if self.paranoid and not pathAdded:
             self._force_source(path)
-        self._u_invoke_client("archives")
     def _list_added(self, root):
         assert os.path.exists(root)
         assert os.access(root, os.X_OK)
@@ -252,9 +248,6 @@ class Arch(RCS):
     def _rcs_commit(self, commitfile):
         summary,body = self._u_parse_commitfile(commitfile)
         #status,output,error = self._invoke_client("make-log")
-        self._u_invoke_client("tree-root")
-        self._u_invoke_client("tree-version")
-        self._u_invoke_client("archives")
         if body == None:
             status,output,error \
                 = self._u_invoke_client("commit","--summary",summary)

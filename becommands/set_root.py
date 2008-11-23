@@ -43,6 +43,7 @@ def execute(args):
     >>> execute([])
     Using Arch for revision control.
     Directory initialized.
+    >>> rcs.cleanup()
 
     >>> try:
     ...     execute(['.'])

@@ -105,7 +105,6 @@ class Dir (object):
     def __del__(self):
         self.cleanup()
     def cleanup(self):
-        print "Removing", self.path
         self.shutil.rmtree(self.path)
     def __call__(self):
         return self.path
