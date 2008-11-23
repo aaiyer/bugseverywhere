@@ -22,7 +22,6 @@ import copy
 import unittest
 import doctest
 
-from beuuid import uuid_gen
 import mapfile
 import bug
 import cmdutil
