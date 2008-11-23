@@ -38,15 +38,13 @@ def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) == 0:
         raise cmdutil.UserError("Please specify a bug id.")
-    if len(args) > 1:
-        help()
-        raise cmdutil.UserError("Too many arguments.")
     bd = bugdir.BugDir(loadNow=True)
-    bug = bd.bug_from_shortname(args[0])
-    print bug.string(show_comments=True)
+    for bugid in args:
+        bug = bd.bug_from_shortname(bugid)
+        print bug.string(show_comments=True)
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be show bug-id")
+    parser = cmdutil.CmdOptionParser("be show bug-id [more bug-ids...]")
     return parser
 
 longhelp="""
