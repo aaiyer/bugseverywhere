@@ -25,7 +25,6 @@ import shutil
 import unittest
 import doctest
 
-
 from utility import Dir, search_parent_directories
 
 

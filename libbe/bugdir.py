@@ -24,7 +24,6 @@ import doctest
 
 import mapfile
 import bug
-import cmdutil
 import utility
 from rcs import rcs_by_name, detect_rcs, installed_rcs, PathNotInRoot
 
@@ -51,6 +50,14 @@ class InvalidValue(ValueError):
         Exception.__init__(self, msg)
         self.name = name
         self.value = value
+
+class MultipleBugMatches(ValueError):
+    def __init__(self, shortname, matches):
+        msg = ("More than one bug matches %s.  "
+               "Please be more specific.\n%s" % shortname, matches)
+        ValueError.__init__(self, msg)
+        self.shortname = shortnamename
+        self.matches = matches
 
 
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
@@ -356,8 +363,7 @@ class BugDir (list):
             if uuid.startswith(shortname):
                 matches.append(uuid)
         if len(matches) > 1:
-            raise cmdutil.UserError("More than one bug matches %s.  "
-                                    "Please be more specific." % shortname)
+            raise MultipleBugMatches(shortname, matches)
         if len(matches) == 1:
             return self.bug_from_uuid(matches[0])
         raise KeyError("No bug matches %s" % shortname)
