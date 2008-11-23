@@ -215,8 +215,12 @@ class RCS(object):
         """
         Get the RCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
         If the RCS has not been configured with a username, return the user's
-        id.
+        id.  You can override the automatic lookup procedure by setting the
+        RCS.user_id attribute to a string of your choice.
         """
+        if hasattr(self, "user_id"):
+            if self.user_id != None:
+                return self.user_id
         id = self._rcs_get_user_id()
         if id == None:
             name = self._u_get_fallback_username()

@@ -18,6 +18,7 @@ import os
 import os.path
 import errno
 import time
+import copy
 import unittest
 import doctest
 
@@ -94,6 +95,7 @@ class BugDir (list):
                  assert_new_BugDir=False, allow_rcs_init=False,
                  loadNow=False, rcs=None):
         list.__init__(self)
+        self._save_user_id = False
         self.settings = {}
         if root == None:
             root = os.getcwd()
@@ -112,6 +114,7 @@ class BugDir (list):
             if rcs == None:
                 rcs = self.guess_rcs(allow_rcs_init)
             self.rcs = rcs
+            user_id = self.rcs.get_user_id()
 
     def find_root(self, path):
         """
@@ -162,7 +165,25 @@ class BugDir (list):
 
     rcs = property(_get_rcs, _set_rcs, doc="A revision control system (RCS) instance")
 
+    _user_id = setting_property("user-id", doc="The user's prefered name.  Kept seperate to make saving/loading settings easy.  Don't set this attribute.  Set .user_id instead, and ._user_id will be automatically adjusted.  This setting is only saved if ._save_user_id == True")
+
+    def _get_user_id(self):
+        return self._user_id
+
+    def _set_user_id(self, user_id):
+        if self.rcs != None:
+            self.rcs.user_id = user_id
+        self._user_id = user_id
+
+    user_id = property(_get_user_id, _set_user_id, doc="The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Not that the Arch RCS backend *enforces* ids with this format.")
+
     target = setting_property("target", doc="The current project development target")
+
+    def save_user_id(self, user_id=None):
+        if user_id == None:
+            user_id = self.rcs.get_user_id()
+        self._save_user_id = True
+        self.user_id = user_id
 
     def get_path(self, *args):
         my_dir = os.path.join(self.root, ".be")
@@ -192,7 +213,13 @@ class BugDir (list):
             if not os.path.exists(self.get_path()):
                 raise NoBugDir(self.get_path())
             self.settings = self._get_settings(self.get_path("settings"))
+            
             self.rcs = rcs_by_name(self.rcs_name)
+            if self.user_id != None: # there was a user name in the settings file
+                self._save_user_id = True
+            else:
+                self.user_id = self.rcs.get_user_id()
+            
             self._clear_bugs()
             for uuid in self.list_uuids():
                 self._load_bug(uuid)
@@ -222,6 +249,10 @@ class BugDir (list):
             # is just working with a BugDir in memory, we don't want
             # to go cluttering up his file system with settings files.
             return
+        if self._save_user_id == False and settings == self.settings:
+            if "user-id" in settings:
+                settings = copy.copy(settings)
+                del settings["user-id"]
         try:
             mapfile.map_save(self.rcs, settings_path, settings)
         except PathNotInRoot, e:
