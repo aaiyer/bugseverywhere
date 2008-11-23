@@ -21,9 +21,6 @@ import re
 import unittest
 import doctest
 
-import traceback
-import sys
-
 import config
 from beuuid import uuid_gen
 from rcs import RCS, RCStestCase, CommandError
@@ -58,10 +55,6 @@ class Arch(RCS):
         self._create_archive(path)
         self._create_project(path)
         self._add_project_code(path)
-        #print "RCSid:", id(self), "init", self._archive_project_name()
-        #print "BEGIN_TRACE"
-        #traceback.print_stack(file=sys.stdout)
-        #print "END_TRACE"
     def _create_archive(self, path):
         # Create a new archive
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
@@ -102,6 +95,11 @@ class Arch(RCS):
         self._archive_dir = False
         self._archive_name = False
     def _create_project(self, path):
+        """
+        Create a temporary Arch project in the directory PATH.  This
+        project will be removed by
+          __del__->cleanup->_rcs_cleanup->_remove_project
+        """
         # http://mwolson.org/projects/GettingStartedWithArch.html
         # http://regexps.srparish.net/tutorial-tla/new-project.html#Starting_a_New_Project
         category = "bugs-everywhere"
@@ -110,6 +108,7 @@ class Arch(RCS):
         self._project_name = "%s--%s--%s" % (category, branch, version)
         self._invoke_client("archive-setup", self._project_name,
                             directory=path)
+        self._tmp_project = True
     def _remove_project(self):
         assert self._tmp_project == True
         assert self._project_name != None
@@ -153,15 +152,10 @@ class Arch(RCS):
         self._invoke_client("import", "--summary", "Began versioning",
                             directory=path)
     def _rcs_cleanup(self):
-        #print "RCSid:", id(self), "cleaned", self._archive_project_name()
-        #print "BEGIN_TRACE"
-        #traceback.print_stack(file=sys.stdout)
-        #print "END_TRACE"
         if self._tmp_project == True:
             self._remove_project()
         if self._tmp_archive == True:
             self._remove_archive()
-
 
     def _rcs_root(self, path):
         if not os.path.isdir(path):
@@ -195,7 +189,6 @@ class Arch(RCS):
         archive_name,project_name = output.rstrip('\n').split('/')
         self._archive_name = archive_name
         self._project_name = project_name
-
     def _rcs_get_user_id(self):
         try:
             self._u_invoke_client("archives")

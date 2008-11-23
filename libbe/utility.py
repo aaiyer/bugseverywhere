@@ -97,12 +97,15 @@ def search_parent_directories(path, filename):
         old_path = path
         path = os.path.dirname(path)
 
-class Dir:
+class Dir (object):
     "A temporary directory for testing use"
     def __init__(self):
         self.path = tempfile.mkdtemp(prefix="BEtest")
         self.shutil = shutil # save local reference for __del__
     def __del__(self):
+        self.cleanup()
+    def cleanup(self):
+        print "Removing", self.path
         self.shutil.rmtree(self.path)
     def __call__(self):
         return self.path

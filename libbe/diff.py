@@ -87,11 +87,11 @@ def bug_changes(old, new, bugs):
     change_strings = ["%s: %s -> %s" % f for f in change_list]
     for comment_id in new_comment_ids:
         if comment_id not in old_comment_ids:
-            summary = comment_summary(new.get_comment(comment_id), "new")
+            summary = comment_summary(new.comment_root.comment_from_uuid(comment_id), "new")
             change_strings.append(summary)
     for comment_id in old_comment_ids:
         if comment_id not in new_comment_ids:
-            summary = comment_summary(new.get_comment(comment_id), "removed")
+            summary = comment_summary(new.comment.root.comment_from_uuid(comment_id), "removed")
             change_strings.append(summary)
 
     if len(change_strings) == 0:

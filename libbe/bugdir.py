@@ -363,8 +363,8 @@ class BugDirTestCase(unittest.TestCase):
         self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False, allow_rcs_init=True)
         self.rcs = self.bugdir.rcs
     def tearDown(self):
-        del(self.rcs)
-        del(self.dir)
+        self.rcs.cleanup()
+        self.dir.cleanup()
     def fullPath(self, path):
         return os.path.join(self.dir.path, path)
     def assertPathExists(self, path):
@@ -410,4 +410,4 @@ class BugDirTestCase(unittest.TestCase):
         self.versionTest()
 
 unitsuite = unittest.TestLoader().loadTestsFromTestCase(BugDirTestCase)
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+suite = unittest.TestSuite([unitsuite])#, doctest.DocTestSuite()])
