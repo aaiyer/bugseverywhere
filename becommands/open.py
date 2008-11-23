@@ -26,7 +26,7 @@ def execute(args):
     >>> print bd.bug_from_shortname("b").status
     closed
     >>> execute(["b"])
-    >>> bd.load()
+    >>> bd._clear_bugs()
     >>> print bd.bug_from_shortname("b").status
     open
     """
@@ -36,7 +36,7 @@ def execute(args):
     if len(args) > 1:
         help()
         raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     bug = bd.bug_from_shortname(args[0])
     bug.status = "open"
     bd.save()

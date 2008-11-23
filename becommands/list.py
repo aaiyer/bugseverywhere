@@ -36,7 +36,8 @@ def execute(args):
     if len(args) > 0:
         help()
         raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
+    bd.load_all_bugs()
     # select status
     if options.status != None:
         if options.status == "all":
@@ -84,7 +85,7 @@ def execute(args):
             assigned = "all"
     for i in range(len(assigned)):
         if assigned[i] == '-':
-            assigned[i] = bd.rcs.get_user_id()
+            assigned[i] = bd.user_id
     # select target
     if options.target != None:
         if options.target == "all":

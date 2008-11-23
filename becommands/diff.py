@@ -46,7 +46,7 @@ def execute(args):
     if len(args) > 1:
         help()
         raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     if bd.rcs.versioned == False:
         print "This directory is not revision-controlled."
     else:

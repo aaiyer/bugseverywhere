@@ -38,7 +38,7 @@ def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) == 0:
         raise cmdutil.UserError("Please specify a bug id.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     for bugid in args:
         bug = bd.bug_from_shortname(bugid)
         print bug.string(show_comments=True)

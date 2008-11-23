@@ -89,11 +89,11 @@ class BugDir (list):
     be flushed to the file system automatically.  However, the BugDir
     will only load information from the file system when it loads new
     bugs/comments that it doesn't already have in memory, or when it
-    explicitly asked to do so (e.g. .load() or __init__(loadNow=True)).
+    explicitly asked to do so (e.g. .load() or __init__(from_disk=True)).
     """
     def __init__(self, root=None, sink_to_existing_root=True,
                  assert_new_BugDir=False, allow_rcs_init=False,
-                 loadNow=False, rcs=None):
+                 from_disk=False, rcs=None):
         list.__init__(self)
         self._save_user_id = False
         self.settings = {}
@@ -105,7 +105,7 @@ class BugDir (list):
             if not os.path.exists(root):
                 raise NoRootEntry(root)
             self.root = root
-        if loadNow == True:
+        if from_disk == True:
             self.load()
         else:
             if assert_new_BugDir == True:
@@ -217,14 +217,16 @@ class BugDir (list):
             self.settings = self._get_settings(self.get_path("settings"))
             
             self.rcs = rcs_by_name(self.rcs_name)
-            if self._user_id != None: # there was a user name in the settings file
-                self.save_user_id()
-            
-            self._clear_bugs()
-            for uuid in self.list_uuids():
-                self._load_bug(uuid)
+            if self._user_id != None: # was a user name in the settings file
+                self.save_user_id()            
             
         self._bug_map_gen()
+
+    def load_all_bugs(self):
+        "Warning: this could take a while."
+        self._clear_bugs()
+        for uuid in self.list_uuids():
+            self._load_bug(uuid)
 
     def save(self):
         self.rcs.mkdir(self.get_path())
@@ -274,7 +276,7 @@ class BugDir (list):
             duplicate_settings["user-id"] = self.user_id
             self._save_settings(duplicate_settings_path, duplicate_settings)
 
-        return BugDir(duplicate_path, loadNow=True)
+        return BugDir(duplicate_path, from_disk=True)
 
     def remove_duplicate_bugdir(self):
         self.rcs.remove_duplicate_repo()
@@ -283,6 +285,9 @@ class BugDir (list):
         map = {}
         for bug in self:
             map[bug.uuid] = bug
+        for uuid in self.list_uuids():
+            if uuid not in map:
+                map[uuid] = None
         self.bug_map = map
 
     def list_uuids(self):
@@ -304,7 +309,7 @@ class BugDir (list):
             self.pop()
 
     def _load_bug(self, uuid):
-        bg = bug.Bug(bugdir=self, uuid=uuid, loadNow=True)
+        bg = bug.Bug(bugdir=self, uuid=uuid, from_disk=True)
         self.append(bg)
         self._bug_map_gen()
         return bg
@@ -347,14 +352,15 @@ class BugDir (list):
         a:om: Bug A
         """
         matches = []
-        for bug in self:
-            if bug.uuid.startswith(shortname):
-                matches.append(bug)
+        self._bug_map_gen()
+        for uuid in self.bug_map.keys():
+            if uuid.startswith(shortname):
+                matches.append(uuid)
         if len(matches) > 1:
-            raise cmdutil.UserError("More than one bug matches %s.  Please be more"
-                                    " specific." % shortname)
+            raise cmdutil.UserError("More than one bug matches %s.  "
+                                    "Please be more specific." % shortname)
         if len(matches) == 1:
-            return matches[0]
+            return self.bug_from_uuid(matches[0])
         raise KeyError("No bug matches %s" % shortname)
 
     def bug_from_uuid(self, uuid):
@@ -362,6 +368,8 @@ class BugDir (list):
             self._bug_map_gen()
             if uuid not in self.bug_map:
                 raise KeyError("No bug matches %s" % uuid +str(self.bug_map)+str(self))
+        if self.bug_map[uuid] == None:
+            self._load_bug(uuid)
         return self.bug_map[uuid]
 
 

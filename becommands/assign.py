@@ -27,17 +27,17 @@ def execute(args):
     True
 
     >>> execute(["a"])
-    >>> bd.load()
-    >>> bd.bug_from_shortname("a").assigned == bd.rcs.get_user_id()
+    >>> bd._clear_bugs()
+    >>> bd.bug_from_shortname("a").assigned == bd.user_id
     True
 
     >>> execute(["a", "someone"])
-    >>> bd.load()
+    >>> bd._clear_bugs()
     >>> print bd.bug_from_shortname("a").assigned
     someone
 
     >>> execute(["a","none"])
-    >>> bd.load()
+    >>> bd._clear_bugs()
     >>> bd.bug_from_shortname("a").assigned is None
     True
     """
@@ -48,10 +48,10 @@ def execute(args):
     if len(args) > 2:
         help()
         raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
-        bug.assigned = bug.rcs.get_user_id()
+        bug.assigned = bd.user_id
     elif len(args) == 2:
         if args[1] == "none":
             bug.assigned = None

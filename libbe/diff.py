@@ -24,15 +24,17 @@ def diff(old_bugdir, new_bugdir):
     added = []
     removed = []
     modified = []
-    for old_bug in old_bugdir:
-        new_bug = new_bugdir.bug_map.get(old_bug.uuid)
-        if new_bug is None :
-            removed.append(old_bug)
-        else:
+    for uuid in old_bugdir.list_uuids():
+        old_bug = old_bugdir.bug_from_uuid(uuid)
+        try:
+            new_bug = new_bugdir.bug_from_uuid(uuid)
             if old_bug != new_bug:
                 modified.append((old_bug, new_bug))
-    for new_bug in new_bugdir:
+        except KeyError:
+            removed.append(old_bug)
+    for uuid in new_bugdir.list_uuids():
         if not old_bugdir.bug_map.has_key(new_bug.uuid):
+            new_bug = new_bugdir.bug_from_uuid(uuid)
             added.append(new_bug)
     return (removed, modified, added)
 
@@ -82,7 +84,9 @@ def bug_changes(old, new, bugs):
     change_list = change_lines(old, new, ("time", "creator", "severity",
     "target", "summary", "status", "assigned"))
 
+    old.load_comments()
     old_comment_ids = [c.uuid for c in old.comment_root.traverse()]
+    new.load_comments()
     new_comment_ids = [c.uuid for c in new.comment_root.traverse()]
     change_strings = ["%s: %s -> %s" % f for f in change_list]
     for comment_id in new_comment_ids:

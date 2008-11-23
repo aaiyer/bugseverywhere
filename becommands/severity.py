@@ -37,7 +37,7 @@ def execute(args):
     if len(args) not in (1,2):
         print help()
         return
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         print bug.severity

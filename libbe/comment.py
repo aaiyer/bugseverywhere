@@ -63,7 +63,7 @@ def loadComments(bug):
     for uuid in os.listdir(path):
         if uuid.startswith('.'):
             continue
-        comm = Comment(bug, uuid, loadNow=True)
+        comm = Comment(bug, uuid, from_disk=True)
         comments.append(comm)
     return _list_to_root(comments, bug)
 
@@ -74,16 +74,16 @@ def saveComments(bug):
         comment.save()
 
 class Comment(Tree):
-    def __init__(self, bug=None, uuid=None, loadNow=False,
+    def __init__(self, bug=None, uuid=None, from_disk=False,
                  in_reply_to=None, body=None):
         """
-        Set loadNow=True to load an old bug.
-        Set loadNow=False to create a new bug.
+        Set from_disk=True to load an old bug.
+        Set from_disk=False to create a new bug.
 
-        The uuid option is required when loadNow==True.
+        The uuid option is required when from_disk==True.
         
         The in_reply_to and body options are only used if
-        loadNow==False (the default).  When loadNow==True, they are
+        from_disk==False (the default).  When from_disk==True, they are
         loaded from the bug database.
         
         in_reply_to should be the uuid string of the parent comment.
@@ -94,7 +94,7 @@ class Comment(Tree):
             self.rcs = bug.rcs
         else:
             self.rcs = None
-        if loadNow == True: 
+        if from_disk == True: 
             self.uuid = uuid 
             self.load()
         else:

@@ -36,7 +36,7 @@ def execute(args):
     if len(args) > 2:
         help()
         raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     if len(args) == 0:
         keys = bd.settings.keys()
         keys.sort()

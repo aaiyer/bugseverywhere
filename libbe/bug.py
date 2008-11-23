@@ -95,17 +95,20 @@ class Bug(object):
 
     active = property(_get_active)
 
-    def __init__(self, bugdir=None, uuid=None, loadNow=False, summary=None):
+    def __init__(self, bugdir=None, uuid=None, from_disk=False,
+                 load_comments=False, summary=None):
         self.bugdir = bugdir
         if bugdir != None:
             self.rcs = bugdir.rcs
         else:
             self.rcs = None
-        if loadNow == True:
+        if from_disk == True:
+            self._comments_loaded = False
             self.uuid = uuid
-            self.load()
+            self.load(load_comments=load_comments)
         else:
             # Note: defaults should match those in Bug.load()
+            self._comments_loaded = True
             if uuid != None:
                 self.uuid = uuid
             else:
@@ -162,6 +165,8 @@ class Bug(object):
             bugout = "%s:%s: %s" % (shortname, chars, self.summary.rstrip('\n'))
         
         if show_comments == True:
+            if self._comments_loaded == False:
+                self.load_comments()
             comout = self.comment_root.string_thread(auto_name_map=True,
                                                      bug_shortname=shortname)
             output = bugout + '\n' + comout.rstrip('\n')
@@ -182,7 +187,7 @@ class Bug(object):
         assert name in ["values", "comments"]
         return os.path.join(my_dir, name)
 
-    def load(self):
+    def load(self, load_comments=False):
         map = mapfile.map_load(self.get_path("values"))
         self.summary = map.get("summary")
         self.creator = map.get("creator")
@@ -193,8 +198,13 @@ class Bug(object):
         self.time = map.get("time")
         if self.time is not None:
             self.time = utility.str_to_time(self.time)
-        
+
+        if load_comments == True:
+            self.load_comments()
+
+    def load_comments(self):
         self.comment_root = comment.loadComments(self)
+        self._comments_loaded = True
 
     def _add_attr(self, map, name):
         value = getattr(self, name)
@@ -217,11 +227,13 @@ class Bug(object):
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, map)
 
-        if len(self.comment_root) > 0:
-            self.rcs.mkdir(self.get_path("comments"))
-            comment.saveComments(self)
+        if self._comments_loaded:
+            if len(self.comment_root) > 0:
+                self.rcs.mkdir(self.get_path("comments"))
+                comment.saveComments(self)
 
     def remove(self):
+        self.load_comments()
         self.comment_root.remove()
         path = self.get_path()
         self.rcs.recursive_remove(path)

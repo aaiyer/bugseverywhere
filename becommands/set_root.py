@@ -67,7 +67,7 @@ def execute(args):
         pass
         #raise cmdutil.UserError, "No such directory: %s" % basedir
     try:
-        bd = bugdir.BugDir(basedir, loadNow=False, sink_to_existing_root=False, assert_new_BugDir=True)
+        bd = bugdir.BugDir(basedir, from_disk=False, sink_to_existing_root=False, assert_new_BugDir=True)
     except bugdir.NoRootEntry:
         raise cmdutil.UserError("No such directory: %s" % basedir)
     except bugdir.AlreadyInitialized:

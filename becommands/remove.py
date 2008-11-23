@@ -28,7 +28,7 @@ def execute(args):
     closed
     >>> execute (["b"])
     Removed bug b
-    >>> bd.load()
+    >>> bd._clear_bugs()
     >>> try:
     ...     bd.bug_from_shortname("b")
     ... except KeyError:
@@ -38,7 +38,7 @@ def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) != 1:
         raise cmdutil.UserError("Please specify a bug id.")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     bug = bd.bug_from_shortname(args[0])
     bd.remove_bug(bug)
     bd.save()

@@ -41,7 +41,7 @@ def execute(args):
     options, args = get_parser().parse_args(args)
     if len(args) != 1:
         raise cmdutil.UserError("Please supply a summary message")
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     bug = bd.new_bug(summary=args[0])
     bd.save()
     print "Created bug with ID %s" % bd.bug_shortname(bug)

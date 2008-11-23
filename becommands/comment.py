@@ -25,12 +25,14 @@ def execute(args):
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
     >>> execute(["a", "This is a comment about a"])
-    >>> bd.load()
-    >>> comment = bd.bug_from_shortname("a").comment_root[0]
+    >>> bd._clear_bugs()
+    >>> bug = bd.bug_from_shortname("a")
+    >>> bug.load_comments()
+    >>> comment = bug.comment_root[0]
     >>> print comment.body
     This is a comment about a
     <BLANKLINE>
-    >>> comment.From == bd.rcs.get_user_id()
+    >>> comment.From == bd.user_id
     True
     >>> comment.time <= int(time.time())
     True
@@ -45,8 +47,11 @@ def execute(args):
 
     >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
     >>> execute(["b"])
-    >>> bd.load()
-    >>> print bd.bug_from_shortname("b").comment_root[0].body
+    >>> bd._clear_bugs()
+    >>> bug = bd.bug_from_shortname("b")
+    >>> bug.load_comments()
+    >>> comment = bug.comment_root[0]
+    >>> print comment.body
     I like cheese
     <BLANKLINE>
     """
@@ -68,8 +73,9 @@ def execute(args):
         bugname = shortname
         is_reply = False
     
-    bd = bugdir.BugDir(loadNow=True)
+    bd = bugdir.BugDir(from_disk=True)
     bug = bd.bug_from_shortname(bugname)
+    bug.load_comments()
     if is_reply:
         parent = bug.comment_root.comment_from_shortname(shortname, bug_shortname=bugname)
     else:
