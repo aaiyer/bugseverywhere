@@ -140,7 +140,9 @@ class Comment(Tree):
           From: 
           Date: Thu, 20 Nov 2008 15:55:11 +0000
         <BLANKLINE>
-          Some insightful remarks
+          Some
+          insightful
+          remarks
         """
         if shortname == None:
             shortname = self.uuid
@@ -152,7 +154,7 @@ class Comment(Tree):
         lines.append("")
         #lines.append(textwrap.fill(self._clean_string(self.body),
         #                           width=(79-indent)))
-        lines.append(self._clean_string(self.body))
+        lines.extend(self._clean_string(self.body).splitlines())
         # some comments shouldn't be wrapped...
         
         istring = ' '*indent
