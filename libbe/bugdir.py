@@ -105,7 +105,7 @@ class BugDir (list):
         if root == None:
             root = os.getcwd()
         if sink_to_existing_root == True:
-            self.root = self.find_root(root)
+            self.root = self._find_root(root)
         else:
             if not os.path.exists(root):
                 raise NoRootEntry(root)
@@ -117,11 +117,11 @@ class BugDir (list):
                 if os.path.exists(self.get_path()):
                     raise AlreadyInitialized, self.get_path()
             if rcs == None:
-                rcs = self.guess_rcs(allow_rcs_init)
+                rcs = self._guess_rcs(allow_rcs_init)
             self.rcs = rcs
             user_id = self.rcs.get_user_id()
 
-    def find_root(self, path):
+    def _find_root(self, path):
         """
         Search for an existing bug database dir and it's ancestors and
         return a BugDir rooted there.
@@ -214,7 +214,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
         assert args[0] in ["version", "settings", "bugs"], str(args)
         return os.path.join(my_dir, *args)
 
-    def guess_rcs(self, allow_rcs_init=False):
+    def _guess_rcs(self, allow_rcs_init=False):
         deepdir = self.get_path()
         if not os.path.exists(deepdir):
             deepdir = os.path.dirname(deepdir)
@@ -319,7 +319,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
         for uuid in self.list_uuids():
             if uuid not in map:
                 map[uuid] = None
-        self.bug_map = map
+        self._bug_map = map
 
     def list_uuids(self):
         uuids = []
@@ -366,7 +366,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
         used for long term reference.
         """
         chars = 3
-        for uuid in self.bug_map.keys():
+        for uuid in self._bug_map.keys():
             if bug.uuid == uuid:
                 continue
             while (bug.uuid[:chars] == uuid[:chars]):
@@ -384,7 +384,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
         """
         matches = []
         self._bug_map_gen()
-        for uuid in self.bug_map.keys():
+        for uuid in self._bug_map.keys():
             if uuid.startswith(shortname):
                 matches.append(uuid)
         if len(matches) > 1:
@@ -394,15 +394,20 @@ that the Arch RCS backend *enforces* ids with this format.""")
         raise KeyError("No bug matches %s" % shortname)
 
     def bug_from_uuid(self, uuid):
-        if uuid not in self.bug_map:
-            self._bug_map_gen()
-            if uuid not in self.bug_map:
-                raise KeyError("No bug matches %s\n  bug map: %s\n  root: %s" \
-                                   % (uuid, self.bug_map, self.root))
-        if self.bug_map[uuid] == None:
+        if not self.has_bug(uuid):
+            raise KeyError("No bug matches %s\n  bug map: %s\n  root: %s" \
+                               % (uuid, self._bug_map, self.root))
+        if self._bug_map[uuid] == None:
             self._load_bug(uuid)
-        return self.bug_map[uuid]
+        return self._bug_map[uuid]
 
+    def has_bug(self, bug_uuid):
+        if bug_uuid not in self._bug_map:
+            self._bug_map_gen()
+            if bug_uuid not in self._bug_map:
+                return False
+        return True
+        
 
 def simple_bug_dir():
     """

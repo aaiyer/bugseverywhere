@@ -33,7 +33,7 @@ def diff(old_bugdir, new_bugdir):
         except KeyError:
             removed.append(old_bug)
     for uuid in new_bugdir.list_uuids():
-        if not old_bugdir.bug_map.has_key(uuid):
+        if not old_bugdir.has_bug(uuid):
             new_bug = new_bugdir.bug_from_uuid(uuid)
             added.append(new_bug)
     return (removed, modified, added)
@@ -87,18 +87,17 @@ def bug_changes(old, new, bugs):
     change_list = change_lines(old, new, ("time", "creator", "severity",
     "target", "summary", "status", "assigned"))
 
-    old.load_comments()
-    old_comment_ids = [c.uuid for c in old.comment_root.traverse()]
-    new.load_comments()
-    new_comment_ids = [c.uuid for c in new.comment_root.traverse()]
+    old_comment_ids = [c.uuid for c in old.comments()]
+    new_comment_ids = [c.uuid for c in new.comments()]
     change_strings = ["%s: %s -> %s" % f for f in change_list]
     for comment_id in new_comment_ids:
         if comment_id not in old_comment_ids:
-            summary = comment_summary(new.comment_root.comment_from_uuid(comment_id), "new")
+            summary = comment_summary(new.comment_from_uuid(comment_id), "new")
             change_strings.append(summary)
     for comment_id in old_comment_ids:
         if comment_id not in new_comment_ids:
-            summary = comment_summary(new.comment.root.comment_from_uuid(comment_id), "removed")
+            summary = comment_summary(new.comment_from_uuid(comment_id),
+                                      "removed")
             change_strings.append(summary)
 
     if len(change_strings) == 0:

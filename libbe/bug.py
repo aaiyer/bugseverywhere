@@ -206,6 +206,12 @@ class Bug(object):
         self.comment_root = comment.loadComments(self)
         self._comments_loaded = True
 
+    def comments(self):
+        if self._comments_loaded == False:
+            self.load_comments()
+        for comment in self.comment_root.traverse():
+            yield comment
+
     def _add_attr(self, map, name):
         value = getattr(self, name)
         if value is not None:

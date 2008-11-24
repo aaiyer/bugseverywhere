@@ -104,10 +104,10 @@ def editor_string(comment=None):
     CantFindEditor: Can't find editor to get string from
     >>> os.environ["EDITOR"] = "echo bar > "
     >>> editor_string()
-    'bar\\n'
+    u'bar\\n'
     >>> os.environ["VISUAL"] = "echo baz > "
     >>> editor_string()
-    'baz\\n'
+    u'baz\\n'
     >>> del os.environ["EDITOR"]
     >>> del os.environ["VISUAL"]
     """
