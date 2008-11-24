@@ -25,7 +25,8 @@ import doctest
 import mapfile
 import bug
 import utility
-from rcs import rcs_by_name, detect_rcs, installed_rcs, PathNotInRoot
+import rcs
+
 
 class NoBugDir(Exception):
     def __init__(self, path):
@@ -67,18 +68,16 @@ def setting_property(name, valid=None, doc=None):
     def getter(self):
         value = self.settings.get(name) 
         if valid is not None:
-            if value not in valid:
+            if value not in valid and value != None:
                 raise InvalidValue(name, value)
         return value
     
     def setter(self, value):
-        if valid is not None:
-            if value not in valid and value is not None:
-                raise InvalidValue(name, value)
-        if value is None:
-            del self.settings[name]
-        else:
-            self.settings[name] = value
+        if value != getter(self):
+            if value is None:
+                del self.settings[name]
+            else:
+                self.settings[name] = value
         self._save_settings(self.get_path("settings"), self.settings)
     
     return property(getter, setter, doc=doc)
@@ -151,27 +150,36 @@ class BugDir (list):
         return tree_version
 
     def set_version(self):
-        self.rcs.set_file_contents(self.get_path("version"), TREE_VERSION_STRING)
+        self.rcs.set_file_contents(self.get_path("version"),
+                                   TREE_VERSION_STRING)
 
     rcs_name = setting_property("rcs_name",
                                 ("None", "bzr", "git", "Arch", "hg"),
-                                doc="The name of the current RCS.  Kept seperate to make saving/loading settings easy.  Don't set this attribute.  Set .rcs instead, and .rcs_name will be automatically adjusted.")
+                                doc=
+"""The name of the current RCS.  Kept seperate to make saving/loading
+settings easy.  Don't set this attribute.  Set .rcs instead, and
+.rcs_name will be automatically adjusted.""")
 
     _rcs = None
 
     def _get_rcs(self):
         return self._rcs
 
-    def _set_rcs(self, rcs):
-        if rcs == None:
-            rcs = rcs_by_name("None")
-        self._rcs = rcs
-        rcs.root(self.root)
-        self.rcs_name = rcs.name
+    def _set_rcs(self, new_rcs):
+        if new_rcs == None:
+            new_rcs = rcs.rcs_by_name("None")
+        self._rcs = new_rcs
+        new_rcs.root(self.root)
+        self.rcs_name = new_rcs.name
 
-    rcs = property(_get_rcs, _set_rcs, doc="A revision control system (RCS) instance")
+    rcs = property(_get_rcs, _set_rcs,
+                   doc="A revision control system (RCS) instance")
 
-    _user_id = setting_property("user-id", doc="The user's prefered name.  Kept seperate to make saving/loading settings easy.  Don't set this attribute.  Set .user_id instead, and ._user_id will be automatically adjusted.  This setting is only saved if ._save_user_id == True")
+    _user_id = setting_property("user-id", doc=
+"""The user's prefered name.  Kept seperate to make saving/loading
+settings easy.  Don't set this attribute.  Set .user_id instead,
+and ._user_id will be automatically adjusted.  This setting is
+only saved if ._save_user_id == True""")
 
     def _get_user_id(self):
         if self._user_id == None and self.rcs != None:
@@ -183,9 +191,12 @@ class BugDir (list):
             self.rcs.user_id = user_id
         self._user_id = user_id
 
-    user_id = property(_get_user_id, _set_user_id, doc="The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Not that the Arch RCS backend *enforces* ids with this format.")
+    user_id = property(_get_user_id, _set_user_id, doc=
+"""The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Note
+that the Arch RCS backend *enforces* ids with this format.""")
 
-    target = setting_property("target", doc="The current project development target")
+    target = setting_property("target",
+                              doc="The current project development target")
 
     def save_user_id(self, user_id=None):
         if user_id == None:
@@ -204,25 +215,26 @@ class BugDir (list):
         deepdir = self.get_path()
         if not os.path.exists(deepdir):
             deepdir = os.path.dirname(deepdir)
-        rcs = detect_rcs(deepdir)
+        new_rcs = rcs.detect_rcs(deepdir)
         install = False
-        if rcs.name == "None":
+        if new_rcs.name == "None":
             if allow_rcs_init == True:
-                rcs = installed_rcs()
-                rcs.init(self.root)
-        self.rcs = rcs
-        return rcs
+                new_rcs = rcs.installed_rcs()
+                new_rcs.init(self.root)
+        self.rcs = new_rcs
+        return new_rcs
 
     def load(self):
         version = self.get_version()
         if version != TREE_VERSION_STRING:
-            raise NotImplementedError, "BugDir cannot handle version '%s' yet." % version
+            raise NotImplementedError, \
+                "BugDir cannot handle version '%s' yet." % version
         else:
             if not os.path.exists(self.get_path()):
                 raise NoBugDir(self.get_path())
             self.settings = self._get_settings(self.get_path("settings"))
             
-            self.rcs = rcs_by_name(self.rcs_name)
+            self.rcs = rcs.rcs_by_name(self.rcs_name) # set real RCS
             if self._user_id != None: # was a user name in the settings file
                 self.save_user_id()            
             
@@ -243,9 +255,20 @@ class BugDir (list):
             bug.save()
 
     def _get_settings(self, settings_path):
+        if self.rcs_name == None:
+            # Use a temporary RCS to loading settings the first time
+            RCS = rcs.rcs_by_name("None")
+            RCS.root(self.root)
+        else:
+            RCS = self.rcs
+        
+        allow_no_rcs = not RCS.path_in_root(settings_path)
+        # allow_no_rcs=True should only be for the special case of
+        # configuring duplicate bugdir settings
+        
         try:
-            settings = mapfile.map_load(settings_path)
-        except mapfile.NoSuchFile:
+            settings = mapfile.map_load(RCS, settings_path, allow_no_rcs)
+        except rcs.NoSuchFile:
             settings = {"rcs_name": "None"}
         return settings
 
@@ -263,19 +286,18 @@ class BugDir (list):
                 if "user-id" in settings:
                     settings = copy.copy(settings)
                     del settings["user-id"]
-        try:
-            mapfile.map_save(self.rcs, settings_path, settings)
-        except PathNotInRoot, e:
-            # Special case for configuring duplicate bugdir settings
-            none_rcs = rcs_by_name("None")
-            none_rcs.root(settings_path)
-            mapfile.map_save(none_rcs, settings_path, settings)
+        allow_no_rcs = not self.rcs.path_in_root(settings_path)
+        # allow_no_rcs=True should only be for the special case of
+        # configuring duplicate bugdir settings
+        mapfile.map_save(self.rcs, settings_path, settings, allow_no_rcs)
 
     def duplicate_bugdir(self, revision):
         duplicate_path = self.rcs.duplicate_repo(revision)
 
-        # setup revision RCS as None, since the duplicate may not be initialized for versioning
-        duplicate_settings_path = os.path.join(duplicate_path, ".be", "settings")
+        # setup revision RCS as None, since the duplicate may not be
+        # initialized for versioning
+        duplicate_settings_path = os.path.join(duplicate_path,
+                                               ".be", "settings")
         duplicate_settings = self._get_settings(duplicate_settings_path)
         if "rcs_name" in duplicate_settings:
             duplicate_settings["rcs_name"] = "None"
@@ -372,7 +394,8 @@ class BugDir (list):
         if uuid not in self.bug_map:
             self._bug_map_gen()
             if uuid not in self.bug_map:
-                raise KeyError("No bug matches %s" % uuid +str(self.bug_map)+str(self))
+                raise KeyError("No bug matches %s\n  bug map: %s\n  root: %s" \
+                                   % (uuid, self.bug_map, self.root))
         if self.bug_map[uuid] == None:
             self._load_bug(uuid)
         return self.bug_map[uuid]
@@ -407,7 +430,8 @@ class BugDirTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
     def setUp(self):
         self.dir = utility.Dir()
-        self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False, allow_rcs_init=True)
+        self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
+                             allow_rcs_init=True)
         self.rcs = self.bugdir.rcs
     def tearDown(self):
         self.rcs.cleanup()
@@ -429,16 +453,24 @@ class BugDirTestCase(unittest.TestCase):
         self.bugdir.save()
         new = self.rcs.commit("Fixed bug a")
         dupdir = self.bugdir.duplicate_bugdir(original)
-        self.failUnless(dupdir.root != self.bugdir.root, "%s, %s" % (dupdir.root, self.bugdir.root))
+        self.failUnless(dupdir.root != self.bugdir.root,
+                        "%s, %s" % (dupdir.root, self.bugdir.root))
         bugAorig = dupdir.bug_from_uuid("a")
-        self.failUnless(bugA != bugAorig, "\n%s\n%s" % (bugA.string(), bugAorig.string()))
+        self.failUnless(bugA != bugAorig,
+                        "\n%s\n%s" % (bugA.string(), bugAorig.string()))
         bugAorig.status = "fixed"
-        self.failUnless(bug.cmp_status(bugA, bugAorig)==0, "%s, %s" % (bugA.status, bugAorig.status))
-        self.failUnless(bug.cmp_severity(bugA, bugAorig)==0, "%s, %s" % (bugA.severity, bugAorig.severity))
-        self.failUnless(bug.cmp_assigned(bugA, bugAorig)==0, "%s, %s" % (bugA.assigned, bugAorig.assigned))
-        self.failUnless(bug.cmp_time(bugA, bugAorig)==0, "%s, %s" % (bugA.time, bugAorig.time))
-        self.failUnless(bug.cmp_creator(bugA, bugAorig)==0, "%s, %s" % (bugA.creator, bugAorig.creator))
-        self.failUnless(bugA == bugAorig, "\n%s\n%s" % (bugA.string(), bugAorig.string()))
+        self.failUnless(bug.cmp_status(bugA, bugAorig)==0,
+                        "%s, %s" % (bugA.status, bugAorig.status))
+        self.failUnless(bug.cmp_severity(bugA, bugAorig)==0,
+                        "%s, %s" % (bugA.severity, bugAorig.severity))
+        self.failUnless(bug.cmp_assigned(bugA, bugAorig)==0,
+                        "%s, %s" % (bugA.assigned, bugAorig.assigned))
+        self.failUnless(bug.cmp_time(bugA, bugAorig)==0,
+                        "%s, %s" % (bugA.time, bugAorig.time))
+        self.failUnless(bug.cmp_creator(bugA, bugAorig)==0,
+                        "%s, %s" % (bugA.creator, bugAorig.creator))
+        self.failUnless(bugA == bugAorig,
+                        "\n%s\n%s" % (bugA.string(), bugAorig.string()))
         self.bugdir.remove_duplicate_bugdir()
         self.failUnless(os.path.exists(dupdir.root)==False, str(dupdir.root))
     def testRun(self):

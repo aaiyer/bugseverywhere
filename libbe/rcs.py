@@ -64,8 +64,22 @@ class CommandError(Exception):
 class SettingIDnotSupported(NotImplementedError):
     pass
 
+class RCSnotRooted(Exception):
+    def __init__(self):
+        msg = "RCS not rooted"
+        Exception.__init__(self, msg)
+
 class PathNotInRoot(Exception):
-    pass
+    def __init__(self, path, root):
+        msg = "Path '%s' not in root '%s'" % (path, root)
+        Exception.__init__(self, msg)
+        self.path = path
+        self.root = root
+
+class NoSuchFile(Exception):
+    def __init__(self, pathname):
+        Exception.__init__(self, "No such file: %s" % pathname)
+
 
 def new():
     return RCS()
@@ -255,6 +269,8 @@ class RCS(object):
         Remove a file/directory and all its decendents from both
         version control and the filesystem.
         """
+        if not os.path.exists(dirname):
+            raise NoSuchFile(dirname)
         for dirpath,dirnames,filenames in os.walk(dirname, topdown=False):
             filenames.extend(dirnames)
             for path in filenames:
@@ -270,34 +286,44 @@ class RCS(object):
         at path.
         """
         self._rcs_update(self._u_rel_path(path))
-    def get_file_contents(self, path, revision=None):
+    def get_file_contents(self, path, revision=None, allow_no_rcs=False):
         """
         Get the file as it was in a given revision.
         Revision==None specifies the current revision.
         """
-        relpath = self._u_rel_path(path)
-        return self._rcs_get_file_contents(relpath, revision).decode("utf-8")
-    def set_file_contents(self, path, contents):
+        if not os.path.exists(path):
+            raise NoSuchFile(path)
+        if self._use_rcs(path, allow_no_rcs):
+            relpath = self._u_rel_path(path)
+            contents = self._rcs_get_file_contents(relpath,revision)
+        else:
+            contents = file(path, "rb").read()
+        return contents.decode("utf-8")
+    def set_file_contents(self, path, contents, allow_no_rcs=False):
         """
         Set the file contents under version control.
         """
         add = not os.path.exists(path)
         file(path, "wb").write(contents.encode("utf-8"))
-        if add:
-            self.add(path)
-        else:
-            self.update(path)
-    def mkdir(self, path):
+        
+        if self._use_rcs(path, allow_no_rcs):
+            if add:
+                self.add(path)
+            else:
+                self.update(path)
+    def mkdir(self, path, allow_no_rcs=False):
         """
         Create (if neccessary) a directory at path under version
         control.
         """
         if not os.path.exists(path):
             os.mkdir(path)
-            self.add(path)
+            if self._use_rcs(path, allow_no_rcs):
+                self.add(path)
         else:
             assert os.path.isdir(path)
-            self.update(path)
+            if self._use_rcs(path, allow_no_rcs):
+                self.update(path)
     def duplicate_repo(self, revision=None):
         """
         Get the repository as it was in a given revision.
@@ -387,6 +413,43 @@ class RCS(object):
         or None if none of those files exist.
         """
         return search_parent_directories(path, filename)
+    def _use_rcs(self, path, allow_no_rcs):
+        """
+        Try and decide if _rcs_add/update/mkdir/etc calls will
+        succeed.  Returns True is we think the rcs_call would
+        succeeed, and False otherwise.
+        """
+        use_rcs = True
+        exception = None
+        if self.rootdir != None:
+            if self.path_in_root(path) == False:
+                use_rcs = False
+                exception = PathNotInRoot(path, self.rootdir)
+        else:
+            use_rcs = False
+            exception = RCSnotRooted
+        if use_rcs == False and allow_no_rcs==False:
+            raise exception
+        return use_rcs
+    def path_in_root(self, path, root=None):
+        """
+        Return the relative path to path from root.
+        >>> rcs = new()
+        >>> rcs.path_in_root("/a.b/c/.be", "/a.b/c")
+        True
+        >>> rcs.path_in_root("/a.b/.be", "/a.b/c")
+        False
+        """
+        if root == None:
+            if self.rootdir == None:
+                raise RCSnotRooted
+            root = self.rootdir
+        path = os.path.abspath(path)
+        absRoot = os.path.abspath(root)
+        absRootSlashedDir = os.path.join(absRoot,"")
+        if not path.startswith(absRootSlashedDir):
+            return False
+        return True
     def _u_rel_path(self, path, root=None):
         """
         Return the relative path to path from root.
@@ -395,18 +458,18 @@ class RCS(object):
         '.be'
         """
         if root == None:
-            assert self.rootdir != None, "RCS not rooted"
+            if self.rootdir == None:
+                raise RCSnotRooted
             root = self.rootdir
-        if os.path.isabs(path):
-            absRoot = os.path.abspath(root)
-            absRootSlashedDir = os.path.join(absRoot,"")
-            if not path.startswith(absRootSlashedDir):
-                raise PathNotInRoot, \
-                    "file %s not in root %s" % (path, absRootSlashedDir)
-            assert path != absRootSlashedDir, \
-                "file %s == root directory %s" % (path, absRootSlashedDir)
-            path = path[len(absRootSlashedDir):]
-        return path
+        path = os.path.abspath(path)
+        absRoot = os.path.abspath(root)
+        absRootSlashedDir = os.path.join(absRoot,"")
+        if not path.startswith(absRootSlashedDir):
+            raise PathNotInRoot(path, absRootSlashedDir)
+        assert path != absRootSlashedDir, \
+            "file %s == root directory %s" % (path, absRootSlashedDir)
+        relpath = path[len(absRootSlashedDir):]
+        return relpath
     def _u_abspath(self, path, root=None):
         """
         Return the absolute path from a path realtive to root.

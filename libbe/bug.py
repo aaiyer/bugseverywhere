@@ -188,7 +188,7 @@ class Bug(object):
         return os.path.join(my_dir, name)
 
     def load(self, load_comments=False):
-        map = mapfile.map_load(self.get_path("values"))
+        map = mapfile.map_load(self.rcs, self.get_path("values"))
         self.summary = map.get("summary")
         self.creator = map.get("creator")
         self.target = map.get("target")

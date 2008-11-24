@@ -181,7 +181,7 @@ class Comment(Tree):
         return os.path.join(my_dir, name)
 
     def load(self):
-        map = mapfile.map_load(self.get_path("values"))
+        map = mapfile.map_load(self.rcs, self.get_path("values"))
         self.time = utility.str_to_time(map["Date"])
         self.From = map["From"]
         self.in_reply_to = map.get("In-reply-to")
