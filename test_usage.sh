@@ -89,7 +89,7 @@ then # set a default ID
 fi
 echo "I am '$ID'"
 
-be set-root .
+be set-root
 OUT=`be new 'having too much fun'`
 echo "$OUT"
 BUG=`echo "$OUT" | sed -n 's/Created bug with ID //p'`

@@ -150,8 +150,10 @@ class Comment(Tree):
         lines.append("From: %s" % self._clean_string(self.From))
         lines.append("Date: %s" % utility.time_to_str(self.time))
         lines.append("")
-        lines.append(textwrap.fill(self._clean_string(self.body),
-                                   width=(79-indent)))
+        #lines.append(textwrap.fill(self._clean_string(self.body),
+        #                           width=(79-indent)))
+        lines.append(self._clean_string(self.body))
+        # some comments shouldn't be wrapped...
         
         istring = ' '*indent
         sep = '\n' + istring
