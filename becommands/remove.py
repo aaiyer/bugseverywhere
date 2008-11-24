@@ -45,7 +45,7 @@ def execute(args):
     print "Removed bug %s" % bug.uuid
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be remove bug-id")
+    parser = cmdutil.CmdOptionParser("be remove BUG-ID")
     return parser
 
 longhelp="""

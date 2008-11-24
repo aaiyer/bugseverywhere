@@ -44,7 +44,7 @@ def execute(args):
         print bug.string(show_comments=True)
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be show bug-id [more bug-ids...]")
+    parser = cmdutil.CmdOptionParser("be show BUG-ID [BUG-ID ...]")
     return parser
 
 longhelp="""

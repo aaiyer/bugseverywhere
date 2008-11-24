@@ -52,13 +52,13 @@ def execute(args):
         bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be target bug-id [target]")
+    parser = cmdutil.CmdOptionParser("be target BUG-ID [TARGET]")
     return parser
 
 longhelp="""
 Show or change a bug's target for fixing.  
 
-If no target is specified, the current value is printed.  If a target 
+If no target is specified, the current value is printed.  If a target
 is specified, it will be assigned to the bug.
 
 Targets are freeform; any text may be specified.  They will generally be

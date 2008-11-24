@@ -52,7 +52,7 @@ def execute(args):
         bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be set [name] [value]")
+    parser = cmdutil.CmdOptionParser("be set [NAME] [VALUE]")
     return parser
 
 longhelp="""

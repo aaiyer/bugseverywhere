@@ -88,7 +88,7 @@ This command initializes Bugs Everywhere support for the specified directory
 and all its subdirectories.  It will auto-detect any supported revision control
 system.  You can use "be set rcs_name" to change the rcs being used.
 
-DIRECTORY defaults to your current working directory.
+The directory defaults to your current working directory.
 
 It is usually a good idea to put the Bugs Everywhere root at the source code
 root, but you can put it anywhere.  If you run "be set-root" in a subdirectory,

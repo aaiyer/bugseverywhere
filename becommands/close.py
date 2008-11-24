@@ -43,11 +43,11 @@ def execute(args):
     bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be close bug-id")
+    parser = cmdutil.CmdOptionParser("be close BUG-ID")
     return parser
 
 longhelp="""
-Close the bug identified by bug-id.
+Close the bug identified by BUG-ID.
 """
 
 def help():

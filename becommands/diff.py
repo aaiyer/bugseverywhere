@@ -57,7 +57,7 @@ def execute(args):
         bd.remove_duplicate_bugdir()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be diff [specifier]")
+    parser = cmdutil.CmdOptionParser("be diff [SPECIFIER]")
     return parser
 
 longhelp="""

@@ -51,7 +51,7 @@ def execute(args):
         bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be status bug-id [status]")
+    parser = cmdutil.CmdOptionParser("be status BUG-ID [STATUS]")
     return parser
 
 longhelp=["""
