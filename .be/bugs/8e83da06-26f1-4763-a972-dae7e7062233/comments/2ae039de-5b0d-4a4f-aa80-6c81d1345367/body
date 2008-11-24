@@ -1,0 +1,2 @@
+Aha, a final os.chdir('/') line is required to clean up after the
+set_root.py doctest.

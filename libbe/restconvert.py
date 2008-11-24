@@ -27,7 +27,7 @@ try :
     from xml.etree import ElementTree # Python 2.5 (and greater?)
 except ImportError :
     from elementtree import ElementTree
-
+import doctest
 
 def rest_xml(rest):
     warnings = StringIO()
@@ -126,3 +126,5 @@ def foldout(name, arguments, options, content, lineno, content_offset,
     foldout += foldout_body
     foldout.set_class('foldout')
     return [foldout]
+
+suite = doctest.DocTestSuite()

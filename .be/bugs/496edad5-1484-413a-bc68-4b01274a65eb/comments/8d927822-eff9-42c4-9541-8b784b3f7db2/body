@@ -1,0 +1,29 @@
+I was having problems with `python test.py bugdir` with the Arch
+backend.  Commits were failing with `archive not registered'.
+
+Adding some trace information to arch.Arch._rcs_init() and
+._rcs_cleanup() (the traceback module is great :p), I found
+that the problem was coming from bugdir.BugDir.guess_rcs().
+
+The Arch backend deletes any auto-created archives when it is cleaned
+up (RCS.__del__ -> RCS.cleanup -> Arch._rcs_cleanup).  This means that
+whatever instance is used to init the archive in guess_rcs() must be
+kept around.  I had been doing:
+  * installed_rcs() -> Arch-instance-A
+  * Arch-instance-A.init()
+  * store Arch-instnance-A.name as bugdir.rcs_name
+  * future calls to bugdir.rcs get new instance Arch-instance-B
+  * eventually Arch-instance-A cleaned up
+  * archive dissapears & tests crash
+
+I switched things around so .rcs is the `master attribute' and
+.rcs_name follows it.  Now just save whichever rcs you used to init
+your archive as .rcs.
+
+In order to implement the fix, I had to tweak the memory/file-system
+interaction a bit.  Instead of saving the settings *every*time* a
+setting_property changed, we now save only if the .be file exists.
+This file serves as a 'file-system-bugdir-active' flag.  Before it is
+created (e.g., by a .save()), the BugDir lives purely in memory, and
+can freely go about configuring .rcs, .rcs_name, etc until it get's
+to the point where it's ready to go to disk.

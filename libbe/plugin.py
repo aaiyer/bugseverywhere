@@ -17,6 +17,8 @@
 import os
 import os.path
 import sys
+import doctest
+
 def my_import(mod_name):
     module = __import__(mod_name)
     components = mod_name.split('.')
@@ -34,6 +36,8 @@ def iter_plugins(prefix):
     modfiles = os.listdir(os.path.join(plugin_path, prefix))
     modfiles.sort()
     for modfile in modfiles:
+        if modfile.startswith('.'):
+            continue # the occasional emacs temporary file
         if modfile.endswith(".py") and modfile != "__init__.py":
             yield modfile[:-3], my_import(prefix+"."+modfile[:-3])
 
@@ -55,6 +59,9 @@ def get_plugin(prefix, name):
 plugin_path = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
 if plugin_path not in sys.path:
     sys.path.append(plugin_path)
+
+suite = doctest.DocTestSuite()
+
 def _test():
     import doctest
     doctest.testmod()

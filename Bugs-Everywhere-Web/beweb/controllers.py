@@ -4,9 +4,7 @@ import cherrypy
 import turbogears
 from turbogears import controllers, expose, validate, redirect, identity
 
-from libbe.bugdir import (tree_root, cmp_severity, new_bug, new_comment, 
-                          NoRootEntry)
-from libbe import names
+from libbe.bugdir import tree_root, NoRootEntry
 from config import projects
 from prest import PrestHandler, provide_action
 
@@ -94,10 +92,7 @@ class Bug(PrestHandler):
         bug_tree = project_tree(project)
         bugs = list(bug_tree.list())
         if sort_by is None:
-            def cmp_date(bug1, bug2):
-                return -cmp(bug1.time, bug2.time)
-            bugs.sort(cmp_date)
-            bugs.sort(cmp_severity)
+            bugs.sort()
         return {"project_id"      : project,
                 "project_name"    : projects[project][0],
                 "bugs"            : bugs,
@@ -108,11 +103,12 @@ class Bug(PrestHandler):
     @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "New bug")
     def new_bug(self, bug_data, bug, **kwargs):
-        bug = new_bug(project_tree(bug_data['project']))
+        bug = project_tree(bug_data['project']).new_bug()
         bug.creator = identity.current.user.userId
         bug.save()
         raise cherrypy.HTTPRedirect(bug_url(bug_data['project'], bug.uuid))
 
+    @identity.require( identity.has_permission("editbugs"))
     @provide_action("action", "Update")
     def update(self, bug_data, bug, status, severity, summary, assigned, 
                action):

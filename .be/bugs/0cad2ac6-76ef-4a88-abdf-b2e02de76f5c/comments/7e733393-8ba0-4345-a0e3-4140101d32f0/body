@@ -1,0 +1,23 @@
+Oops, missed a case.  I now see what Hubert was saying about absolute
+paths :p.  In git.strip_git(), the output of git_repo_for_path('.')
+was being subtracted from an absolute path.  Obviously, if the path
+was returning '.', you'd get things like
+
+filename=
+/home/wking/src/fun/testbe/.be/bugs/c3bf839b-88f9-4609-89a2-6a5b75c415b8/values
+
+stripping 2 chars ('.' and '/')], returns
+ome/wking/src/fun/testbe/.be/bugs/c3bf839b-88f9-4609-89a2-6a5b75c415b8/values
+
+
+Now we convert the git_repo_for_path output to an absolute path and get
+
+filename=
+/home/wking/src/fun/testbe/.be/bugs/c3bf839b-88f9-4609-89a2-6a5b75c415b8/values
+absRepoPath=
+/home/wking/src/fun/testbe
+absRepoSlashedDir=
+/home/wking/src/fun/testbe/
+returns
+.be/bugs/c3bf839b-88f9-4609-89a2-6a5b75c415b8/values
+

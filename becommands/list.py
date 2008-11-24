@@ -15,106 +15,167 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """List bugs"""
-from libbe import bugdir, cmdutil, names
+from libbe import cmdutil, bugdir
+from libbe.bug import cmp_full, severity_values, status_values, \
+    active_status_values, inactive_status_values
 import os
+__desc__ = __doc__
+
 def execute(args):
+    """
+    >>> import os
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> execute([])
+    a:om: Bug A
+    >>> execute(["--status", "all"])
+    a:om: Bug A
+    b:cm: Bug B
+    """
     options, args = get_parser().parse_args(args)
     if len(args) > 0:
-        raise cmdutil.UsageError
-    active = True
-    severity = ("minor", "serious", "critical", "fatal")
-    if options.wishlist:
-        severity = ("wishlist",)
-    if options.closed:
-        active = False
-    tree = cmdutil.bug_tree()
-    current_id = names.creator()
+        help()
+        raise cmdutil.UserError("Too many arguments.")
+    bd = bugdir.BugDir(from_disk=True)
+    bd.load_all_bugs()
+    # select status
+    if options.status != None:
+        if options.status == "all":
+            status = status_values
+        else:
+            status = options.status.split(',')
+    else:
+        status = []
+        if options.active == True:
+            status.extend(list(active_status_values))
+        if options.unconfirmed == True:
+            status.append("unconfirmed")
+        if options.open == True:
+            status.append("opened")
+        if options.test == True:
+            status.append("test")
+        if status == []: # set the default value
+            status = active_status_values
+    # select severity
+    if options.severity != None:
+        if options.severity == "all":
+            severity = severity_values
+        else:
+            severity = options.severity.split(',')
+    else:
+        severity = []
+        if options.wishlist == True:
+            severity.extend("wishlist")
+        if options.important == True:
+            serious = severity_values.index("serious")
+            severity.append(list(severity_values[serious:]))
+        if severity == []: # set the default value
+            severity = severity_values
+    # select assigned
+    if options.assigned != None:
+        if options.assigned == "all":
+            assigned = "all"
+        else:
+            assigned = options.assigned.split(',')
+    else:
+        assigned = []
+        if options.mine == True:
+            assigned.extend('-')
+        if assigned == []: # set the default value
+            assigned = "all"
+    for i in range(len(assigned)):
+        if assigned[i] == '-':
+            assigned[i] = bd.user_id
+    # select target
+    if options.target != None:
+        if options.target == "all":
+            target = "all"
+        else:
+            target = options.target.split(',')
+    else:
+        target = []
+        if options.cur_target == True:
+            target.append(bd.target)
+        if target == []: # set the default value
+            target = "all"
+    
     def filter(bug):
-        if options.mine and bug.assigned != current_id:
+        if status != "all" and not bug.status in status:
             return False
-        if options.cur_target:
-            if tree.target is None or bug.target != tree.target:
-                return False
-        if active is not None:
-            if bug.active != active:
-                return False
-        if bug.severity not in severity:
+        if severity != "all" and not bug.severity in severity:
+            return False
+        if assigned != "all" and not bug.assigned in assigned:
+            return False
+        if target != "all" and not bug.target in target:
             return False
         return True
 
-    all_bugs = list(tree.list())
-    bugs = [b for b in all_bugs if filter(b) ]
+    bugs = [b for b in bd if filter(b) ]
     if len(bugs) == 0:
         print "No matching bugs found"
     
-    my_target_bugs = []
-    other_target_bugs = []
-    unassigned_target_bugs = []
-    my_bugs = []
-    other_bugs = []
-    unassigned_bugs = []
-    if tree.target is not None:
-        for bug in bugs:
-            if bug.target != tree.target:
-                continue
-            if bug.assigned == current_id:
-                my_target_bugs.append(bug)
-            elif bug.assigned is None:
-                unassigned_target_bugs.append(bug)
-            else:
-                other_target_bugs.append(bug)
-
-    for bug in bugs:
-        if tree.target is not None and bug.target == tree.target:
-            continue
-        if bug.assigned == current_id:
-            my_bugs.append(bug)
-        elif bug.assigned is None:
-            unassigned_bugs.append(bug)
-        else:
-            other_bugs.append(bug)
-
-    def list_bugs(cur_bugs, title, no_target=False):
-        def cmp_date(bug1, bug2):
-            return -cmp(bug1.time, bug2.time)
-        cur_bugs.sort(cmp_date)
-        cur_bugs.sort(bugdir.cmp_severity)
+    def list_bugs(cur_bugs, title=None, no_target=False):
+        cur_bugs.sort(cmp_full)
         if len(cur_bugs) > 0:
-            print cmdutil.underlined(title)
+            if title != None:
+                print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print cmdutil.bug_summary(bug, all_bugs, no_target=no_target,
-                                          shortlist=True)
+                print bug.string(shortlist=True)
     
-    list_bugs(my_target_bugs, 
-              "Bugs assigned to you for target %s" % tree.target, 
-              no_target=True)
-    list_bugs(unassigned_target_bugs, 
-              "Unassigned bugs for target %s" % tree.target, no_target=True)
-    list_bugs(other_target_bugs, 
-              "Bugs assigned to others for target %s" % tree.target, 
-              no_target=True)
-    list_bugs(my_bugs, "Bugs assigned to you")
-    list_bugs(unassigned_bugs, "Unassigned bugs")
-    list_bugs(other_bugs, "Bugs assigned to others")
-
+    list_bugs(bugs, no_target=False)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be list [options]")
-    parser.add_option("-w", "--wishlist", action="store_true", dest="wishlist",
-                      help="List bugs with 'wishlist' severity")
-    parser.add_option("-c", "--closed", action="store_true", dest="closed",
-                      help="List closed bugs")
-    parser.add_option("-m", "--mine", action="store_true", dest="mine",
-                      help="List only bugs assigned to you")
-    parser.add_option("-t", "--cur-target", action="store_true", 
-                      dest="cur_target",
-                      help="List only bugs for the current target")
+    parser.add_option("-s", "--status", metavar="STATUS", dest="status",
+                      help="List options matching STATUS", default=None)
+    parser.add_option("-v", "--severity", metavar="SEVERITY", dest="severity",
+                      help="List options matching SEVERITY", default=None)
+    parser.add_option("-a", "--assigned", metavar="ASSIGNED", dest="assigned",
+                      help="List options matching ASSIGNED", default=None)
+    parser.add_option("-t", "--target", metavar="TARGET", dest="target",
+                      help="List options matching TARGET", default=None)
+    # boolean shortucts.  All of these are special cases of long forms
+    bools = (("w", "wishlist", "List bugs with 'wishlist' severity"),
+             ("i", "important", "List bugs with >= 'serious' severity"),
+             ("A", "active", "List all active bugs"),
+             ("u", "unconfirmed", "List unconfirmed bugs"),
+             ("o", "open", "List open bugs"),
+             ("T", "test", "List bugs in testing"),
+             ("m", "mine", "List bugs assigned to you"),
+             ("c", "cur-target", "List bugs for the current target"))
+    for s in bools:
+        attr = s[1].replace('-','_')
+        short = "-%c" % s[0]
+        long = "--%s" % s[1]
+        help = s[2]
+        parser.add_option(short, long, action="store_true",
+                          dest=attr, help=help)
     return parser
 
 longhelp="""
-This command lists bugs.  Options are cumulative, so that -mc will list only
-closed bugs assigned to you.
-"""
+This command lists bugs.  There are several criteria that you can
+search by:
+  * status
+  * severity
+  * assigned (who the bug is assigned to)
+  * target   (bugfix deadline)
+Allowed values for each criterion may be given in a comma seperated
+list.  The special string "all" may be used with any of these options
+to match all values of the criterion.
+
+status
+  %s
+severity
+  %s
+assigned
+  free form, with the string '-' being a shortcut for yourself.
+target
+  free form
+
+In addition, there are some shortcut options that set boolean flags.
+The boolean options are ignored if the matching string option is used.
+""" % (','.join(status_values),
+       ','.join(severity_values))
 
 def help():
     return get_parser().help_str() + longhelp

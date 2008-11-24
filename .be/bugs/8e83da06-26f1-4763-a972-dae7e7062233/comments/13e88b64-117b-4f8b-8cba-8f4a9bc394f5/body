@@ -1,0 +1,38 @@
+File "/home/wking/src/fun/be-bugfix/becommands/status.py", line 25, in becommands.status.execute
+Failed example:
+    bd = bugdir.simple_bug_dir()
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.status.execute[1]>", line 1, in <module>
+        bd = bugdir.simple_bug_dir()
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 293, in simple_bug_dir
+        bugdir = BugDir(dir.path, sink_to_existing_root=False, allow_rcs_init=True)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 99, in __init__
+        rcs = self.guess_rcs(allow_rcs_init)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 165, in guess_rcs
+        rcs = installed_rcs()
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 53, in installed_rcs
+        return _get_matching_rcs(lambda rcs: rcs.installed())
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 37, in _get_matching_rcs
+        if matchfn(rcs) == True:
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 53, in <lambda>
+        return _get_matching_rcs(lambda rcs: rcs.installed())
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 180, in installed
+        self._rcs_help()
+      File "/home/wking/src/fun/be-bugfix/libbe/bzr.py", line 32, in _rcs_help
+        status,output,error = self._u_invoke_client("--help")
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 362, in _u_invoke_client
+        return self._u_invoke(cl_args, expect, cwd=directory)
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 355, in _u_invoke
+        raise CommandError(error, status)
+    CommandError: Command failed (1): 'import site' failed; use -v for traceback
+    bzr: ERROR: Couldn't import bzrlib and dependencies.
+    Please check bzrlib is on your PYTHONPATH.
+
+    Traceback (most recent call last):
+      File "/usr/bin/bzr", line 64, in <module>
+        import bzrlib
+    ImportError: No module named bzrlib
+

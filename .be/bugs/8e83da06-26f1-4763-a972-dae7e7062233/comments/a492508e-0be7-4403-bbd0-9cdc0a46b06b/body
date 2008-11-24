@@ -1,0 +1,170 @@
+Hysteretic!  test.py severity passes, then fails.
+
+Problem caused somewhere in set_root?  Doctest?  Bzr?
+
+libbe/plugin.py adds the BE-path to sys.path, but it is done by the
+time the TestRunner fires up...  Wierd.
+
+$ python test.py severity set_root severity
+Doctest: becommands.severity.execute ... ok
+Doctest: becommands.set_root.execute ... FAIL
+Doctest: becommands.severity.execute ... FAIL
+
+======================================================================
+FAIL: Doctest: becommands.set_root.execute
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python2.5/doctest.py", line 2128, in runTest
+    raise self.failureException(self.format_failure(new.getvalue()))
+AssertionError: Failed doctest test for becommands.set_root.execute
+  File "/home/wking/src/fun/be-bugfix/becommands/set_root.py", line 22, in execute
+
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/set_root.py", line 41, in becommands.set_root.execute
+Failed example:
+    print rcs.name
+Expected:
+    Arch
+Got:
+    bzr
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/set_root.py", line 43, in becommands.set_root.execute
+Failed example:
+    execute([])
+Expected:
+    Using Arch for revision control.
+    Directory initialized.
+Got:
+    Using bzr for revision control.
+    Directory initialized.
+
+
+======================================================================
+FAIL: Doctest: becommands.severity.execute
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python2.5/doctest.py", line 2128, in runTest
+    raise self.failureException(self.format_failure(new.getvalue()))
+AssertionError: Failed doctest test for becommands.severity.execute
+  File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 22, in execute
+
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 25, in becommands.severity.execute
+Failed example:
+    bd = bugdir.simple_bug_dir()
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.severity.execute[1]>", line 1, in <module>
+        bd = bugdir.simple_bug_dir()
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 293, in simple_bug_dir
+        bugdir = BugDir(dir.path, sink_to_existing_root=False, allow_rcs_init=True)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 99, in __init__
+        rcs = self.guess_rcs(allow_rcs_init)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 165, in guess_rcs
+        rcs = installed_rcs()
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 53, in installed_rcs
+        return _get_matching_rcs(lambda rcs: rcs.installed())
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 37, in _get_matching_rcs
+        if matchfn(rcs) == True:
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 53, in <lambda>
+        return _get_matching_rcs(lambda rcs: rcs.installed())
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 180, in installed
+        self._rcs_help()
+      File "/home/wking/src/fun/be-bugfix/libbe/bzr.py", line 32, in _rcs_help
+        status,output,error = self._u_invoke_client("--help")
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 362, in _u_invoke_client
+        return self._u_invoke(cl_args, expect, cwd=directory)
+      File "/home/wking/src/fun/be-bugfix/libbe/rcs.py", line 355, in _u_invoke
+        raise CommandError(error, status)
+    CommandError: Command failed (1): 'import site' failed; use -v for traceback
+    bzr: ERROR: Couldn't import bzrlib and dependencies.
+    Please check bzrlib is on your PYTHONPATH.
+
+    Traceback (most recent call last):
+      File "/usr/bin/bzr", line 64, in <module>
+        import bzrlib
+    ImportError: No module named bzrlib
+
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 26, in becommands.severity.execute
+Failed example:
+    os.chdir(bd.root)
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.severity.execute[2]>", line 1, in <module>
+        os.chdir(bd.root)
+    NameError: name 'bd' is not defined
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 27, in becommands.severity.execute
+Failed example:
+    execute(["a"])
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.severity.execute[3]>", line 1, in <module>
+        execute(["a"])
+      File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 40, in execute
+        bd = bugdir.BugDir(loadNow=True)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 85, in __init__
+        root = os.getcwd()
+    OSError: [Errno 2] No such file or directory
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 29, in becommands.severity.execute
+Failed example:
+    execute(["a", "wishlist"])
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.severity.execute[4]>", line 1, in <module>
+        execute(["a", "wishlist"])
+      File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 40, in execute
+        bd = bugdir.BugDir(loadNow=True)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 85, in __init__
+        root = os.getcwd()
+    OSError: [Errno 2] No such file or directory
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 30, in becommands.severity.execute
+Failed example:
+    execute(["a"])
+Exception raised:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.severity.execute[5]>", line 1, in <module>
+        execute(["a"])
+      File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 40, in execute
+        bd = bugdir.BugDir(loadNow=True)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 85, in __init__
+        root = os.getcwd()
+    OSError: [Errno 2] No such file or directory
+----------------------------------------------------------------------
+File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 32, in becommands.severity.execute
+Failed example:
+    execute(["a", "none"])
+Expected:
+    Traceback (most recent call last):
+    UserError: Invalid severity level: none
+Got:
+    Traceback (most recent call last):
+      File "/usr/lib/python2.5/doctest.py", line 1228, in __run
+        compileflags, 1) in test.globs
+      File "<doctest becommands.severity.execute[6]>", line 1, in <module>
+        execute(["a", "none"])
+      File "/home/wking/src/fun/be-bugfix/becommands/severity.py", line 40, in execute
+        bd = bugdir.BugDir(loadNow=True)
+      File "/home/wking/src/fun/be-bugfix/libbe/bugdir.py", line 85, in __init__
+        root = os.getcwd()
+    OSError: [Errno 2] No such file or directory
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 8.719s
+
+FAILED (failures=2)
+

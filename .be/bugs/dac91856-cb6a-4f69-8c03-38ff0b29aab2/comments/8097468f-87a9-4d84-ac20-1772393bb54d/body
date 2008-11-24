@@ -1,0 +1,26 @@
+It looks like the mapfiles are not being 'git add'ed after changes.
+
+$ mkdir BEtest
+$ cd BEtest
+$ git init
+$ be set-root .
+$ be new 'new'
+$ git status
+# On branch master
+#
+# Initial commit
+#
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#       new file: .be/bugs/8f021d79-44f5-479f-af12-c37e2caf3ce1/values
+#       new file: .be/settings
+#       new file: .be/version
+#
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#
+#       modified:   .be/bugs/8f021d79-44f5-479f-af12-c37e2caf3ce1/values
+#       modified:   .be/settings
+#
+

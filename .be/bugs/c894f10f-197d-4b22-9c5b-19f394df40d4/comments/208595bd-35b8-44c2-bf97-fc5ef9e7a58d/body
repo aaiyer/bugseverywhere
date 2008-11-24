@@ -1,0 +1,17 @@
+Example:
+
+We're working happily in a versioned bugdir, and our RCS knows who we
+are.  We create a temporary repository copy from a previous revision
+for diff generation.  We set the RCS for the copy to "None", since we
+didn't bother initializing our normal RCS in the snapshot copy.  But
+now the BugDir instantized on the copy doesn't know who we are!
+
+Solution:
+
+Track user id in the bugdir settings file.  If you
+bugdir.settings["user_id"], it will be saved and loaded.  When loaded,
+it will also set bugdir.user_id.  If you set rcs.user_id, it will be
+returned by rcs.get_user_id(), instead of returing the output of
+rcs._rcs_get_user_id().  We should be caching the output of
+_rcs_get_user_id() anyway.
+

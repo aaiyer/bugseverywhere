@@ -15,45 +15,52 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Assign an individual or group to fix a bug"""
-from libbe import bugdir, cmdutil, names 
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests, names
     >>> import os
-    >>> dir = tests.simple_bug_dir()
-    >>> os.chdir(dir.dir)
-    >>> dir.get_bug("a").assigned is None
+    >>> bd = bugdir.simple_bug_dir()
+    >>> os.chdir(bd.root)
+    >>> bd.bug_from_shortname("a").assigned is None
     True
+
     >>> execute(["a"])
-    >>> dir.get_bug("a").assigned == names.creator()
+    >>> bd._clear_bugs()
+    >>> bd.bug_from_shortname("a").assigned == bd.user_id
     True
+
     >>> execute(["a", "someone"])
-    >>> dir.get_bug("a").assigned
-    u'someone'
+    >>> bd._clear_bugs()
+    >>> print bd.bug_from_shortname("a").assigned
+    someone
+
     >>> execute(["a","none"])
-    >>> dir.get_bug("a").assigned is None
+    >>> bd._clear_bugs()
+    >>> bd.bug_from_shortname("a").assigned is None
     True
-    >>> tests.clean_up()
     """
     options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
-        print help()
-        return
-    bug = cmdutil.get_bug(args[0])
+        raise cmdutil.UserError("Please specify a bug id.")
+    if len(args) > 2:
+        help()
+        raise cmdutil.UserError("Too many arguments.")
+    bd = bugdir.BugDir(from_disk=True)
+    bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
-        bug.assigned = names.creator()
+        bug.assigned = bd.user_id
     elif len(args) == 2:
         if args[1] == "none":
             bug.assigned = None
         else:
             bug.assigned = args[1]
-    bug.save()
+    bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be assign bug-id [assignee]")
+    parser = cmdutil.CmdOptionParser("be assign BUG-ID [ASSIGNEE]")
     return parser
 
 longhelp = """

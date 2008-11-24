@@ -17,60 +17,60 @@
 """Compare two bug trees"""
 from libbe import cmdutil, bugdir
 from libbe.utility import time_to_str
+from libbe.bug import cmp_severity
+import doctest
 
-def diff(old_tree, new_tree):
-    old_bug_map = old_tree.bug_map()
-    new_bug_map = new_tree.bug_map()
+def diff(old_bugdir, new_bugdir):
     added = []
     removed = []
     modified = []
-    for old_bug in old_bug_map.itervalues():
-        new_bug = new_bug_map.get(old_bug.uuid)
-        if new_bug is None :
-            removed.append(old_bug)
-        else:
+    for uuid in old_bugdir.list_uuids():
+        old_bug = old_bugdir.bug_from_uuid(uuid)
+        try:
+            new_bug = new_bugdir.bug_from_uuid(uuid)
             if old_bug != new_bug:
                 modified.append((old_bug, new_bug))
-    for new_bug in new_bug_map.itervalues():
-        if not old_bug_map.has_key(new_bug.uuid):
+        except KeyError:
+            removed.append(old_bug)
+    for uuid in new_bugdir.list_uuids():
+        if not old_bugdir.has_bug(uuid):
+            new_bug = new_bugdir.bug_from_uuid(uuid)
             added.append(new_bug)
     return (removed, modified, added)
 
-
-def reference_diff(bugdir, spec=None):
-    return diff(bugdir.get_reference_bugdir(spec), bugdir)
-    
 def diff_report(diff_data, bug_dir):
     (removed, modified, added) = diff_data
-    bugs = list(bug_dir.list())
     def modified_cmp(left, right):
-        return bugdir.cmp_severity(left[1], right[1])
+        return cmp_severity(left[1], right[1])
 
-    added.sort(bugdir.cmp_severity)
-    removed.sort(bugdir.cmp_severity)
+    added.sort(cmp_severity)
+    removed.sort(cmp_severity)
     modified.sort(modified_cmp)
 
-    if len(added) > 0: 
+    if len(added) > 0:
         print "New bug reports:"
         for bug in added:
-            print cmdutil.bug_summary(bug, bugs, no_target=True)
+            print bug.string(shortlist=True)
+        print ""
 
     if len(modified) > 0:
         printed = False
         for old_bug, new_bug in modified:
-            change_str = bug_changes(old_bug, new_bug, bugs)
+            change_str = bug_changes(old_bug, new_bug, bug_dir)
             if change_str is None:
                 continue
             if not printed:
                 printed = True
                 print "Modified bug reports:"
             print change_str
+        print ""
 
     if len(removed) > 0: 
         print "Removed bug reports:"
         for bug in removed:
-            print cmdutil.bug_summary(bug, bugs, no_target=True)
-   
+            print bug.string(shortlist=True)
+        print ""
+
 def change_lines(old, new, attributes):
     change_list = []    
     for attr in attributes:
@@ -87,24 +87,27 @@ def bug_changes(old, new, bugs):
     change_list = change_lines(old, new, ("time", "creator", "severity",
     "target", "summary", "status", "assigned"))
 
-    old_comment_ids = list(old.iter_comment_ids())
-    new_comment_ids = list(new.iter_comment_ids())
+    old_comment_ids = [c.uuid for c in old.comments()]
+    new_comment_ids = [c.uuid for c in new.comments()]
     change_strings = ["%s: %s -> %s" % f for f in change_list]
     for comment_id in new_comment_ids:
         if comment_id not in old_comment_ids:
-            summary = comment_summary(new.get_comment(comment_id), "new")
+            summary = comment_summary(new.comment_from_uuid(comment_id), "new")
             change_strings.append(summary)
     for comment_id in old_comment_ids:
         if comment_id not in new_comment_ids:
-            summary = comment_summary(new.get_comment(comment_id), "removed")
+            summary = comment_summary(new.comment_from_uuid(comment_id),
+                                      "removed")
             change_strings.append(summary)
 
     if len(change_strings) == 0:
         return None
-    return "%s%s\n" % (cmdutil.bug_summary(new, bugs, shortlist=True), 
-                       "\n".join(change_strings))
+    return "%s\n  %s" % (new.string(shortlist=True),
+                         "  \n".join(change_strings))
 
 
 def comment_summary(comment, status):
     return "%8s comment from %s on %s" % (status, comment.From, 
-                                          time_to_str(comment.date))
+                                          time_to_str(comment.time))
+
+suite = doctest.DocTestSuite()

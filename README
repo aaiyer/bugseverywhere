@@ -17,7 +17,7 @@ $ be set-root $PROJECT_ROOT
 
 To create bugs, use "be new $DESCRIPTION".  To comment on bugs, you can can use
 "be comment $BUG_ID".  To close a bug, use "be close $BUG_ID".  For more
-commands, see "be help"
+commands, see "be help".  You can also look at the usage in test_usage.sh.
 
 Using BeWeb, the web UI
 =======================

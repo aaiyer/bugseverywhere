@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?python
-from libbe.bugdir import severity_levels, active_status, inactive_status, thread_comments
+from libbe.bug import severity_values, status_values, thread_comments
 from libbe.utility import time_to_str 
 from beweb.controllers import bug_list_url, comment_url
 from beweb.formatting import comment_body_xhtml, select_among
@@ -20,14 +20,14 @@ people = people_map()
 <form method="post" action=".">
 <table>
 <tr><td>Status</td><td>Severity</td><td>Assigned To</td><td>Summary</td></tr>
-<tr><td>${select_among("status", active_status+inactive_status, bug.status)}</td><td>${select_among("severity", severity_levels, bug.severity)}</td>
+<tr><td>${select_among("status", status_values, bug.status)}</td><td>${select_among("severity", severity_values, bug.severity)}</td>
 <td>${select_among("assigned", people.keys()+[None], bug.assigned, people)}</td><td><input name="summary" value="${bug.summary}" size="80" /></td></tr>
 </table>
 <div py:def="show_comment(comment, children)" class="comment">
     <insetbox>
     <table>
         <tr><td>From</td><td>${comment.From}</td></tr>
-        <tr><td>Date</td><td>${time_to_str(comment.date)}</td></tr>
+        <tr><td>Date</td><td>${time_to_str(comment.time)}</td></tr>
     </table>
     <div py:content="comment_body_xhtml(comment)" py:strip="True"></div>
     <a href="${comment_url(project_id, bug.uuid, comment.uuid)}">Edit</a>

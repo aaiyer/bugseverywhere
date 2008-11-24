@@ -14,133 +14,86 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import os
-import tempfile
+import re
+import unittest
+import doctest
 
-from rcs import invoke
+from rcs import RCS, RCStestCase, CommandError
 
-def strip_git(filename):
-    # Find the base path of the GIT tree, in order to strip that leading
-    # path from arguments to git -- it doesn't like absolute paths.
-    if os.path.isabs(filename):
-        filename = filename[len(git_repo_for_path('.'))+1:]
-    return filename
+def new():
+    return Git()
 
-def invoke_client(*args, **kwargs):
-    directory = kwargs['directory']
-    expect = kwargs.get('expect', (0, 1))
-    cl_args = ["git"]
-    cl_args.extend(args)
-    status,output,error = invoke(cl_args, expect, cwd=directory)
-    return status, output
-
-def add_id(filename, paranoid=False):
-    filename = strip_git(filename)
-    invoke_client("add", filename, directory=git_repo_for_path('.'))
-
-def delete_id(filename):
-    filename = strip_git(filename)
-    invoke_client("rm", filename, directory=git_repo_for_path('.'))
-
-def mkdir(path, paranoid=False):
-    os.mkdir(path)
-
-def set_file_contents(path, contents):
-    add = not os.path.exists(path)
-    file(path, "wb").write(contents)
-    if add:
-        add_id(path)
-
-def detect(path):
-    """Detect whether a directory is revision-controlled using GIT"""
-    path = os.path.realpath(path)
-    old_path = None
-    while True:
-        if os.path.exists(os.path.join(path, ".git")):
+class Git(RCS):
+    name="git"
+    client="git"
+    versioned=True
+    def _rcs_help(self):
+        status,output,error = self._u_invoke_client("--help")
+        return output
+    def _rcs_detect(self, path):
+        if self._u_search_parent_directories(path, ".git") != None :
             return True
-        if path == old_path:
-            return False
-        old_path = path
-        path = os.path.dirname(path)
+        return False 
+    def _rcs_root(self, path):
+        """Find the root of the deepest repository containing path."""
+        # Assume that nothing funny is going on; in particular, that we aren't
+        # dealing with a bare repo.
+        if os.path.isdir(path) != True:
+            path = os.path.dirname(path)
+        status,output,error = self._u_invoke_client("rev-parse", "--git-dir",
+                                                    directory=path)
+        gitdir = os.path.join(path, output.rstrip('\n'))
+        dirname = os.path.abspath(os.path.dirname(gitdir))
+        return dirname
+    def _rcs_init(self, path):
+        self._u_invoke_client("init", directory=path)
+    def _rcs_get_user_id(self):
+        status,output,error = self._u_invoke_client("config", "user.name")
+        name = output.rstrip('\n')
+        status,output,error = self._u_invoke_client("config", "user.email")
+        email = output.rstrip('\n')
+        return self._u_create_id(name, email)
+    def _rcs_set_user_id(self, value):
+        name,email = self._u_parse_id(value)
+        if email != None:
+            self._u_invoke_client("config", "user.email", email)
+        self._u_invoke_client("config", "user.name", name)
+    def _rcs_add(self, path):
+        if os.path.isdir(path):
+            return
+        self._u_invoke_client("add", path)
+    def _rcs_remove(self, path):
+        if not os.path.isdir(self._u_abspath(path)):
+            self._u_invoke_client("rm", "-f", path)
+    def _rcs_update(self, path):
+        self._rcs_add(path)
+    def _rcs_get_file_contents(self, path, revision=None):
+        if revision == None:
+            return file(self._u_abspath(path), "rb").read()
+        else:
+            arg = "%s:%s" % (revision,path)
+            status,output,error = self._u_invoke_client("show", arg)
+            return output
+    def _rcs_duplicate_repo(self, directory, revision=None):
+        if revision==None:
+            RCS._rcs_duplicate_repo(self, directory, revision)
+        else:
+            #self._u_invoke_client("archive", revision, directory) # makes tarball
+            self._u_invoke_client("clone", "--no-checkout",".",directory)
+            self._u_invoke_client("checkout", revision, directory=directory)
+    def _rcs_commit(self, commitfile):
+        status,output,error = self._u_invoke_client('commit', '-a',
+                                                    '-F', commitfile)
+        revision = None
+        revline = re.compile("Created (.*)commit (.*):(.*)")
+        match = revline.search(output)
+        assert match != None, output+error
+        assert len(match.groups()) == 3
+        revision = match.groups()[1]
+        return revision
+ 
+class GitTestCase(RCStestCase):
+    Class = Git
 
-def precommit(directory):
-    pass
-
-def commit(directory, summary, body=None):
-    if body is not None:
-        summary += '\n' + body
-    descriptor, filename = tempfile.mkstemp()
-    try:
-        temp_file = os.fdopen(descriptor, 'wb')
-        temp_file.write(summary)
-        temp_file.close()
-        invoke_client('commit', '-a', '-F', filename, directory=directory)
-    finally:
-        os.unlink(filename)
-
-def postcommit(directory):
-    pass
-
-
-# In order to diff the bug database, you need a way to check out arbitrary
-# previous revisions and a mechanism for locating the bug_dir in the revision
-# you've checked out.
-#
-# Copying the Mercurial implementation, this feature is implemented by four
-# functions:
-#
-# git_dir_for_path : find '.git' for a git tree.
-#
-# export : check out a commit 'spec' from git-repo 'bug_dir' into a dir
-#          'revision_dir'
-#
-# find_or_make_export : check out a commit 'spec' from git repo 'directory' to
-#                       any location you please and return the path to the checkout
-#
-# path_in_reference : return a path to the bug_dir of the commit 'spec'
-
-def git_repo_for_path(path):
-    """Find the root of the deepest repository containing path."""
-    # Assume that nothing funny is going on; in particular, that we aren't
-    # dealing with a bare repo.
-    return os.path.dirname(git_dir_for_path(path))
-
-def git_dir_for_path(path):
-    """Find the git-dir of the deepest repo containing path."""
-    return invoke_client("rev-parse", "--git-dir", directory=path)[1].rstrip()
-
-def export(spec, bug_dir, revision_dir):
-    """Check out commit 'spec' from the git repo containing bug_dir into
-    'revision_dir'."""
-    if not os.path.exists(revision_dir):
-        os.makedirs(revision_dir)
-    invoke_client("init", directory=revision_dir)
-    invoke_client("pull", git_dir_for_path(bug_dir), directory=revision_dir)
-    invoke_client("checkout", '-f', spec, directory=revision_dir)
-
-def find_or_make_export(spec, directory):
-    """Checkout 'spec' from the repo at 'directory' by hook or by crook and
-    return the path to the working copy."""
-    home = os.path.expanduser("~")
-    revision_root = os.path.join(home, ".be_revs")
-    if not os.path.exists(revision_root):
-        os.mkdir(revision_root)
-    revision_dir = os.path.join(revision_root, spec)
-    if not os.path.exists(revision_dir):
-        export(spec, directory, revision_dir)
-    return revision_dir
-
-def path_in_reference(bug_dir, spec):
-    """Check out 'spec' and return the path to its bug_dir."""
-    spec = spec or 'HEAD'
-    spec = invoke_client('rev-parse', spec, directory=bug_dir)[1].rstrip()
-    # This is a really hairy computation.
-    # The theory is that we can't possibly be working out of a bare repo;
-    # hence, we get the rel_bug_dir by chopping off dirname(git_dir_for_path(bug_dir))
-    # + '/'.
-    rel_bug_dir = strip_git(bug_dir)
-    export_root = find_or_make_export(spec, directory=bug_dir)
-    return os.path.join(export_root, rel_bug_dir)
-
-
-name = "git"
-
+unitsuite = unittest.TestLoader().loadTestsFromTestCase(GitTestCase)
+suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

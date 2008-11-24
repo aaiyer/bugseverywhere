@@ -1,0 +1,10 @@
+Problem was due to 
+  open-value-file
+  write-value-file
+  add/update-value-file
+which should be (and now is)
+  open-value-file
+  write-value-file
+  close-value-file
+  add/update-value-file
+since it was getting added before the changes we'd written were flushed out.

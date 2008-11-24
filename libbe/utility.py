@@ -18,57 +18,50 @@ import calendar
 import time
 import os
 import tempfile
+import shutil
+import doctest
 
-class FileString(object):
-    """Bare-bones pseudo-file class
+
+def search_parent_directories(path, filename):
+    """
+    Find the file (or directory) named filename in path or in any
+    of path's parents.
     
-    >>> f = FileString("me\\nyou")
-    >>> len(list(f))
-    2
-    >>> len(list(f))
-    0
-    >>> f = FileString()
-    >>> f.write("hello\\nthere")
-    >>> "".join(list(f))
-    'hello\\nthere'
+    e.g.
+    search_parent_directories("/a/b/c", ".be")
+    will return the path to the first existing file from
+    /a/b/c/.be
+    /a/b/.be
+    /a/.be
+    /.be
+    or None if none of those files exist.
     """
-    def __init__(self, str=""):
-        object.__init__(self)
-        self.str = str
-        self._iter = None
+    path = os.path.realpath(path)
+    assert os.path.exists(path)
+    old_path = None
+    while True:
+        check_path = os.path.join(path, filename)
+        if os.path.exists(check_path):
+            return check_path
+        if path == old_path:
+            return None
+        old_path = path
+        path = os.path.dirname(path)
 
-    def __iter__(self):
-        if self._iter is None:
-            self._iter = self._get_iter()
-        return self._iter
-
-    def _get_iter(self):
-        for line in self.str.splitlines(True):
-            yield line
-
-    def write(self, line):
-        self.str += line
-
-
-def get_file(f):
-    """
-    Return a file-like object from input.  This is a helper for functions that
-    can take either file or string parameters.
-
-    :param f: file or string
-    :return: a FileString if input is a string, otherwise return the imput 
-    object.
-
-    >>> isinstance(get_file(file("/dev/null")), file)
-    True
-    >>> isinstance(get_file("f"), FileString)
-    True
-    """
-    if isinstance(f, basestring):
-        return FileString(f)
-    else:
-        return f
-
+class Dir (object):
+    "A temporary directory for testing use"
+    def __init__(self):
+        self.path = tempfile.mkdtemp(prefix="BEtest")
+        self.rmtree = shutil.rmtree # save local reference for __del__
+        self.removed = False
+    def __del__(self):
+        self.cleanup()
+    def cleanup(self):
+        if self.removed == False:
+            self.rmtree(self.path)
+            self.removed = True
+    def __call__(self):
+        return self.path
 
 RFC_2822_TIME_FMT = "%a, %d %b %Y %H:%M:%S +0000"
 
@@ -111,10 +104,10 @@ def editor_string(comment=None):
     CantFindEditor: Can't find editor to get string from
     >>> os.environ["EDITOR"] = "echo bar > "
     >>> editor_string()
-    'bar\\n'
+    u'bar\\n'
     >>> os.environ["VISUAL"] = "echo baz > "
     >>> editor_string()
-    'baz\\n'
+    u'baz\\n'
     >>> del os.environ["EDITOR"]
     >>> del os.environ["VISUAL"]
     """
@@ -133,7 +126,7 @@ def editor_string(comment=None):
         os.close(fhandle)
         oldmtime = os.path.getmtime(fname)
         os.system("%s %s" % (editor, fname))
-        output = trimmed_string(file(fname, "rb").read())
+        output = trimmed_string(file(fname, "rb").read().decode("utf-8"))
         if output.rstrip('\n') == "":
             output = None
     finally:
@@ -162,3 +155,5 @@ def trimmed_string(instring):
             break
         out.append(line)
     return ''.join(out)
+
+suite = doctest.DocTestSuite()

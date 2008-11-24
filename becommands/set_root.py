@@ -15,64 +15,80 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Assign the root directory for bug tracking"""
-from libbe import bugdir, cmdutil, rcs
+import os.path
+from libbe import cmdutil, bugdir
+__desc__ = __doc__
 
 def execute(args):
     """
-    >>> from libbe import tests
+    >>> from libbe import utility, rcs
     >>> import os
-    >>> dir = tests.Dir()
+    >>> dir = utility.Dir()
     >>> try:
-    ...     bugdir.tree_root(dir.name)
+    ...     bugdir.BugDir(dir.path)
     ... except bugdir.NoBugDir, e:
     ...     True
     True
-    >>> execute([dir.name])
+    >>> execute([dir.path])
     No revision control detected.
     Directory initialized.
-    >>> bd = bugdir.tree_root(dir.name)
-    >>> bd.root = dir.name
-    >>> dir = tests.arch_dir()
-    >>> os.chdir(dir.name)
-    >>> execute(['.'])
+    >>> del(dir)
+
+    >>> dir = utility.Dir()
+    >>> os.chdir(dir.path)
+    >>> rcs = rcs.installed_rcs()
+    >>> rcs.init('.')
+    >>> print rcs.name
+    Arch
+    >>> execute([])
     Using Arch for revision control.
     Directory initialized.
-    >>> bd = bugdir.tree_root(dir.name+"/{arch}")
-    >>> bd.root = dir.name
+    >>> rcs.cleanup()
+
     >>> try:
     ...     execute(['.'])
     ... except cmdutil.UserError, e:
     ...     str(e).startswith("Directory already initialized: ")
     True
-    >>> tests.clean_up()
     >>> execute(['/highly-unlikely-to-exist'])
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
+    >>> os.chdir('/')
     """
     options, args = get_parser().parse_args(args)
-    if len(args) != 1:
-        raise cmdutil.UsageError
-    dir_rcs = rcs.detect(args[0])
+    if len(args) > 1:
+        print help()
+        raise cmdutil.UserError, "Too many arguments"
+    if len(args) == 1:
+        basedir = args[0]
+    else:
+        basedir = "."
+    if os.path.exists(basedir) == False:
+        pass
+        #raise cmdutil.UserError, "No such directory: %s" % basedir
     try:
-        bugdir.create_bug_dir(args[0], dir_rcs)
+        bd = bugdir.BugDir(basedir, from_disk=False, sink_to_existing_root=False, assert_new_BugDir=True)
     except bugdir.NoRootEntry:
-        raise cmdutil.UserError("No such directory: %s" % args[0])
+        raise cmdutil.UserError("No such directory: %s" % basedir)
     except bugdir.AlreadyInitialized:
-        raise cmdutil.UserError("Directory already initialized: %s" % args[0])
-    if dir_rcs.name is not "None":
-        print "Using %s for revision control." % dir_rcs.name
+        raise cmdutil.UserError("Directory already initialized: %s" % basedir)
+    bd.save()
+    if bd.rcs.name is not "None":
+        print "Using %s for revision control." % bd.rcs.name
     else:
         print "No revision control detected."
     print "Directory initialized."
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be set-root DIRECTORY")
+    parser = cmdutil.CmdOptionParser("be set-root [DIRECTORY]")
     return parser
 
 longhelp="""
 This command initializes Bugs Everywhere support for the specified directory
 and all its subdirectories.  It will auto-detect any supported revision control
 system.  You can use "be set rcs_name" to change the rcs being used.
+
+The directory defaults to your current working directory.
 
 It is usually a good idea to put the Bugs Everywhere root at the source code
 root, but you can put it anywhere.  If you run "be set-root" in a subdirectory,
