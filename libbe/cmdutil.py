@@ -98,10 +98,9 @@ class CmdOptionParser(optparse.OptionParser):
                             self._long_opt.iterkeys()])
 
     def help_str(self):
-        fs = utility.FileString()
-        self.print_help(fs)
-        return fs.str
-
+        f = StringIO()
+        self.print_help(f)
+        return f.getvalue()
 
 def underlined(instring):
     """Produces a version of a string that is underlined with '='

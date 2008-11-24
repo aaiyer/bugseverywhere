@@ -140,13 +140,16 @@ class BugDir (list):
             return beroot
         
     def get_version(self, path=None):
+        if self.rcs_name == None:
+            # Use a temporary RCS to check the version for the first time
+            RCS = rcs.rcs_by_name("None")
+            RCS.root(self.root)
+        else:
+            RCS = self.rcs
+
         if path == None:
             path = self.get_path("version")
-        try:
-            tree_version = self.rcs.get_file_contents(path)
-        except AttributeError, e:
-            # haven't initialized rcs yet
-            tree_version = file(path, "rb").read().decode("utf-8")
+        tree_version = RCS.get_file_contents(path)
         return tree_version
 
     def set_version(self):
@@ -234,7 +237,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
                 raise NoBugDir(self.get_path())
             self.settings = self._get_settings(self.get_path("settings"))
             
-            self.rcs = rcs.rcs_by_name(self.rcs_name) # set real RCS
+            self.rcs = rcs.rcs_by_name(self.rcs_name)
             if self._user_id != None: # was a user name in the settings file
                 self.save_user_id()            
             
