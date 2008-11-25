@@ -85,8 +85,8 @@ class Comment(Tree):
     def __init__(self, bug=None, uuid=None, from_disk=False,
                  in_reply_to=None, body=None):
         """
-        Set from_disk=True to load an old bug.
-        Set from_disk=False to create a new bug.
+        Set from_disk=True to load an old comment.
+        Set from_disk=False to create a new comment.
 
         The uuid option is required when from_disk==True.
         

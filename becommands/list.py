@@ -136,7 +136,7 @@ def get_parser():
                       help="List options matching ASSIGNED", default=None)
     parser.add_option("-t", "--target", metavar="TARGET", dest="target",
                       help="List options matching TARGET", default=None)
-    # boolean shortucts.  All of these are special cases of long forms
+    # boolean options.  All but uuids are special cases of long forms
     bools = (("u", "uuids", "Only print the bug UUIDS"),
              ("w", "wishlist", "List bugs with 'wishlist' severity"),
              ("i", "important", "List bugs with >= 'serious' severity"),

@@ -52,11 +52,37 @@ def execute(args, test=False):
     else:
         old_bd = bd.duplicate_bugdir(revision)
         r,m,a = diff.diff(old_bd, bd)
-        print diff.diff_report((r,m,a), bd).encode(bd.encoding)
+        
+        optbugs = []
+        if options.all == True:
+            options.new = options.modified = options.removed = True
+        if options.new == True:
+            optbugs.extend(a)
+        if options.modified == True:
+            optbugs.extend([new for old,new in m])
+        if options.removed == True:
+            optbugs.extend(r)
+        if len(optbugs) > 0:
+            for bug in optbugs:
+                print bug.uuid
+        else :
+            print diff.diff_report((r,m,a), bd).encode(bd.encoding)
         bd.remove_duplicate_bugdir()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be diff [SPECIFIER]")
+    parser = cmdutil.CmdOptionParser("be diff [options] REVISION")
+    # boolean options
+    bools = (("n", "new", "Print UUIDS for new bugs"),
+             ("m", "modified", "Print UUIDS for modified bugs"),
+             ("r", "removed", "Print UUIDS for removed bugs"),
+             ("a", "all", "Print UUIDS for all changed bugs"))
+    for s in bools:
+        attr = s[1].replace('-','_')
+        short = "-%c" % s[0]
+        long = "--%s" % s[1]
+        help = s[2]
+        parser.add_option(short, long, action="store_true",
+                          dest=attr, help=help)
     return parser
 
 longhelp="""
@@ -64,7 +90,11 @@ Uses the RCS to compare the current tree with a previous tree, and prints
 a pretty report.  If specifier is given, it is a specifier for the particular
 previous tree to use.  Specifiers are specific to their RCS.  
 
-For Arch: a fully-qualified revision name
+For Arch your specifier must be a fully-qualified revision name.
+
+Besides the standard summary output, you can use the options to output
+UUIDS for the different categories.  This output can be used as the
+input to 'be show' to get and understanding of the current status.
 """
 
 def help():
