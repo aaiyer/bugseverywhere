@@ -1,0 +1,9 @@
+Solution here
+http://www.amk.ca/python/howto/unicode
+
+You need to encode before printing.
+
+This is unfortunate, because we're currently very glib about just
+printing info to the terminal.  This makes it much more important to
+have a single bugdir-wide encoding specification...
+

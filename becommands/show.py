@@ -41,7 +41,7 @@ def execute(args):
     bd = bugdir.BugDir(from_disk=True)
     for bugid in args:
         bug = bd.bug_from_shortname(bugid)
-        print bug.string(show_comments=True)
+        print bug.string(show_comments=True).encode('utf-8')
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show BUG-ID [BUG-ID ...]")

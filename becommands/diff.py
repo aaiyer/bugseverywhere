@@ -54,6 +54,7 @@ def execute(args):
         old_bd = bd.duplicate_bugdir(revision)
         r,m,a = diff.diff(old_bd, bd)
         diff.diff_report((r,m,a), bd)
+        # TODO, string return from diff report
         bd.remove_duplicate_bugdir()
 
 def get_parser():

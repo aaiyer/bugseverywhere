@@ -1,0 +1,14 @@
+$ be show 31cd490d-a1c2-4ab3-8284-d80395e34dd2
+
+works as expected, but
+
+$ be show 31cd490d-a1c2-4ab3-8284-d80395e34dd2 | grep something
+Traceback (most recent call last):
+  File "/home/wking/bin/be", line 30, in <module>
+    sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
+  File "/home/wking/src/fun/be-bugfix/libbe/cmdutil.py", line 57, in execute
+  File "/home/wking/src/fun/be/be.wtk/becommands/show.py", line 44, in execute
+    print bug.string(show_comments=True)
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u2019' in position 2100: ordinal not in range(128)
+
+By the way, u2019 is a fancy apostrophe.
