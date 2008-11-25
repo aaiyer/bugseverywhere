@@ -39,6 +39,9 @@ class Tree(list):
     
     >>> a.branch_len()
     5
+    >>> a.sort(key=lambda node : -node.branch_len())
+    >>> "".join([node.n for node in a.traverse()])
+    'acfhiebdg'
     >>> a.sort(key=lambda node : node.branch_len())
     >>> "".join([node.n for node in a.traverse()])
     'abdgcefhi'
@@ -93,7 +96,7 @@ class Tree(list):
         """
         list.sort(self, *args, **kwargs)
         for child in self:
-            child.sort()
+            child.sort(*args, **kwargs)
 
     def traverse(self, depthFirst=True):
         """
