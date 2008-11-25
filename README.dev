@@ -26,3 +26,9 @@ consistent interface
     alter the parser (e.g. add some more options) before returning it.
 
 Again, you can just browse around in becommands to get a feel for things.
+
+Run any doctests in your plugin with
+  be$ python test.py <yourplugin>
+for example
+  be$ python test.py merge
+

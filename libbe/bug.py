@@ -95,6 +95,22 @@ class Bug(object):
 
     active = property(_get_active)
 
+    def _get_comment_root(self):
+        if self._comment_root == None:
+            if self._comments_loaded == True:
+                self._comment_root = comment.loadComments(self)
+            else:
+                self._comment_root = comment.Comment(self,
+                                                     uuid=comment.INVALID_UUID)
+        return self._comment_root
+
+    def _set_comment_root(self, comment_root):
+        self._comment_root = comment_root
+
+    _comment_root = None
+    comment_root = property(_get_comment_root, _set_comment_root,
+                            doc="The trunk of the comment tree")
+
     def __init__(self, bugdir=None, uuid=None, from_disk=False,
                  load_comments=False, summary=None):
         self.bugdir = bugdir
@@ -123,7 +139,6 @@ class Bug(object):
             self.severity = "minor"
             self.assigned = None
             self.time = int(time.time()) # only save to second precision
-            self.comment_root = comment.Comment(self, uuid=comment.INVALID_UUID)
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
@@ -162,7 +177,7 @@ class Bug(object):
             statuschar = self.status[0]
             severitychar = self.severity[0]
             chars = "%c%c" % (statuschar, severitychar)
-            bugout = "%s:%s: %s" % (shortname, chars, self.summary.rstrip('\n'))
+            bugout = "%s:%s: %s" % (shortname,chars,self.summary.rstrip('\n'))
         
         if show_comments == True:
             if self._comments_loaded == False:
@@ -203,9 +218,10 @@ class Bug(object):
             self.load_comments()
 
     def load_comments(self):
-        self.comment_root = comment.loadComments(self)
+        # clear _comment_root, so _get_comment_root returns a fresh version
+        self._comment_root = None 
         self._comments_loaded = True
-
+ 
     def comments(self):
         if self._comments_loaded == False:
             self.load_comments()
@@ -233,23 +249,22 @@ class Bug(object):
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, map)
 
-        if self._comments_loaded:
-            if len(self.comment_root) > 0:
-                self.rcs.mkdir(self.get_path("comments"))
-                comment.saveComments(self)
+        if len(self.comment_root) > 0:
+            self.rcs.mkdir(self.get_path("comments"))
+            comment.saveComments(self)
 
     def remove(self):
-        self.load_comments()
         self.comment_root.remove()
         path = self.get_path()
         self.rcs.recursive_remove(path)
     
     def new_comment(self, body=None):
-        comm = comment.comment_root.new_reply(body=body)
+        comm = self.comment_root.new_reply(body=body)
         return comm
 
     def comment_from_shortname(self, shortname, *args, **kwargs):
-        return self.comment_root.comment_from_shortname(shortname, *args, **kwargs)
+        return self.comment_root.comment_from_shortname(shortname,
+                                                        *args, **kwargs)
 
     def comment_from_uuid(self, uuid):
         return self.comment_root.comment_from_uuid(uuid)

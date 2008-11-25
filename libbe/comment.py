@@ -73,6 +73,14 @@ def saveComments(bug):
     for comment in bug.comment_root.traverse():
         comment.save()
 
+class InvalidShortname(KeyError):
+    def __init__(self, shortname, shortnames):
+        msg = "Invalid shortname %s\n%s" % (shortname, shortnames)
+        KeyError.__init__(self, msg)
+        self.shortname = shortname
+        self.shortnames = shortnames
+
+
 class Comment(Tree):
     def __init__(self, bug=None, uuid=None, from_disk=False,
                  in_reply_to=None, body=None):
@@ -133,12 +141,12 @@ class Comment(Tree):
     def string(self, indent=0, shortname=None):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
-        >>> comm.time = utility.str_to_time("Thu, 20 Nov 2008 15:55:11 +0000")
+        >>> comm.time = utility.str_to_time("Thu, 01 Jan 1970 00:00:00 +0000")
         >>> print comm.string(indent=2, shortname="com-1")
           --------- Comment ---------
           Name: com-1
           From: 
-          Date: Thu, 20 Nov 2008 15:55:11 +0000
+          Date: Thu, 01 Jan 1970 00:00:00 +0000
         <BLANKLINE>
           Some
           insightful
@@ -220,9 +228,7 @@ class Comment(Tree):
             path = comment.get_path()
             self.rcs.recursive_remove(path)
 
-    def add_reply(self, reply):
-        if reply.time != None and self.time != None:
-            assert reply.time >= self.time
+    def add_reply(self, reply, allow_time_inversion=False):
         if self.uuid != INVALID_UUID:
             reply.in_reply_to = self.uuid
         self.append(reply)
@@ -362,7 +368,8 @@ class Comment(Tree):
         for cur_name, comment in self.comment_shortnames(*args, **kwargs):
             if comment_shortname == cur_name:
                 return comment
-        raise KeyError(comment_shortname)
+        raise InvalidShortname(comment_shortname,
+                               list(self.comment_shortnames(*args, **kwargs)))
 
     def comment_from_uuid(self, uuid):
         """

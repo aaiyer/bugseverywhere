@@ -95,6 +95,8 @@ echo "$OUT"
 BUG=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
 echo "Working with bug: $BUG"
 be comment $BUG "This is an argument"
+be set user_id "$ID"    # get tired of guessing user id for none RCS
+be set                  # show settings
 be comment $BUG:1 "No it isn't" # comment on the first comment
 be show $BUG            # show details on a given bug
 be close $BUG           # set bug status to 'closed'
@@ -102,7 +104,6 @@ be comment $BUG "It's closed, but I can still comment."
 be open $BUG            # set bug status to 'open'
 be comment $BUG "Reopend, comment again"
 be status $BUG fixed    # set bug status to 'fixed'
-be show $BUG            # show bug details & comments
 be list                 # list all open bugs
 be list --status fixed  # list all fixed bugs
 be assign $BUG          # assign the bug to yourself
@@ -111,6 +112,11 @@ be assign $BUG 'Joe'    # assign the bug to Joe
 be list -a Joe -s fixed # list the fixed bugs assigned to Joe
 be assign $BUG none     # assign the bug to noone
 be diff                 # see what has changed
+OUT=`be new 'also having too much fun'`
+BUGB=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
+be comment $BUGB "Blissfully unaware of a similar bug"
+be merge $BUG $BUGB     # join BUGB to BUG
+be show $BUG            # show bug details & comments
 be remove $BUG # decide that you don't like that bug after all
 cd /
 rm -rf $TESTDIR
