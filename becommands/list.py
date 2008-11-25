@@ -113,15 +113,18 @@ def execute(args, test=False):
     if len(bugs) == 0:
         print "No matching bugs found"
     
-    def list_bugs(cur_bugs, title=None, no_target=False):
+    def list_bugs(cur_bugs, title=None, just_uuids=False):
         cur_bugs.sort(cmp_full)
         if len(cur_bugs) > 0:
             if title != None:
                 print cmdutil.underlined(title)
             for bug in cur_bugs:
-                print bug.string(shortlist=True)
+                if just_uuids:
+                    print bug.uuid
+                else:
+                    print bug.string(shortlist=True)
     
-    list_bugs(bugs, no_target=False)
+    list_bugs(bugs, just_uuids=options.uuids)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be list [options]")
@@ -134,10 +137,11 @@ def get_parser():
     parser.add_option("-t", "--target", metavar="TARGET", dest="target",
                       help="List options matching TARGET", default=None)
     # boolean shortucts.  All of these are special cases of long forms
-    bools = (("w", "wishlist", "List bugs with 'wishlist' severity"),
+    bools = (("u", "uuids", "Only print the bug UUIDS"),
+             ("w", "wishlist", "List bugs with 'wishlist' severity"),
              ("i", "important", "List bugs with >= 'serious' severity"),
              ("A", "active", "List all active bugs"),
-             ("u", "unconfirmed", "List unconfirmed bugs"),
+             ("U", "unconfirmed", "List unconfirmed bugs"),
              ("o", "open", "List open bugs"),
              ("T", "test", "List bugs in testing"),
              ("m", "mine", "List bugs assigned to you"),
@@ -152,8 +156,17 @@ def get_parser():
     return parser
 
 longhelp="""
-This command lists bugs.  There are several criteria that you can
-search by:
+This command lists bugs.  Normally it prints a short string like
+  576:om: Allow attachments
+Where
+  576   the bug id
+  o     the bug status is 'open' (first letter)
+  m     the bug severity is 'minor' (first letter)
+  Allo... the bug summary string
+
+You can optionally (-u) print only the bug ids.
+
+There are several criteria that you can filter by:
   * status
   * severity
   * assigned (who the bug is assigned to)

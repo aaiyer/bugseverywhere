@@ -42,6 +42,8 @@ def execute(args, test=False):
     for bugid in args:
         bug = bd.bug_from_shortname(bugid)
         print bug.string(show_comments=True)
+        if bugid != args[-1]:
+            print "" # add a blank line between bugs
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show BUG-ID [BUG-ID ...]")
