@@ -74,6 +74,9 @@ def setting_property(name, valid=None, doc=None):
     
     def setter(self, value):
         if value != getter(self):
+            if valid is not None:
+                if value not in valid and value != None:
+                    raise InvalidValue(name, value)
             if value is None:
                 del self.settings[name]
             else:
@@ -178,7 +181,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     rcs = property(_get_rcs, _set_rcs,
                    doc="A revision control system (RCS) instance")
 
-    _user_id = setting_property("user-id", doc=
+    _user_id = setting_property("user_id", doc=
 """The user's prefered name.  Kept seperate to make saving/loading
 settings easy.  Don't set this attribute.  Set .user_id instead,
 and ._user_id will be automatically adjusted.  This setting is
@@ -238,9 +241,9 @@ that the Arch RCS backend *enforces* ids with this format.""")
             self.settings = self._get_settings(self.get_path("settings"))
             
             self.rcs = rcs.rcs_by_name(self.rcs_name)
-            if self._user_id != None: # was a user name in the settings file
-                self.save_user_id()            
-            
+            if self.settings.get("user_id") != None:
+                self.save_user_id()  # was a user name in the settings file
+
         self._bug_map_gen()
 
     def load_all_bugs(self):
@@ -286,9 +289,9 @@ that the Arch RCS backend *enforces* ids with this format.""")
                 # to go cluttering up his file system with settings files.
                 return
             if self._save_user_id == False:
-                if "user-id" in settings:
+                if "user_id" in settings:
                     settings = copy.copy(settings)
-                    del settings["user-id"]
+                    del settings["user_id"]
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
         # allow_no_rcs=True should only be for the special case of
         # configuring duplicate bugdir settings
@@ -304,7 +307,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
         duplicate_settings = self._get_settings(duplicate_settings_path)
         if "rcs_name" in duplicate_settings:
             duplicate_settings["rcs_name"] = "None"
-            duplicate_settings["user-id"] = self.user_id
+            duplicate_settings["user_id"] = self.user_id
             self._save_settings(duplicate_settings_path, duplicate_settings)
 
         return BugDir(duplicate_path, from_disk=True)

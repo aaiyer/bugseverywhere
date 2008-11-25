@@ -46,8 +46,10 @@ def execute(args):
         print bd.settings.get(args[0])
     else:
         if args[1] != "none":
-            old_setting = bd.settings[args[0]]
+            old_setting = bd.settings.get(args[0])
             bd.settings[args[0]] = args[1]
+            if args[0] == "user_id":
+                bd.save_user_id()
             
             # attempt to get the new value
             bd.save()
