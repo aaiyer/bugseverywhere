@@ -58,14 +58,14 @@ class Hg(RCS):
         pass
     def _rcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return file(os.path.join(self.rootdir, path), "rb").read()
+            return RCS._rcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
                 self._u_invoke_client("cat","-r",revision,path)
             return output
     def _rcs_duplicate_repo(self, directory, revision=None):
         if revision == None:
-            RCS._rcs_duplicate_repo(self, directory, revision)
+            return RCS._rcs_duplicate_repo(self, directory, revision)
         else:
             self._u_invoke_client("archive", "--rev", revision, directory)
     def _rcs_commit(self, commitfile):

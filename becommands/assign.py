@@ -18,7 +18,7 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
@@ -26,17 +26,17 @@ def execute(args):
     >>> bd.bug_from_shortname("a").assigned is None
     True
 
-    >>> execute(["a"])
+    >>> execute(["a"], test=True)
     >>> bd._clear_bugs()
     >>> bd.bug_from_shortname("a").assigned == bd.user_id
     True
 
-    >>> execute(["a", "someone"])
+    >>> execute(["a", "someone"], test=True)
     >>> bd._clear_bugs()
     >>> print bd.bug_from_shortname("a").assigned
     someone
 
-    >>> execute(["a","none"])
+    >>> execute(["a","none"], test=True)
     >>> bd._clear_bugs()
     >>> bd.bug_from_shortname("a").assigned is None
     True
@@ -44,11 +44,11 @@ def execute(args):
     options, args = get_parser().parse_args(args)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
-        raise cmdutil.UserError("Please specify a bug id.")
+        raise cmdutil.UsageError("Please specify a bug id.")
     if len(args) > 2:
         help()
-        raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError("Too many arguments.")
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         bug.assigned = bd.user_id

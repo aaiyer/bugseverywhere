@@ -19,25 +19,24 @@ from libbe import cmdutil, bugdir
 from libbe.bug import severity_values, severity_description
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a"])
+    >>> execute(["a"], test=True)
     minor
-    >>> execute(["a", "wishlist"])
-    >>> execute(["a"])
+    >>> execute(["a", "wishlist"], test=True)
+    >>> execute(["a"], test=True)
     wishlist
-    >>> execute(["a", "none"])
+    >>> execute(["a", "none"], test=True)
     Traceback (most recent call last):
     UserError: Invalid severity level: none
     """
     options, args = get_parser().parse_args(args)
     if len(args) not in (1,2):
-        print help()
-        return
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         print bug.severity
@@ -46,7 +45,7 @@ def execute(args):
             bug.severity = args[1]
         except ValueError, e:
             if e.name != "severity":
-                raise
+                raise e
             raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
         bd.save()
 

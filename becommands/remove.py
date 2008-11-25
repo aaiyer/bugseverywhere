@@ -18,7 +18,7 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> from libbe import mapfile
     >>> import os
@@ -26,7 +26,7 @@ def execute(args):
     >>> os.chdir(bd.root)
     >>> print bd.bug_from_shortname("b").status
     closed
-    >>> execute (["b"])
+    >>> execute (["b"], test=True)
     Removed bug b
     >>> bd._clear_bugs()
     >>> try:
@@ -37,8 +37,8 @@ def execute(args):
     """
     options, args = get_parser().parse_args(args)
     if len(args) != 1:
-        raise cmdutil.UserError("Please specify a bug id.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError, "Please specify a bug id."
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     bd.remove_bug(bug)
     bd.save()

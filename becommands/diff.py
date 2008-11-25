@@ -20,7 +20,7 @@ from libbe import cmdutil, bugdir, diff
 import os
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
@@ -31,7 +31,7 @@ def execute(args):
     >>> changed = bd.rcs.commit("Closed bug a")
     >>> os.chdir(bd.root)
     >>> if bd.rcs.versioned == True:
-    ...     execute([original])
+    ...     execute([original], test=True)
     ... else:
     ...     print "a:cm: Bug A\\nstatus: open -> closed\\n"
     Modified bug reports:
@@ -45,16 +45,14 @@ def execute(args):
     if len(args) == 1:
         revision = args[0]
     if len(args) > 1:
-        help()
-        raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError("Too many arguments.")
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     if bd.rcs.versioned == False:
         print "This directory is not revision-controlled."
     else:
         old_bd = bd.duplicate_bugdir(revision)
         r,m,a = diff.diff(old_bd, bd)
-        diff.diff_report((r,m,a), bd)
-        # TODO, string return from diff report
+        print diff.diff_report((r,m,a), bd).encode(bd.encoding)
         bd.remove_duplicate_bugdir()
 
 def get_parser():

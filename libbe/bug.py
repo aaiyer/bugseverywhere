@@ -182,7 +182,10 @@ class Bug(object):
         if show_comments == True:
             if self._comments_loaded == False:
                 self.load_comments()
-            comout = self.comment_root.string_thread(auto_name_map=True,
+            # take advantage of the string_thread(auto_name_map=True)
+            # SIDE-EFFECT of sorting by bug time.
+            comout = self.comment_root.string_thread(flatten=False,
+                                                     auto_name_map=True,
                                                      bug_shortname=shortname)
             output = bugout + '\n' + comout.rstrip('\n')
         else :

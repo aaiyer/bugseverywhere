@@ -15,16 +15,16 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Add a comment to a bug"""
-from libbe import cmdutil, bugdir, utility
+from libbe import cmdutil, bugdir, editor
 import os
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import time
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a", "This is a comment about a"])
+    >>> execute(["a", "This is a comment about a"], test=True)
     >>> bd._clear_bugs()
     >>> bug = bd.bug_from_shortname("a")
     >>> bug.load_comments()
@@ -41,12 +41,12 @@ def execute(args):
 
     >>> if 'EDITOR' in os.environ:
     ...     del os.environ["EDITOR"]
-    >>> execute(["b"])
+    >>> execute(["b"], test=True)
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
 
     >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
-    >>> execute(["b"])
+    >>> execute(["b"], test=True)
     >>> bd._clear_bugs()
     >>> bug = bd.bug_from_shortname("b")
     >>> bug.load_comments()
@@ -57,10 +57,9 @@ def execute(args):
     """
     options, args = get_parser().parse_args(args)
     if len(args) == 0:
-        raise cmdutil.UserError("Please specify a bug or comment id.")
+        raise cmdutil.UsageError("Please specify a bug or comment id.")
     if len(args) > 2:
-        help()
-        raise cmdutil.UserError("Too many arguments.")
+        raise cmdutil.UsageError("Too many arguments.")
     
     shortname = args[0]
     if shortname.count(':') > 1:
@@ -73,20 +72,20 @@ def execute(args):
         bugname = shortname
         is_reply = False
     
-    bd = bugdir.BugDir(from_disk=True)
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(bugname)
     bug.load_comments()
     if is_reply:
-        parent = bug.comment_root.comment_from_shortname(shortname, bug_shortname=bugname)
+        parent = bug.comment_root.comment_from_shortname(shortname,
+                                                         bug_shortname=bugname)
     else:
         parent = bug.comment_root
     
     if len(args) == 1:
         try:
-            body = utility.editor_string("Please enter your comment above")
-        except utility.CantFindEditor:
-            raise cmdutil.UserError(
-                "No comment supplied, and EDITOR not specified.")
+            body = editor.editor_string("Please enter your comment above")
+        except editor.CantFindEditor, e:
+            raise cmdutil.UserError, "No comment supplied, and EDITOR not specified."
         if body is None:
             raise cmdutil.UserError("No comment entered.")
         body = body.decode('utf-8')

@@ -16,14 +16,14 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import optparse
 import os
-import locale
 from textwrap import TextWrapper
 from StringIO import StringIO
 import doctest
 
 import bugdir
 import plugin
-import utility
+import encoding
+
 
 class UserError(Exception):
     def __init__(self, msg):
@@ -33,6 +33,13 @@ class UserErrorWrap(UserError):
     def __init__(self, exception):
         UserError.__init__(self, str(exception))
         self.exception = exception
+
+class GetHelp(Exception):
+    pass
+
+class UsageError(Exception):
+    pass
+
 
 def iter_commands():
     for name, module in plugin.iter_plugins("becommands"):
@@ -52,9 +59,11 @@ def get_command(command_name):
         raise UserError("Unknown command %s" % command_name)
     return cmd
 
+
 def execute(cmd, args):
-    encoding = locale.getpreferredencoding() or 'ascii'
-    return get_command(cmd).execute([a.decode(encoding) for a in args])
+    enc = encoding.get_encoding()
+    get_command(cmd).execute([a.decode(enc) for a in args])
+    return 0
 
 def help(cmd=None):
     if cmd != None:
@@ -71,17 +80,8 @@ def help(cmd=None):
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
         return "\n".join(ret)
 
-class GetHelp(Exception):
-    pass
-
-
-class UsageError(Exception):
-    pass
-
-
 def raise_get_help(option, opt, value, parser):
     raise GetHelp
-
         
 class CmdOptionParser(optparse.OptionParser):
     def __init__(self, usage):

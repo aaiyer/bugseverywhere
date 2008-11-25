@@ -55,7 +55,7 @@ class Bzr(RCS):
         pass
     def _rcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return file(os.path.join(self.rootdir, path), "rb").read()
+            return RCS._rcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
                 self._u_invoke_client("cat","-r",revision,path)

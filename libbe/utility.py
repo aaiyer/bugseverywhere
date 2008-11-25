@@ -15,10 +15,11 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 import calendar
-import time
+import codecs
 import os
-import tempfile
 import shutil
+import tempfile
+import time
 import doctest
 
 
@@ -87,73 +88,5 @@ def str_to_time(str_time):
 def handy_time(time_val):
     return time.strftime("%a, %d %b %Y %H:%M", time.localtime(time_val))
 
-class CantFindEditor(Exception):
-    def __init__(self):
-        Exception.__init__(self, "Can't find editor to get string from")
-
-def editor_string(comment=None):
-
-    """Invokes the editor, and returns the user_produced text as a string
-
-    >>> if "EDITOR" in os.environ:
-    ...     del os.environ["EDITOR"]
-    >>> if "VISUAL" in os.environ:
-    ...     del os.environ["VISUAL"]
-    >>> editor_string()
-    Traceback (most recent call last):
-    CantFindEditor: Can't find editor to get string from
-    >>> os.environ["EDITOR"] = "echo bar > "
-    >>> editor_string()
-    u'bar\\n'
-    >>> os.environ["VISUAL"] = "echo baz > "
-    >>> editor_string()
-    u'baz\\n'
-    >>> del os.environ["EDITOR"]
-    >>> del os.environ["VISUAL"]
-    """
-    for name in ('VISUAL', 'EDITOR'):
-        try:
-            editor = os.environ[name]
-            break
-        except KeyError:
-            pass
-    else:
-        raise CantFindEditor()
-    fhandle, fname = tempfile.mkstemp()
-    try:
-        if comment is not None:
-            os.write(fhandle, '\n'+comment_string(comment))
-        os.close(fhandle)
-        oldmtime = os.path.getmtime(fname)
-        os.system("%s %s" % (editor, fname))
-        output = trimmed_string(file(fname, "rb").read().decode("utf-8"))
-        if output.rstrip('\n') == "":
-            output = None
-    finally:
-        os.unlink(fname)
-    return output
-
-
-def comment_string(comment):
-    """
-    >>> comment_string('hello')
-    '== Anything below this line will be ignored ==\\nhello'
-    """
-    return '== Anything below this line will be ignored ==\n' + comment
-
-
-def trimmed_string(instring):
-    """
-    >>> trimmed_string("hello\\n== Anything below this line will be ignored")
-    'hello\\n'
-    >>> trimmed_string("hi!\\n" + comment_string('Booga'))
-    'hi!\\n'
-    """
-    out = []
-    for line in instring.splitlines(True):
-        if line.startswith('== Anything below this line will be ignored'):
-            break
-        out.append(line)
-    return ''.join(out)
 
 suite = doctest.DocTestSuite()

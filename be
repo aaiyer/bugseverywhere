@@ -33,9 +33,12 @@ else:
         except cmdutil.GetHelp:
             print cmdutil.help(sys.argv[1])
             sys.exit(0)
-        except cmdutil.UsageError:
+        except cmdutil.UsageError, e:
+            print "Invalid usage:", e
+            print "\nArgs:", sys.argv[1:]
             print cmdutil.help(sys.argv[1])
             sys.exit(1)
     except cmdutil.UserError, e:
+        print "ERROR:"
         print e
         sys.exit(1)

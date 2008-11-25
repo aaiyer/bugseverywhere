@@ -18,25 +18,24 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["target"])
+    >>> execute(["target"], test=True)
     None
-    >>> execute(["target", "tomorrow"])
-    >>> execute(["target"])
+    >>> execute(["target", "tomorrow"], test=True)
+    >>> execute(["target"], test=True)
     tomorrow
-    >>> execute(["target", "none"])
-    >>> execute(["target"])
+    >>> execute(["target", "none"], test=True)
+    >>> execute(["target"], test=True)
     None
     """
     options, args = get_parser().parse_args(args)
     if len(args) > 2:
-        help()
-        raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError, "Too many arguments"
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     if len(args) == 0:
         keys = bd.settings.keys()
         keys.sort()

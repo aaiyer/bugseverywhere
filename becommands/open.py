@@ -18,25 +18,24 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
     >>> print bd.bug_from_shortname("b").status
     closed
-    >>> execute(["b"])
+    >>> execute(["b"], test=True)
     >>> bd._clear_bugs()
     >>> print bd.bug_from_shortname("b").status
     open
     """
     options, args = get_parser().parse_args(args)
     if len(args) == 0:
-        raise cmdutil.UserError("Please specify a bug id.")
+        raise cmdutil.UsageError, "Please specify a bug id."
     if len(args) > 1:
-        help()
-        raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError, "Too many arguments."
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     bug.status = "open"
     bd.save()

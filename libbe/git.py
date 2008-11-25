@@ -69,7 +69,7 @@ class Git(RCS):
         self._rcs_add(path)
     def _rcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return file(self._u_abspath(path), "rb").read()
+            return RCS._rcs_get_file_contents(self, path, revision)
         else:
             arg = "%s:%s" % (revision,path)
             status,output,error = self._u_invoke_client("show", arg)

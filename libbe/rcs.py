@@ -15,13 +15,14 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 from subprocess import Popen, PIPE
+import codecs
 import os
 import os.path
-from socket import gethostname
 import re
+from socket import gethostname
+import shutil
 import sys
 import tempfile
-import shutil
 import unittest
 import doctest
 
@@ -77,8 +78,9 @@ class PathNotInRoot(Exception):
         self.root = root
 
 class NoSuchFile(Exception):
-    def __init__(self, pathname):
-        Exception.__init__(self, "No such file: %s" % pathname)
+    def __init__(self, pathname, root="."):
+        path = os.path.abspath(os.path.join(root, pathname))
+        Exception.__init__(self, "No such file: %s" % path)
 
 
 def new():
@@ -97,12 +99,13 @@ class RCS(object):
     name = "None"
     client = "" # command-line tool for _u_invoke_client
     versioned = False
-    def __init__(self, paranoid=False):
+    def __init__(self, paranoid=False, encoding=sys.getdefaultencoding()):
         self.paranoid = paranoid
         self.verboseInvoke = False
         self.rootdir = None
         self._duplicateBasedir = None
         self._duplicateDirname = None
+        self.encoding = encoding
     def __del__(self):
         self.cleanup()
 
@@ -171,15 +174,15 @@ class RCS(object):
         pass
     def _rcs_get_file_contents(self, path, revision=None):
         """
-        Get the file contents as they were in a given revision.  Don't
-        worry about decoding the contents, the RCS.get_file_contents()
-        method will handle that.
-        
+        Get the file contents as they were in a given revision.
         Revision==None specifies the current revision.
         """
         assert revision == None, \
             "The %s RCS does not support revision specifiers" % self.name
-        return file(os.path.join(self.rootdir, path), "rb").read()
+        f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
+        contents = f.read()
+        f.close()
+        return contents
     def _rcs_duplicate_repo(self, directory, revision=None):
         """
         Get the repository as it was in a given revision.
@@ -297,14 +300,18 @@ class RCS(object):
             relpath = self._u_rel_path(path)
             contents = self._rcs_get_file_contents(relpath,revision)
         else:
-            contents = file(path, "rb").read()
-        return contents.decode("utf-8")
+            f = codecs.open(path, "r", self.encoding)
+            contents = f.read()
+            f.close()
+        return contents
     def set_file_contents(self, path, contents, allow_no_rcs=False):
         """
         Set the file contents under version control.
         """
         add = not os.path.exists(path)
-        file(path, "wb").write(contents.encode("utf-8"))
+        f = codecs.open(path, "w", self.encoding)
+        f.write(contents)
+        f.close()
         
         if self._use_rcs(path, allow_no_rcs):
             if add:
@@ -537,13 +544,13 @@ class RCS(object):
         Split the commitfile created in self.commit() back into
         summary and header lines.
         """
-        f = file(commitfile, "rb")
+        f = codecs.open(commitfile, "r", self.encoding)
         summary = f.readline()
         body = f.read()
         body.lstrip('\n')
         if len(body) == 0:
             body = None
-        f.close
+        f.close()
         return (summary, body)
         
 

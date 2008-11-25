@@ -18,14 +18,14 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os, time
     >>> from libbe import bug
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
     >>> bug.uuid_gen = lambda: "X"
-    >>> execute (["this is a test",])
+    >>> execute (["this is a test",], test=True)
     Created bug with ID X
     >>> bd.load()
     >>> bug = bd.bug_from_uuid("X")
@@ -40,8 +40,8 @@ def execute(args):
     """
     options, args = get_parser().parse_args(args)
     if len(args) != 1:
-        raise cmdutil.UserError("Please supply a summary message")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError("Please supply a summary message")
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.new_bug(summary=args[0])
     bd.save()
     print "Created bug with ID %s" % bd.bug_shortname(bug)

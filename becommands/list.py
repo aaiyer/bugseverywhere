@@ -21,22 +21,21 @@ from libbe.bug import cmp_full, severity_values, status_values, \
 import os
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute([])
+    >>> execute([], test=True)
     a:om: Bug A
-    >>> execute(["--status", "all"])
+    >>> execute(["--status", "all"], test=True)
     a:om: Bug A
     b:cm: Bug B
     """
     options, args = get_parser().parse_args(args)
     if len(args) > 0:
-        help()
-        raise cmdutil.UserError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError("Too many arguments.")
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bd.load_all_bugs()
     # select status
     if options.status != None:

@@ -1,0 +1,5 @@
+Wrote/borrowed libbe/encoding.py.
+Now the following works:
+
+python -c 'import libbe.encoding as e; print e.get_encoding(); e.set_IO_stream_encodings(e.get_encoding()) ;print u"\u2019"' | cat
+

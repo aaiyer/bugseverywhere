@@ -46,12 +46,13 @@ def diff_report(diff_data, bug_dir):
     added.sort(cmp_severity)
     removed.sort(cmp_severity)
     modified.sort(modified_cmp)
-
+    lines = []
+    
     if len(added) > 0:
-        print "New bug reports:"
+        lines.append("New bug reports:")
         for bug in added:
-            print bug.string(shortlist=True)
-        print ""
+            lines.extend(bug.string(shortlist=True).splitlines())
+        lines.append("")
 
     if len(modified) > 0:
         printed = False
@@ -61,15 +62,18 @@ def diff_report(diff_data, bug_dir):
                 continue
             if not printed:
                 printed = True
-                print "Modified bug reports:"
-            print change_str
-        print ""
+                lines.append("Modified bug reports:")
+            lines.extend(change_str.splitlines())
+        if printed == True:
+            lines.append("")
 
-    if len(removed) > 0: 
-        print "Removed bug reports:"
+    if len(removed) > 0:
+        lines.append("Removed bug reports:")
         for bug in removed:
-            print bug.string(shortlist=True)
-        print ""
+            lines.extend(bug.string(shortlist=True).splitlines())
+        lines.append("")
+    
+    return '\n'.join(lines)
 
 def change_lines(old, new, attributes):
     change_list = []    

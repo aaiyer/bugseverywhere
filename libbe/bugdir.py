@@ -24,8 +24,9 @@ import doctest
 
 import mapfile
 import bug
-import utility
 import rcs
+import encoding
+import utility
 
 
 class NoBugDir(Exception):
@@ -64,7 +65,9 @@ class MultipleBugMatches(ValueError):
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
 
-def setting_property(name, valid=None, doc=None):
+def setting_property(name, valid=None, default=None, doc=None):
+    if default != None:
+        raise NotImplementedError
     def getter(self):
         value = self.settings.get(name) 
         if valid is not None:
@@ -88,7 +91,27 @@ def setting_property(name, valid=None, doc=None):
 
 class BugDir (list):
     """
-    File-system access:
+    Sink to existing root
+    ======================
+    
+    Consider the following usage case:
+    You have a bug directory rooted in
+      /path/to/source
+    by which I mean the '.be' directory is at
+      /path/to/source/.be
+    However, you're of in some subdirectory like
+      /path/to/source/GUI/testing
+    and you want to comment on a bug.  Setting sink_to_root=True wen
+    you initialize your BugDir will cause it to search for the '.be'
+    file in the ancestors of the path you passed in as 'root'.
+      /path/to/source/GUI/testing/.be     miss
+      /path/to/source/GUI/.be             miss
+      /path/to/source/.be                 hit!
+    So it still roots itself appropriately without much work for you.
+        
+    File-system access
+    ==================
+    
     When rooted in non-bugdir directory, BugDirs live completely in
     memory until the first call to .save().  This creates a '.be'
     sub-directory containing configurations options, bugs, comments,
@@ -98,12 +121,35 @@ class BugDir (list):
     will only load information from the file system when it loads new
     bugs/comments that it doesn't already have in memory, or when it
     explicitly asked to do so (e.g. .load() or __init__(from_disk=True)).
+    
+    Allow RCS initialization
+    ========================
+    
+    This one is for testing purposes.  Setting it to True allows the
+    BugDir to search for an installed RCS backend and initialize it in
+    the root directory.  This is a convenience option for supporting
+    tests of versioning functionality (e.g. .duplicate_bugdir).
+
+    Disable encoding manipulation
+    =============================
+    
+    This one is for testing purposed.  You might have non-ASCII
+    Unicode in your bugs, comments, files, etc.  BugDir instances try
+    and support your preferred encoding scheme (e.g. "utf-8") when
+    dealing with stream and file input/output.  For stream output,
+    this involves replacing sys.stdout and sys.stderr
+    (libbe.encode.set_IO_stream_encodings).  However this messes up
+    doctest's output catching.  In order to support doctest tests
+    using BugDirs, set manipulate_encodings=False, and stick to ASCII
+    in your tests.
     """
     def __init__(self, root=None, sink_to_existing_root=True,
                  assert_new_BugDir=False, allow_rcs_init=False,
+                 manipulate_encodings=True,
                  from_disk=False, rcs=None):
         list.__init__(self)
         self._save_user_id = False
+        self._manipulate_encodings = manipulate_encodings
         self.settings = {}
         if root == None:
             root = os.getcwd()
@@ -131,7 +177,8 @@ class BugDir (list):
         """
         if not os.path.exists(path):
             raise NoRootEntry(path)
-        versionfile = utility.search_parent_directories(path, os.path.join(".be", "version"))
+        versionfile=utility.search_parent_directories(path,
+                                                      os.path.join(".be", "version"))
         if versionfile != None:
             beroot = os.path.dirname(versionfile)
             root = os.path.dirname(beroot)
@@ -142,11 +189,11 @@ class BugDir (list):
                 raise NoBugDir(path)
             return beroot
         
-    def get_version(self, path=None):
-        if self.rcs_name == None:
-            # Use a temporary RCS to check the version for the first time
+    def get_version(self, path=None, use_none_rcs=False):
+        if use_none_rcs == True:
             RCS = rcs.rcs_by_name("None")
             RCS.root(self.root)
+            RCS.encoding = encoding.get_encoding()
         else:
             RCS = self.rcs
 
@@ -159,6 +206,40 @@ class BugDir (list):
         self.rcs.set_file_contents(self.get_path("version"),
                                    TREE_VERSION_STRING)
 
+    def _get_encoding(self):
+        if self._encoding == None:
+            return encoding.get_encoding()
+        else:
+            return self._encoding
+    def _set_encoding(self, new_encoding):
+        if new_encoding != None:
+            if encoding.known_encoding(new_encoding) == False:
+                raise InvalidValue("encoding", new_encoding)
+        self._encoding = new_encoding
+        if self._manipulate_encodings == True:
+            encoding.set_IO_stream_encodings(self.encoding)
+        if hasattr(self, "rcs"):
+            if self.rcs != None:
+                self.rcs.encoding = self.encoding
+    _encoding = setting_property("encoding",
+                                 doc=
+"""The default input/output encoding to use (e.g. "utf-8").
+Dont' set this attribute, set .encoding instead.""")
+    encoding = property(_get_encoding, _set_encoding, doc=
+"""The default input/output encoding to use (e.g. "utf-8").""")
+
+    def _get_rcs(self):
+        return self._rcs
+    def _set_rcs(self, new_rcs):
+        if new_rcs == None:
+            new_rcs = rcs.rcs_by_name("None")
+        new_rcs.encoding = self.encoding
+        self._rcs = new_rcs
+        new_rcs.root(self.root)
+        self.rcs_name = new_rcs.name
+    _rcs = None
+    rcs = property(_get_rcs, _set_rcs,
+                   doc="A revision control system (RCS) instance")
     rcs_name = setting_property("rcs_name",
                                 ("None", "bzr", "git", "Arch", "hg"),
                                 doc=
@@ -166,40 +247,24 @@ class BugDir (list):
 settings easy.  Don't set this attribute.  Set .rcs instead, and
 .rcs_name will be automatically adjusted.""")
 
-    _rcs = None
 
-    def _get_rcs(self):
-        return self._rcs
-
-    def _set_rcs(self, new_rcs):
-        if new_rcs == None:
-            new_rcs = rcs.rcs_by_name("None")
-        self._rcs = new_rcs
-        new_rcs.root(self.root)
-        self.rcs_name = new_rcs.name
-
-    rcs = property(_get_rcs, _set_rcs,
-                   doc="A revision control system (RCS) instance")
-
+    def _get_user_id(self):
+        if self._user_id == None and self.rcs != None:
+            self._user_id = self.rcs.get_user_id()
+        return self._user_id
+    def _set_user_id(self, user_id):
+        if self.rcs != None:
+            self.rcs.user_id = user_id
+        self._user_id = user_id
+    user_id = property(_get_user_id, _set_user_id, doc=
+"""The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Note
+that the Arch RCS backend *enforces* ids with this format.""")
     _user_id = setting_property("user_id", doc=
 """The user's prefered name.  Kept seperate to make saving/loading
 settings easy.  Don't set this attribute.  Set .user_id instead,
 and ._user_id will be automatically adjusted.  This setting is
 only saved if ._save_user_id == True""")
 
-    def _get_user_id(self):
-        if self._user_id == None and self.rcs != None:
-            self._user_id = self.rcs.get_user_id()
-        return self._user_id
-
-    def _set_user_id(self, user_id):
-        if self.rcs != None:
-            self.rcs.user_id = user_id
-        self._user_id = user_id
-
-    user_id = property(_get_user_id, _set_user_id, doc=
-"""The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Note
-that the Arch RCS backend *enforces* ids with this format.""")
 
     target = setting_property("target",
                               doc="The current project development target")
@@ -231,7 +296,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
         return new_rcs
 
     def load(self):
-        version = self.get_version()
+        version = self.get_version(use_none_rcs=True)
         if version != TREE_VERSION_STRING:
             raise NotImplementedError, \
                 "BugDir cannot handle version '%s' yet." % version
@@ -241,6 +306,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
             self.settings = self._get_settings(self.get_path("settings"))
             
             self.rcs = rcs.rcs_by_name(self.rcs_name)
+            self.encoding = self.encoding # setup encoding, IO_stream_encoding...
             if self.settings.get("user_id") != None:
                 self.save_user_id()  # was a user name in the settings file
 
@@ -292,6 +358,8 @@ that the Arch RCS backend *enforces* ids with this format.""")
                 if "user_id" in settings:
                     settings = copy.copy(settings)
                     del settings["user_id"]
+            if settings.get("encoding") == encoding.get_encoding():
+                del settings["encoding"] # don't duplicate system default
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
         # allow_no_rcs=True should only be for the special case of
         # configuring duplicate bugdir settings
@@ -310,7 +378,7 @@ that the Arch RCS backend *enforces* ids with this format.""")
             duplicate_settings["user_id"] = self.user_id
             self._save_settings(duplicate_settings_path, duplicate_settings)
 
-        return BugDir(duplicate_path, from_disk=True)
+        return BugDir(duplicate_path, from_disk=True, manipulate_encodings=self._manipulate_encodings)
 
     def remove_duplicate_bugdir(self):
         self.rcs.remove_duplicate_repo()
@@ -423,7 +491,8 @@ def simple_bug_dir():
     """
     dir = utility.Dir()
     assert os.path.exists(dir.path)
-    bugdir = BugDir(dir.path, sink_to_existing_root=False, allow_rcs_init=True)
+    bugdir = BugDir(dir.path, sink_to_existing_root=False, allow_rcs_init=True,
+                    manipulate_encodings=False)
     bugdir._dir_ref = dir # postpone cleanup since dir.__del__() removes dir.
     bug_a = bugdir.new_bug("a", summary="Bug A")
     bug_a.creator = "John Doe <jdoe@example.com>"

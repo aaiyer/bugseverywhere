@@ -18,33 +18,32 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a"])
+    >>> execute(["a"], test=True)
     No target assigned.
-    >>> execute(["a", "tomorrow"])
-    >>> execute(["a"])
+    >>> execute(["a", "tomorrow"], test=True)
+    >>> execute(["a"], test=True)
     tomorrow
-    >>> execute(["a", "none"])
-    >>> execute(["a"])
+    >>> execute(["a", "none"], test=True)
+    >>> execute(["a"], test=True)
     No target assigned.
     """
     options, args = get_parser().parse_args(args)
-    assert(len(args) in (0, 1, 2))
-    if len(args) == 0:
-        print help()
-        return
-    bd = bugdir.BugDir(from_disk=True)
+    if len(args) not in (1, 2):
+        raise cmdutil.UsageError
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         if bug.target is None:
             print "No target assigned."
         else:
             print bug.target
-    elif len(args) == 2:
+    else:
+        assert len(args) == 2
         if args[1] == "none":
             bug.target = None
         else:

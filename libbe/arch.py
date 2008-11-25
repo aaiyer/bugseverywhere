@@ -14,10 +14,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+import codecs
 import os
+import re
 import shutil
 import time
-import re
 import unittest
 import doctest
 
@@ -133,13 +134,16 @@ class Arch(RCS):
         """
         tagpath = os.path.join(path, "{arch}", "=tagging-method")
         lines_out = []
-        for line in file(tagpath, "rb"):
-            line.decode("utf-8")
+        f = codecs.open(tagpath, "r", self.encoding)
+        for line in f:
             if line.startswith("source "):
                 lines_out.append("source ^[._=a-zA-X0-9].*$\n")
             else:
                 lines_out.append(line)
-        file(tagpath, "wb").write("".join(lines_out).encode("utf-8"))
+        f.close()
+        f = codecs.open(tagpath, "w", self.encoding)
+        f.write("".join(lines_out))
+        f.close()
 
     def _add_project_code(self, path):
         # http://mwolson.org/projects/GettingStartedWithArch.html
@@ -215,7 +219,9 @@ class Arch(RCS):
         return [os.path.join(root, p) for p in inv_str.split('\n')]
     def _add_dir_rule(self, rule, dirname, root):
         inv_path = os.path.join(dirname, '.arch-inventory')
-        file(inv_path, "ab").write(rule)
+        f = codecs.open(inv_path, "a", self.encoding)
+        f.write(rule)
+        f.close()
         if os.path.realpath(inv_path) not in self._list_added(root):
             paranoid = self.paranoid
             self.paranoid = False
@@ -233,12 +239,16 @@ class Arch(RCS):
         pass
     def _rcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return file(self._u_abspath(path), "rb").read()
+            return RCS._rcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
                 self._invoke_client("file-find", path, revision)
-            path = output.rstrip('\n')
-            return file(self._u_abspath(path), "rb").read()
+            relpath = output.rstrip('\n')
+            abspath = os.path.join(self.rootdir, relpath)
+            f = codecs.open(abspath, "r", self.encoding)
+            contents = f.read()
+            f.close()
+            return contents
     def _rcs_duplicate_repo(self, directory, revision=None):
         if revision == None:
             RCS._rcs_duplicate_repo(self, directory, revision)

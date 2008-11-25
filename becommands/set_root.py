@@ -19,7 +19,7 @@ import os.path
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> from libbe import utility, rcs
     >>> import os
@@ -29,7 +29,7 @@ def execute(args):
     ... except bugdir.NoBugDir, e:
     ...     True
     True
-    >>> execute([dir.path])
+    >>> execute([dir.path], test=True)
     No revision control detected.
     Directory initialized.
     >>> del(dir)
@@ -40,34 +40,31 @@ def execute(args):
     >>> rcs.init('.')
     >>> print rcs.name
     Arch
-    >>> execute([])
+    >>> execute([], test=True)
     Using Arch for revision control.
     Directory initialized.
     >>> rcs.cleanup()
 
     >>> try:
-    ...     execute(['.'])
+    ...     execute(['.'], test=True)
     ... except cmdutil.UserError, e:
     ...     str(e).startswith("Directory already initialized: ")
     True
-    >>> execute(['/highly-unlikely-to-exist'])
+    >>> execute(['/highly-unlikely-to-exist'], test=True)
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
     >>> os.chdir('/')
     """
     options, args = get_parser().parse_args(args)
     if len(args) > 1:
-        print help()
-        raise cmdutil.UserError, "Too many arguments"
+        raise cmdutil.UsageError
     if len(args) == 1:
         basedir = args[0]
     else:
         basedir = "."
-    if os.path.exists(basedir) == False:
-        pass
-        #raise cmdutil.UserError, "No such directory: %s" % basedir
     try:
-        bd = bugdir.BugDir(basedir, from_disk=False, sink_to_existing_root=False, assert_new_BugDir=True)
+        bd = bugdir.BugDir(basedir, from_disk=False, sink_to_existing_root=False, assert_new_BugDir=True,
+                           manipulate_encodings=not test)
     except bugdir.NoRootEntry:
         raise cmdutil.UserError("No such directory: %s" % basedir)
     except bugdir.AlreadyInitialized:

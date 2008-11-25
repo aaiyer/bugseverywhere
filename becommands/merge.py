@@ -19,7 +19,7 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
@@ -38,7 +38,7 @@ def execute(args):
     >>> dummy.time = 2
     >>> bd.save()
     >>> os.chdir(bd.root)
-    >>> execute(["a", "b"])
+    >>> execute(["a", "b"], test=True)
     Merging bugs a and b
     >>> bd._clear_bugs()
     >>> a = bd.bug_from_shortname("a")
@@ -61,30 +61,30 @@ def execute(args):
     Date: Thu, 01 Jan 1970 00:00:01 +0000
     <BLANKLINE>
     Testing
-    --------- Comment ---------
-    Name: a:2
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:02 +0000
+      --------- Comment ---------
+      Name: a:2
+      From: wking <wking@thor.yang.physics.drexel.edu>
+      Date: Thu, 01 Jan 1970 00:00:02 +0000
     <BLANKLINE>
-    Testing...
+      Testing...
     --------- Comment ---------
     Name: a:3
     From: wking <wking@thor.yang.physics.drexel.edu>
     Date: Thu, 01 Jan 1970 00:00:03 +0000
     <BLANKLINE>
     Merged from bug b
-    --------- Comment ---------
-    Name: a:4
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:01 +0000
+      --------- Comment ---------
+      Name: a:4
+      From: wking <wking@thor.yang.physics.drexel.edu>
+      Date: Thu, 01 Jan 1970 00:00:01 +0000
     <BLANKLINE>
-    1 2
-    --------- Comment ---------
-    Name: a:5
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:02 +0000
+      1 2
+        --------- Comment ---------
+        Name: a:5
+        From: wking <wking@thor.yang.physics.drexel.edu>
+        Date: Thu, 01 Jan 1970 00:00:02 +0000
     <BLANKLINE>
-    1 2 3 4
+        1 2 3 4
     >>> b = bd.bug_from_shortname("b")
     >>> b.load_comments()
     >>> mergeB = b.comment_from_shortname(":3")
@@ -105,12 +105,12 @@ def execute(args):
     Date: Thu, 01 Jan 1970 00:00:01 +0000
     <BLANKLINE>
     1 2
-    --------- Comment ---------
-    Name: b:2
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:02 +0000
+      --------- Comment ---------
+      Name: b:2
+      From: wking <wking@thor.yang.physics.drexel.edu>
+      Date: Thu, 01 Jan 1970 00:00:02 +0000
     <BLANKLINE>
-    1 2 3 4
+      1 2 3 4
     --------- Comment ---------
     Name: b:3
     From: wking <wking@thor.yang.physics.drexel.edu>
@@ -122,12 +122,12 @@ def execute(args):
     """
     options, args = get_parser().parse_args(args)
     if len(args) < 2:
-        raise cmdutil.UserError("Please two bug ids.")
+        raise cmdutil.UsageError("Please specify two bug ids.")
     if len(args) > 2:
         help()
-        raise cmdutil.UserError("Too many arguments.")
+        raise cmdutil.UsageError("Too many arguments.")
     
-    bd = bugdir.BugDir(from_disk=True)
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bugA = bd.bug_from_shortname(args[0])
     bugA.load_comments()
     bugB = bd.bug_from_shortname(args[1])

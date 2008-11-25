@@ -19,29 +19,28 @@ from libbe import cmdutil, bugdir
 from libbe.bug import status_values, status_description
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a"])
+    >>> execute(["a"], test=True)
     open
-    >>> execute(["a", "closed"])
-    >>> execute(["a"])
+    >>> execute(["a", "closed"], test=True)
+    >>> execute(["a"], test=True)
     closed
-    >>> execute(["a", "none"])
+    >>> execute(["a", "none"], test=True)
     Traceback (most recent call last):
     UserError: Invalid status: none
     """
     options, args = get_parser().parse_args(args)
     if len(args) not in (1,2):
-        print help()
-        return
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         print bug.status
-    elif len(args) == 2:
+    else:
         try:
             bug.status = args[1]
         except ValueError, e:

@@ -243,11 +243,19 @@ class Comment(Tree):
         self.add_reply(reply)
         return reply
 
-    def string_thread(self, name_map={}, indent=0,
+    def string_thread(self, name_map={}, indent=0, flatten=True,
                       auto_name_map=False, bug_shortname=None):
         """
         Return a sting displaying a thread of comments.
         bug_shortname is only used if auto_name_map == True.
+        
+        SIDE-EFFECT: if auto_name_map==True, calls comment_shornames()
+        which will sort the tree by comment.time.  Avoid by calling
+          name_map = {}
+          for shortname,comment in comm.comment_shortnames(bug_shortname):
+              name_map[comment.uuid] = shortname
+          comm.sort(key=lambda c : c.From) # your sort
+          comm.string_thread(name_map=name_map)
 
         >>> a = Comment(bug=None, uuid="a", body="Insightful remarks")
         >>> a.time = utility.str_to_time("Thu, 20 Nov 2008 01:00:00 +0000")
@@ -261,7 +269,7 @@ class Comment(Tree):
         >>> d.uuid = "d"
         >>> d.time = utility.str_to_time("Thu, 20 Nov 2008 04:00:00 +0000")
         >>> a.sort(key=lambda comm : comm.time)
-        >>> print a.string_thread()
+        >>> print a.string_thread(flatten=True)
         --------- Comment ---------
         Name: a
         From: 
@@ -317,7 +325,7 @@ class Comment(Tree):
             for shortname,comment in self.comment_shortnames(bug_shortname):
                 name_map[comment.uuid] = shortname
         stringlist = []
-        for depth,comment in self.thread(flatten=True):
+        for depth,comment in self.thread(flatten=flatten):
             ind = 2*depth+indent
             if comment.uuid in name_map:
                 sname = name_map[comment.uuid]

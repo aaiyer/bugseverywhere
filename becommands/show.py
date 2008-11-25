@@ -18,12 +18,12 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute (["a",])
+    >>> execute (["a",], test=True)
               ID : a
       Short name : a
         Severity : minor
@@ -37,11 +37,11 @@ def execute(args):
     """
     options, args = get_parser().parse_args(args)
     if len(args) == 0:
-        raise cmdutil.UserError("Please specify a bug id.")
-    bd = bugdir.BugDir(from_disk=True)
+        raise cmdutil.UsageError
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     for bugid in args:
         bug = bd.bug_from_shortname(bugid)
-        print bug.string(show_comments=True).encode('utf-8')
+        print bug.string(show_comments=True)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show BUG-ID [BUG-ID ...]")

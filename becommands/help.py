@@ -21,20 +21,25 @@ __desc__ = __doc__
 def execute(args):
     """
     Print help of specified command.
+    >>> execute(["help"])
+    Usage: be help [COMMAND]
+    <BLANKLINE>
+    Options:
+      -h, --help  Print a help message
+    <BLANKLINE>
+    Print help for specified command or list of all commands.
+    <BLANKLINE>
     """
     options, args = get_parser().parse_args(args)
     if len(args) > 1:
-        raise cmdutil.UserError("Too many arguments.")
+        raise cmdutil.UsageError("Too many arguments.")
     if len(args) == 0:
         print cmdutil.help()
     else:
         try:
             print cmdutil.help(args[0])
         except AttributeError:
-            print "No help available"
-    
-    return
-
+            print "No help available"    
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be help [COMMAND]")
