@@ -46,7 +46,17 @@ def execute(args):
         print bd.settings.get(args[0])
     else:
         if args[1] != "none":
+            old_setting = bd.settings[args[0]]
             bd.settings[args[0]] = args[1]
+            
+            # attempt to get the new value
+            bd.save()
+            try:
+                bd.load()
+            except bugdir.InvalidValue, e:
+                bd.settings[args[0]] = old_setting
+                bd.save()
+                raise cmdutil.UserError(e)
         else:
             del bd.settings[args[0]]
         bd.save()
