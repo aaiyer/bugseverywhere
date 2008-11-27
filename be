@@ -24,6 +24,9 @@ __doc__ == cmdutil.help()
 
 if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
     print cmdutil.help()
+elif sys.argv[1] == '--commands':
+    for command, module in cmdutil.iter_commands():
+        print command
 else:
     try:
         try:
