@@ -24,11 +24,10 @@ __doc__ == cmdutil.help()
 
 if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
     print cmdutil.help()
-elif sys.argv[1] == '--commands':
+elif sys.argv[1] == '--complete':
     for command, module in cmdutil.iter_commands():
         print command
-elif sys.argv[1] == '--options':
-    print '\n'.join(cmdutil.options())
+    print '\n'.join(["--help","--complete","--options"])
 else:
     try:
         try:

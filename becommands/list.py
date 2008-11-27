@@ -37,11 +37,11 @@ def execute(args, test=False):
     
     for option in [o.dest for o in parser.option_list if o.dest != None]:
         value = getattr(options, option)
-        if value == "--options":
+        if value == "--complete":
             if option == "status":
                 raise cmdutil.GetCompletions(status_values)
             raise cmdutil.GetCompletions()
-    if "--options" in args:
+    if "--complete" in args:
         raise cmdutil.GetCompletions() # no completions for arguments yet
     
     if len(args) > 0:

@@ -11,13 +11,9 @@
 #   "An introduction to bash completion: part 2"
 #   http://www.debian-administration.org/articles/317
 
-# Support commands of the form:
-#   be <command> [<long option>] [<long option>] ...
 # Requires:
-#   be --commands
-#       to print a list of available commands
-#   be command [<option> ...] --options
-#       to print a list of available long options
+#   be [X Y Z] --complete
+#       to print a list of available completions at that point
 _be()
 {
     local cur prev opts
@@ -27,7 +23,7 @@ _be()
     
     if [ $COMP_CWORD -eq 1 ]; then
 	# no command yet, show all commands
-	COMPREPLY=( $( compgen -W "$(be --commands)" -- $cur ) )
+	COMPREPLY=( $( compgen -W "$(be --complete)" -- $cur ) )
     else
 	# remove the first word (should be "be") for security reasons
 	unset COMP_WORDS[0]
@@ -36,7 +32,7 @@ _be()
 	for i in `seq $COMP_CWORD ${#COMP_WORDS[@]}`; do
 	    unset COMP_WORDS[$i];
 	done
-	COMPREPLY=( $( compgen -W "$(be "${COMP_WORDS[@]}" --options)" -- $cur ) )
+	COMPREPLY=( $( compgen -W "$(be "${COMP_WORDS[@]}" --complete)" -- $cur ) )
     fi
 }
 

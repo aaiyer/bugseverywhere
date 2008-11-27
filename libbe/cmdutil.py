@@ -86,16 +86,12 @@ def help(cmd=None):
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
         return "\n".join(ret)
 
-def options(cmd=None):
-    if cmd != None:
-        parser = get_command(cmd).get_parser()
-        longopts = []
-        for opt in parser.option_list:
-            longopts.append(opt.get_opt_string())
-        return longopts
-    else:
-        # These probably shouldn't be hardcoded...
-        return ["--help","--commands","--options"]
+def options(cmd):
+    parser = get_command(cmd).get_parser()
+    longopts = []
+    for opt in parser.option_list:
+        longopts.append(opt.get_opt_string())
+    return longopts
 
 def raise_get_help(option, opt, value, parser):
     raise GetHelp
@@ -109,9 +105,9 @@ class CmdOptionParser(optparse.OptionParser):
         self.remove_option("-h")
         self.add_option("-h", "--help", action="callback", 
                         callback=raise_get_help, help="Print a help message")
-        self.add_option("--options", action="callback",
+        self.add_option("--complete", action="callback",
                         callback=raise_get_completions,
-                        help="Print a list of available long options")
+                        help="Print a list of available completions")
 
     def error(self, message):
         raise UsageError(message)
