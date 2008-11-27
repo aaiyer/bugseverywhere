@@ -43,7 +43,8 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser)
+    cmdutil.default_complete(options, args, parser,
+                             bugid_args={0: lambda bug : bug.active==True})
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         raise cmdutil.UsageError("Please specify a bug id.")

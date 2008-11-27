@@ -129,17 +129,37 @@ def option_value_pairs(options, parser):
         value = getattr(options, option)
         yield (option, value)
 
-def default_complete(options, args, parser):
+def default_complete(options, args, parser, bugid_args={}):
     """
     A dud complete implementation for becommands to that the
     --complete argument doesn't cause any problems.  Use this
     until you've set up a command-specific complete function.
+    
+    bugid_args is an optional dict where the keys are positional
+    arguments taking bug shortnames and the values are functions for
+    filtering, since that's a common enough operation.
+    e.g. for "be open [options] BUGID"
+    bugid_args = {0: lambda bug : bug.active == False}
     """
     for option,value in option_value_pairs(options, parser):
         if value == "--complete":
             raise cmdutil.GetCompletions()
-    if "--complete" in args:
-        raise cmdutil.GetCompletions()
+    for pos,value in enumerate(args):
+        if value == "--complete":
+            if pos in bugid_args:
+                filter = bugid_args[pos]
+                bugshortnames = []
+                try:
+                    bd = bugdir.BugDir(from_disk=True,
+                                       manipulate_encodings=False)
+                    bd.load_all_bugs()
+                    bugs = [bug for bug in bd if filter(bug) == True]
+                    bugshortnames = [bd.bug_shortname(bug) for bug in bugs]
+                except bugdir.NoBugDir:
+                    bugshortnames = ["NOBUGDIR"]
+                    pass
+                raise GetCompletions(bugshortnames)
+            raise GetCompletions()
 
 def underlined(instring):
     """Produces a version of a string that is underlined with '='
