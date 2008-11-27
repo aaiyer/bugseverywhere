@@ -27,6 +27,8 @@ if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
 elif sys.argv[1] == '--commands':
     for command, module in cmdutil.iter_commands():
         print command
+elif sys.argv[1] == '--options':
+    print '\n'.join(cmdutil.options())
 else:
     try:
         try:
@@ -35,6 +37,9 @@ else:
             raise cmdutil.UserError("Unknown command \"%s\"" % e.args[0])
         except cmdutil.GetHelp:
             print cmdutil.help(sys.argv[1])
+            sys.exit(0)
+        except cmdutil.GetCompletions, e:
+            print '\n'.join(e.completions)
             sys.exit(0)
         except cmdutil.UsageError, e:
             print "Invalid usage:", e

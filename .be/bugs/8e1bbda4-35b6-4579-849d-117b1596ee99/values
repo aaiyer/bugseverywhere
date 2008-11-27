@@ -1,0 +1,35 @@
+
+
+
+creator=W. Trevor King <wking@drexel.edu>
+
+
+
+
+
+
+severity=serious
+
+
+
+
+
+
+status=open
+
+
+
+
+
+
+summary=be <cmmd> <argopt> --options doesn't raise GetOptions
+
+
+
+
+
+
+time=Thu, 27 Nov 2008 13:39:25 +0000
+
+
+

@@ -32,9 +32,21 @@ def execute(args, test=False):
     a:om: Bug A
     b:cm: Bug B
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    
+    for option in [o.dest for o in parser.option_list if o.dest != None]:
+        value = getattr(options, option)
+        if value == "--options":
+            if option == "status":
+                raise cmdutil.GetCompletions(status_values)
+            raise cmdutil.GetCompletions()
+    if "--options" in args:
+        raise cmdutil.GetCompletions() # no completions for arguments yet
+    
     if len(args) > 0:
         raise cmdutil.UsageError("Too many arguments.")
+    
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bd.load_all_bugs()
     # select status

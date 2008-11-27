@@ -1,0 +1,15 @@
+For example:
+  $ be list --status --options
+    File "/home/wking/bin/be", line 35, in <module>
+      sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
+    File "/home/wking/lib/python2.5/site-packages/libbe/cmdutil.py", line 67, in execute
+      get_command(cmd).execute([a.decode(enc) for a in args])
+    File "/home/wking/lib/python2.5/site-packages/becommands/list.py", line 36, in execute
+      raise Exception, "parsed options"
+  Exception: parsed options
+
+The reason for this is that --status takes an argument, so 'be list'
+thinks it should list all the bugs with status == "--options".
+Ideally what should happen is that an argument-taking option would
+check for argument --options, and if so, would raise an exception
+returning a list of appropriate completions *for that argument*.

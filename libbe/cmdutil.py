@@ -18,6 +18,7 @@ import optparse
 import os
 from textwrap import TextWrapper
 from StringIO import StringIO
+import sys
 import doctest
 
 import bugdir
@@ -34,12 +35,17 @@ class UserErrorWrap(UserError):
         UserError.__init__(self, str(exception))
         self.exception = exception
 
-class GetHelp(Exception):
-    pass
-
 class UsageError(Exception):
     pass
 
+class GetHelp(Exception):
+    pass
+
+class GetCompletions(Exception):
+    def __init__(self, completions=[]):
+        msg = "Get allowed completions"
+        Exception.__init__(self, msg)
+        self.completions = completions
 
 def iter_commands():
     for name, module in plugin.iter_plugins("becommands"):
@@ -80,15 +86,32 @@ def help(cmd=None):
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
         return "\n".join(ret)
 
+def options(cmd=None):
+    if cmd != None:
+        parser = get_command(cmd).get_parser()
+        longopts = []
+        for opt in parser.option_list:
+            longopts.append(opt.get_opt_string())
+        return longopts
+    else:
+        # These probably shouldn't be hardcoded...
+        return ["--help","--commands","--options"]
+
 def raise_get_help(option, opt, value, parser):
     raise GetHelp
-        
+
+def raise_get_completions(option, opt, value, parser):
+    raise GetCompletions(options(sys.argv[1]))
+
 class CmdOptionParser(optparse.OptionParser):
     def __init__(self, usage):
         optparse.OptionParser.__init__(self, usage)
         self.remove_option("-h")
         self.add_option("-h", "--help", action="callback", 
                         callback=raise_get_help, help="Print a help message")
+        self.add_option("--options", action="callback",
+                        callback=raise_get_completions,
+                        help="Print a list of available long options")
 
     def error(self, message):
         raise UsageError(message)
