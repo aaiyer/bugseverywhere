@@ -106,7 +106,7 @@ To add a comment to a bug, use the bug ID as the argument.  To reply to another
 comment, specify the comment name (as shown in "be show" output).
 
 $EDITOR is used to launch an editor.  If unspecified, no comment will be
-created.)
+created.
 """
 
 def help():
