@@ -33,7 +33,7 @@ def execute(args):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser)
+    complete(options, args, parser)
     if len(args) > 1:
         raise cmdutil.UsageError("Too many arguments.")
     if len(args) == 0:
@@ -54,3 +54,12 @@ Print help for specified command or list of all commands.
 
 def help():
     return get_parser().help_str() + longhelp
+
+def complete(options, args, parser):
+    for option, value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            # no argument-options at the moment, so this is future-proofing
+            raise cmdutil.GetCompletions()
+    if "--complete" in args:
+        cmds = [command for command,module in cmdutil.iter_commands()]
+        raise cmdutil.GetCompletions(cmds)
