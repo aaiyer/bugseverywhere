@@ -41,7 +41,9 @@ def execute(args, test=False):
     >>> bd.bug_from_shortname("a").assigned is None
     True
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    cmdutil.default_complete(options, args, parser)
     assert(len(args) in (0, 1, 2))
     if len(args) == 0:
         raise cmdutil.UsageError("Please specify a bug id.")

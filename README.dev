@@ -14,6 +14,10 @@ provide the following elements:
     The entry function for your plugin.  args is everything from
     sys.argv after the name of your plugin (e.g. for the command
     `be open abc', args=['abc']).
+
+    Note: be supports command-completion.  To avoid raising errors you
+    need to deal with possible '--complete' options and arguments.
+    See the 'Command completion' section below for more information.
   help()
      Return the string to be output by `be help <yourplugin>',
      `be <yourplugin> --help', etc.
@@ -27,8 +31,39 @@ consistent interface
 
 Again, you can just browse around in becommands to get a feel for things.
 
+Testing
+-------
+
 Run any doctests in your plugin with
   be$ python test.py <yourplugin>
 for example
   be$ python test.py merge
 
+
+Command completion
+------------------
+
+BE implements a general framework to make it easy to support command
+completion for arbitrary plugins.  In order to support this system,
+all becommands should properly handle the '--complete' commandline
+argument, returning a list of possible completions.  For example
+  $ be --commands
+      lists options accepted by be and the names of all available becommands.
+  $ be list --commands
+      lists options accepted by becommand/list
+  $ be list --status --commands
+      lists arguments accepted by the becommand/list --status option
+  $ be show -- --commands
+      lists possible vals for the first positional argument of becommand/show
+This is a lot of information, but command-line completion is really
+convenient for the user.  See becommand/list.py and becommand/show.py
+for example implementations.  The basic idea is to raise
+  cmdutil.GetCompletions(['list','of','possible','completions'])
+once you've determined what that list should be.
+
+However, command completion is not critcal.  The first priority is to
+implement the target functionality, with fancy shell sugar coming
+later.  In recognition of this, cmdutil provides the default_complete
+function which ensures that if '--complete' is any one of the
+arguments, options, or option-arguments, GetCompletions will be raised
+with and empty list.

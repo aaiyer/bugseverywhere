@@ -32,7 +32,9 @@ def execute(args, test=False):
     >>> execute(["a"], test=True)
     No target assigned.
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    cmdutil.default_complete(options, args, parser)
     if len(args) not in (1, 2):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)

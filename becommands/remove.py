@@ -35,7 +35,9 @@ def execute(args, test=False):
     ...     print "Bug not found"
     Bug not found
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    cmdutil.default_complete(options, args, parser)
     if len(args) != 1:
         raise cmdutil.UsageError, "Please specify a bug id."
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)

@@ -26,11 +26,14 @@ def execute(args):
     <BLANKLINE>
     Options:
       -h, --help  Print a help message
+      --complete  Print a list of available completions
     <BLANKLINE>
     Print help for specified command or list of all commands.
     <BLANKLINE>
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    cmdutil.default_complete(options, args, parser)
     if len(args) > 1:
         raise cmdutil.UsageError("Too many arguments.")
     if len(args) == 0:

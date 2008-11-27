@@ -38,7 +38,9 @@ def execute(args, test=False):
     >>> bug.target == None
     True
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    cmdutil.default_complete(options, args, parser)
     if len(args) != 1:
         raise cmdutil.UsageError("Please supply a summary message")
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)

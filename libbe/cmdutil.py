@@ -86,7 +86,7 @@ def help(cmd=None):
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
         return "\n".join(ret)
 
-def options(cmd):
+def completions(cmd):
     parser = get_command(cmd).get_parser()
     longopts = []
     for opt in parser.option_list:
@@ -97,7 +97,7 @@ def raise_get_help(option, opt, value, parser):
     raise GetHelp
 
 def raise_get_completions(option, opt, value, parser):
-    raise GetCompletions(options(sys.argv[1]))
+    raise GetCompletions(completions(sys.argv[1]))
 
 class CmdOptionParser(optparse.OptionParser):
     def __init__(self, usage):
@@ -120,6 +120,26 @@ class CmdOptionParser(optparse.OptionParser):
         f = StringIO()
         self.print_help(f)
         return f.getvalue()
+
+def option_value_pairs(options, parser):
+    """
+    Iterate through OptionParser (option, value) pairs.
+    """
+    for option in [o.dest for o in parser.option_list if o.dest != None]:
+        value = getattr(options, option)
+        yield (option, value)
+
+def default_complete(options, args, parser):
+    """
+    A dud complete implementation for becommands to that the
+    --complete argument doesn't cause any problems.  Use this
+    until you've set up a command-specific complete function.
+    """
+    for option,value in option_value_pairs(options, parser):
+        if value == "--complete":
+            raise cmdutil.GetCompletions()
+    if "--complete" in args:
+        raise cmdutil.GetCompletions()
 
 def underlined(instring):
     """Produces a version of a string that is underlined with '='

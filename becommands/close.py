@@ -31,7 +31,9 @@ def execute(args, test=False):
     >>> print bd.bug_from_shortname("a").status
     closed
     """
-    options, args = get_parser().parse_args(args)
+    parser = get_parser()
+    options, args = parser.parse_args(args)
+    cmdutil.default_complete(options, args, parser)
     if len(args) == 0:
         raise cmdutil.UsageError("Please specify a bug id.")
     if len(args) > 1:

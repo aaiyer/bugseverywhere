@@ -34,16 +34,7 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    
-    for option in [o.dest for o in parser.option_list if o.dest != None]:
-        value = getattr(options, option)
-        if value == "--complete":
-            if option == "status":
-                raise cmdutil.GetCompletions(status_values)
-            raise cmdutil.GetCompletions()
-    if "--complete" in args:
-        raise cmdutil.GetCompletions() # no completions for arguments yet
-    
+    complete(options, args, parser)    
     if len(args) > 0:
         raise cmdutil.UsageError("Too many arguments.")
     
@@ -203,3 +194,14 @@ The boolean options are ignored if the matching string option is used.
 
 def help():
     return get_parser().help_str() + longhelp
+
+def complete(options, args, parser):
+    for option, value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            if option == "status":
+                raise cmdutil.GetCompletions(status_values)
+            elif option == "severity":
+                raise cmdutil.GetCompletions(severity_values)
+            raise cmdutil.GetCompletions()
+    if "--complete" in args:
+        raise cmdutil.GetCompletions() # no positional arguments for list
