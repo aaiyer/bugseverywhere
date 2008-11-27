@@ -183,7 +183,7 @@ class Bug(object):
             if self._comments_loaded == False:
                 self.load_comments()
             # take advantage of the string_thread(auto_name_map=True)
-            # SIDE-EFFECT of sorting by bug time.
+            # SIDE-EFFECT of sorting by comment time.
             comout = self.comment_root.string_thread(flatten=False,
                                                      auto_name_map=True,
                                                      bug_shortname=shortname)
@@ -272,6 +272,13 @@ class Bug(object):
     def comment_from_uuid(self, uuid):
         return self.comment_root.comment_from_uuid(uuid)
 
+    def comment_shortnames(self, shortname=None):
+        """
+        SIDE-EFFECT : Comment.comment_shortnames will sort the comment
+        tree by comment.time
+        """
+        for id, comment in self.comment_root.comment_shortnames(shortname):
+            yield (id, comment)
 
 # the general rule for bug sorting is that "more important" bugs are
 # less than "less important" bugs.  This way sorting a list of bugs

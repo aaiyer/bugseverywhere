@@ -57,7 +57,7 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser)
+    complete(options, args, parser)
     if len(args) == 0:
         raise cmdutil.UsageError("Please specify a bug or comment id.")
     if len(args) > 2:
@@ -113,3 +113,28 @@ created.
 
 def help():
     return get_parser().help_str() + longhelp
+
+def complete(options, args, parser):
+    for option,value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            # no argument-options at the moment, so this is future-proofing
+            raise cmdutil.GetCompletions()
+    for pos,value in enumerate(args):
+        if value == "--complete":
+            if pos == 0: # fist positional argument is a bug or comment id
+                ids = []
+                try:
+                    bd = bugdir.BugDir(from_disk=True,
+                                       manipulate_encodings=False)
+                    bd.load_all_bugs()
+                    bugs = [bug for bug in bd if bug.active == True]
+                    for bug in bugs:
+                        shortname = bd.bug_shortname(bug)
+                        ids.append(shortname)
+                        bug.load_comments()
+                        for id,comment in bug.comment_shortnames(shortname):
+                            ids.append(id)
+                except bugdir.NoBugDir:
+                    pass
+                raise cmdutil.GetCompletions(ids)
+            raise cmdutil.GetCompletions()

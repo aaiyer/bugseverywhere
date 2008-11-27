@@ -156,7 +156,6 @@ def default_complete(options, args, parser, bugid_args={}):
                     bugs = [bug for bug in bd if filter(bug) == True]
                     bugshortnames = [bd.bug_shortname(bug) for bug in bugs]
                 except bugdir.NoBugDir:
-                    bugshortnames = ["NOBUGDIR"]
                     pass
                 raise GetCompletions(bugshortnames)
             raise GetCompletions()

@@ -249,7 +249,7 @@ class Comment(Tree):
         Return a sting displaying a thread of comments.
         bug_shortname is only used if auto_name_map == True.
         
-        SIDE-EFFECT: if auto_name_map==True, calls comment_shornames()
+        SIDE-EFFECT: if auto_name_map==True, calls comment_shortnames()
         which will sort the tree by comment.time.  Avoid by calling
           name_map = {}
           for shortname,comment in comm.comment_shortnames(bug_shortname):
@@ -334,7 +334,7 @@ class Comment(Tree):
             stringlist.append(comment.string(indent=ind, shortname=sname))
         return '\n'.join(stringlist)
 
-    def comment_shortnames(self, bug_shortname=""):
+    def comment_shortnames(self, bug_shortname=None):
         """
         Iterate through (id, comment) pairs, in time order.
         (This is a user-friendly id, not the comment uuid).
@@ -355,6 +355,8 @@ class Comment(Tree):
         bug-1:3 c
         bug-1:4 d
         """
+        if bug_shortname == None:
+            bug_shortname = ""
         self.sort(key=lambda comm : comm.time)
         for num,comment in enumerate(self.traverse()):
             yield ("%s:%d" % (bug_shortname, num+1), comment)
