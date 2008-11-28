@@ -122,12 +122,20 @@ def complete(options, args, parser):
     for pos,value in enumerate(args):
         if value == "--complete":
             if pos == 0: # fist positional argument is a bug or comment id
+                if len(args) >= 2:
+                    partial = args[1].split(':')[0] # take only bugid portion
+                else:
+                    partial = ""
                 ids = []
                 try:
                     bd = bugdir.BugDir(from_disk=True,
                                        manipulate_encodings=False)
-                    bd.load_all_bugs()
-                    bugs = [bug for bug in bd if bug.active == True]
+                    bugs = []
+                    for uuid in bd.list_uuids():
+                        if uuid.startswith(partial):
+                            bug = bd.bug_from_uuid(uuid)
+                            if bug.active == True:
+                                bugs.append(bug)
                     for bug in bugs:
                         shortname = bd.bug_shortname(bug)
                         ids.append(shortname)
