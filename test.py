@@ -22,6 +22,8 @@ if len(sys.argv) > 1:
         if mod is not None and hasattr(mod, "suite"):
             suite.addTest(mod.suite)
             match = True
+        else:
+            print "Module \"%s\" has no test suite" % submodname
         mod = plugin.get_plugin("becommands", submodname)
         if mod is not None:
             suite.addTest(doctest.DocTestSuite(mod))
