@@ -21,6 +21,9 @@ import time
 import doctest
 
 from beuuid import uuid_gen
+from properties import Property, doc_property, local_property, \
+    defaulting_property, checked_property, cached_property, \
+    primed_property, change_hook_property, settings_property
 import mapfile
 import comment
 import utility
@@ -69,76 +72,155 @@ for i in range(len(status_values)):
     status_index[status_values[i]] = i
 
 
-def checked_property(name, valid):
-    """
-    Provide access to an attribute name, testing for valid values.
-    """
-    def getter(self):
-        value = getattr(self, "_"+name)
-        if value not in valid:
-            raise InvalidValue(name, value)
-        return value
-
-    def setter(self, value):
-        if value not in valid:
-            raise InvalidValue(name, value)
-        return setattr(self, "_"+name, value)
-    return property(getter, setter)
+# Define an invalid value for our properties, distinct from None,
+# which shows that a property has been initialized but has no value.
+EMPTY = -1
 
 
 class Bug(object):
-    severity = checked_property("severity", severity_values)
-    status = checked_property("status", status_values)
+    """
+    >>> b = Bug()
+    >>> print b.status
+    open
+    >>> print b.severity
+    minor
 
-    def _get_active(self):
+    There are two formats for time, int and string.  Setting either
+    one will adjust the other appropriately.  The string form is the
+    one stored in the bug's settings file on disk.
+    >>> print type(b.time)
+    <type 'int'>
+    >>> print type(b.time_string)
+    <type 'str'>
+    >>> b.time = 0
+    >>> print b.time_string
+    Thu, 01 Jan 1970 00:00:00 +0000
+    >>> b.time_string="Thu, 01 Jan 1970 00:01:00 +0000"
+    >>> b.time
+    60
+    >>> print b.settings["time"]
+    Thu, 01 Jan 1970 00:01:00 +0000
+    """
+    def _save_settings(self, old, new):
+        if self.sync_with_disk==True:
+            self.save_settings()
+    def _load_settings(self):
+        if self.sync_with_disk==True and self._settings_loaded==False:
+            self.load_settings()
+        else:
+            for property in self.settings_properties:
+                if property not in self.settings:
+                    self.settings[property] = EMPTY
+
+    settings_properties = []
+    required_saved_properties = ['status','severity'] # to protect against future changes in default values
+
+    def _versioned_property(name, doc, default=None, save=_save_settings, load=_load_settings, setprops=settings_properties, allowed=None):
+        "Combine the common decorators in a single function"
+        setprops.append(name)
+        def decorator(funcs):
+            if allowed != None:
+                checked = checked_property(allowed=allowed)
+            defaulting  = defaulting_property(default=default, null=EMPTY)
+            change_hook = change_hook_property(hook=save)
+            primed      = primed_property(primer=load)
+            settings    = settings_property(name=name)
+            docp        = doc_property(doc=doc)
+            deco = defaulting(change_hook(primed(settings(docp(funcs)))))
+            if allowed != None:
+                deco = checked(deco)
+            return Property(deco)
+        return decorator
+
+    @_versioned_property(name="severity",
+                         doc="A measure of the bug's importance",
+                         default="minor",
+                         allowed=severity_values)
+    def severity(): return {}
+
+    @_versioned_property(name="status",
+                         doc="The bug's current status",
+                         default="open",
+                         allowed=status_values)
+    def status(): return {}
+    
+    @property
+    def active(self):
         return self.status in active_status_values
 
-    active = property(_get_active)
+    @_versioned_property(name="target",
+                         doc="The deadline for fixing this bug")
+    def target(): return {}
+
+    @_versioned_property(name="creator",
+                         doc="The user who entered the bug into the system")
+    def creator(): return {}
+
+    @_versioned_property(name="reporter",
+                         doc="The user who reported the bug")
+    def reporter(): return {}
+
+    @_versioned_property(name="assigned",
+                         doc="The developer in charge of the bug")
+    def assigned(): return {}
+
+    @_versioned_property(name="time",
+                         doc="An RFC 2822 timestamp for bug creation")
+    def time_string(): return {}
+
+    def _get_time(self):
+        if self.time_string == None:
+            return None
+        return utility.str_to_time(self.time_string)
+    def _set_time(self, value):
+        self.time_string = utility.time_to_str(value)
+    time = property(fget=_get_time,
+                    fset=_set_time,
+                    doc="An integere version of .time_string")
+
+    @_versioned_property(name="summary",
+                         doc="A one-line bug description")
+    def summary(): return {}
 
     def _get_comment_root(self):
-        if self._comment_root == None:
-            if self._comments_loaded == True:
-                self._comment_root = comment.loadComments(self)
-            else:
-                self._comment_root = comment.Comment(self,
-                                                     uuid=comment.INVALID_UUID)
-        return self._comment_root
+        if self.sync_with_disk:
+            return comment.loadComments(self)
+        else:
+            return comment.Comment(self, uuid=comment.INVALID_UUID)
 
-    def _set_comment_root(self, comment_root):
-        self._comment_root = comment_root
+    @Property
+    @cached_property(generator=_get_comment_root)
+    @local_property("comment_root")
+    @doc_property(doc="The trunk of the comment tree")
+    def comment_root(): return {}
 
-    _comment_root = None
-    comment_root = property(_get_comment_root, _set_comment_root,
-                            doc="The trunk of the comment tree")
+    def _get_rcs(self):
+        if hasattr(self.bugdir, "rcs"):
+            return self.bugdir.rcs
+
+    @Property
+    @cached_property(generator=_get_rcs)
+    @local_property("rcs")
+    @doc_property(doc="A revision control system instance.")
+    def rcs(): return {}
 
     def __init__(self, bugdir=None, uuid=None, from_disk=False,
                  load_comments=False, summary=None):
         self.bugdir = bugdir
-        if bugdir != None:
-            self.rcs = bugdir.rcs
-        else:
-            self.rcs = None
+        self.uuid = uuid
+        self._settings_loaded = False
+        self.settings = {}
         if from_disk == True:
-            self._comments_loaded = False
-            self.uuid = uuid
-            self.load(load_comments=load_comments)
+            self.sync_with_disk = True
+            #self.load(load_comments=load_comments)
         else:
-            # Note: defaults should match those in Bug.load()
-            self._comments_loaded = True
-            if uuid != None:
-                self.uuid = uuid
-            else:
+            self.sync_with_disk = False
+            if uuid == None:
                 self.uuid = uuid_gen()
-            self.summary = summary
+            self.time = int(time.time()) # only save to second precision
             if self.rcs != None:
                 self.creator = self.rcs.get_user_id()
-            else:
-                self.creator = None
-            self.target = None
-            self.status = "open"
-            self.severity = "minor"
-            self.assigned = None
-            self.time = int(time.time()) # only save to second precision
+            self.summary = summary
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
@@ -149,27 +231,19 @@ class Bug(object):
         else:
             shortname = self.bugdir.bug_shortname(self)
         if shortlist == False:
-            if self.time == None:
-                timestring = ""
+            if self.time_string == "":
+                timestring = self.time_string
             else:
                 htime = utility.handy_time(self.time)
-                ftime = utility.time_to_str(self.time)
-                timestring = "%s (%s)" % (htime, ftime)
+                timestring = "%s (%s)" % (htime, self.time_string)
             info = [("ID", self.uuid),
                     ("Short name", shortname),
                     ("Severity", self.severity),
                     ("Status", self.status),
-                    ("Assigned", self.assigned),
-                    ("Target", self.target),
-                    ("Creator", self.creator),
+                    ("Assigned", self.assigned or ""),
+                    ("Target", self.target or ""),
+                    ("Creator", self.creator or ""),
                     ("Created", timestring)]
-            newinfo = []
-            for k,v in info:
-                if v == None:
-                    newinfo.append((k,""))
-                else:
-                    newinfo.append((k,v))
-            info = newinfo
             longest_key_len = max([len(k) for k,v in info])
             infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
             bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
@@ -180,8 +254,6 @@ class Bug(object):
             bugout = "%s:%s: %s" % (shortname,chars,self.summary.rstrip('\n'))
         
         if show_comments == True:
-            if self._comments_loaded == False:
-                self.load_comments()
             # take advantage of the string_thread(auto_name_map=True)
             # SIDE-EFFECT of sorting by comment time.
             comout = self.comment_root.string_thread(flatten=False,
@@ -205,52 +277,38 @@ class Bug(object):
         assert name in ["values", "comments"]
         return os.path.join(my_dir, name)
 
-    def load(self, load_comments=False):
-        map = mapfile.map_load(self.rcs, self.get_path("values"))
-        self.summary = map.get("summary")
-        self.creator = map.get("creator")
-        self.target = map.get("target")
-        self.status = map.get("status", "open")
-        self.severity = map.get("severity", "minor")
-        self.assigned = map.get("assigned")
-        self.time = map.get("time")
-        if self.time is not None:
-            self.time = utility.str_to_time(self.time)
-
-        if load_comments == True:
-            self.load_comments()
+    def load_settings(self):
+        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        for property in self.settings_properties:
+            if property not in self.settings:
+                self.settings[property] = EMPTY
+            elif self.settings[property] == None:
+                self.settings[property] = EMPTY
+        self._settings_loaded = True
 
     def load_comments(self):
-        # clear _comment_root, so _get_comment_root returns a fresh version
-        self._comment_root = None 
-        self._comments_loaded = True
- 
-    def comments(self):
-        if self._comments_loaded == False:
-            self.load_comments()
-        for comment in self.comment_root.traverse():
-            yield comment
+        # Clear _comment_root, so _get_comment_root returns a fresh
+        # version.  Turn of syncing temporarily so we don't write our
+        # blank comment tree to disk.
+        self.sync_with_disk = False
+        self._comment_root = None
+        self.sync_with_disk = True
 
-    def _add_attr(self, map, name):
-        value = getattr(self, name)
-        if value is not None:
-            map[name] = value
-
-    def save(self):
+    def save_settings(self):
         assert self.summary != None, "Can't save blank bug"
         map = {}
-        self._add_attr(map, "assigned")
-        self._add_attr(map, "summary")
-        self._add_attr(map, "creator")
-        self._add_attr(map, "target")
-        self._add_attr(map, "status")
-        self._add_attr(map, "severity")
-        if self.time is not None:
-            map["time"] = utility.time_to_str(self.time)
+        for k,v in self.settings.items():
+            if (v != None and v != EMPTY):
+                map[k] = v
+        for k in self.required_saved_properties:
+            map[k] = getattr(self, k)
 
         self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, map)
+        
+    def save(self):
+        self.save_settings()
 
         if len(self.comment_root) > 0:
             self.rcs.mkdir(self.get_path("comments"))
@@ -261,6 +319,10 @@ class Bug(object):
         path = self.get_path()
         self.rcs.recursive_remove(path)
     
+    def comments(self):
+        for comment in self.comment_root.traverse():
+            yield comment
+
     def new_comment(self, body=None):
         comm = self.comment_root.new_reply(body=body)
         return comm
@@ -280,7 +342,8 @@ class Bug(object):
         for id, comment in self.comment_root.comment_shortnames(shortname):
             yield (id, comment)
 
-# the general rule for bug sorting is that "more important" bugs are
+
+# The general rule for bug sorting is that "more important" bugs are
 # less than "less important" bugs.  This way sorting a list of bugs
 # will put the most important bugs first in the list.  When relative
 # importance is unclear, the sorting follows some arbitrary convention
