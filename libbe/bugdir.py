@@ -409,6 +409,7 @@ only saved if ._save_user_id == True""")
     def _clear_bugs(self):
         while len(self) > 0:
             self.pop()
+        self._bug_map_gen()
 
     def _load_bug(self, uuid):
         bg = bug.Bug(bugdir=self, uuid=uuid, from_disk=True)
@@ -567,6 +568,37 @@ class BugDirTestCase(unittest.TestCase):
         self.failUnless(bugA == bugAprime, "%s != %s" % (bugA, bugAprime))
         self.bugdir.save()
         self.versionTest()
+    def testComments(self):
+        self.bugdir.new_bug(uuid="a", summary="Ant")
+        bug = self.bugdir.bug_from_uuid("a")
+        comm = bug.comment_root
+        rep = comm.new_reply("Ants are small.")
+        rep.new_reply("And they have six legs.")
+        self.bugdir.save()
+        self.bugdir._clear_bugs()        
+        bug = self.bugdir.bug_from_uuid("a")
+        bug.load_comments()
+        self.failUnless(len(bug.comment_root)==1, len(bug.comment_root))
+        for index,comment in enumerate(bug.comments()):
+            if index == 0:
+                repLoaded = comment
+                self.failUnless(repLoaded.uuid == rep.uuid, repLoaded.uuid)
+                self.failUnless(comment.sync_with_disk == True,
+                                comment.sync_with_disk)
+                #load_settings()
+                self.failUnless(comment.content_type == "text/plain",
+                                comment.content_type)
+                self.failUnless(repLoaded.settings["Content-type"]=="text/plain",
+                                repLoaded.settings)
+                self.failUnless(repLoaded.body == "Ants are small.",
+                                repLoaded.body)
+            elif index == 1:
+                self.failUnless(comment.in_reply_to == repLoaded.uuid,
+                                repLoaded.uuid)
+                self.failUnless(comment.body == "And they have six legs.",
+                                comment.body)
+            else:
+                self.failIf(True, "Invalid comment: %d\n%s" % (index, comment))
 
 unitsuite = unittest.TestLoader().loadTestsFromTestCase(BugDirTestCase)
 suite = unittest.TestSuite([unitsuite])#, doctest.DocTestSuite()])

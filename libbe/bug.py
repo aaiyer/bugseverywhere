@@ -176,15 +176,15 @@ class Bug(object):
         self.time_string = utility.time_to_str(value)
     time = property(fget=_get_time,
                     fset=_set_time,
-                    doc="An integere version of .time_string")
+                    doc="An integer version of .time_string")
 
     @_versioned_property(name="summary",
                          doc="A one-line bug description")
     def summary(): return {}
 
-    def _get_comment_root(self):
+    def _get_comment_root(self, load_full=False):
         if self.sync_with_disk:
-            return comment.loadComments(self)
+            return comment.loadComments(self, load_full=load_full)
         else:
             return comment.Comment(self, uuid=comment.INVALID_UUID)
 
@@ -212,7 +212,6 @@ class Bug(object):
         self.settings = {}
         if from_disk == True:
             self.sync_with_disk = True
-            #self.load(load_comments=load_comments)
         else:
             self.sync_with_disk = False
             if uuid == None:
@@ -286,13 +285,18 @@ class Bug(object):
                 self.settings[property] = EMPTY
         self._settings_loaded = True
 
-    def load_comments(self):
-        # Clear _comment_root, so _get_comment_root returns a fresh
-        # version.  Turn of syncing temporarily so we don't write our
-        # blank comment tree to disk.
-        self.sync_with_disk = False
-        self._comment_root = None
-        self.sync_with_disk = True
+    def load_comments(self, load_full=True):
+        if load_full == True:
+            # Force a complete load of the whole comment tree
+            self.comment_root = self._get_comment_root(load_full=True)
+        else:
+            # Setup for fresh lazy-loading.  Clear _comment_root, so
+            # _get_comment_root returns a fresh version.  Turn of
+            # syncing temporarily so we don't write our blank comment
+            # tree to disk.
+            self.sync_with_disk = False
+            self.comment_root = None
+            self.sync_with_disk = True
 
     def save_settings(self):
         assert self.summary != None, "Can't save blank bug"
