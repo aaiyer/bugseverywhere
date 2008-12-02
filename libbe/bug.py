@@ -24,6 +24,7 @@ from beuuid import uuid_gen
 from properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
+import settings_object
 import mapfile
 import comment
 import utility
@@ -72,12 +73,7 @@ for i in range(len(status_values)):
     status_index[status_values[i]] = i
 
 
-# Define an invalid value for our properties, distinct from None,
-# which shows that a property has been initialized but has no value.
-EMPTY = -1
-
-
-class Bug(object):
+class Bug(settings_object.SavedSettingsObject):
     """
     >>> b = Bug()
     >>> print b.status
@@ -101,47 +97,31 @@ class Bug(object):
     >>> print b.settings["time"]
     Thu, 01 Jan 1970 00:01:00 +0000
     """
-    def _save_settings(self, old, new):
-        if self.sync_with_disk==True:
-            self.save_settings()
-    def _load_settings(self):
-        if self.sync_with_disk==True and self._settings_loaded==False:
-            self.load_settings()
-        else:
-            for property in self.settings_properties:
-                if property not in self.settings:
-                    self.settings[property] = EMPTY
-
     settings_properties = []
-    required_saved_properties = ['status','severity'] # to protect against future changes in default values
-
-    def _versioned_property(name, doc, default=None, save=_save_settings, load=_load_settings, setprops=settings_properties, allowed=None):
-        "Combine the common decorators in a single function"
-        setprops.append(name)
-        def decorator(funcs):
-            if allowed != None:
-                checked = checked_property(allowed=allowed)
-            defaulting  = defaulting_property(default=default, null=EMPTY)
-            change_hook = change_hook_property(hook=save)
-            primed      = primed_property(primer=load)
-            settings    = settings_property(name=name)
-            docp        = doc_property(doc=doc)
-            deco = defaulting(change_hook(primed(settings(docp(funcs)))))
-            if allowed != None:
-                deco = checked(deco)
-            return Property(deco)
-        return decorator
+    required_saved_properties = []
+    _prop_save_settings = settings_object.prop_save_settings
+    _prop_load_settings = settings_object.prop_load_settings
+    def _versioned_property(settings_properties=settings_properties,
+                            required_saved_properties=required_saved_properties,
+                            **kwargs):
+        if "settings_properties" not in kwargs:
+            kwargs["settings_properties"] = settings_properties
+        if "required_saved_properties" not in kwargs:
+            kwargs["required_saved_properties"]=required_saved_properties
+        return settings_object.versioned_property(**kwargs)
 
     @_versioned_property(name="severity",
                          doc="A measure of the bug's importance",
                          default="minor",
-                         allowed=severity_values)
+                         allowed=severity_values,
+                         require_save=True)
     def severity(): return {}
 
     @_versioned_property(name="status",
                          doc="The bug's current status",
                          default="open",
-                         allowed=status_values)
+                         allowed=status_values,
+                         require_save=True)
     def status(): return {}
     
     @property
@@ -206,10 +186,9 @@ class Bug(object):
 
     def __init__(self, bugdir=None, uuid=None, from_disk=False,
                  load_comments=False, summary=None):
+        settings_object.SavedSettingsObject.__init__(self)
         self.bugdir = bugdir
         self.uuid = uuid
-        self._settings_loaded = False
-        self.settings = {}
         if from_disk == True:
             self.sync_with_disk = True
         else:
@@ -223,6 +202,13 @@ class Bug(object):
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
+
+    def _setting_attr_string(self, setting):
+        value = getattr(self, setting)
+        if value == settings_object.EMPTY:
+            return ""
+        else:
+            return str(value)
 
     def string(self, shortlist=False, show_comments=False):
         if self.bugdir == None:
@@ -239,9 +225,9 @@ class Bug(object):
                     ("Short name", shortname),
                     ("Severity", self.severity),
                     ("Status", self.status),
-                    ("Assigned", self.assigned or ""),
-                    ("Target", self.target or ""),
-                    ("Creator", self.creator or ""),
+                    ("Assigned", self._setting_attr_string("assigned")),
+                    ("Target", self._setting_attr_string("target")),
+                    ("Creator", self._setting_attr_string("creator")),
                     ("Created", timestring)]
             longest_key_len = max([len(k) for k,v in info])
             infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
@@ -278,12 +264,7 @@ class Bug(object):
 
     def load_settings(self):
         self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
-        for property in self.settings_properties:
-            if property not in self.settings:
-                self.settings[property] = EMPTY
-            elif self.settings[property] == None:
-                self.settings[property] = EMPTY
-        self._settings_loaded = True
+        self._setup_saved_settings()
 
     def load_comments(self, load_full=True):
         if load_full == True:
@@ -300,16 +281,10 @@ class Bug(object):
 
     def save_settings(self):
         assert self.summary != None, "Can't save blank bug"
-        map = {}
-        for k,v in self.settings.items():
-            if v != None and v != EMPTY:
-                map[k] = v
-        for k in self.required_saved_properties:
-            map[k] = getattr(self, k)
-
+        
         self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, map)
+        mapfile.map_save(self.rcs, path, self._get_saved_settings())
         
     def save(self):
         self.save_settings()

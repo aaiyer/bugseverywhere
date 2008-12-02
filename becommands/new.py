@@ -15,7 +15,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Create a new bug"""
-from libbe import cmdutil, bugdir
+from libbe import cmdutil, bugdir, settings_object
 __desc__ = __doc__
 
 def execute(args, test=False):
@@ -35,7 +35,7 @@ def execute(args, test=False):
     True
     >>> bug.severity
     u'minor'
-    >>> bug.target == None
+    >>> bug.target == settings_object.EMPTY
     True
     """
     parser = get_parser()
