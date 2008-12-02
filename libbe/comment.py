@@ -298,7 +298,7 @@ class Comment(Tree):
     def save_settings(self):
         map = {}
         for k,v in self.settings.items():
-            if (v != None and v != EMPTY):
+            if v != None and v != EMPTY:
                 map[k] = v
         for k in self.required_saved_properties:
             map[k] = getattr(self, self._setting_name_to_attr_name(k))

@@ -15,8 +15,18 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Change tree settings"""
-from libbe import cmdutil, bugdir
+from libbe import cmdutil, bugdir, settings_object
 __desc__ = __doc__
+
+def _value_string(bd, setting):
+    val = bd.settings.get(setting, settings_object.EMPTY)
+    if val == settings_object.EMPTY:
+        default = getattr(bd, bd._setting_name_to_attr_name(setting))
+        if default != settings_object.EMPTY:
+            val = "None (%s)" % default
+        else:
+            val = None
+    return str(val)
 
 def execute(args, test=False):
     """
@@ -39,23 +49,22 @@ def execute(args, test=False):
         raise cmdutil.UsageError, "Too many arguments"
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     if len(args) == 0:
-        keys = bd.settings.keys()
+        keys = bd.settings_properties
         keys.sort()
         for key in keys:
-            print "%16s: %s" % (key, bd.settings[key])
+            print "%16s: %s" % (key, _value_string(bd, key))
     elif len(args) == 1:
-        print bd.settings.get(args[0])
+        print _value_string(bd, args[0])
     else:
         if args[1] != "none":
+            if args[0] not in bd.settings_properties:
+                msg = "Invalid setting %s\n" % args[0]
+                msg += 'Allowed settings:\n  '
+                msg += '\n  '.join(bd.settings_properties)
+                raise cmdutil.UserError(msg)
             old_setting = bd.settings.get(args[0])
-            bd.settings[args[0]] = args[1]
-            if args[0] == "user_id":
-                bd.save_user_id()
-            
-            # attempt to get the new value
-            bd.save()
             try:
-                bd.load()
+                setattr(bd, args[0], args[1])
             except bugdir.InvalidValue, e:
                 bd.settings[args[0]] = old_setting
                 bd.save()
