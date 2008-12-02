@@ -44,7 +44,7 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser)
+    complete(options, args, parser)
     if len(args) > 2:
         raise cmdutil.UsageError, "Too many arguments"
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
@@ -95,3 +95,15 @@ To unset a setting, set it to "none".
 
 def help():
     return get_parser().help_str() + longhelp
+
+def complete(options, args, parser):
+    for option, value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            # no argument-options at the moment, so this is future-proofing
+            raise cmdutil.GetCompletions()
+    for pos,value in enumerate(args):
+        if value == "--complete":
+            if pos == 0: # first positional argument is a setting name
+                props = bugdir.BugDir.settings_properties
+                raise cmdutil.GetCompletions(props)
+            raise cmdutil.GetCompletions() # no positional arguments for list
