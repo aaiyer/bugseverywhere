@@ -26,6 +26,7 @@ from beuuid import uuid_gen
 from properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
+import settings_object
 import mapfile
 from tree import Tree
 import utility
@@ -57,7 +58,8 @@ def _list_to_root(comments, bug):
         assert comment.uuid != None
         uuid_map[comment.uuid] = comment
     for comm in comments:
-        if comm.in_reply_to == None:
+        rep = comm.in_reply_to
+        if rep == None or rep == settings_object.EMPTY or rep == bug.uuid:
             root_comments.append(comm)
         else:
             parentUUID = comm.in_reply_to
@@ -93,11 +95,7 @@ def saveComments(bug):
         comment.save()
 
 
-# Define an invalid value for our properties, distinct from None,
-# which shows that a property has been initialized but has no value.
-EMPTY = -1
-
-class Comment(Tree):
+class Comment(Tree, settings_object.SavedSettingsObject):
     """
     >>> c = Comment()
     >>> c.uuid != None
@@ -106,40 +104,19 @@ class Comment(Tree):
     >>> print c.content_type
     text/plain
     """
-    
-    def _save_settings(self, old, new):
-        if self.sync_with_disk==True:
-            self.save_settings()
-    def _load_settings(self):
-        if self.sync_with_disk==True and self._settings_loaded==False:
-            self.load_settings()
-        else:
-            for property in self.settings_properties:
-                if property not in self.settings:
-                    self.settings[property] = EMPTY
 
     settings_properties = []
-    required_saved_properties = ['Content-type'] # to protect against future changes in default values
-    def _setting_name_to_attr_name(self, name):
-        "Helper for looking up default vals for required-saved-properties"
-        return name.lower().replace('-', '_')
-
-    def _versioned_property(name, doc, default=None, save=_save_settings, load=_load_settings, setprops=settings_properties, allowed=None):
-        "Combine the common decorators in a single function"
-        setprops.append(name)
-        def decorator(funcs):
-            if allowed != None:
-                checked = checked_property(allowed=allowed)
-            defaulting  = defaulting_property(default=default, null=EMPTY)
-            change_hook = change_hook_property(hook=save)
-            primed      = primed_property(primer=load)
-            settings    = settings_property(name=name)
-            docp        = doc_property(doc=doc)
-            deco = defaulting(change_hook(primed(settings(docp(funcs)))))
-            if allowed != None:
-                deco = checked(deco)
-            return Property(deco)
-        return decorator
+    required_saved_properties = []
+    _prop_save_settings = settings_object.prop_save_settings
+    _prop_load_settings = settings_object.prop_load_settings
+    def _versioned_property(settings_properties=settings_properties,
+                            required_saved_properties=required_saved_properties,
+                            **kwargs):
+        if "settings_properties" not in kwargs:
+            kwargs["settings_properties"] = settings_properties
+        if "required_saved_properties" not in kwargs:
+            kwargs["required_saved_properties"]=required_saved_properties
+        return settings_object.versioned_property(**kwargs)
 
     @_versioned_property(name="From",
                          doc="The author of the comment")
@@ -151,7 +128,8 @@ class Comment(Tree):
 
     @_versioned_property(name="Content-type",
                          doc="Mime type for comment body",
-                         default="text/plain")
+                         default="text/plain",
+                         require_save=True)
     def content_type(): return {}
 
     @_versioned_property(name="Date",
@@ -209,10 +187,9 @@ class Comment(Tree):
         in_reply_to should be the uuid string of the parent comment.
         """
         Tree.__init__(self)
+        settings_object.SavedSettingsObject.__init__(self)
         self.bug = bug
         self.uuid = uuid 
-        self._settings_loaded = False
-        self.settings = {}
         if from_disk == True: 
             self.sync_with_disk = True
         else:
@@ -231,6 +208,13 @@ class Comment(Tree):
             if comment.uuid == INVALID_UUID:
                 continue
             yield comment
+
+    def _setting_attr_string(self, setting):
+        value = getattr(self, setting)
+        if value == settings_object.EMPTY:
+            return ""
+        else:
+            return str(value)
 
     def string(self, indent=0, shortname=None):
         """
@@ -251,7 +235,7 @@ class Comment(Tree):
         lines = []
         lines.append("--------- Comment ---------")
         lines.append("Name: %s" % shortname)
-        lines.append("From: %s" % (self.From or ""))
+        lines.append("From: %s" % (self._setting_attr_string("From")))
         lines.append("Date: %s" % self.time_string)
         lines.append("")
         #lines.append(textwrap.fill(self.body or "",
@@ -288,24 +272,12 @@ class Comment(Tree):
 
     def load_settings(self):
         self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
-        for property in self.settings_properties:
-            if property not in self.settings:
-                self.settings[property] = EMPTY
-            elif self.settings[property] == None:
-                self.settings[property] = EMPTY
-        self._settings_loaded = True
+        self._setup_saved_settings()
 
     def save_settings(self):
-        map = {}
-        for k,v in self.settings.items():
-            if v != None and v != EMPTY:
-                map[k] = v
-        for k in self.required_saved_properties:
-            map[k] = getattr(self, self._setting_name_to_attr_name(k))
-        
         self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, map)
+        mapfile.map_save(self.rcs, path, self._get_saved_settings())
 
     def save(self):
         assert self.body != None, "Can't save blank comment"
