@@ -149,7 +149,7 @@ class Bug(settings_object.SavedSettingsObject):
     def time_string(): return {}
 
     def _get_time(self):
-        if self.time_string == None:
+        if self.time_string == None or self.time_string == settings_object.EMPTY:
             return None
         return utility.str_to_time(self.time_string)
     def _set_time(self, value):
@@ -389,10 +389,15 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
     """
     if not hasattr(bug_2, attr) :
         return 1
+    val_1 = getattr(bug_1, attr)
+    val_2 = getattr(bug_2, attr)
+    if val_1 == settings_object.EMPTY: val_1 = None
+    if val_2 == settings_object.EMPTY: val_2 = None
+    
     if invert == True :
-        return -cmp(getattr(bug_1, attr), getattr(bug_2, attr))
+        return -cmp(val_1, val_2)
     else :
-        return cmp(getattr(bug_1, attr), getattr(bug_2, attr))
+        return cmp(val_1, val_2)
 
 # alphabetical rankings (a < z)
 cmp_creator = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "creator")
