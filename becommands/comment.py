@@ -15,7 +15,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Add a comment to a bug"""
-from libbe import cmdutil, bugdir, editor
+from libbe import cmdutil, bugdir, settings_object, editor
 import os
 __desc__ = __doc__
 
@@ -27,7 +27,7 @@ def execute(args, test=False):
     >>> execute(["a", "This is a comment about a"], test=True)
     >>> bd._clear_bugs()
     >>> bug = bd.bug_from_shortname("a")
-    >>> bug.load_comments()
+    >>> bug.load_comments(load_full=False)
     >>> comment = bug.comment_root[0]
     >>> print comment.body
     This is a comment about a
@@ -36,7 +36,7 @@ def execute(args, test=False):
     True
     >>> comment.time <= int(time.time())
     True
-    >>> comment.in_reply_to is None
+    >>> comment.in_reply_to is settings_object.EMPTY
     True
 
     >>> if 'EDITOR' in os.environ:
@@ -49,7 +49,7 @@ def execute(args, test=False):
     >>> execute(["b"], test=True)
     >>> bd._clear_bugs()
     >>> bug = bd.bug_from_shortname("b")
-    >>> bug.load_comments()
+    >>> bug.load_comments(load_full=False)
     >>> comment = bug.comment_root[0]
     >>> print comment.body
     I like cheese
@@ -76,7 +76,7 @@ def execute(args, test=False):
     
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(bugname)
-    bug.load_comments()
+    bug.load_comments(load_full=False)
     if is_reply:
         parent = bug.comment_root.comment_from_shortname(shortname,
                                                          bug_shortname=bugname)
@@ -139,7 +139,7 @@ def complete(options, args, parser):
                     for bug in bugs:
                         shortname = bd.bug_shortname(bug)
                         ids.append(shortname)
-                        bug.load_comments()
+                        bug.load_comments(load_full=False)
                         for id,comment in bug.comment_shortnames(shortname):
                             ids.append(id)
                 except bugdir.NoBugDir:

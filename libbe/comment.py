@@ -23,9 +23,22 @@ import textwrap
 import doctest
 
 from beuuid import uuid_gen
+from properties import Property, doc_property, local_property, \
+    defaulting_property, checked_property, cached_property, \
+    primed_property, change_hook_property, settings_property
+import settings_object
 import mapfile
 from tree import Tree
 import utility
+
+
+class InvalidShortname(KeyError):
+    def __init__(self, shortname, shortnames):
+        msg = "Invalid shortname %s\n%s" % (shortname, shortnames)
+        KeyError.__init__(self, msg)
+        self.shortname = shortname
+        self.shortnames = shortnames
+
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
@@ -45,7 +58,8 @@ def _list_to_root(comments, bug):
         assert comment.uuid != None
         uuid_map[comment.uuid] = comment
     for comm in comments:
-        if comm.in_reply_to == None:
+        rep = comm.in_reply_to
+        if rep == None or rep == settings_object.EMPTY or rep == bug.uuid:
             root_comments.append(comm)
         else:
             parentUUID = comm.in_reply_to
@@ -55,7 +69,11 @@ def _list_to_root(comments, bug):
     dummy_root.extend(root_comments)
     return dummy_root
 
-def loadComments(bug):
+def loadComments(bug, load_full=False):
+    """
+    Set load_full=True when you want to load the comment completely
+    from disk *now*, rather than waiting and lazy loading as required.
+    """
     path = bug.get_path("comments")
     if not os.path.isdir(path):
         return Comment(bug, uuid=INVALID_UUID)
@@ -64,6 +82,9 @@ def loadComments(bug):
         if uuid.startswith('.'):
             continue
         comm = Comment(bug, uuid, from_disk=True)
+        if load_full == True:
+            comm.load_settings()
+            dummy = comm.body # force the body to load
         comments.append(comm)
     return _list_to_root(comments, bug)
 
@@ -73,15 +94,84 @@ def saveComments(bug):
     for comment in bug.comment_root.traverse():
         comment.save()
 
-class InvalidShortname(KeyError):
-    def __init__(self, shortname, shortnames):
-        msg = "Invalid shortname %s\n%s" % (shortname, shortnames)
-        KeyError.__init__(self, msg)
-        self.shortname = shortname
-        self.shortnames = shortnames
 
+class Comment(Tree, settings_object.SavedSettingsObject):
+    """
+    >>> c = Comment()
+    >>> c.uuid != None
+    True
+    >>> c.uuid = "some-UUID"
+    >>> print c.content_type
+    text/plain
+    """
 
-class Comment(Tree):
+    settings_properties = []
+    required_saved_properties = []
+    _prop_save_settings = settings_object.prop_save_settings
+    _prop_load_settings = settings_object.prop_load_settings
+    def _versioned_property(settings_properties=settings_properties,
+                            required_saved_properties=required_saved_properties,
+                            **kwargs):
+        if "settings_properties" not in kwargs:
+            kwargs["settings_properties"] = settings_properties
+        if "required_saved_properties" not in kwargs:
+            kwargs["required_saved_properties"]=required_saved_properties
+        return settings_object.versioned_property(**kwargs)
+
+    @_versioned_property(name="From",
+                         doc="The author of the comment")
+    def From(): return {}
+
+    @_versioned_property(name="In-reply-to",
+                         doc="UUID for parent comment or bug")
+    def in_reply_to(): return {}
+
+    @_versioned_property(name="Content-type",
+                         doc="Mime type for comment body",
+                         default="text/plain",
+                         require_save=True)
+    def content_type(): return {}
+
+    @_versioned_property(name="Date",
+                         doc="An RFC 2822 timestamp for comment creation")
+    def time_string(): return {}
+
+    def _get_time(self):
+        if self.time_string == None:
+            return None
+        return utility.str_to_time(self.time_string)
+    def _set_time(self, value):
+        self.time_string = utility.time_to_str(value)
+    time = property(fget=_get_time,
+                    fset=_set_time,
+                    doc="An integer version of .time_string")
+
+    def _get_comment_body(self):
+        if self.rcs != None and self.sync_with_disk == True:
+            import rcs
+            return self.rcs.get_file_contents(self.get_path("body"))
+    def _set_comment_body(self, value, force=False):
+        if (self.rcs != None and self.sync_with_disk == True) or force==True:
+            assert value != None, "Can't save empty comment"
+            self.rcs.set_file_contents(self.get_path("body"), value)
+
+    @Property
+    @change_hook_property(hook=_set_comment_body)
+    @cached_property(generator=_get_comment_body)
+    @local_property("body")
+    @doc_property(doc="The meat of the comment")
+    def body(): return {}
+
+    def _get_rcs(self):
+        if hasattr(self.bug, "rcs"):
+            return self.bug.rcs
+
+    @Property
+    @cached_property(generator=_get_rcs)
+    @local_property("rcs")
+    @doc_property(doc="A revision control system instance.")
+    def rcs(): return {}
+
     def __init__(self, bug=None, uuid=None, from_disk=False,
                  in_reply_to=None, body=None):
         """
@@ -97,26 +187,19 @@ class Comment(Tree):
         in_reply_to should be the uuid string of the parent comment.
         """
         Tree.__init__(self)
+        settings_object.SavedSettingsObject.__init__(self)
         self.bug = bug
-        if bug != None:
-            self.rcs = bug.rcs
-        else:
-            self.rcs = None
+        self.uuid = uuid 
         if from_disk == True: 
-            self.uuid = uuid 
-            self.load()
+            self.sync_with_disk = True
         else:
-            if uuid != None:
-                self.uuid = uuid
-            else:
+            self.sync_with_disk = False
+            if uuid == None:
                 self.uuid = uuid_gen()
-            self.time = time.time()
+            self.time = int(time.time()) # only save to second precision
             if self.rcs != None:
                 self.From = self.rcs.get_user_id()
-            else:
-                self.From = None
             self.in_reply_to = in_reply_to
-            self.content_type = "text/plain"
             self.body = body
 
     def traverse(self, *args, **kwargs):
@@ -126,22 +209,17 @@ class Comment(Tree):
                 continue
             yield comment
 
-    def _clean_string(self, value):
-        """
-        >>> comm = Comment()
-        >>> comm._clean_string(None)
-        ''
-        >>> comm._clean_string("abc")
-        'abc'
-        """
-        if value == None:
+    def _setting_attr_string(self, setting):
+        value = getattr(self, setting)
+        if value == settings_object.EMPTY:
             return ""
-        return value
+        else:
+            return str(value)
 
     def string(self, indent=0, shortname=None):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
-        >>> comm.time = utility.str_to_time("Thu, 01 Jan 1970 00:00:00 +0000")
+        >>> comm.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> print comm.string(indent=2, shortname="com-1")
           --------- Comment ---------
           Name: com-1
@@ -157,12 +235,12 @@ class Comment(Tree):
         lines = []
         lines.append("--------- Comment ---------")
         lines.append("Name: %s" % shortname)
-        lines.append("From: %s" % self._clean_string(self.From))
-        lines.append("Date: %s" % utility.time_to_str(self.time))
+        lines.append("From: %s" % (self._setting_attr_string("From")))
+        lines.append("Date: %s" % self.time_string)
         lines.append("")
-        #lines.append(textwrap.fill(self._clean_string(self.body),
+        #lines.append(textwrap.fill(self.body or "",
         #                           width=(79-indent)))
-        lines.extend(self._clean_string(self.body).splitlines())
+        lines.extend((self.body or "").splitlines())
         # some comments shouldn't be wrapped...
         
         istring = ' '*indent
@@ -173,7 +251,7 @@ class Comment(Tree):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
         >>> comm.uuid = "com-1"
-        >>> comm.time = utility.str_to_time("Thu, 20 Nov 2008 15:55:11 +0000")
+        >>> comm.time_string = "Thu, 20 Nov 2008 15:55:11 +0000"
         >>> comm.From = "Jane Doe <jdoe@example.com>"
         >>> print comm
         --------- Comment ---------
@@ -192,36 +270,22 @@ class Comment(Tree):
         assert name in ["values", "body"]
         return os.path.join(my_dir, name)
 
-    def load(self):
-        map = mapfile.map_load(self.rcs, self.get_path("values"))
-        self.time = utility.str_to_time(map["Date"])
-        self.From = map["From"]
-        self.in_reply_to = map.get("In-reply-to")
-        self.content_type = map.get("Content-type", "text/plain")
-        self.body = self.rcs.get_file_contents(self.get_path("body"))
+    def load_settings(self):
+        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        self._setup_saved_settings()
+
+    def save_settings(self):
+        self.rcs.mkdir(self.get_path())
+        path = self.get_path("values")
+        mapfile.map_save(self.rcs, path, self._get_saved_settings())
 
     def save(self):
-        assert self.rcs != None
-        map_file = {"Date": utility.time_to_str(self.time)}
-        self._add_headers(map_file, ("From", "in_reply_to", "content_type"))
-        self.rcs.mkdir(self.get_path())
-        mapfile.map_save(self.rcs, self.get_path("values"), map_file)
-        self.rcs.set_file_contents(self.get_path("body"), self.body)
- 
-    def _add_headers(self, map, names):
-        map_names = {}
-        for name in names:
-            map_names[name] = self._pyname_to_header(name)
-        self._add_attrs(map, map_names)
-
-    def _pyname_to_header(self, name):
-        return name.capitalize().replace('_', '-')
-
-    def _add_attrs(self, map, map_names):
-        for name in map_names.keys():
-            value = getattr(self, name)
-            if value is not None:
-                map[map_names[name]] = value
+        assert self.body != None, "Can't save blank comment"
+        #if self.in_reply_to == None:
+        #    raise Exception, str(self)+'\n'+str(self.settings)+'\n'+str(self._settings_loaded)
+        #assert self.in_reply_to != None, "Comment must be a reply to something"
+        self.save_settings()
+        self._set_comment_body(self.body, force=True)
 
     def remove(self):
         for comment in self.traverse():
@@ -232,15 +296,19 @@ class Comment(Tree):
         if self.uuid != INVALID_UUID:
             reply.in_reply_to = self.uuid
         self.append(reply)
+        #raise Exception, "adding reply \n%s\n%s" % (self, reply)
 
     def new_reply(self, body=None):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
         >>> repA = comm.new_reply("Critique original comment")
         >>> repB = repA.new_reply("Begin flamewar :p")
+        >>> repB.in_reply_to == repA.uuid
+        True
         """
         reply = Comment(self.bug, body=body)
         self.add_reply(reply)
+        #raise Exception, "new reply added (%s),\n%s\n%s\n\t--%s--" % (body, self, reply, reply.in_reply_to)
         return reply
 
     def string_thread(self, name_map={}, indent=0, flatten=True,
