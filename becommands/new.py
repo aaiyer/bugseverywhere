@@ -45,11 +45,17 @@ def execute(args, test=False):
         raise cmdutil.UsageError("Please supply a summary message")
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.new_bug(summary=args[0])
+    if options.reporter != None:
+        bug.reporter = options.reporter
+    else:
+        bug.reporter = bug.creator
     bd.save()
     print "Created bug with ID %s" % bd.bug_shortname(bug)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be new SUMMARY")
+    parser.add_option("-r", "--reporter", metavar="REPORTER", dest="reporter",
+                      help="The user who reported the bug", default=None)
     return parser
 
 longhelp="""

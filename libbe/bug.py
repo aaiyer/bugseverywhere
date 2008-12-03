@@ -227,6 +227,7 @@ class Bug(settings_object.SavedSettingsObject):
                     ("Status", self.status),
                     ("Assigned", self._setting_attr_string("assigned")),
                     ("Target", self._setting_attr_string("target")),
+                    ("Reporter", self._setting_attr_string("reporter")),
                     ("Creator", self._setting_attr_string("creator")),
                     ("Created", timestring)]
             longest_key_len = max([len(k) for k,v in info])
