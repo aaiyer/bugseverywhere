@@ -1,0 +1,5 @@
+Aaron said this was closeable in Nov. 24th email to the BE list.
+
+I think "priorities" == "bug severities", in which case this
+functionality is now available with the per-tree severity
+configuration.

@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: Allow different sorts
 
 
-
-
-
-status=open
-
-
-
-
-
-
-summary=Allow different sorts
-
-
-
-
-
-
-time=Wed, 25 Jan 2006 15:43:19 +0000
-
-
+time: Wed, 25 Jan 2006 15:43:19 +0000
 

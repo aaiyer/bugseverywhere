@@ -100,7 +100,7 @@ def parse(contents):
         if len(line.split("=")) == 2:
             old_format = True
             break
-    if old_format: # translate to YAML
+    if old_format: # translate to YAML.  Hack to deal with old BE bugs.
         newlines = []
         for line in contents.splitlines():
             line = line.rstrip('\n')

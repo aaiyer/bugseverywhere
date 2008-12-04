@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: Arbitrary numerical priorities?
 
 
-
-
-
-status=open
-
-
-
-
-
-
-summary=Arbitrary numerical priorities?
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:09:30 +0000
-
-
+time: Wed, 04 Jan 2006 21:09:30 +0000
 
