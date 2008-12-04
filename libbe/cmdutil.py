@@ -97,11 +97,13 @@ def raise_get_help(option, opt, value, parser):
     raise GetHelp
 
 def raise_get_completions(option, opt, value, parser):
+    print "got completion arg"
     raise GetCompletions(completions(sys.argv[1]))
 
 class CmdOptionParser(optparse.OptionParser):
     def __init__(self, usage):
         optparse.OptionParser.__init__(self, usage)
+        self.disable_interspersed_args()
         self.remove_option("-h")
         self.add_option("-h", "--help", action="callback", 
                         callback=raise_get_help, help="Print a help message")

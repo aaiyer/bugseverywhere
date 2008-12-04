@@ -170,11 +170,16 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     @_versioned_property(name="user_id",
                          doc=
-"""The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Note
+"""The user's prefered name, e.g. 'John Doe <jdoe@example.com>'.  Note
 that the Arch RCS backend *enforces* ids with this format.""",
                          change_hook=_set_user_id,
                          generator=_guess_user_id)
     def user_id(): return {}
+
+    @_versioned_property(name="default_assignee",
+                         doc=
+"""The default assignee for new bugs e.g. 'John Doe <jdoe@example.com>'.""")
+    def default_assignee(): return {}
 
     @_versioned_property(name="rcs_name",
                          doc="""The name of the current RCS.  Kept seperate to make saving/loading
@@ -217,6 +222,35 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     @local_property("bug_map")
     @doc_property(doc="A dict of (bug-uuid, bug-instance) pairs.")
     def _bug_map(): return {}
+
+    def _setup_severities(self, severities):
+        if severities != None and severities != settings_object.EMPTY:
+            bug.load_severities(severities)
+    def _set_severities(self, old_severities, new_severities):
+        self._setup_severities(new_severities)
+        self._prop_save_settings(old_severities, new_severities)
+    @_versioned_property(name="severities",
+                         doc="The allowed bug severities and their descriptions.",
+                         change_hook=_set_severities)
+    def severities(): return {}
+
+    def _setup_status(self, active_status, inactive_status):
+        bug.load_status(active_status, inactive_status)
+    def _set_active_status(self, old_active_status, new_active_status):
+        self._setup_status(new_active_status, self.inactive_status)
+        self._prop_save_settings(old_active_status, new_active_status)
+    @_versioned_property(name="active_status",
+                         doc="The allowed active bug states and their descriptions.",
+                         change_hook=_set_active_status)
+    def active_status(): return {}
+
+    def _set_inactive_status(self, old_inactive_status, new_inactive_status):
+        self._setup_status(self.active_status, new_inactive_status)
+        self._prop_save_settings(old_inactive_status, new_inactive_status)
+    @_versioned_property(name="inactive_status",
+                         doc="The allowed inactive bug states and their descriptions.",
+                         change_hook=_set_inactive_status)
+    def inactive_status(): return {}
 
 
     def __init__(self, root=None, sink_to_existing_root=True,
@@ -318,6 +352,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             
             self.rcs = rcs.rcs_by_name(self.rcs_name)
             self._setup_encoding(self.encoding)
+            self._setup_severities(self.severities)
+            self._setup_status(self.active_status, self.inactive_status)
 
     def load_all_bugs(self):
         "Warning: this could take a while."
@@ -369,7 +405,10 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         if "rcs_name" in duplicate_settings:
             duplicate_settings["rcs_name"] = "None"
             duplicate_settings["user_id"] = self.user_id
-            self._save_settings(duplicate_settings_path, duplicate_settings)
+        if "disabled" in bug.status_values:
+            # Hack to support old versions of BE bugs
+            duplicate_settings["inactive_status"] = self.inactive_status
+        self._save_settings(duplicate_settings_path, duplicate_settings)
 
         return BugDir(duplicate_path, from_disk=True, manipulate_encodings=self._manipulate_encodings)
 

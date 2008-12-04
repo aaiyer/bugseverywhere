@@ -34,9 +34,9 @@ import utility
 # Use a tuple of (category, description) tuples since we don't have
 # ordered dicts in Python yet http://www.python.org/dev/peps/pep-0372/
 
-# in order of increasing severity
-severity_level_def = (
-  ("wishlist","A feature that could improve usefullness, but not a bug."),
+# in order of increasing severity.  (name, description) pairs
+severity_def = (
+  ("wishlist","A feature that could improve usefulness, but not a bug."),
   ("minor","The standard bug level."),
   ("serious","A bug that requires workarounds."),
   ("critical","A bug that prevents some features from working at all."),
@@ -52,25 +52,50 @@ active_status_def = (
 inactive_status_def = (
   ("closed", "The bug is no longer relevant."),
   ("fixed", "The bug should no longer occur."),
-  ("wontfix","It's not a bug, it's a feature."),
-  ("disabled", "?"))
+  ("wontfix","It's not a bug, it's a feature."))
 
 
 ### Convert the description tuples to more useful formats
 
-severity_values = tuple([val for val,description in severity_level_def])
-severity_description = dict(severity_level_def)
+severity_values = ()
+severity_description = {}
 severity_index = {}
-for i in range(len(severity_values)):
-    severity_index[severity_values[i]] = i
+def load_severities(severity_def):
+    global severity_values
+    global severity_description
+    global severity_index
+    if severity_def == settings_object.EMPTY:
+        return
+    severity_values = tuple([val for val,description in severity_def])
+    severity_description = dict(severity_def)
+    severity_index = {}
+    for i,severity in enumerate(severity_values):
+        severity_index[severity] = i
+load_severities(severity_def)
 
-active_status_values = tuple(val for val,description in active_status_def)
-inactive_status_values = tuple(val for val,description in inactive_status_def)
-status_values = active_status_values + inactive_status_values
-status_description = dict(active_status_def+inactive_status_def)
+active_status_values = []
+inactive_status_values = []
+status_values = []
+status_description = {}
 status_index = {}
-for i in range(len(status_values)):
-    status_index[status_values[i]] = i
+def load_status(active_status_def, inactive_status_def):
+    global active_status_values
+    global inactive_status_values
+    global status_values
+    global status_description
+    global status_index
+    if active_status_def == settings_object.EMPTY:
+        active_status_def = globals()["active_status_def"]
+    if inactive_status_def == settings_object.EMPTY:
+        inactive_status_def = globals()["inactive_status_def"]
+    active_status_values = tuple([val for val,description in active_status_def])
+    inactive_status_values = tuple([val for val,description in inactive_status_def])
+    status_values = active_status_values + inactive_status_values
+    status_description = dict(tuple(active_status_def) + tuple(inactive_status_def))
+    status_index = {}
+    for i,status in enumerate(status_values):
+        status_index[status] = i
+load_status(active_status_def, inactive_status_def)
 
 
 class Bug(settings_object.SavedSettingsObject):
@@ -113,14 +138,14 @@ class Bug(settings_object.SavedSettingsObject):
     @_versioned_property(name="severity",
                          doc="A measure of the bug's importance",
                          default="minor",
-                         allowed=severity_values,
+                         check_fn=lambda s: s in severity_values,
                          require_save=True)
     def severity(): return {}
 
     @_versioned_property(name="status",
                          doc="The bug's current status",
                          default="open",
-                         allowed=status_values,
+                         check_fn=lambda s: s in status_values,
                          require_save=True)
     def status(): return {}
     

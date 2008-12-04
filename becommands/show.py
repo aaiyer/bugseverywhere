@@ -30,6 +30,7 @@ def execute(args, test=False):
           Status : open
         Assigned : 
           Target : 
+        Reporter : 
          Creator : John Doe <jdoe@example.com>
          Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
     Bug A

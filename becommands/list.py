@@ -15,9 +15,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """List bugs"""
-from libbe import cmdutil, bugdir
-from libbe.bug import cmp_full, severity_values, status_values, \
-    active_status_values, inactive_status_values
+from libbe import cmdutil, bugdir, bug
 import os
 __desc__ = __doc__
 
@@ -43,13 +41,13 @@ def execute(args, test=False):
     # select status
     if options.status != None:
         if options.status == "all":
-            status = status_values
+            status = bug.status_values
         else:
             status = options.status.split(',')
     else:
         status = []
         if options.active == True:
-            status.extend(list(active_status_values))
+            status.extend(list(bug.active_status_values))
         if options.unconfirmed == True:
             status.append("unconfirmed")
         if options.open == True:
@@ -57,11 +55,11 @@ def execute(args, test=False):
         if options.test == True:
             status.append("test")
         if status == []: # set the default value
-            status = active_status_values
+            status = bug.active_status_values
     # select severity
     if options.severity != None:
         if options.severity == "all":
-            severity = severity_values
+            severity = bug.severity_values
         else:
             severity = options.severity.split(',')
     else:
@@ -69,10 +67,10 @@ def execute(args, test=False):
         if options.wishlist == True:
             severity.extend("wishlist")
         if options.important == True:
-            serious = severity_values.index("serious")
-            severity.append(list(severity_values[serious:]))
+            serious = bug.severity_values.index("serious")
+            severity.append(list(bug.severity_values[serious:]))
         if severity == []: # set the default value
-            severity = severity_values
+            severity = bug.severity_values
     # select assigned
     if options.assigned != None:
         if options.assigned == "all":
@@ -117,15 +115,15 @@ def execute(args, test=False):
         print "No matching bugs found"
     
     def list_bugs(cur_bugs, title=None, just_uuids=False):
-        cur_bugs.sort(cmp_full)
+        cur_bugs.sort(bug.cmp_full)
         if len(cur_bugs) > 0:
             if title != None:
                 print cmdutil.underlined(title)
-            for bug in cur_bugs:
+            for bg in cur_bugs:
                 if just_uuids:
-                    print bug.uuid
+                    print bg.uuid
                 else:
-                    print bug.string(shortlist=True)
+                    print bg.string(shortlist=True)
     
     list_bugs(bugs, just_uuids=options.uuids)
 
@@ -158,7 +156,9 @@ def get_parser():
                           dest=attr, help=help)
     return parser
 
-longhelp="""
+
+def help():
+    longhelp="""
 This command lists bugs.  Normally it prints a short string like
   576:om: Allow attachments
 Where
@@ -189,19 +189,17 @@ target
 
 In addition, there are some shortcut options that set boolean flags.
 The boolean options are ignored if the matching string option is used.
-""" % (','.join(status_values),
-       ','.join(severity_values))
-
-def help():
+""" % (','.join(bug.status_values),
+       ','.join(bug.severity_values))
     return get_parser().help_str() + longhelp
 
 def complete(options, args, parser):
     for option, value in cmdutil.option_value_pairs(options, parser):
         if value == "--complete":
             if option == "status":
-                raise cmdutil.GetCompletions(status_values)
+                raise cmdutil.GetCompletions(bug.status_values)
             elif option == "severity":
-                raise cmdutil.GetCompletions(severity_values)
+                raise cmdutil.GetCompletions(bug.severity_values)
             raise cmdutil.GetCompletions()
     if "--complete" in args:
         raise cmdutil.GetCompletions() # no positional arguments for list

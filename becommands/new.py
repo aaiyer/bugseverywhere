@@ -29,12 +29,12 @@ def execute(args, test=False):
     Created bug with ID X
     >>> bd.load()
     >>> bug = bd.bug_from_uuid("X")
-    >>> bug.summary
-    u'this is a test'
+    >>> print bug.summary
+    this is a test
     >>> bug.time <= int(time.time())
     True
-    >>> bug.severity
-    u'minor'
+    >>> print bug.severity
+    minor
     >>> bug.target == settings_object.EMPTY
     True
     """
@@ -49,6 +49,10 @@ def execute(args, test=False):
         bug.reporter = options.reporter
     else:
         bug.reporter = bug.creator
+    if options.assigned != None:
+        bug.assigned = options.assigned
+    elif bd.default_assignee != settings_object.EMPTY:
+        bug.assigned = bd.default_assignee
     bd.save()
     print "Created bug with ID %s" % bd.bug_shortname(bug)
 
@@ -56,6 +60,8 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be new SUMMARY")
     parser.add_option("-r", "--reporter", metavar="REPORTER", dest="reporter",
                       help="The user who reported the bug", default=None)
+    parser.add_option("-a", "--assigned", metavar="ASSIGNED", dest="assigned",
+                      help="The developer in charge of the bug", default=None)
     return parser
 
 longhelp="""

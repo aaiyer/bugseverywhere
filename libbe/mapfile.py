@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+import yaml
 import os.path
 import errno
 import utility
@@ -29,17 +30,20 @@ class IllegalValue(Exception):
         Exception.__init__(self, 'Illegal value "%s"' % value)
         self.value = value 
 
-def generate(map, context=3):
-    """Generate a format-2 mapfile content string.  This is a simpler
-    format, but should merge better, because there's no chance of
-    confusion for appends, and lines are unique for both key and
-    value.
-
+def generate(map):
+    """Generate a YAML mapfile content string.
     >>> generate({"q":"p"})
-    '\\n\\n\\nq=p\\n\\n\\n\\n'
+    'q: p\\n\\n'
+    >>> generate({"q":u"Fran\u00e7ais"})
+    'q: Fran\\xc3\\xa7ais\\n\\n'
+    >>> generate({"q":u"hello"})
+    'q: hello\\n\\n'
     >>> generate({"q=":"p"})
     Traceback (most recent call last):
     IllegalKey: Illegal key "q="
+    >>> generate({"q:":"p"})
+    Traceback (most recent call last):
+    IllegalKey: Illegal key "q:"
     >>> generate({"q\\n":"p"})
     Traceback (most recent call last):
     IllegalKey: Illegal key "q\\n"
@@ -53,7 +57,6 @@ def generate(map, context=3):
     Traceback (most recent call last):
     IllegalValue: Illegal value "p\\n"
     """
-    assert(context > 0)
     keys = map.keys()
     keys.sort()
     for key in keys:
@@ -61,6 +64,7 @@ def generate(map, context=3):
             assert not key.startswith('>')
             assert('\n' not in key)
             assert('=' not in key)
+            assert(':' not in key)
             assert(len(key) > 0)
         except AssertionError:
             raise IllegalKey(key.encode('string_escape'))
@@ -69,20 +73,19 @@ def generate(map, context=3):
 
     lines = []
     for key in keys:
-        for i in range(context):
-            lines.append("")
-        lines.append("%s=%s" % (key, map[key]))
-        for i in range(context):
-            lines.append("")
-    return '\n'.join(lines) + '\n'
+        lines.append(yaml.safe_dump({key: map[key]},
+                                    default_flow_style=False,
+                                    allow_unicode=True))
+        lines.append("")
+    return '\n'.join(lines)
 
 def parse(contents):
     """
-    Parse a format-2 mapfile string.
-    >>> parse('\\n\\n\\nq=p\\n\\n\\n\\n')['q']
+    Parse a YAML mapfile string.
+    >>> parse('q: p\\n\\n')['q']
     'p'
-    >>> parse('\\n\\nq=\\'p\\'\\n\\n\\n\\n')['q']
-    "\'p\'"
+    >>> parse('q: \\'p\\'\\n\\n')['q']
+    'p'
     >>> contents = generate({"a":"b", "c":"d", "e":"f"})
     >>> dict = parse(contents)
     >>> dict["a"]
@@ -92,15 +95,25 @@ def parse(contents):
     >>> dict["e"]
     'f'
     """
-    result = {}
+    old_format = False
     for line in contents.splitlines():
-        line = line.rstrip('\n')
-        if len(line) == 0:
-            continue
-        name,value = [field for field in line.split('=', 1)]
-        assert not result.has_key(name)
-        result[name] = value
-    return result
+        if len(line.split("=")) == 2:
+            old_format = True
+            break
+    if old_format: # translate to YAML.  Hack to deal with old BE bugs.
+        newlines = []
+        for line in contents.splitlines():
+            line = line.rstrip('\n')
+            if len(line) == 0:
+                continue
+            fields = line.split("=")
+            if len(fields) == 2:
+                key,value = fields
+                newlines.append('%s: "%s"' % (key, value.replace('"','\\"')))
+            else:
+                newlines.append(line)
+        contents = '\n'.join(newlines)
+    return yaml.load(contents)
 
 def map_save(rcs, path, map, allow_no_rcs=False):
     """Save the map as a mapfile to the specified path"""

@@ -1,35 +1,15 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: critical
 
 
+status: closed
 
 
-
-severity=critical
-
-
+summary: OK, maybe not fatal, but how about a new name that suggests process tracking,
+  not just bugs?
 
 
-
-
-status=open
-
-
-
-
-
-
-summary=OK, maybe not fatal, but how about a new name that suggests process tracking, not just bugs?
-
-
-
-
-
-
-time=Fri, 27 Jan 2006 14:37:25 +0000
-
-
+time: Fri, 27 Jan 2006 14:37:25 +0000
 

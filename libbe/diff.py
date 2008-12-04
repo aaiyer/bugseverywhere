@@ -15,9 +15,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Compare two bug trees"""
-from libbe import cmdutil, bugdir
+from libbe import cmdutil, bugdir, bug
 from libbe.utility import time_to_str
-from libbe.bug import cmp_severity
 import doctest
 
 def diff(old_bugdir, new_bugdir):
@@ -41,17 +40,17 @@ def diff(old_bugdir, new_bugdir):
 def diff_report(diff_data, bug_dir):
     (removed, modified, added) = diff_data
     def modified_cmp(left, right):
-        return cmp_severity(left[1], right[1])
+        return bug.cmp_severity(left[1], right[1])
 
-    added.sort(cmp_severity)
-    removed.sort(cmp_severity)
+    added.sort(bug.cmp_severity)
+    removed.sort(bug.cmp_severity)
     modified.sort(modified_cmp)
     lines = []
     
     if len(added) > 0:
         lines.append("New bug reports:")
-        for bug in added:
-            lines.extend(bug.string(shortlist=True).splitlines())
+        for bg in added:
+            lines.extend(bg.string(shortlist=True).splitlines())
         lines.append("")
 
     if len(modified) > 0:
@@ -69,8 +68,8 @@ def diff_report(diff_data, bug_dir):
 
     if len(removed) > 0:
         lines.append("Removed bug reports:")
-        for bug in removed:
-            lines.extend(bug.string(shortlist=True).splitlines())
+        for bg in removed:
+            lines.extend(bg.string(shortlist=True).splitlines())
         lines.append("")
     
     return '\n'.join(lines)

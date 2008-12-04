@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=open
-
-
-
-
-
-
-summary=implement message-change log
-
-
+summary: implement message-change log
 
