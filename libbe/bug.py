@@ -65,10 +65,6 @@ def load_severities(severity_def):
     global severity_values
     global severity_description
     global severity_index
-    if type(severity_def[0]) == dict:
-        # Convert {"name": "X", "description": "Y"} severities to ("X","Y").
-        # The dict form is loaded from the per-tree settings file.
-        severity_def = [(d["name"], d["description"]) for d in severity_def]
     severity_values = tuple([val for val,description in severity_def])
     severity_description = dict(severity_def)
     severity_index = {}
@@ -125,7 +121,7 @@ class Bug(settings_object.SavedSettingsObject):
     @_versioned_property(name="severity",
                          doc="A measure of the bug's importance",
                          default="minor",
-                         allowed=severity_values,
+                         check_fn=lambda s: s in severity_values,
                          require_save=True)
     def severity(): return {}
 

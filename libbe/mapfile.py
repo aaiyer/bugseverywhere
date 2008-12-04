@@ -34,6 +34,10 @@ def generate(map):
     """Generate a YAML mapfile content string.
     >>> generate({"q":"p"})
     'q: p\\n\\n'
+    >>> generate({"q":u"Fran\u00e7ais"})
+    'q: Fran\\xc3\\xa7ais\\n\\n'
+    >>> generate({"q":u"hello"})
+    'q: hello\\n\\n'
     >>> generate({"q=":"p"})
     Traceback (most recent call last):
     IllegalKey: Illegal key "q="
@@ -69,7 +73,9 @@ def generate(map):
 
     lines = []
     for key in keys:
-        lines.append(yaml.dump({key: map[key]}, default_flow_style=False))
+        lines.append(yaml.safe_dump({key: map[key]},
+                                    default_flow_style=False,
+                                    allow_unicode=True))
         lines.append("")
     return '\n'.join(lines)
 
