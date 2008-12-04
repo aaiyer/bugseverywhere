@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=open
-
-
-
-
-
-
-summary=Customizable severity levels?
-
-
+summary: Customizable severity levels?
 

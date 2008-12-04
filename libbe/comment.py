@@ -275,6 +275,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         self._setup_saved_settings()
 
     def save_settings(self):
+        parent_dir = os.path.dirname(self.get_path())
+        self.rcs.mkdir(parent_dir)
         self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, self._get_saved_settings())

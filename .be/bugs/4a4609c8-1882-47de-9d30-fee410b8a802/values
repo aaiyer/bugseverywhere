@@ -4,7 +4,7 @@ creator: abentley
 severity: minor
 
 
-status: fixed
+status: closed
 
 
 summary: Do we need a severity between serious and minor? EG "Moderate"?
