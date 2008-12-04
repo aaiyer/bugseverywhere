@@ -229,6 +229,24 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
                          change_hook=_set_severities)
     def severities(): return {}
 
+    def _setup_status(self, active_status, inactive_status):
+        bug.load_status(active_status, inactive_status)
+    def _set_active_status(self, old_active_status, new_active_status):
+        self._setup_status(new_active_status, self.inactive_status)
+        self._prop_save_settings(old_active_status, new_active_status)
+    @_versioned_property(name="active_status",
+                         doc="The allowed active bug states and their descriptions.",
+                         change_hook=_set_active_status)
+    def active_status(): return {}
+
+    def _set_inactive_status(self, old_inactive_status, new_inactive_status):
+        self._setup_status(self.active_status, new_inactive_status)
+        self._prop_save_settings(old_inactive_status, new_inactive_status)
+    @_versioned_property(name="inactive_status",
+                         doc="The allowed inactive bug states and their descriptions.",
+                         change_hook=_set_inactive_status)
+    def inactive_status(): return {}
+
 
     def __init__(self, root=None, sink_to_existing_root=True,
                  assert_new_BugDir=False, allow_rcs_init=False,
@@ -330,6 +348,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             self.rcs = rcs.rcs_by_name(self.rcs_name)
             self._setup_encoding(self.encoding)
             self._setup_severities(self.severities)
+            self._setup_status(self.active_status, self.inactive_status)
 
     def load_all_bugs(self):
         "Warning: this could take a while."
@@ -381,7 +400,10 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         if "rcs_name" in duplicate_settings:
             duplicate_settings["rcs_name"] = "None"
             duplicate_settings["user_id"] = self.user_id
-            self._save_settings(duplicate_settings_path, duplicate_settings)
+        if "disabled" in bug.status_values:
+            # Hack to support old versions of BE bugs
+            duplicate_settings["inactive_status"] = self.inactive_status
+        self._save_settings(duplicate_settings_path, duplicate_settings)
 
         return BugDir(duplicate_path, from_disk=True, manipulate_encodings=self._manipulate_encodings)
 

@@ -64,10 +64,10 @@ is specified, it will be assigned to the bug.
 
 Severity levels are:
 """]
-    try:
+    try: # See if there are any per-tree severity configurations
         bd = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
     except bugdir.NoBugDir, e:
-        pass
+        pass # No tree, just show the defaults
     longest_severity_len = max([len(s) for s in bug.severity_values])
     for severity in bug.severity_values :
         description = bug.severity_description[severity]

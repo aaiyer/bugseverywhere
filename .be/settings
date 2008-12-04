@@ -1,15 +1,12 @@
 rcs_name: bzr
 
 
-severities:
-- - wishlist
-  - A feature that could improve usefulness, but not a bug.
-- - minor
-  - The standard bug level.
-- - serious
-  - A bug that requires workarounds.
-- - critical
-  - A bug that prevents some features from working at all.
-- - fatal
-  - A bug that makes the package unusable.
-
+inactive_status:
+- - closed
+  - The bug is no longer relevant.
+- - fixed
+  - The bug should no longer occur.
+- - wontfix
+  - It's not a bug, it's a feature.
+- - disabled
+  - Unknown meaning.  For backwards compatibility with old BE bugs.

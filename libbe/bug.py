@@ -52,8 +52,7 @@ active_status_def = (
 inactive_status_def = (
   ("closed", "The bug is no longer relevant."),
   ("fixed", "The bug should no longer occur."),
-  ("wontfix","It's not a bug, it's a feature."),
-  ("disabled", "?"))
+  ("wontfix","It's not a bug, it's a feature."))
 
 
 ### Convert the description tuples to more useful formats
@@ -65,6 +64,8 @@ def load_severities(severity_def):
     global severity_values
     global severity_description
     global severity_index
+    if severity_def == settings_object.EMPTY:
+        return
     severity_values = tuple([val for val,description in severity_def])
     severity_description = dict(severity_def)
     severity_index = {}
@@ -72,13 +73,29 @@ def load_severities(severity_def):
         severity_index[severity] = i
 load_severities(severity_def)
 
-active_status_values = tuple(val for val,description in active_status_def)
-inactive_status_values = tuple(val for val,description in inactive_status_def)
-status_values = active_status_values + inactive_status_values
-status_description = dict(active_status_def+inactive_status_def)
+active_status_values = []
+inactive_status_values = []
+status_values = []
+status_description = {}
 status_index = {}
-for i in range(len(status_values)):
-    status_index[status_values[i]] = i
+def load_status(active_status_def, inactive_status_def):
+    global active_status_values
+    global inactive_status_values
+    global status_values
+    global status_description
+    global status_index
+    if active_status_def == settings_object.EMPTY:
+        active_status_def = globals()["active_status_def"]
+    if inactive_status_def == settings_object.EMPTY:
+        inactive_status_def = globals()["inactive_status_def"]
+    active_status_values = tuple([val for val,description in active_status_def])
+    inactive_status_values = tuple([val for val,description in inactive_status_def])
+    status_values = active_status_values + inactive_status_values
+    status_description = dict(tuple(active_status_def) + tuple(inactive_status_def))
+    status_index = {}
+    for i,status in enumerate(status_values):
+        status_index[status] = i
+load_status(active_status_def, inactive_status_def)
 
 
 class Bug(settings_object.SavedSettingsObject):
@@ -128,7 +145,7 @@ class Bug(settings_object.SavedSettingsObject):
     @_versioned_property(name="status",
                          doc="The bug's current status",
                          default="open",
-                         allowed=status_values,
+                         check_fn=lambda s: s in status_values,
                          require_save=True)
     def status(): return {}
     
