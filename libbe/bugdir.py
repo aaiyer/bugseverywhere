@@ -218,6 +218,10 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     @doc_property(doc="A dict of (bug-uuid, bug-instance) pairs.")
     def _bug_map(): return {}
 
+    @_versioned_property(name="severities",
+                         doc="The allowed bug severities and their descriptions.")
+    def severities(): return {}
+
 
     def __init__(self, root=None, sink_to_existing_root=True,
                  assert_new_BugDir=False, allow_rcs_init=False,

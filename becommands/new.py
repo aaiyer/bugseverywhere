@@ -29,12 +29,12 @@ def execute(args, test=False):
     Created bug with ID X
     >>> bd.load()
     >>> bug = bd.bug_from_uuid("X")
-    >>> bug.summary
-    u'this is a test'
+    >>> print bug.summary
+    this is a test
     >>> bug.time <= int(time.time())
     True
-    >>> bug.severity
-    u'minor'
+    >>> print bug.severity
+    minor
     >>> bug.target == settings_object.EMPTY
     True
     """

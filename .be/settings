@@ -1,7 +1,13 @@
+rcs_name: bzr
 
-
-
-rcs_name=bzr
-
-
-
+severities:
+- name: wishlist
+  description: A feature that could improve usefulness, but not a bug.
+- name: minor
+  description: The standard bug level.
+- name: serious
+  description: A bug that requires workarounds.
+- name: critical
+  description: A bug that prevents some features from working at all.
+- name: fatal
+  description: A bug that makes the package unusable.

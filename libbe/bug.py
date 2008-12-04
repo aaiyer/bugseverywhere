@@ -36,7 +36,7 @@ import utility
 
 # in order of increasing severity
 severity_level_def = (
-  ("wishlist","A feature that could improve usefullness, but not a bug."),
+  ("wishlist","A feature that could improve usefulness, but not a bug."),
   ("minor","The standard bug level."),
   ("serious","A bug that requires workarounds."),
   ("critical","A bug that prevents some features from working at all."),
