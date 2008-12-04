@@ -170,11 +170,16 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     @_versioned_property(name="user_id",
                          doc=
-"""The user's prefered name, e.g 'John Doe <jdoe@example.com>'.  Note
+"""The user's prefered name, e.g. 'John Doe <jdoe@example.com>'.  Note
 that the Arch RCS backend *enforces* ids with this format.""",
                          change_hook=_set_user_id,
                          generator=_guess_user_id)
     def user_id(): return {}
+
+    @_versioned_property(name="default_assignee",
+                         doc=
+"""The default assignee for new bugs e.g. 'John Doe <jdoe@example.com>'.""")
+    def default_assignee(): return {}
 
     @_versioned_property(name="rcs_name",
                          doc="""The name of the current RCS.  Kept seperate to make saving/loading
