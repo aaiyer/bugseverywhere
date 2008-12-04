@@ -34,8 +34,8 @@ import utility
 # Use a tuple of (category, description) tuples since we don't have
 # ordered dicts in Python yet http://www.python.org/dev/peps/pep-0372/
 
-# in order of increasing severity
-severity_level_def = (
+# in order of increasing severity.  (name, description) pairs
+severity_def = (
   ("wishlist","A feature that could improve usefulness, but not a bug."),
   ("minor","The standard bug level."),
   ("serious","A bug that requires workarounds."),
@@ -58,11 +58,23 @@ inactive_status_def = (
 
 ### Convert the description tuples to more useful formats
 
-severity_values = tuple([val for val,description in severity_level_def])
-severity_description = dict(severity_level_def)
+severity_values = ()
+severity_description = {}
 severity_index = {}
-for i in range(len(severity_values)):
-    severity_index[severity_values[i]] = i
+def load_severities(severity_def):
+    global severity_values
+    global severity_description
+    global severity_index
+    if type(severity_def[0]) == dict:
+        # Convert {"name": "X", "description": "Y"} severities to ("X","Y").
+        # The dict form is loaded from the per-tree settings file.
+        severity_def = [(d["name"], d["description"]) for d in severity_def]
+    severity_values = tuple([val for val,description in severity_def])
+    severity_description = dict(severity_def)
+    severity_index = {}
+    for i,severity in enumerate(severity_values):
+        severity_index[severity] = i
+load_severities(severity_def)
 
 active_status_values = tuple(val for val,description in active_status_def)
 inactive_status_values = tuple(val for val,description in inactive_status_def)

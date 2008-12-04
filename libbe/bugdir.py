@@ -218,8 +218,15 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     @doc_property(doc="A dict of (bug-uuid, bug-instance) pairs.")
     def _bug_map(): return {}
 
+    def _setup_severities(self, severities):
+        if severities != None and severities != settings_object.EMPTY:
+            bug.load_severities(severities)
+    def _set_severities(self, old_severities, new_severities):
+        self._setup_severities(new_severities)
+        self._prop_save_settings(old_severities, new_severities)
     @_versioned_property(name="severities",
-                         doc="The allowed bug severities and their descriptions.")
+                         doc="The allowed bug severities and their descriptions.",
+                         change_hook=_set_severities)
     def severities(): return {}
 
 
@@ -322,6 +329,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             
             self.rcs = rcs.rcs_by_name(self.rcs_name)
             self._setup_encoding(self.encoding)
+            self._setup_severities(self.severities)
 
     def load_all_bugs(self):
         "Warning: this could take a while."

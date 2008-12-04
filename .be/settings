@@ -5,6 +5,8 @@ severities:
   description: A feature that could improve usefulness, but not a bug.
 - name: minor
   description: The standard bug level.
+- name: moderate
+  description: Yet another bug severity.
 - name: serious
   description: A bug that requires workarounds.
 - name: critical
