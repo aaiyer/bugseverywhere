@@ -34,8 +34,7 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : True})
+    complete(options, args, parser)
     if len(args) not in (1,2):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
@@ -58,12 +57,12 @@ def get_parser():
 
 def help():
     longhelp=["""
-Show or change a bug's severity level.
+Show or change a bug's status.
 
-If no severity is specified, the current value is printed.  If a severity level
+If no status is specified, the current value is printed.  If a status
 is specified, it will be assigned to the bug.
 
-Severity levels are:
+Status levels are:
 """]
     try: # See if there are any per-tree status configurations
         bd = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
@@ -76,3 +75,25 @@ Severity levels are:
         longhelp.append(s)
     longhelp = ''.join(longhelp)
     return get_parser().help_str() + longhelp
+
+def complete(options, args, parser):
+    for option,value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            # no argument-options at the moment, so this is future-proofing
+            raise cmdutil.GetCompletions()
+    for pos,value in enumerate(args):
+        if value == "--complete":
+            try: # See if there are any per-tree status configurations
+                bd = bugdir.BugDir(from_disk=True,
+                                   manipulate_encodings=False)
+            except bugdir.NoBugDir:
+                bd = None
+            if pos == 0: # fist positional argument is a bug id 
+                ids = []
+                if bd != None:
+                    bd.load_all_bugs()
+                    ids = [bd.bug_shortname(bg) for bg in bd]
+                raise cmdutil.GetCompletions(ids)
+            elif pos == 1: # second positional argument is a status
+                raise cmdutil.GetCompletions(bug.status_values)
+            raise cmdutil.GetCompletions()

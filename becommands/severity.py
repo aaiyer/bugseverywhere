@@ -34,8 +34,7 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True})
+    complete(options, args, parser)
     if len(args) not in (1,2):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
@@ -75,3 +74,27 @@ Severity levels are:
         longhelp.append(s)
     longhelp = ''.join(longhelp)
     return get_parser().help_str() + longhelp
+
+def complete(options, args, parser):
+    for option,value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            # no argument-options at the moment, so this is future-proofing
+            raise cmdutil.GetCompletions()
+    for pos,value in enumerate(args):
+        if value == "--complete":
+            try: # See if there are any per-tree severity configurations
+                bd = bugdir.BugDir(from_disk=True,
+                                   manipulate_encodings=False)
+            except bugdir.NoBugDir:
+                bd = None
+            if pos == 0: # fist positional argument is a bug id 
+                ids = []
+                if bd != None:
+                    bd.load_all_bugs()
+                    filter = lambda bg : bg.active==True
+                    bugs = [bg for bg in bd if filter(bg)==True]
+                    ids = [bd.bug_shortname(bg) for bg in bugs]
+                raise cmdutil.GetCompletions(ids)
+            elif pos == 1: # second positional argument is a severity
+                raise cmdutil.GetCompletions(bug.severity_values)
+            raise cmdutil.GetCompletions()
