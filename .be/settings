@@ -6,8 +6,6 @@ severities:
   - A feature that could improve usefulness, but not a bug.
 - - minor
   - The standard bug level.
-- - moderate
-  - Yet another bug severity.
 - - serious
   - A bug that requires workarounds.
 - - critical

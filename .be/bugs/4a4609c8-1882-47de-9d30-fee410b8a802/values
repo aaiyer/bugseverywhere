@@ -1,10 +1,10 @@
 creator: abentley
 
 
-severity: moderate
+severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Do we need a severity between serious and minor? EG "Moderate"?
