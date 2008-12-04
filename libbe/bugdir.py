@@ -162,10 +162,12 @@ class BugDir (list, settings_object.SavedSettingsObject):
                          check_fn=_check_encoding)
     def encoding(): return {}
 
+    def _setup_user_id(self, user_id):
+        self.rcs.user_id = user_id        
     def _guess_user_id(self):
         return self.rcs.get_user_id()
     def _set_user_id(self, old_user_id, new_user_id):
-        self.rcs.user_id = new_user_id
+        self._setup_user_id(new_user_id)
         self._prop_save_settings(old_user_id, new_user_id)
 
     @_versioned_property(name="user_id",
@@ -283,7 +285,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if rcs == None:
                 rcs = self._guess_rcs(allow_rcs_init)
             self.rcs = rcs
-            user_id = self.rcs.get_user_id()
+            self._setup_user_id(self.user_id)
 
     def _find_root(self, path):
         """
@@ -351,9 +353,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             self.load_settings()
             
             self.rcs = rcs.rcs_by_name(self.rcs_name)
-            self._setup_encoding(self.encoding)
-            self._setup_severities(self.severities)
-            self._setup_status(self.active_status, self.inactive_status)
+            self._setup_user_id(self.user_id)
 
     def load_all_bugs(self):
         "Warning: this could take a while."
@@ -372,6 +372,10 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     def load_settings(self):
         self.settings = self._get_settings(self.get_path("settings"))
         self._setup_saved_settings()
+        self._setup_user_id(self.user_id)
+        self._setup_encoding(self.encoding)
+        self._setup_severities(self.severities)
+        self._setup_status(self.active_status, self.inactive_status)
 
     def _get_settings(self, settings_path):
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
