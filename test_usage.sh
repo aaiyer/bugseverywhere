@@ -11,7 +11,7 @@
 # Note that this script uses the *installed* version of be, not the
 # one in your working tree.
 
-set -e # exit imediately on failed command
+set -e # exit immediately on failed command
 set -o pipefail # pipes fail if any stage fails
 set -v # verbose, echo commands to stdout
 
