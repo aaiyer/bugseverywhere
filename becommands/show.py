@@ -41,10 +41,15 @@ def execute(args):
     bd = bugdir.BugDir(from_disk=True)
     for bugid in args:
         bug = bd.bug_from_shortname(bugid)
-        print bug.string(show_comments=True)
+        if options.dumpXML:
+            print bug.xml(show_comments=True)
+        else:
+            print bug.string(show_comments=True)
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be show BUG-ID [BUG-ID ...]")
+    parser = cmdutil.CmdOptionParser("be show [options] BUG-ID [BUG-ID ...]")
+    parser.add_option("-x", "--xml", action="store_true",
+                      dest='dumpXML', help="Dump as XML")
     return parser
 
 longhelp="""

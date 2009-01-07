@@ -130,6 +130,20 @@ class Comment(Tree):
             return ""
         return value
 
+    def xml(self, indent=0, shortname=None):
+        if shortname == None:
+            shortname = self.uuid
+        ret = """<comment>
+  <name>%s</name>
+  <from>%s</from>
+  <date>%s</date>
+  <body>%s</body>
+</comment>\n""" % (shortname,
+                   self._clean_string(self.From),
+                   utility.time_to_str(self.time),
+                   self.body.rstrip('\n'))
+        return ret
+
     def string(self, indent=0, shortname=None):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
@@ -319,6 +333,23 @@ class Comment(Tree):
                 sname = None
             stringlist.append(comment.string(indent=ind, shortname=sname))
         return '\n'.join(stringlist)
+
+    def xml_thread(self, name_map={}, indent=0,
+                   auto_name_map=False, bug_shortname=None):
+        if auto_name_map == True:
+            name_map = {}
+            for shortname,comment in self.comment_shortnames(bug_shortname):
+                name_map[comment.uuid] = shortname
+        stringlist = []
+        for depth,comment in self.thread(flatten=True):
+            ind = 2*depth+indent
+            if comment.uuid in name_map:
+                sname = name_map[comment.uuid]
+            else:
+                sname = None
+            stringlist.append(comment.xml(indent=ind, shortname=sname))
+        return '\n'.join(stringlist)
+        
 
     def comment_shortnames(self, bug_shortname=""):
         """
