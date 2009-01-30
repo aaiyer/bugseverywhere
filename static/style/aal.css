@@ -25,7 +25,7 @@ blockquote:before,blockquote:after,q:before,q:after {content: ''; content: none;
 header, nav, section, article, aside, footer {display: block;}
 
 /* Basic styles */
-body {background: #fff; color: #000; font: .75em/1.5em Helvetica, Arial, "Liberation Sans", "Bitstream Vera Sans", sans-serif;}
+body {background: #fff; color: #000; font: .75em/1.5em "Helvetica Neue", Helvetica, Arial, "Liberation Sans", "Bitstream Vera Sans", sans-serif;}
 html>body {font-size: 14px;}
 
 img {display: inline-block; vertical-align: bottom;}

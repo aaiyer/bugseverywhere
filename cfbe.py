@@ -16,7 +16,7 @@ class WebInterface:
     
     @cherrypy.expose
     def index(self):
-        template = env.get_template('base.html')
+        template = env.get_template('list.html')
         return template.render(bugs=bd)
     
 
