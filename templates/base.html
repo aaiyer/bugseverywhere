@@ -11,8 +11,33 @@
     </head>
     
     <body>
-        <div id="logo"><p>Cherry Flavored Bugs Everywhere!</p></div>
-        <div id="header"><h1>stevelosh</h1></div>
-        {% block content %}{% endblock %}
+        <div id="logo"><h1>Cherry Flavored Bugs Everywhere!</h1></div>
+        <div id="header">
+            <div class="center-column">
+                <h1>stevelosh</h1>
+            </div>
+        </div>
+        <div id="content-pane" class="center-column">
+            <div id="nav">
+                <span id="filters">
+                    Just show me:
+                    <a href="fixme">Open</a>
+                    <a href="fixme">Closed</a>
+                    <a href="fixme">Assigned to...</a>
+                    <a href="fixme">Scheduled for...</a>
+                </span>
+                <span id="create">
+                    <a href="fixme">Create a new bug</a>
+                </span>
+            </div>
+            <h2>Open Bugs</h2>
+            {% block content %}{% endblock %}
+        </div>
+        <div id="footer" class="center-column">
+            Site by <a href="http://stevelosh.com">Steve</a>.
+            Built with <a href="http://cherrypy.org">CherryPy</a>.
+            Templates by <a href="http://jinja.pocoo.org/2/">Jinja2</a>.
+            We asked <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvarks</a> for help.
+        </div>
     </body>
 </html>
