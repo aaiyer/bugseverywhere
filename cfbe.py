@@ -4,11 +4,11 @@ import cherrypy
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 
-template_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/templates'
 bug_root = '/Users/sjl/Documents/stevelosh/.be'
 bd = bugdir.BugDir(root=bug_root)
 bd.load_all_bugs()
 
+template_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/templates'
 env = Environment(loader=FileSystemLoader(template_root))
 
 class WebInterface:
@@ -20,4 +20,5 @@ class WebInterface:
         return template.render(bugs=bd)
     
 
-cherrypy.quickstart(WebInterface())
+config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
+cherrypy.quickstart(WebInterface(), '/', config)
