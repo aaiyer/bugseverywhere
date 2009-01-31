@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+    Bug {{ bd.bug_shortname(bug) }} &ndash; {{ bug.summary }}
+{% endblock %}
+
+{% block content %}
+    <p class="creation-info">Created on {{ bug.time|datetimeformat }} by {{ bug.creator|e }}</p>
+    
+    <h3>Bug Details</h3>
+    <p>
+        <span class="detail-field-header">Status:</span>
+        <span class="detail-field-contents">{{ bug.status }}</span><br />
+        
+        <span class="detail-field-header">Severity:</span>
+        <span class="detail-field-contents">{{ bug.severity }}</span><br />
+        
+        <span class="detail-field-header">Scheduled for:</span>
+        <span class="detail-field-contents">{{ bug.target }}</span><br />
+        
+        <span class="detail-field-header">Assigned to:</span>
+        <span class="detail-field-contents">{{ bug.assigned|e }}</span><br />
+        
+        <span class="detail-field-header">Permanent ID:</span>
+        <span class="detail-field-contents">{{ bug.uuid }}</span><br />
+    </p>
+    
+    <h3>Summary</h3>
+    <p>
+        {{ bug.summary }}
+    </p>
+    
+    <h3>Comments</h3>
+    {% for comment in bug.comments() %}
+        <div class="bug-comment">
+            <h4 class="bug-comment-header">{{ comment.From|e }} said:</h4>
+            <p class="bug-comment-body">{{ comment.body|trim|e }}</p>
+            <p class="bug-comment-footer">on {{ comment.time|datetimeformat }}</p>
+        </div>
+    {% endfor %}
+{% endblock %}

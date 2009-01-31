@@ -3,10 +3,15 @@
 import cherrypy
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
+from datetime import datetime
 
+
+def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
+    return datetime.fromtimestamp(value).strftime(format)
 
 template_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/templates'
 env = Environment(loader=FileSystemLoader(template_root))
+env.filters['datetimeformat'] = datetimeformat
 
 class WebInterface:
     """The web interface to CFBE."""
@@ -17,7 +22,7 @@ class WebInterface:
         self.bd = bugdir.BugDir(root=self.bug_root)
         self.repository_name = self.bd.root.split('/')[-1]
     
-    def get_common_information(self, assignee, target):
+    def get_common_information(self):
         possible_assignees = list(set([bug.assigned for bug in self.bd if bug.assigned != None]))
         possible_assignees.sort(key=unicode.lower)
         
@@ -25,7 +30,8 @@ class WebInterface:
         possible_targets.sort(key=unicode.lower)
         
         return {'possible_assignees': possible_assignees,
-                'possible_targets': possible_targets,}
+                'possible_targets': possible_targets,
+                'repository_name': self.repository_name,}
     
     def filter_bugs(self, status, assignee, target):
         """Filter the list of bugs to return only those desired."""
@@ -60,12 +66,27 @@ class WebInterface:
         template = env.get_template('list.html')
         bugs = self.filter_bugs(status, assignee, target)
         
-        common_info = self.get_common_information(assignee, target)
+        common_info = self.get_common_information()
         return template.render(bugs=bugs, bd=self.bd, label=label, 
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
-                               repository_name=self.repository_name)
+                               repository_name=common_info['repository_name'])
     
+    @cherrypy.expose
+    def bug(self, id=''):
+        """The page for viewing a single bug."""
+        
+        self.bd.load_all_bugs()
+        
+        bug = self.bd.bug_from_shortname(id)
+        
+        template = env.get_template('bug.html')
+        common_info = self.get_common_information()
+        return template.render(bug=bug, bd=self.bd, 
+                               assignees=common_info['possible_assignees'],
+                               targets=common_info['possible_targets'],
+                               repository_name=common_info['repository_name'])
+
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
 bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'

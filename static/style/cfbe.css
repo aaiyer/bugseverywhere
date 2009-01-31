@@ -31,3 +31,11 @@ table { margin-bottom: 1.417em; }
 tr.stripe { background-color: #f5e5f0; }
 
 div#assignees, div#targets { display: none; }
+
+p.creation-info { color: #888; }
+span.detail-field-header { font-weight: 700; width: 7.5em; padding-right: 1em; display: inline-block; text-align: right; }
+
+div.bug-comment { margin-left: 2em;}
+p.bug-comment-body { white-space: pre; margin: 0em 0em 0em 0em; }
+p.bug-comment-footer { margin: 0em 0em; color: #888; }
+h4.bug-comment-header { margin: 1.5em 0em 0em; }
