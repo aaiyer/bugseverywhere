@@ -10,12 +10,19 @@
         <link rel="stylesheet" type="text/css" media="screen"
               href="/static/style/cfbe.css" />
         
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.1/jquery.min.js"></script>
         <script type="text/javascript" src="/static/scripts/jquery.corners.min.js"></script>
         <script type="text/javascript">
             $(function() {
                 $('#content-pane').corners('bottom 8px');
+                
+                $('#external-pane').hide();
                 $('#external-pane-content').corners('bottom 8px');
+                
+                $('#filter-assignee').click(function() {
+                    $('#external-pane-content').html($('#assignees').html());
+                    $('#external-pane').fadeIn('fast');
+                });
             });
         </script>
     </head>
@@ -34,8 +41,8 @@
                         Just show me:
                         <a href="/">Open</a>
                         <a href="/?status=closed">Closed</a>
-                        <a href="fixme">Assigned to...</a>
-                        <a href="fixme">Scheduled for...</a>
+                        <a href="#" id="filter-assignee">Assigned to...</a>
+                        <a href="#">Scheduled for...</a>
                     </span>
                     <span id="create">
                         <a href="fixme">Create a new bug</a>
@@ -54,7 +61,15 @@
             </div>
         </div>
         <div id="external-pane">
-            <div id="external-pane-content"><p>Test</p></div>
+            <div id="external-pane-content"></div>
+        </div>
+        <div id="assignees">
+            <p>
+                <a href="/?assignee=None">Unassigned</a><br /><br />
+                {% for assignee in assignees %}
+                    <a href="/?assignee={{ assignee|e }}">{{ assignee|e }}</a><br />
+                {% endfor %}
+            </p>
         </div>
     </body>
 </html>

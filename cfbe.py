@@ -4,7 +4,7 @@ import cherrypy
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 
-bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
+bug_root = '/Users/sjl/Desktop/be/.be'
 bd = bugdir.BugDir(root=bug_root)
 bd.load_all_bugs()
 
@@ -15,17 +15,35 @@ class WebInterface:
     """The web interface to CFBE."""
     
     @cherrypy.expose
-    def index(self, status='open'):
+    def index(self, status='open', assignee=''):
         bd.load_all_bugs()
         if status == 'open':
             status = ['open', 'assigned', 'test', 'unconfirmed', 'wishlist']
-            label = 'Open'
+            label = 'All Open Bugs'
         elif status == 'closed':
             status = ['closed', 'disabled', 'fixed', 'wontfix']
-            label = 'Closed'
+            label = 'All Closed Bugs'
+        if assignee != '':
+            if assignee == 'None':
+                label += ' Currently Unassigned'
+            else:
+                label += ' Assigned to %s' % (assignee,)
+        
+        
         template = env.get_template('list.html')
+        
+        possible_assignees = list(set([bug.assigned for bug in bd if bug.assigned != None]))
+        possible_assignees.sort(key=unicode.lower)
+        
         bugs = [bug for bug in bd if bug.status in status]
-        return template.render(bugs=bugs, bd=bd, label=label)
+        
+        if assignee != '':
+            if assignee == 'None':
+                assignee = None
+            bugs = [bug for bug in bugs if bug.assigned == assignee]
+        
+        return template.render(bugs=bugs, bd=bd, label=label, 
+                               assignees=possible_assignees)
     
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'

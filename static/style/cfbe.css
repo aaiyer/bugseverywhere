@@ -7,10 +7,10 @@ div#header h1 { font-size: 4em; line-height: 1.5em; margin-bottom: 0em; }
 div#logo      { text-align: right; color: #d03; padding-top: 1.5em; }
 div#logo   h1 { margin-top: 0.65em; margin-bottom: 0.15em; }
 
-div.center-column { width: 50em; margin-left: 10em; }
+div.center-column { width: 50em; margin-left: 5em; }
 div#content-wrap { display: inline-block; vertical-align: top; }
 div#content-pane { background-color: #fbfbfb; padding: 1.5em 2em; }
-div#external-pane { background-image: url(/static/images/left-arrow.png); background-repeat: no-repeat; width: 21em; padding: 0em; display: inline-block; }
+div#external-pane { background-image: url(/static/images/left-arrow.png); background-repeat: no-repeat; width: 24em; padding: 0em; display: inline-block; }
 div#external-pane-content { margin-left: 18px; background-color: #fbfbfb; padding: 1.5em 1em 1px; }
 
 div#footer { text-align: center; }
@@ -26,11 +26,7 @@ a:hover { color: #60b305; }
 
 table#bug-list { width: 100%; }
 table#bug-list th { text-align: left; }
-table tr td, table tr th { 
-    padding: 0px 5px; 
-    border: 0.084em solid black; 
-    line-height: 2.917em;
-}
-table {
-    margin-bottom: 1.417em;
-}
+table tr td, table tr th { padding: 0px 5px; border: 0.084em solid black; line-height: 2.917em; }
+table { margin-bottom: 1.417em; }
+
+div#assignees { display: none; }

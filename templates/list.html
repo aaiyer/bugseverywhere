@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block page_title %}
-    {{ label }} Bugs
+    {{ label }}
 {% endblock %}
 
 {% block content %}
@@ -15,9 +15,9 @@
         {% for bug in bugs %}
         <tr>
             <td>{{ bd.bug_shortname(bug) }}</td>
-            <td>{{ bug.summary }}</td>
+            <td>{{ bug.summary|e|truncate(60) }}</td>
             <td>{{ bug.status }}</td>
-            <td>{{ bug.assigned }}</td>
+            <td>{{ bug.assigned|striptags }}</td>
         </tr>
         {% endfor %}
     </table>
