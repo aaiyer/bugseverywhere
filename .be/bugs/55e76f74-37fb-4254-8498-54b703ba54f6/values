@@ -22,7 +22,7 @@ severity=minor
 
 
 
-status=open
+status=closed
 
 
 
@@ -30,6 +30,13 @@ status=open
 
 
 summary=Fix the footer width.
+
+
+
+
+
+
+target=alpha
 
 
 
