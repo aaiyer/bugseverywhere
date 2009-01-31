@@ -7,13 +7,13 @@ div#header h1 { font-size: 4em; line-height: 1.5em; margin-bottom: 0em; }
 div#logo      { text-align: right; color: #d03; padding-top: 1.5em; }
 div#logo   h1 { margin-top: 0.65em; margin-bottom: 0.15em; }
 
-div.center-column { width: 50em; margin-left: 5em; }
+div.center-column { width: 55em; margin-left: 5em; }
 div#content-wrap { display: inline-block; vertical-align: top; }
 div#content-pane { background-color: #fbfbfb; padding: 1.5em 2em; }
 div#external-pane { background-image: url(/static/images/left-arrow.png); background-repeat: no-repeat; width: 24em; padding: 0em; display: inline-block; }
 div#external-pane-content { margin-left: 18px; background-color: #fbfbfb; padding: 1.5em 1em 1px; }
 
-div#footer { text-align: center; }
+div#footer { text-align: center; width: 59em; }
 div#footer p { font-size: 0.9em; line-height: 1.666em; }
 
 div#nav { margin-bottom: 1.5em; }
@@ -24,9 +24,9 @@ a:link, a:visited, a:active { color: #d03; text-decoration: none; font-weight: b
 a:hover { color: #60b305; }
 
 
-table#bug-list { width: 100%; }
-table#bug-list th { text-align: left; }
-table tr td, table tr th { padding: 0px 5px; border: 0em; line-height: 2em; }
+table#bug-list { width: 100%; border-collapse: collapse; border: 1px solid #ccc; }
+table#bug-list td, table#bug-list th { border: 0em; border-bottom: 1px solid #ccc; text-align: left; }
+table tr td, table tr th { padding: 0px 5px; line-height: 2.916em; }
 table { margin-bottom: 1.417em; }
 tr.stripe { background-color: #f5e5f0; }
 
