@@ -18,7 +18,7 @@ div#footer p { font-size: 0.9em; line-height: 1.666em; }
 
 div#nav { margin-bottom: 1.5em; }
 span#filters { float: right; }
-span#filters a { margin-left: 2em; }
+span#filters a { margin-left: 1.5em; }
 
 a:link, a:visited, a:active { color: #d03; text-decoration: none; font-weight: bold; }
 a:hover { color: #60b305; }
