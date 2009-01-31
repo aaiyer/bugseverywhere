@@ -4,7 +4,7 @@ import cherrypy
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 
-bug_root = '/Users/sjl/Documents/stevelosh/.be'
+bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
 bd = bugdir.BugDir(root=bug_root)
 bd.load_all_bugs()
 
@@ -15,9 +15,17 @@ class WebInterface:
     """The web interface to CFBE."""
     
     @cherrypy.expose
-    def index(self):
+    def index(self, status='open'):
+        bd.load_all_bugs()
+        if status == 'open':
+            status = ['open', 'assigned', 'test', 'unconfirmed', 'wishlist']
+            label = 'Open'
+        elif status == 'closed':
+            status = ['closed', 'disabled', 'fixed', 'wontfix']
+            label = 'Closed'
         template = env.get_template('list.html')
-        return template.render(bugs=bd)
+        bugs = [bug for bug in bd if bug.status in status]
+        return template.render(bugs=bugs, bd=bd, label=label)
     
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'

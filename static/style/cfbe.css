@@ -1,13 +1,20 @@
-body { background-image: url(/static/images/stripe-rhythm.png); background-repeat: repeat;}
+/* @override http://localhost:8080/static/style/cfbe.css */
 
-div#header    { background-color: #d03; color: #fff; }
+body { background-image: url(/static/images/gradient-background.png); background-color: #bbbbbb; background-repeat: repeat-x;}
+
+div#header    { background-image: url(/static/images/gradient-header.png); background-repeat: repeat-x; background-color: #770005; color: #fff; }
 div#header h1 { font-size: 4em; line-height: 1.5em; margin-bottom: 0em; }
 div#logo      { text-align: right; color: #d03; padding-top: 1.5em; }
-div#logo h1   { margin-top: 0.65em; margin-bottom: 0.15em; }
+div#logo   h1 { margin-top: 0.65em; margin-bottom: 0.15em; }
 
-div.center-column { width: 50em; margin-left: auto; margin-right: auto; }
-div#content-pane { background-color: #fbfbfb; padding: 1.5em; }
-div#footer { text-align: center; font-size: 0.9em; line-height: 1.666em; }
+div.center-column { width: 50em; margin-left: 10em; }
+div#content-wrap { display: inline-block; vertical-align: top; }
+div#content-pane { background-color: #fbfbfb; padding: 1.5em 2em; }
+div#external-pane { background-image: url(/static/images/left-arrow.png); background-repeat: no-repeat; width: 21em; padding: 0em; display: inline-block; }
+div#external-pane-content { margin-left: 18px; background-color: #fbfbfb; padding: 1.5em 1em 1px; }
+
+div#footer { text-align: center; }
+div#footer p { font-size: 0.9em; line-height: 1.666em; }
 
 div#nav { margin-bottom: 1.5em; }
 span#filters { float: right; }
@@ -18,6 +25,7 @@ a:hover { color: #60b305; }
 
 
 table#bug-list { width: 100%; }
+table#bug-list th { text-align: left; }
 table tr td, table tr th { 
     padding: 0px 5px; 
     border: 0.084em solid black; 

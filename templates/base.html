@@ -4,10 +4,20 @@
 <html>
     <head>
         <title>Cherry Flavored Bugs Everywhere!</title>
+        
         <link rel="stylesheet" type="text/css" media="screen" 
               href="/static/style/aal.css" />
         <link rel="stylesheet" type="text/css" media="screen"
               href="/static/style/cfbe.css" />
+        
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+        <script type="text/javascript" src="/static/scripts/jquery.corners.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                $('#content-pane').corners('bottom 8px');
+                $('#external-pane-content').corners('bottom 8px');
+            });
+        </script>
     </head>
     
     <body>
@@ -17,27 +27,34 @@
                 <h1>stevelosh</h1>
             </div>
         </div>
-        <div id="content-pane" class="center-column">
-            <div id="nav">
-                <span id="filters">
-                    Just show me:
-                    <a href="fixme">Open</a>
-                    <a href="fixme">Closed</a>
-                    <a href="fixme">Assigned to...</a>
-                    <a href="fixme">Scheduled for...</a>
-                </span>
-                <span id="create">
-                    <a href="fixme">Create a new bug</a>
-                </span>
+        <div id="content-wrap">
+            <div id="content-pane" class="center-column">
+                <div id="nav">
+                    <span id="filters">
+                        Just show me:
+                        <a href="/">Open</a>
+                        <a href="/?status=closed">Closed</a>
+                        <a href="fixme">Assigned to...</a>
+                        <a href="fixme">Scheduled for...</a>
+                    </span>
+                    <span id="create">
+                        <a href="fixme">Create a new bug</a>
+                    </span>
+                </div>
+                <h2>{% block page_title %}&nbsp;{% endblock %}</h2>
+                {% block content %}{% endblock %}
             </div>
-            <h2>Open Bugs</h2>
-            {% block content %}{% endblock %}
+            <div id="footer" class="center-column">
+                <p>
+                    Site by <a href="http://stevelosh.com">Steve</a>.
+                    Built with <a href="http://cherrypy.org">CherryPy</a>.
+                    Templates by <a href="http://jinja.pocoo.org/2/">Jinja2</a>.
+                    I've asked <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvarks</a> for help.
+                </p>
+            </div>
         </div>
-        <div id="footer" class="center-column">
-            Site by <a href="http://stevelosh.com">Steve</a>.
-            Built with <a href="http://cherrypy.org">CherryPy</a>.
-            Templates by <a href="http://jinja.pocoo.org/2/">Jinja2</a>.
-            We asked <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvarks</a> for help.
+        <div id="external-pane">
+            <div id="external-pane-content"><p>Test</p></div>
         </div>
     </body>
 </html>
