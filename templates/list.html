@@ -10,13 +10,15 @@
             <th>ID</th>
             <th>Summary</th>
             <th>Status</th>
+            <th>Target</th>
             <th>Assigned To</th>
         </tr>
         {% for bug in bugs %}
         <tr>
             <td>{{ bd.bug_shortname(bug) }}</td>
-            <td>{{ bug.summary|e|truncate(60) }}</td>
+            <td>{{ bug.summary|e|truncate(65) }}</td>
             <td>{{ bug.status }}</td>
+            <td>{{ bug.target }}</td>
             <td>{{ bug.assigned|striptags }}</td>
         </tr>
         {% endfor %}

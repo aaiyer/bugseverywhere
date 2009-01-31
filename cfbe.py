@@ -16,7 +16,7 @@ class WebInterface:
     """The web interface to CFBE."""
     
     @cherrypy.expose
-    def index(self, status='open', assignee=''):
+    def index(self, status='open', assignee='', target=''):
         bd.load_all_bugs()
         
         if status == 'open':
@@ -25,17 +25,27 @@ class WebInterface:
         elif status == 'closed':
             status = ['closed', 'disabled', 'fixed', 'wontfix']
             label = 'All Closed Bugs'
+            
         if assignee != '':
             if assignee == 'None':
                 label += ' Currently Unassigned'
             else:
                 label += ' Assigned to %s' % (assignee,)
         
+        if target != '':
+            if target == 'None':
+                label += ' Currently Unschdeuled'
+            else:
+                label += ' Scheduled for %s' % (target,)
+        
         
         template = env.get_template('list.html')
         
         possible_assignees = list(set([bug.assigned for bug in bd if bug.assigned != None]))
         possible_assignees.sort(key=unicode.lower)
+        
+        possible_targets = list(set([bug.target for bug in bd if bug.target != None]))
+        possible_targets.sort(key=unicode.lower)
         
         bugs = [bug for bug in bd if bug.status in status]
         
@@ -44,8 +54,14 @@ class WebInterface:
                 assignee = None
             bugs = [bug for bug in bugs if bug.assigned == assignee]
         
+        if target != '':
+            if target == 'None':
+                target = None
+            bugs = [bug for bug in bugs if bug.target == target]
+        
         return template.render(bugs=bugs, bd=bd, label=label, 
                                assignees=possible_assignees,
+                               targets=possible_targets,
                                repository_name=repository_name)
     
 

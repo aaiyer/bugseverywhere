@@ -19,9 +19,16 @@
                 $('#external-pane').hide();
                 $('#external-pane-content').corners('bottom 8px');
                 
-                $('#filter-assignee').click(function() {
+                $('#filter-assignee').click(function(e) {
                     $('#external-pane-content').html($('#assignees').html());
                     $('#external-pane').fadeIn('fast');
+                    e.preventDefault();
+                });
+                
+                $('#filter-target').click(function(e) {
+                    $('#external-pane-content').html($('#targets').html());
+                    $('#external-pane').fadeIn('fast');
+                    e.preventDefault();
                 });
                 
                 $('table tr:odd').addClass('stripe');
@@ -43,8 +50,8 @@
                         Just show me:
                         <a href="/">Open</a>
                         <a href="/?status=closed">Closed</a>
-                        <a href="#" id="filter-assignee">Assigned to...</a>
-                        <a href="#">Scheduled for...</a>
+                        <a href="" id="filter-assignee">Assigned to...</a>
+                        <a href="" id="filter-target">Scheduled for...</a>
                     </span>
                     <span id="create">
                         <a href="fixme">&#43; Create a new bug</a>
@@ -73,6 +80,14 @@
                 <a href="/?assignee=None">Unassigned</a><br /><br />
                 {% for assignee in assignees %}
                     <a href="/?assignee={{ assignee|e }}">{{ assignee|e }}</a><br />
+                {% endfor %}
+            </p>
+        </div>
+        <div id="targets">
+            <p>
+                <a href="/?target=None">Unscheduled</a><br /><br />
+                {% for target in targets %}
+                    <a href="/?target={{ target }}">{{ target }}</a><br />
                 {% endfor %}
             </p>
         </div>

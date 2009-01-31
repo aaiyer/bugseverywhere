@@ -30,4 +30,4 @@ table tr td, table tr th { padding: 0px 5px; line-height: 2.916em; }
 table { margin-bottom: 1.417em; }
 tr.stripe { background-color: #f5e5f0; }
 
-div#assignees { display: none; }
+div#assignees, div#targets { display: none; }
