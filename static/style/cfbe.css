@@ -26,7 +26,8 @@ a:hover { color: #60b305; }
 
 table#bug-list { width: 100%; }
 table#bug-list th { text-align: left; }
-table tr td, table tr th { padding: 0px 5px; border: 0.084em solid black; line-height: 2.917em; }
+table tr td, table tr th { padding: 0px 5px; border: 0em; line-height: 2em; }
 table { margin-bottom: 1.417em; }
+tr.stripe { background-color: #f5e5f0; }
 
 div#assignees { display: none; }
