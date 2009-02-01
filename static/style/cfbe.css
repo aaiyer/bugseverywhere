@@ -46,3 +46,6 @@ form#create-form { height: 3em; display: none; }
 form#create-form div.field { }
 form#create-form input#create-summary { width: 30em; font-weight: 700; }
 form#create-form button#create-button { }
+
+form#add-comment-form { display: none; margin-top: 1.5em; }
+p#add-comment-link {margin-top: 1.5em; }

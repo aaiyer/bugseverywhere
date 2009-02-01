@@ -52,6 +52,7 @@ class WebInterface:
         
         return bugs
     
+    
     @cherrypy.expose
     def index(self, status='open', assignee='', target=''):
         self.bd.load_all_bugs()
@@ -78,6 +79,7 @@ class WebInterface:
                                statuses=common_info['possible_statuses'],
                                repository_name=common_info['repository_name'])
     
+    
     @cherrypy.expose
     def bug(self, id=''):
         """The page for viewing a single bug."""
@@ -94,12 +96,27 @@ class WebInterface:
                                statuses=common_info['possible_statuses'],
                                repository_name=common_info['repository_name'])
     
+    
     @cherrypy.expose
     def create(self, summary):
         """The view that handles the creation of a new bug."""
         if summary.strip() != '':
             self.bd.new_bug(summary=summary).save()
         raise cherrypy.HTTPRedirect('/', status=302)
+    
+    
+    @cherrypy.expose
+    def comment(self, id, body):
+        """The view that handles adding a comment."""
+        bug = self.bd.bug_from_uuid(id)
+        shortname = self.bd.bug_shortname(bug)
+        
+        if body.strip() != '':
+            bug.comment_root.new_reply(body=body)
+            bug.save()
+        
+        raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
+    
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
 bug_root = '/Users/sjl/Desktop/be/.be'

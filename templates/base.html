@@ -36,6 +36,12 @@
                     e.preventDefault();
                 });
                 
+                $('#add-comment').click(function(e) {
+                    $('#add-comment-link').hide();
+                    $('#add-comment-form').fadeIn('fast');
+                    e.preventDefault();
+                });
+                
                 $('table tr:odd').addClass('stripe');
             });
         </script>
