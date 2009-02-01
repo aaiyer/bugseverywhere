@@ -1,11 +1,11 @@
 /* @override http://localhost:8080/static/style/cfbe.css */
 
-body { background-image: url(/static/images/gradient-background.png); background-color: #bbbbbb; background-repeat: repeat-x;}
+body { background-image: url(/static/images/gradient-background.png); background-color: #bbbbbb; background-repeat: repeat-x; 
+       /*background-image: url(/static/images/stripe-rhythm.png); background-repeat: repeat;*/ }
 
-div#header    { background-image: url(/static/images/gradient-header.png); background-repeat: repeat-x; background-color: #770005; color: #fff; }
+div#header    { background-image: url(/static/images/gradient-header.png); background-repeat: repeat-x; 
+                background-color: #770005; color: #fff; margin-top: 1.5em; }
 div#header h1 { font-size: 4em; line-height: 1.5em; margin-bottom: 0em; }
-div#logo      { text-align: right; color: #d03; padding-top: 1.5em; }
-div#logo   h1 { margin-top: 0.65em; margin-bottom: 0.15em; }
 
 div.center-column { width: 55em; margin-left: 5em; }
 div#content-wrap { display: inline-block; vertical-align: top; }
@@ -24,9 +24,11 @@ a:link, a:visited, a:active { color: #d03; text-decoration: none; font-weight: b
 a:hover { color: #60b305; }
 
 
-table#bug-list { width: 100%; border-collapse: collapse; border: 1px solid #ccc; }
-table#bug-list td, table#bug-list th { border: 0em; border-bottom: 1px solid #ccc; text-align: left; }
-table tr td, table tr th { padding: 0px 5px; line-height: 2.916em; }
+table#bug-list { width: 100%; border-collapse: collapse; border: 0.084em solid #ccc; }
+table#bug-list td, table#bug-list th { border: 0em; border-bottom: 0.084em solid #ccc; text-align: left; }
+table tr td, table tr th { padding: 0px 5px; }
+table tr td { line-height: 2.832em; padding-bottom: 0.084em; }
+table tr th { line-height: 2.916em; }
 table { margin-bottom: 1.417em; }
 tr.stripe { background-color: #f5e5f0; }
 
@@ -39,3 +41,8 @@ div.bug-comment { margin-left: 2em;}
 p.bug-comment-body { white-space: pre; margin: 0em 0em 0em 0em; }
 p.bug-comment-footer { margin: 0em 0em; color: #888; }
 h4.bug-comment-header { margin: 1.5em 0em 0em; }
+
+form#create-form { height: 3em; display: none; }
+form#create-form div.field { }
+form#create-form input#create-summary { width: 30em; font-weight: 700; }
+form#create-form button#create-button { }

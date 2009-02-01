@@ -29,8 +29,13 @@ class WebInterface:
         possible_targets = list(set([bug.target for bug in self.bd if bug.target != None]))
         possible_targets.sort(key=unicode.lower)
         
+        possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed', 
+                             u'wishlist', u'closed', u'disabled', u'fixed', 
+                             u'wontfix']
+        
         return {'possible_assignees': possible_assignees,
                 'possible_targets': possible_targets,
+                'possible_statuses': possible_statuses,
                 'repository_name': self.repository_name,}
     
     def filter_bugs(self, status, assignee, target):
@@ -70,6 +75,7 @@ class WebInterface:
         return template.render(bugs=bugs, bd=self.bd, label=label, 
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
+                               statuses=common_info['possible_statuses'],
                                repository_name=common_info['repository_name'])
     
     @cherrypy.expose
@@ -85,9 +91,16 @@ class WebInterface:
         return template.render(bug=bug, bd=self.bd, 
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
+                               statuses=common_info['possible_statuses'],
                                repository_name=common_info['repository_name'])
-
+    
+    @cherrypy.expose
+    def create(self, summary):
+        """The view that handles the creation of a new bug."""
+        if summary.strip() != '':
+            self.bd.new_bug(summary=summary).save()
+        raise cherrypy.HTTPRedirect('/', status=302)
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
-bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
+bug_root = '/Users/sjl/Desktop/be/.be'
 cherrypy.quickstart(WebInterface(bug_root), '/', config)
