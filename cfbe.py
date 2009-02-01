@@ -123,12 +123,12 @@ class WebInterface:
         raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
     
     @cherrypy.expose
-    def edit(self, id, status, target, assignee, severity, summary=''):
+    def edit(self, id, status=None, target=None, assignee=None, severity=None, summary=None):
         """The view that handles editing bug details."""
         bug = self.bd.bug_from_uuid(id)
         shortname = self.bd.bug_shortname(bug)
         
-        if summary.strip() != '':
+        if summary != None:
             bug.summary = summary
         else:
             bug.status = status if status != 'None' else None
@@ -142,6 +142,6 @@ class WebInterface:
     
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
-bug_root = '/Users/sjl/Desktop/be/.be'
-# bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
+# bug_root = '/Users/sjl/Desktop/be/.be'
+bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
 cherrypy.quickstart(WebInterface(bug_root), '/', config)

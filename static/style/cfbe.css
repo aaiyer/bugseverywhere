@@ -54,4 +54,7 @@ p#add-comment-link {margin-top: 1.5em; }
 
 form#bug-details-edit-form { display: none; }
 form#bug-details-edit-form label { font-weight: 700; width: 7.5em; margin-left: 0em; margin-right: 1em; text-align: right; }
-form#bug-details-edit-form .field { padding-left: 0em;}
+form#bug-details-edit-form .field { padding-left: 0em; }
+
+form#bug-summary-edit-form { display: none; }
+input#bug-summary-edit-body { width: 100%; }

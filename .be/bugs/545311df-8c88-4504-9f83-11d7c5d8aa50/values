@@ -1,7 +1,7 @@
 
 
 
-assigned=Steve Losh <steve@stevelosh.com>
+assigned=Steve Losh
 
 
 
@@ -22,14 +22,14 @@ severity=minor
 
 
 
-status=open
+status=closed
 
 
 
 
 
 
-summary=Implement bug updating (not comments.
+summary=Implement bug updating (not comments).  Check on the whitespace of the summary field while you're at it.
 
 
 

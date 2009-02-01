@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 
 {% block page_title %}
-    Bug {{ bd.bug_shortname(bug) }} &ndash; {{ bug.summary }}
+    Bug {{ bd.bug_shortname(bug) }} &ndash; {{ bug.summary|truncate(50) }}
 {% endblock %}
 
 {% block script %}
     <script type="text/javascript">
         $(function() {
+            function set_current_detail_default_values() {
+                $('#bug-details-edit-status option[value="{{ bug.status }}"]').attr('selected', 'yes');
+                $('#bug-details-edit-target option[value="{{ bug.target|e }}"]').attr('selected', 'yes');
+                $('#bug-details-edit-assignee option[value="{{ bug.assigned|striptags }}"]').attr('selected', 'yes');
+                $('#bug-details-edit-severity option[value="{{ bug.severity }}"]').attr('selected', 'yes');
+            }
+            
             $('#add-comment').click(function(e) {
                 $('#add-comment-link').hide();
                 $('#add-comment-form').fadeIn('fast');
@@ -19,10 +26,23 @@
                 e.preventDefault();
             });
             
-            $('#bug-details-edit-status option[value="{{ bug.status }}"]').attr('selected', 'yes');
-            $('#bug-details-edit-target option[value="{{ bug.target }}"]').attr('selected', 'yes');
-            $('#bug-details-edit-assignee option[value="{{ bug.assigned }}"]').attr('selected', 'yes');
-            $('#bug-details-edit-severity option[value="{{ bug.severity }}"]').attr('selected', 'yes');
+            $('#bug-details-edit-form button[type="reset"]').click(function(e) {
+                $('#bug-details-edit-form').hide();
+                $('#bug-details').fadeIn('fast', function() { set_current_detail_default_values(); } );
+            });
+            
+            $('#edit-bug-summary').click(function(e) {
+                $('#bug-summary').hide();
+                $('#bug-summary-edit-form').fadeIn('fast');
+                e.preventDefault();
+            });
+            
+            $('#bug-summary-edit-form button[type="reset"]').click(function(e) {
+                $('#bug-summary-edit-form').hide();
+                $('#bug-summary').fadeIn('fast', function() { set_current_detail_default_values(); } );
+            });
+            
+            set_current_detail_default_values();
         });
     </script>
 {% endblock %}
@@ -76,7 +96,7 @@
                 <select id="bug-details-edit-target" name="target">
                     <option value="None">Unscheduled</option>
                     {% for target in targets %}
-                        <option value="{{ target }}">{{ target }}</option>
+                        <option value="{{ target|e }}">{{ target }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -85,7 +105,7 @@
                 <select id="bug-details-edit-assignee" name="assignee">
                     <option value="None">Unassigned</option>
                     {% for assignee in assignees %}
-                        <option value="{{ assignee }}">{{ assignee }}</option>
+                        <option value="{{ assignee|striptags }}">{{ assignee|striptags|e }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -96,10 +116,26 @@
         </fieldset>
     </form>
     
-    <h3>Summary</h3>
-    <p>
+    <h3 class="header-with-link">Summary</h3>
+    <span class="header-link">
+        <a href="" id="edit-bug-summary">edit</a>
+    </span>
+    <p id="bug-summary">
         {{ bug.summary }}
     </p>
+    
+    <form id="bug-summary-edit-form" class="vertical" action="/edit" method="post">
+        <fieldset>
+            <input type="hidden" name="id" value="{{ bug.uuid }}" />
+            <div class="field">
+                <input type="text" id="bug-summary-edit-body" name="summary" value="{{ bug.summary }}" />
+            </div>
+            <div class="buttons">
+                <button type="submit">Save Changes</button>
+                <button type="reset">Discard Changes</button>
+            </div>
+        </fieldset>
+    </form>
     
     <h3>Comments</h3>
     {% for comment in bug.comments() %}
@@ -113,7 +149,6 @@
         <fieldset>
             <input type="hidden" name="id" value="{{ bug.uuid }}" />
             <div class="field">
-                <label for="add-comment-body">Comment</label>
                 <textarea cols="60" rows="6" id="add-comment-body" name="body"></textarea>
             </div>
             <div class="buttons">
