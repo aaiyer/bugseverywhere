@@ -23,19 +23,22 @@ class WebInterface:
         self.repository_name = self.bd.root.split('/')[-1]
     
     def get_common_information(self):
-        possible_assignees = list(set([bug.assigned for bug in self.bd if bug.assigned != None]))
+        possible_assignees = list(set([bug.assigned for bug in self.bd if unicode(bug.assigned) != 'None']))
         possible_assignees.sort(key=unicode.lower)
         
-        possible_targets = list(set([bug.target for bug in self.bd if bug.target != None]))
+        possible_targets = list(set([bug.target for bug in self.bd if unicode(bug.target) != 'None']))
         possible_targets.sort(key=unicode.lower)
         
         possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed', 
-                             u'wishlist', u'closed', u'disabled', u'fixed', 
-                             u'wontfix']
+                             u'closed', u'disabled', u'fixed', u'wontfix']
+        
+        possible_severities = [u'minor', u'serious', u'critical', u'fatal', 
+                               u'wishlist']
         
         return {'possible_assignees': possible_assignees,
                 'possible_targets': possible_targets,
                 'possible_statuses': possible_statuses,
+                'possible_severities': possible_severities,
                 'repository_name': self.repository_name,}
     
     def filter_bugs(self, status, assignee, target):
@@ -77,6 +80,7 @@ class WebInterface:
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
                                statuses=common_info['possible_statuses'],
+                               severities=common_info['possible_severities'],
                                repository_name=common_info['repository_name'])
     
     
@@ -94,6 +98,7 @@ class WebInterface:
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
                                statuses=common_info['possible_statuses'],
+                               severities=common_info['possible_severities'],
                                repository_name=common_info['repository_name'])
     
     
@@ -117,7 +122,26 @@ class WebInterface:
         
         raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
     
+    @cherrypy.expose
+    def edit(self, id, status, target, assignee, severity, summary=''):
+        """The view that handles editing bug details."""
+        bug = self.bd.bug_from_uuid(id)
+        shortname = self.bd.bug_shortname(bug)
+        
+        if summary.strip() != '':
+            bug.summary = summary
+        else:
+            bug.status = status if status != 'None' else None
+            bug.target = target if target != 'None' else None
+            bug.assigned = assignee if assignee != 'None' else None
+            bug.severity = severity if severity != 'None' else None
+            
+        bug.save()
+        
+        raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
+    
 
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
 bug_root = '/Users/sjl/Desktop/be/.be'
+# bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
 cherrypy.quickstart(WebInterface(bug_root), '/', config)

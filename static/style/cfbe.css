@@ -23,6 +23,8 @@ span#filters a { margin-left: 1.5em; }
 a:link, a:visited, a:active { color: #d03; text-decoration: none; font-weight: bold; }
 a:hover { color: #60b305; }
 
+.header-with-link { display: inline-block; }
+.header-link { margin-left: 1em; }
 
 table#bug-list { width: 100%; border-collapse: collapse; border: 0.084em solid #ccc; }
 table#bug-list td, table#bug-list th { border: 0em; border-bottom: 0.084em solid #ccc; text-align: left; }
@@ -49,3 +51,7 @@ form#create-form button#create-button { }
 
 form#add-comment-form { display: none; margin-top: 1.5em; }
 p#add-comment-link {margin-top: 1.5em; }
+
+form#bug-details-edit-form { display: none; }
+form#bug-details-edit-form label { font-weight: 700; width: 7.5em; margin-left: 0em; margin-right: 1em; text-align: right; }
+form#bug-details-edit-form .field { padding-left: 0em;}

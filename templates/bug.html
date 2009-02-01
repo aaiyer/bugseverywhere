@@ -4,11 +4,38 @@
     Bug {{ bd.bug_shortname(bug) }} &ndash; {{ bug.summary }}
 {% endblock %}
 
+{% block script %}
+    <script type="text/javascript">
+        $(function() {
+            $('#add-comment').click(function(e) {
+                $('#add-comment-link').hide();
+                $('#add-comment-form').fadeIn('fast');
+                e.preventDefault();
+            });
+            
+            $('#edit-bug-details').click(function(e) {
+                $('#bug-details').hide();
+                $('#bug-details-edit-form').fadeIn('fast');
+                e.preventDefault();
+            });
+            
+            $('#bug-details-edit-status option[value="{{ bug.status }}"]').attr('selected', 'yes');
+            $('#bug-details-edit-target option[value="{{ bug.target }}"]').attr('selected', 'yes');
+            $('#bug-details-edit-assignee option[value="{{ bug.assigned }}"]').attr('selected', 'yes');
+            $('#bug-details-edit-severity option[value="{{ bug.severity }}"]').attr('selected', 'yes');
+        });
+    </script>
+{% endblock %}
+
 {% block content %}
     <p class="creation-info">Created on {{ bug.time|datetimeformat }} by {{ bug.creator|e }}</p>
     
-    <h3>Bug Details</h3>
-    <p>
+    <h3 class="header-with-link">Bug Details</h3>
+    <span class="header-link">
+        <a href="" id="edit-bug-details">edit</a>
+    </span>
+    
+    <p id="bug-details">
         <span class="detail-field-header">Status:</span>
         <span class="detail-field-contents">{{ bug.status }}</span><br />
         
@@ -24,6 +51,50 @@
         <span class="detail-field-header">Permanent ID:</span>
         <span class="detail-field-contents">{{ bug.uuid }}</span><br />
     </p>
+    
+    <form id="bug-details-edit-form" class="horizontal" action="/edit" method="post">
+        <fieldset>
+            <input type="hidden" name="id" value="{{ bug.uuid }}" />
+            <div class="field">
+                <label for="bug-details-edit-status">Status:</label>
+                <select id="bug-details-edit-status" name="status">
+                    {% for status in statuses %}
+                        <option value="{{ status }}">{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="bug-details-edit-severity">Severity:</label>
+                <select id="bug-details-edit-severity" name="severity">
+                    {% for severity in severities %}
+                        <option value="{{ severity }}">{{ severity }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="bug-details-edit-target">Scheduled for:</label>
+                <select id="bug-details-edit-target" name="target">
+                    <option value="None">Unscheduled</option>
+                    {% for target in targets %}
+                        <option value="{{ target }}">{{ target }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="bug-details-edit-assignee">Assigned to:</label>
+                <select id="bug-details-edit-assignee" name="assignee">
+                    <option value="None">Unassigned</option>
+                    {% for assignee in assignees %}
+                        <option value="{{ assignee }}">{{ assignee }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="buttons">
+                <button type="submit">Save Changes</button>
+                <button type="reset">Discard Changes</button>
+            </div>
+        </fieldset>
+    </form>
     
     <h3>Summary</h3>
     <p>
