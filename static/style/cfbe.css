@@ -1,7 +1,10 @@
 /* @override http://localhost:8080/static/style/cfbe.css */
 
-body { background-image: url(/static/images/gradient-background.png); background-color: #bbbbbb; background-repeat: repeat-x; 
-       /*background-image: url(/static/images/stripe-rhythm.png); background-repeat: repeat;*/ }
+body { background-image: url(/static/images/gradient-background.png); background-color: #bbbbbb; background-repeat: repeat-x; }
+
+body.rhythm { background-image: url(/static/images/stripe-rhythm.png); background-repeat: repeat; }
+div#content-pane.rhythm { background-color: transparent; }
+div#external-pane-content.rhythm { background-color: transparent; }
 
 div#header    { background-image: url(/static/images/gradient-header.png); background-repeat: repeat-x; 
                 background-color: #770005; color: #fff; margin-top: 1.5em; }
@@ -45,9 +48,7 @@ p.bug-comment-footer { margin: 0em 0em; color: #888; }
 h4.bug-comment-header { margin: 1.5em 0em 0em; }
 
 form#create-form { height: 3em; display: none; }
-form#create-form div.field { }
 form#create-form input#create-summary { width: 30em; font-weight: 700; }
-form#create-form button#create-button { }
 
 form#add-comment-form { display: none; margin-top: 1.5em; }
 p#add-comment-link {margin-top: 1.5em; }
@@ -57,4 +58,4 @@ form#bug-details-edit-form label { font-weight: 700; width: 7.5em; margin-left: 
 form#bug-details-edit-form .field { padding-left: 0em; }
 
 form#bug-summary-edit-form { display: none; }
-input#bug-summary-edit-body { width: 100%; }
+input#bug-summary-edit-body { width: 95%; }

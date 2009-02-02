@@ -10,7 +10,7 @@
             function set_current_detail_default_values() {
                 $('#bug-details-edit-status option[value="{{ bug.status }}"]').attr('selected', 'yes');
                 $('#bug-details-edit-target option[value="{{ bug.target|e }}"]').attr('selected', 'yes');
-                $('#bug-details-edit-assignee option[value="{{ bug.assigned|striptags }}"]').attr('selected', 'yes');
+                $('#bug-details-edit-assignee option[value^="{{ bug.assigned|striptags }}"]').attr('selected', 'yes');
                 $('#bug-details-edit-severity option[value="{{ bug.severity }}"]').attr('selected', 'yes');
             }
             
@@ -105,7 +105,7 @@
                 <select id="bug-details-edit-assignee" name="assignee">
                     <option value="None">Unassigned</option>
                     {% for assignee in assignees %}
-                        <option value="{{ assignee|striptags }}">{{ assignee|striptags|e }}</option>
+                        <option value="{{ assignee|e }}">{{ assignee|e }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -128,7 +128,7 @@
         <fieldset>
             <input type="hidden" name="id" value="{{ bug.uuid }}" />
             <div class="field">
-                <input type="text" id="bug-summary-edit-body" name="summary" value="{{ bug.summary }}" />
+                <input type="text" class="text" id="bug-summary-edit-body" name="summary" value="{{ bug.summary }}" />
             </div>
             <div class="buttons">
                 <button type="submit">Save Changes</button>

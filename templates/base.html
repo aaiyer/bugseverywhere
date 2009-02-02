@@ -19,6 +19,13 @@
                 $('#external-pane').hide();
                 $('#external-pane-content').corners('bottom 8px');
                 
+                $('#show-rhythm').click(function(e) {
+                    $('body').addClass('rhythm');
+                    $('#content-pane').addClass('rhythm');
+                    $('#external-pane-content').addClass('rhythm');
+                    e.preventDefault();
+                });
+                
                 $('#filter-assignee').click(function(e) {
                     $('#external-pane-content').html($('#assignees').html());
                     $('#external-pane').fadeIn('fast');
@@ -82,7 +89,8 @@
                     <a href="http://jinja.pocoo.org/2/">Jinja2</a>,
                     and <a href="http://jquery.com">jQuery</a>.
                     <br/>
-                    He asked <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvarks</a> for help.
+                    He asked <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvarks</a> for help
+                    to make it all <a href="" id="show-rhythm">line up</a>.
                 </p>
             </div>
         </div>
