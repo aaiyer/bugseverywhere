@@ -4,10 +4,13 @@ import cherrypy
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
+from optparse import OptionParser
 
 
 def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
+    """Takes a timestamp and revormats it into a human-readable string."""
     return datetime.fromtimestamp(value).strftime(format)
+
 
 template_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/templates'
 env = Environment(loader=FileSystemLoader(template_root))
@@ -23,6 +26,7 @@ class WebInterface:
         self.repository_name = self.bd.root.split('/')[-1]
     
     def get_common_information(self):
+        """Returns a dict of common information that most pages will need."""
         possible_assignees = list(set([bug.assigned for bug in self.bd if unicode(bug.assigned) != 'None']))
         possible_assignees.sort(key=unicode.lower)
         
@@ -58,6 +62,10 @@ class WebInterface:
     
     @cherrypy.expose
     def index(self, status='open', assignee='', target=''):
+        """The main bug page.
+        Bugs can be filtered by assignee or target.
+        The bug database will be reloaded on each visit."""
+        
         self.bd.load_all_bugs()
         
         if status == 'open':
@@ -122,6 +130,7 @@ class WebInterface:
         
         raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
     
+    
     @cherrypy.expose
     def edit(self, id, status=None, target=None, assignee=None, severity=None, summary=None):
         """The view that handles editing bug details."""
@@ -141,7 +150,26 @@ class WebInterface:
         raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
     
 
+
+def build_parser():
+    """Builds and returns the command line option parser."""
+    
+    usage = 'usage: %prog bug_directory'
+    parser = OptionParser(usage)
+    return parser
+
+def parse_arguments():
+    """Parse the command line arguments."""
+    
+    parser = build_parser()
+    (options, args) = parser.parse_args()
+    
+    if len(args) != 1:
+        parser.error('You need to specify a bug directory.')
+    
+    return { 'bug_root': args[0], }
+
+
 config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
-# bug_root = '/Users/sjl/Desktop/be/.be'
-bug_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/.be'
-cherrypy.quickstart(WebInterface(bug_root), '/', config)
+options = parse_arguments()
+cherrypy.quickstart(WebInterface(options['bug_root']), '/', config)
