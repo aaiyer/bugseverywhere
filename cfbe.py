@@ -2,7 +2,6 @@
 
 import cherrypy
 from cherryflavoredbugseverywhere import web
-from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 from optparse import OptionParser

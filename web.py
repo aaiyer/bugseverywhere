@@ -1,3 +1,6 @@
+import cherrypy
+from libbe import bugdir
+
 class WebInterface:
     """The web interface to CFBE."""
     
