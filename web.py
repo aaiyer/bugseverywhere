@@ -16,7 +16,7 @@ class WebInterface:
         self.bd = bugdir.BugDir(root=self.bug_root)
         self.repository_name = self.bd.root.split('/')[-1]
         self.env = Environment(loader=FileSystemLoader(template_root))
-        env.filters['datetimeformat'] = datetimeformat
+        self.env.filters['datetimeformat'] = datetimeformat
     
     def get_common_information(self):
         """Returns a dict of common information that most pages will need."""
