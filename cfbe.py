@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import cherrypy
-import cherryflavoredbugseverywhere
+from cherryflavoredbugseverywhere import web
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 from optparse import OptionParser
 from os import path
 
-module_dir = path.dirname(path.abspath(cherryflavoredbugseverywhere.__file__))
+module_dir = path.dirname(path.abspath(web.__file__))
 
 def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
     """Takes a timestamp and revormats it into a human-readable string."""
@@ -19,7 +19,7 @@ template_root = path.join(module_dir, 'templates')
 env = Environment(loader=FileSystemLoader(template_root))
 env.filters['datetimeformat'] = datetimeformat
 
-WebInterface = cherryflavoredbugseverywhere.web.WebInterface(path.abspath(options['bug_root']))
+WebInterface = web.WebInterface(path.abspath(options['bug_root']))
 
 def build_parser():
     """Builds and returns the command line option parser."""
