@@ -175,5 +175,4 @@ def parse_arguments():
 
 config = path.join(module_directory, 'cfbe.config')
 options = parse_arguments()
-print path.abspath(options['bug_root'])
 cherrypy.quickstart(WebInterface(path.abspath(options['bug_root'])), '/', config)
