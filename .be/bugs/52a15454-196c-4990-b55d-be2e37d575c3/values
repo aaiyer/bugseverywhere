@@ -22,28 +22,28 @@ severity=minor
 
 
 
-status=closed
+status=open
 
 
 
 
 
 
-summary=Package everything into something easy to download and use.
+summary=Fix the overflow problem in the comments.
 
 
 
 
 
 
-target=alpha
+target=beta
 
 
 
 
 
 
-time=Fri, 30 Jan 2009 03:19:19 +0000
+time=Sat, 07 Feb 2009 21:32:51 +0000
 
 
 
