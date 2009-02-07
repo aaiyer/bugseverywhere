@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 import cherrypy
+import cherryflavoredbugseverywhere
 from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 from optparse import OptionParser
 from os import path
 
-module_directory = path.dirname(path.abspath(__file__))
+module_directory = path.dirname(path.abspath(cherryflavoredbugseverywhere.__file__))
 
 def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
     """Takes a timestamp and revormats it into a human-readable string."""
