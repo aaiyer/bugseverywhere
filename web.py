@@ -1,14 +1,22 @@
 import cherrypy
 from libbe import bugdir
+from jinja2 import Environment, FileSystemLoader
+from datetime import datetime
+
+def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
+    """Takes a timestamp and revormats it into a human-readable string."""
+    return datetime.fromtimestamp(value).strftime(format)
 
 class WebInterface:
     """The web interface to CFBE."""
     
-    def __init__(self, bug_root):
+    def __init__(self, bug_root, template_root):
         """Initialize the bug repository for this web interface."""
         self.bug_root = bug_root
         self.bd = bugdir.BugDir(root=self.bug_root)
         self.repository_name = self.bd.root.split('/')[-1]
+        self.env = Environment(loader=FileSystemLoader(template_root))
+        env.filters['datetimeformat'] = datetimeformat
     
     def get_common_information(self):
         """Returns a dict of common information that most pages will need."""
@@ -65,7 +73,7 @@ class WebInterface:
         if target != '':
             label += ' Currently Unschdeuled' if target == 'None' else ' Scheduled for %s' % (target,)
         
-        template = env.get_template('list.html')
+        template = self.env.get_template('list.html')
         bugs = self.filter_bugs(status, assignee, target)
         
         common_info = self.get_common_information()
@@ -85,7 +93,7 @@ class WebInterface:
         
         bug = self.bd.bug_from_shortname(id)
         
-        template = env.get_template('bug.html')
+        template = self.env.get_template('bug.html')
         common_info = self.get_common_information()
         return template.render(bug=bug, bd=self.bd, 
                                assignees=common_info['possible_assignees'],
