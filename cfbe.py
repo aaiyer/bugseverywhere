@@ -5,14 +5,16 @@ from libbe import bugdir
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 from optparse import OptionParser
+from os import path
 
+module_directory = path.dirname(path.abspath(__file__))
 
 def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
     """Takes a timestamp and revormats it into a human-readable string."""
     return datetime.fromtimestamp(value).strftime(format)
 
 
-template_root = '/Users/sjl/Documents/cherryflavoredbugseverywhere/templates'
+template_root = path.join(module_directory, 'templates')
 env = Environment(loader=FileSystemLoader(template_root))
 env.filters['datetimeformat'] = datetimeformat
 
@@ -170,6 +172,7 @@ def parse_arguments():
     return { 'bug_root': args[0], }
 
 
-config = '/Users/sjl/Documents/cherryflavoredbugseverywhere/cfbe.config'
+config = path.join(module_directory, 'cfbe.config')
 options = parse_arguments()
-cherrypy.quickstart(WebInterface(options['bug_root']), '/', config)
+#cherrypy.quickstart(WebInterface(options['bug_root']), '/', config)
+print module_directory
