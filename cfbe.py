@@ -18,8 +18,6 @@ template_root = path.join(module_dir, 'templates')
 env = Environment(loader=FileSystemLoader(template_root))
 env.filters['datetimeformat'] = datetimeformat
 
-WebInterface = web.WebInterface(path.abspath(options['bug_root']))
-
 def build_parser():
     """Builds and returns the command line option parser."""
     
@@ -41,4 +39,6 @@ def parse_arguments():
 
 config = path.join(module_dir, 'cfbe.config')
 options = parse_arguments()
+
+WebInterface = web.WebInterface(path.abspath(options['bug_root']))
 cherrypy.quickstart(WebInterface, '/', config)
