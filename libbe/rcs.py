@@ -553,6 +553,8 @@ def setup_rcs_test_fixtures(testcase):
     testcase.dir = Dir()
     testcase.dirname = testcase.dir.path
 
+    testcase.rcs_supports_uninitialized_user_id = (
+        testcase.rcs.name not in ["git"])
     testcase.rcs_supports_set_user_id = (
         testcase.rcs.name not in ["None", "hg"])
 
@@ -615,6 +617,9 @@ class RCS_get_user_id_TestCase(RCSTestCase):
 
     def test_gets_existing_user_id(self):
         """ Should get the existing user ID. """
+        if not self.rcs_supports_uninitialized_user_id:
+            return
+
         user_id = self.rcs.get_user_id()
         self.failUnless(
             user_id is not None,
@@ -627,7 +632,10 @@ class RCS_set_user_id_TestCase(RCSTestCase):
     def setUp(self):
         super(RCS_set_user_id_TestCase, self).setUp()
 
-        self.prev_user_id = self.rcs.get_user_id()
+        if self.rcs_supports_uninitialized_user_id:
+            self.prev_user_id = self.rcs.get_user_id()
+        else:
+            self.prev_user_id = "Uninitialized identity <bogus@example.org>"
 
         if self.rcs_supports_set_user_id:
             self.test_new_user_id = "John Doe <jdoe@example.com>"
