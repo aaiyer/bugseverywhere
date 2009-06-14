@@ -546,8 +546,8 @@ class RCS(object):
         f.close
         return (summary, body)
         
-
-class RCStestCase(unittest.TestCase):
+
+class RCSTestCase(unittest.TestCase):
     Class = RCS
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
@@ -635,5 +635,23 @@ class RCStestCase(unittest.TestCase):
         self.versionTest('a/b/text')
         self.rcs.recursive_remove(self.fullPath('a'))
 
-unitsuite = unittest.TestLoader().loadTestsFromTestCase(RCStestCase)
+
+def make_rcs_testcase_subclasses(rcs_class, namespace):
+    """ Make RCSTestCase subclasses for rcs_class in the namespace. """
+    rcs_testcase_classes = [
+        c for c in (
+            ob for ob in globals().values() if isinstance(ob, type))
+        if issubclass(c, RCSTestCase)]
+
+    for base_class in rcs_testcase_classes:
+        testcase_class_name = rcs_class.__name__ + base_class.__name__
+        testcase_class_bases = (base_class,)
+        testcase_class_dict = dict(base_class.__dict__)
+        testcase_class_dict['Class'] = rcs_class
+        testcase_class = type(
+            testcase_class_name, testcase_class_bases, testcase_class_dict)
+        setattr(namespace, testcase_class_name, testcase_class)
+
+
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

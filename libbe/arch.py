@@ -14,6 +14,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+import sys
 import os
 import shutil
 import time
@@ -23,7 +25,8 @@ import doctest
 
 import config
 from beuuid import uuid_gen
-from rcs import RCS, RCStestCase, CommandError
+import rcs
+from rcs import RCS
 
 client = config.get_val("arch_client")
 if client is None:
@@ -270,9 +273,10 @@ class CantAddFile(Exception):
     def __init__(self, file):
         self.file = file
         Exception.__init__(self, "Can't automatically add file %s" % file)
-    
-class ArchTestCase(RCStestCase):
-    Class = Arch
 
-unitsuite = unittest.TestLoader().loadTestsFromTestCase(ArchTestCase)
+
+
+rcs.make_rcs_testcase_subclasses(Arch, sys.modules[__name__])
+
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
