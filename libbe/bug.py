@@ -235,6 +235,42 @@ class Bug(settings_object.SavedSettingsObject):
         else:
             return str(value)
 
+    def xml(self, show_comments=False):
+        if self.bugdir == None:
+            shortname = self.uuid
+        else:
+            shortname = self.bugdir.bug_shortname(self)
+
+        if self.time == None:
+            timestring = ""
+        else:
+            htime = utility.handy_time(self.time)
+            ftime = utility.time_to_str(self.time)
+            timestring = "%s (%s)" % (htime, ftime)
+
+        info = [("uuid", self.uuid),
+                ("short-name", shortname),
+                ("severity", self.severity),
+                ("status", self.status),
+                ("assigned", self.assigned),
+                ("target", self.target),
+                ("reporter", self.reporter),
+                ("creator", self.creator),
+                ("created", timestring),
+                ("summary", self.summary)]
+        ret = '<bug>\n'
+        for (k,v) in info:
+            if v is not None:
+                ret += '  <%s>%s</%s>\n' % (k,v,k)
+
+        if show_comments == True:
+            comout = self.comment_root.xml_thread(auto_name_map=True,
+                                                  bug_shortname=shortname)
+            ret += comout
+
+        ret += '</bug>'
+        return ret
+
     def string(self, shortlist=False, show_comments=False):
         if self.bugdir == None:
             shortname = self.uuid

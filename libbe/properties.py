@@ -28,6 +28,7 @@ for more information on decorators.
 
 import unittest
 
+
 class ValueCheckError (ValueError):
     def __init__(self, name, value, allowed):
         msg = "%s not in %s for %s" % (value, allowed, name)
@@ -65,10 +66,11 @@ def doc_property(doc=None):
         return funcs
     return decorator
 
-def local_property(name):
+def local_property(name, null=None):
     """
     Define get/set access to per-parent-instance local storage.  Uses
     ._<name>_value to store the value for a particular owner instance.
+    If the ._<name>_value attribute does not exist, returns null.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -78,7 +80,7 @@ def local_property(name):
         def _fget(self):
             if fget is not None:
                 fget(self)
-            value = getattr(self, "_%s_value" % name, None)
+            value = getattr(self, "_%s_value" % name, null)
             return value
         def _fset(self, value):
             setattr(self, "_%s_value" % name, value)
@@ -90,7 +92,7 @@ def local_property(name):
         return funcs
     return decorator
 
-def settings_property(name):
+def settings_property(name, null=None):
     """
     Similar to local_property, except where local_property stores the
     value in instance._<name>_value, settings_property stores the
@@ -104,7 +106,7 @@ def settings_property(name):
         def _fget(self):
             if fget is not None:
                 fget(self)
-            value = self.settings.get(name, None)
+            value = self.settings.get(name, null)
             return value
         def _fset(self, value):
             self.settings[name] = value

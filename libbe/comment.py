@@ -216,6 +216,38 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         else:
             return str(value)
 
+    def xml(self, indent=0, shortname=None):
+        """
+        >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
+        >>> comm.uuid = "0123"
+        >>> comm.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> print comm.xml(indent=2, shortname="com-1")
+          <comment>
+            <name>com-1</name>
+            <uuid>0123</uuid>
+            <from></from>
+            <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
+            <body>Some
+        insightful
+        remarks</body>
+          </comment>
+        """
+        if shortname == None:
+            shortname = self.uuid
+        lines = ["<comment>",
+                 "  <name>%s</name>" % (shortname,),
+                 "  <uuid>%s</uuid>" % self.uuid,]
+        if self.in_reply_to != None:
+            lines.append("  <in_reply_to>%s</in_reply_to>" % self.in_reply_to)
+        lines.extend([
+                "  <from>%s</from>" % self._setting_attr_string("From"),
+                "  <date>%s</date>" % self.time_string,
+                "  <body>%s</body>" % (self.body or "").rstrip('\n'),
+                "</comment>\n"])
+        istring = ' '*indent
+        sep = '\n' + istring
+        return istring + sep.join(lines).rstrip('\n')
+
     def string(self, indent=0, shortname=None):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
@@ -313,11 +345,17 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         #raise Exception, "new reply added (%s),\n%s\n%s\n\t--%s--" % (body, self, reply, reply.in_reply_to)
         return reply
 
-    def string_thread(self, name_map={}, indent=0, flatten=True,
+    def string_thread(self, string_method_name="string", name_map={},
+                      indent=0, flatten=True,
                       auto_name_map=False, bug_shortname=None):
         """
-        Return a sting displaying a thread of comments.
+        Return a string displaying a thread of comments.
         bug_shortname is only used if auto_name_map == True.
+        
+        string_method_name (defaults to "string") is the name of the
+        Comment method used to generate the output string for each
+        Comment in the thread.  The method must take the arguments
+        indent and shortname.
         
         SIDE-EFFECT: if auto_name_map==True, calls comment_shortnames()
         which will sort the tree by comment.time.  Avoid by calling
@@ -401,8 +439,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 sname = name_map[comment.uuid]
             else:
                 sname = None
-            stringlist.append(comment.string(indent=ind, shortname=sname))
+            string_fn = getattr(comment, string_method_name)
+            stringlist.append(string_fn(indent=ind, shortname=sname))
         return '\n'.join(stringlist)
+
+    def xml_thread(self, name_map={}, indent=0,
+                   auto_name_map=False, bug_shortname=None):
+        return self.string_thread(string_method_name="xml", name_map=name_map,
+                                  indent=indent, auto_name_map=auto_name_map,
+                                  bug_shortname=bug_shortname)
 
     def comment_shortnames(self, bug_shortname=None):
         """

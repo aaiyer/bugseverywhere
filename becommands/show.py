@@ -35,6 +35,19 @@ def execute(args, test=False):
          Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
     Bug A
     <BLANKLINE>
+    >>> execute (["--xml", "a"], test=True)
+    <bug>
+      <uuid>a</uuid>
+      <short-name>a</short-name>
+      <severity>minor</severity>
+      <status>open</status>
+      <assigned><class 'libbe.settings_object.EMPTY'></assigned>
+      <target><class 'libbe.settings_object.EMPTY'></target>
+      <reporter><class 'libbe.settings_object.EMPTY'></reporter>
+      <creator>John Doe <jdoe@example.com></creator>
+      <created>Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)</created>
+      <summary>Bug A</summary>
+    </bug>
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -45,12 +58,17 @@ def execute(args, test=False):
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     for bugid in args:
         bug = bd.bug_from_shortname(bugid)
-        print bug.string(show_comments=True)
-        if bugid != args[-1]:
-            print "" # add a blank line between bugs
+        if options.dumpXML:
+            print bug.xml(show_comments=True)
+        else:
+            print bug.string(show_comments=True)
+            if bugid != args[-1]:
+                print "" # add a blank line between bugs
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be show BUG-ID [BUG-ID ...]")
+    parser = cmdutil.CmdOptionParser("be show [options] BUG-ID [BUG-ID ...]")
+    parser.add_option("-x", "--xml", action="store_true",
+                      dest='dumpXML', help="Dump as XML")
     return parser
 
 longhelp="""

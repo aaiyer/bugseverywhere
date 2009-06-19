@@ -29,20 +29,43 @@ from properties import Property, doc_property, local_property, \
     cached_property, primed_property, change_hook_property, \
     settings_property
 
-# Define an invalid value for our properties, distinct from None,
-# which shows that a property has been initialized but has no value.
-EMPTY = -1
+
+class _Token (object):
+    """
+    `Control' value class for properties.  We want values that only
+    mean something to the settings_object module.
+    """
+    pass
+
+class UNPRIMED (_Token):
+    "Property has not been primed."
+    pass
+
+class EMPTY (_Token):
+    """
+    Property has been primed but has no user-set value, so use
+    default/generator value.
+    """
+    pass
 
 
 def prop_save_settings(self, old, new):
+    """
+    The default action undertaken when a property changes.
+    """
     if self.sync_with_disk==True:
         self.save_settings()
+
 def prop_load_settings(self):
+    """
+    The default action undertaken when an UNPRIMED property is accessed.
+    """
     if self.sync_with_disk==True and self._settings_loaded==False:
         self.load_settings()
     else:
         self._setup_saved_settings(flag_as_loaded=False)
 
+# Some name-mangling routines for pretty printing setting names
 def setting_name_to_attr_name(self, name):
     """
     Convert keys to the .settings dict into their associated
@@ -60,6 +83,7 @@ def attr_name_to_setting_name(self, name):
     """
     return name.capitalize().replace('_', '-')
 
+
 def versioned_property(name, doc,
                        default=None, generator=None,
                        change_hook=prop_save_settings,
@@ -75,7 +99,9 @@ def versioned_property(name, doc,
     working default will keep the generator from functioning.  Use the
     default if you know what you want the default value to be at
     'coding time'.  Use the generator if you can write a function to
-    determine a valid default at run time.
+    determine a valid default at run time.  If both default and
+    generator are None, then the property will be a defaulting
+    property which defaults to None.
         
     allowed and check_fn have a similar relationship, although you can
     use both of these if you want.  allowed compares the proposed
@@ -112,8 +138,8 @@ def versioned_property(name, doc,
             fulldoc += "\n\nThe allowed values for this property are: %s." \
                        % (', '.join(allowed))
         hooked      = change_hook_property(hook=change_hook)
-        primed      = primed_property(primer=primer)
-        settings    = settings_property(name=name)
+        primed      = primed_property(primer=primer, initVal=UNPRIMED)
+        settings    = settings_property(name=name, null=UNPRIMED)
         docp        = doc_property(doc=fulldoc)
         deco = hooked(primed(settings(docp(funcs))))
         if default != None:
@@ -154,11 +180,14 @@ class SavedSettingsObject(object):
         self._setup_saved_settings()
         
     def _setup_saved_settings(self, flag_as_loaded=True):
-        """To be run after setting self.settings up from disk."""
+        """
+        To be run after setting self.settings up from disk.  Marks all
+        settings as primed.
+        """
         for property in self.settings_properties:
             if property not in self.settings:
                 self.settings[property] = EMPTY
-            elif self.settings[property] == None:
+            elif self.settings[property] == UNPRIMED:
                 self.settings[property] = EMPTY
         if flag_as_loaded == True:
             self._settings_loaded = True
@@ -189,6 +218,63 @@ class SavedSettingsObject(object):
 
 
 class SavedSettingsObjectTests(unittest.TestCase):
+    def testSimpleProperty(self):
+        class Test(SavedSettingsObject):
+            settings_properties = []
+            required_saved_properties = []
+            @versioned_property(name="Content-type",
+                                doc="A test property",
+                                settings_properties=settings_properties,
+                                required_saved_properties=required_saved_properties)
+            def content_type(): return {}
+            def __init__(self):
+                SavedSettingsObject.__init__(self)
+        t = Test()
+        # access missing setting
+        self.failUnless(t._settings_loaded == False, t._settings_loaded)
+        self.failUnless(len(t.settings) == 0, len(t.settings))
+        self.failUnless(t.content_type == EMPTY, t.content_type)
+        # accessing t.content_type triggers the priming, which runs
+        # t._setup_saved_settings, which fills out t.settings with
+        # EMPTY data.  t._settings_loaded is still false though, since
+        # the default priming does not do any of the `official' loading
+        # that occurs in t.load_settings.
+        self.failUnless(len(t.settings) == 1, len(t.settings))
+        self.failUnless(t.settings["Content-type"] == EMPTY,
+                        t.settings["Content-type"])
+        self.failUnless(t._settings_loaded == False, t._settings_loaded)
+        # load settings creates an EMPTY value in the settings array
+        t.load_settings()
+        self.failUnless(t._settings_loaded == True, t._settings_loaded)
+        self.failUnless(t.settings["Content-type"] == EMPTY,
+                        t.settings["Content-type"])
+        self.failUnless(t.content_type == EMPTY, t.content_type)
+        self.failUnless(len(t.settings) == 1, len(t.settings))
+        self.failUnless(t.settings["Content-type"] == EMPTY,
+                        t.settings["Content-type"])
+        # now we set a value
+        t.content_type = None
+        self.failUnless(t.settings["Content-type"] == None,
+                        t.settings["Content-type"])
+        self.failUnless(t.content_type == None, t.content_type)
+        self.failUnless(t.settings["Content-type"] == None,
+                        t.settings["Content-type"])
+        # now we set another value
+        t.content_type = "text/plain"
+        self.failUnless(t.content_type == "text/plain", t.content_type)
+        self.failUnless(t.settings["Content-type"] == "text/plain",
+                        t.settings["Content-type"])
+        self.failUnless(t._get_saved_settings()=={"Content-type":"text/plain"},
+                        t._get_saved_settings())
+        # now we clear to the post-primed value
+        t.content_type = EMPTY
+        self.failUnless(t._settings_loaded == True, t._settings_loaded)
+        self.failUnless(t.settings["Content-type"] == EMPTY,
+                        t.settings["Content-type"])
+        self.failUnless(t.content_type == EMPTY, t.content_type)
+        self.failUnless(len(t.settings) == 1, len(t.settings))
+        self.failUnless(t.settings["Content-type"] == EMPTY,
+                        t.settings["Content-type"])
     def testDefaultingProperty(self):
         class Test(SavedSettingsObject):
             settings_properties = []
