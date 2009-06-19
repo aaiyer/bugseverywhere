@@ -85,7 +85,7 @@ class Git(RCS):
         status,output,error = self._u_invoke_client('commit', '-a',
                                                     '-F', commitfile)
         revision = None
-        revline = re.compile("Created (.*)commit (.*):(.*)")
+        revline = re.compile("(.*) (.*)[:\]] (.*)")
         match = revline.search(output)
         assert match != None, output+error
         assert len(match.groups()) == 3
