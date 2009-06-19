@@ -61,7 +61,7 @@ for example implementations.  The basic idea is to raise
   cmdutil.GetCompletions(['list','of','possible','completions'])
 once you've determined what that list should be.
 
-However, command completion is not critcal.  The first priority is to
+However, command completion is not critical.  The first priority is to
 implement the target functionality, with fancy shell sugar coming
 later.  In recognition of this, cmdutil provides the default_complete
 function which ensures that if '--complete' is any one of the
