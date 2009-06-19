@@ -1,0 +1,4 @@
+I've added comments-from-stdin, so we can add tracebacks, e.g. with
+
+  $ be list --invalid-option | be comment <bug-id> -
+

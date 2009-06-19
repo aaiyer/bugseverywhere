@@ -17,6 +17,7 @@
 """Add a comment to a bug"""
 from libbe import cmdutil, bugdir, settings_object, editor
 import os
+import sys
 __desc__ = __doc__
 
 def execute(args, test=False):
@@ -83,7 +84,7 @@ def execute(args, test=False):
     else:
         parent = bug.comment_root
     
-    if len(args) == 1:
+    if len(args) == 1: # try to launch an editor for comment-body entry
         try:
             body = editor.editor_string("Please enter your comment above")
         except editor.CantFindEditor, e:
@@ -91,7 +92,11 @@ def execute(args, test=False):
         if body is None:
             raise cmdutil.UserError("No comment entered.")
         body = body.decode('utf-8')
-    else:
+    elif args[1] == '-': # read body from stdin
+        body = sys.stdin.read()
+        if not body.endswith('\n'):
+            body+='\n'
+    else: # body = arg[1]
         body = args[1]
         if not body.endswith('\n'):
             body+='\n'
@@ -100,14 +105,16 @@ def execute(args, test=False):
     bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be comment ID COMMENT")
+    parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
     return parser
 
 longhelp="""
-To add a comment to a bug, use the bug ID as the argument.  To reply to another
-comment, specify the comment name (as shown in "be show" output).
-
-$EDITOR is used to launch an editor.  If unspecified, no comment will be
+To add a comment to a bug, use the bug ID as the argument.  To reply
+to another comment, specify the comment name (as shown in "be show"
+output).  COMMENT, if specified, should be either the text of your
+comment or "-", in which case the text will be read from stdin.  If
+you do not specify a COMMENT, $EDITOR is used to launch an editor.  If
+COMMENT is unspecified and EDITOR is not set, no comment will be
 created.
 """
 
