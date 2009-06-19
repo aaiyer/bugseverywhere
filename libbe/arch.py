@@ -29,7 +29,6 @@ from rcs import RCS, RCStestCase, CommandError
 client = config.get_val("arch_client")
 if client is None:
     client = "tla"
-    config.set_val("arch_client", client)
 
 def new():
     return Arch()
@@ -50,6 +49,7 @@ class Arch(RCS):
     def _rcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
         if self._u_search_parent_directories(path, "{arch}") != None :
+            config.set_val("arch_client", client)
             return True
         return False
     def _rcs_init(self, path):
