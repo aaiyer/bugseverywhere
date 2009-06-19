@@ -23,8 +23,8 @@ import doctest
 
 def get_encoding():
     """
-    Guess a useful input/output/filesystem encoding...  Maybe we nees
-    seperate encodings for input/output and filessytem?  Hmm...
+    Guess a useful input/output/filesystem encoding...  Maybe we need
+    seperate encodings for input/output and filesystem?  Hmm...
     """
     encoding = locale.getpreferredencoding() or sys.getdefaultencoding()
     if sys.platform != 'win32' or sys.version_info[:2] > (2, 3):
