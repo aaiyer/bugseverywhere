@@ -26,9 +26,9 @@ import config
 from beuuid import uuid_gen
 from rcs import RCS, RCStestCase, CommandError
 
-client = config.get_val("arch_client")
-if client is None:
-    client = "tla"
+DEFAULT_CLIENT = "tla"
+
+client = config.get_val("arch_client", default=DEFAULT_CLIENT)
 
 def new():
     return Arch()

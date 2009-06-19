@@ -48,7 +48,7 @@ def set_val(name, value, section="DEFAULT", encoding=None):
     config.write(f)
     f.close()
 
-def get_val(name, section="DEFAULT", encoding=None):
+def get_val(name, section="DEFAULT", default=None, encoding=None):
     """
     Get a value from the per-user config file
 
@@ -64,15 +64,18 @@ def get_val(name, section="DEFAULT", encoding=None):
     >>> get_val("junk") is None
     True
     """
-    if encoding == None:
-        encoding = default_encoding
-    config = ConfigParser.ConfigParser()
-    f = codecs.open(path(), "r", encoding)
-    config.readfp(f, path())
-    f.close()
-    try:
-        return config.get(section, name)
-    except ConfigParser.NoOptionError:
-        return None
+    if os.path.exists(path()):
+        if encoding == None:
+            encoding = default_encoding
+        config = ConfigParser.ConfigParser()
+        f = codecs.open(path(), "r", encoding)
+        config.readfp(f, path())
+        f.close()
+        try:
+            return config.get(section, name)
+        except ConfigParser.NoOptionError:
+            return default
+    else:
+        return default
 
 suite = doctest.DocTestSuite()
