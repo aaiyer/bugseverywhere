@@ -548,9 +548,7 @@ class RCS(object):
         
 
 def setup_rcs_test_fixtures(testcase):
-    """
-    Set up test fixtures for RCS test case.
-    """
+    """Set up test fixtures for RCS test case."""
     testcase.rcs = testcase.Class()
     testcase.dir = Dir()
     testcase.dirname = testcase.dir.path
@@ -574,9 +572,7 @@ def setup_rcs_test_fixtures(testcase):
 
 
 class RCSTestCase(unittest.TestCase):
-    """
-    Test cases for base RCS class.
-    """
+    """Test cases for base RCS class."""
 
     Class = RCS
 
@@ -597,23 +593,17 @@ class RCSTestCase(unittest.TestCase):
 
 
 class RCS_init_TestCase(RCSTestCase):
-    """
-    Test cases for RCS.init method.
-    """
+    """Test cases for RCS.init method."""
 
     def test_detect_should_succeed_after_init(self):
-        """
-        Should detect RCS in directory after initialization.
-        """
+        """Should detect RCS in directory after initialization."""
         self.failUnless(
             self.rcs.detect(self.dirname),
             "Did not detect %(name)s RCS after initialising"
                 % vars(self.Class))
 
     def test_rcs_rootdir_in_specified_root_path(self):
-        """
-        RCS root directory should be in specified root path.
-        """
+        """RCS root directory should be in specified root path."""
         rp = os.path.realpath(self.rcs.rootdir)
         dp = os.path.realpath(self.dirname)
         rcs_name = self.Class.name
@@ -623,14 +613,10 @@ class RCS_init_TestCase(RCSTestCase):
 
 
 class RCS_get_user_id_TestCase(RCSTestCase):
-    """
-    Test cases for RCS.get_user_id method.
-    """
+    """Test cases for RCS.get_user_id method."""
 
     def test_gets_existing_user_id(self):
-        """
-        Should get the existing user ID.
-        """
+        """Should get the existing user ID."""
         if not self.rcs_supports_uninitialized_user_id:
             return
 
@@ -641,9 +627,7 @@ class RCS_get_user_id_TestCase(RCSTestCase):
 
 
 class RCS_set_user_id_TestCase(RCSTestCase):
-    """
-    Test cases for RCS.set_user_id method.
-    """
+    """Test cases for RCS.set_user_id method."""
 
     def setUp(self):
         super(RCS_set_user_id_TestCase, self).setUp()
@@ -663,9 +647,7 @@ class RCS_set_user_id_TestCase(RCSTestCase):
         super(RCS_set_user_id_TestCase, self).tearDown()
 
     def test_raises_error_in_unsupported_vcs(self):
-        """
-        Should raise an error in a VCS that doesn't support it.
-        """
+        """Should raise an error in a VCS that doesn't support it."""
         if self.rcs_supports_set_user_id:
             return
         self.assertRaises(
@@ -673,9 +655,7 @@ class RCS_set_user_id_TestCase(RCSTestCase):
             self.rcs.set_user_id, "foo")
 
     def test_updates_user_id_in_supporting_rcs(self):
-        """
-        Should update the user ID in an RCS that supports it.
-        """
+        """Should update the user ID in an RCS that supports it."""
         if not self.rcs_supports_set_user_id:
             return
         user_id = self.rcs.get_user_id()
@@ -686,9 +666,7 @@ class RCS_set_user_id_TestCase(RCSTestCase):
 
 
 def setup_rcs_revision_test_fixtures(testcase):
-    """
-    Set up revision test fixtures for RCS test case.
-    """
+    """Set up revision test fixtures for RCS test case."""
     testcase.test_dirs = ['a', 'a/b', 'c']
     for path in testcase.test_dirs:
         testcase.rcs.mkdir(testcase.full_path(path))
@@ -702,9 +680,7 @@ def setup_rcs_revision_test_fixtures(testcase):
 
 
 class RCS_mkdir_TestCase(RCSTestCase):
-    """
-    Test cases for RCS.mkdir method.
-    """
+    """Test cases for RCS.mkdir method."""
 
     def setUp(self):
         super(RCS_mkdir_TestCase, self).setUp()
@@ -716,9 +692,7 @@ class RCS_mkdir_TestCase(RCSTestCase):
         super(RCS_mkdir_TestCase, self).tearDown()
 
     def test_mkdir_creates_directory(self):
-        """
-        Should create specified directory in filesystem.
-        """
+        """Should create specified directory in filesystem."""
         for path in self.test_dirs:
             full_path = self.full_path(path)
             self.failUnless(
@@ -727,9 +701,7 @@ class RCS_mkdir_TestCase(RCSTestCase):
 
 
 class RCS_commit_TestCase(RCSTestCase):
-    """
-    Test cases for RCS.commit method.
-    """
+    """Test cases for RCS.commit method."""
 
     def setUp(self):
         super(RCS_commit_TestCase, self).setUp()
@@ -741,9 +713,7 @@ class RCS_commit_TestCase(RCSTestCase):
         super(RCS_commit_TestCase, self).tearDown()
 
     def test_file_contents_as_specified(self):
-        """
-        Should set file contents as specified.
-        """
+        """Should set file contents as specified."""
         test_contents = self.test_contents['rev_1']
         for path in self.test_files:
             full_path = self.full_path(path)
@@ -752,9 +722,7 @@ class RCS_commit_TestCase(RCSTestCase):
             self.failUnlessEqual(test_contents, current_contents)
 
     def test_file_contents_as_committed(self):
-        """
-        Should have file contents as specified after commit.
-        """
+        """Should have file contents as specified after commit."""
         test_contents = self.test_contents['rev_1']
         for path in self.test_files:
             full_path = self.full_path(path)
@@ -764,9 +732,7 @@ class RCS_commit_TestCase(RCSTestCase):
             self.failUnlessEqual(test_contents, current_contents)
 
     def test_file_contents_as_set_when_uncommitted(self):
-        """
-        Should set file contents as specified after commit.
-        """
+        """Should set file contents as specified after commit."""
         if not self.rcs.versioned:
             return
         for path in self.test_files:
@@ -781,9 +747,7 @@ class RCS_commit_TestCase(RCSTestCase):
                 self.test_contents['uncommitted'], current_contents)
 
     def test_revision_file_contents_as_committed(self):
-        """
-        Should get file contents as committed to specified revision.
-        """
+        """Should get file contents as committed to specified revision."""
         if not self.rcs.versioned:
             return
         for path in self.test_files:
@@ -800,9 +764,7 @@ class RCS_commit_TestCase(RCSTestCase):
 
 
 class RCS_duplicate_repo_TestCase(RCSTestCase):
-    """
-    Test cases for RCS.duplicate_repo method.
-    """
+    """Test cases for RCS.duplicate_repo method."""
 
     def setUp(self):
         super(RCS_duplicate_repo_TestCase, self).setUp()
@@ -815,9 +777,7 @@ class RCS_duplicate_repo_TestCase(RCSTestCase):
         super(RCS_duplicate_repo_TestCase, self).tearDown()
 
     def test_revision_file_contents_as_committed(self):
-        """
-        Should match file contents as committed to specified revision.
-        """
+        """Should match file contents as committed to specified revision."""
         if not self.rcs.versioned:
             return
         for path in self.test_files:
@@ -836,9 +796,7 @@ class RCS_duplicate_repo_TestCase(RCSTestCase):
 
 
 def make_rcs_testcase_subclasses(rcs_class, namespace):
-    """
-    Make RCSTestCase subclasses for rcs_class in the namespace.
-    """
+    """Make RCSTestCase subclasses for rcs_class in the namespace."""
     rcs_testcase_classes = [
         c for c in (
             ob for ob in globals().values() if isinstance(ob, type))
