@@ -14,12 +14,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 import os
 import re
+import sys
 import unittest
 import doctest
 
-from rcs import RCS, RCStestCase, CommandError
+import rcs
+from rcs import RCS
 
 def new():
     return Bzr()
@@ -79,7 +82,7 @@ class Bzr(RCS):
     def postcommit(self):
         try:
             self._u_invoke_client('merge')
-        except CommandError, e:
+        except rcs.CommandError, e:
             if ('No merge branch known or specified' in e.err_str or
                 'No merge location known or specified' in e.err_str):
                 pass
@@ -91,8 +94,8 @@ class Bzr(RCS):
         if len(self._u_invoke_client('status', directory=directory)[1]) > 0:
             self.commit('Merge from upstream')
 
-class BzrTestCase(RCStestCase):
-    Class = Bzr
+    
+rcs.make_rcs_testcase_subclasses(Bzr, sys.modules[__name__])
 
-unitsuite = unittest.TestLoader().loadTestsFromTestCase(BzrTestCase)
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

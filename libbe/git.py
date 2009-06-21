@@ -13,12 +13,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 import os
 import re
+import sys
 import unittest
 import doctest
 
-from rcs import RCS, RCStestCase, CommandError
+import rcs
+from rcs import RCS
 
 def new():
     return Git()
@@ -91,9 +94,9 @@ class Git(RCS):
         assert len(match.groups()) == 3
         revision = match.groups()[1]
         return revision
- 
-class GitTestCase(RCStestCase):
-    Class = Git
 
-unitsuite = unittest.TestLoader().loadTestsFromTestCase(GitTestCase)
+    
+rcs.make_rcs_testcase_subclasses(Git, sys.modules[__name__])
+
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

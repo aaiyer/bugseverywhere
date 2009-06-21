@@ -13,12 +13,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 import os
 import re
+import sys
 import unittest
 import doctest
 
-from rcs import RCS, RCStestCase, CommandError, SettingIDnotSupported
+import rcs
+from rcs import RCS
 
 def new():
     return Hg()
@@ -49,7 +52,7 @@ class Hg(RCS):
         standard Mercurial.
         http://www.selenic.com/mercurial/wiki/index.cgi/ConfigExtension
         """
-        raise SettingIDnotSupported
+        raise rcs.SettingIDnotSupported
     def _rcs_add(self, path):
         self._u_invoke_client("add", path)
     def _rcs_remove(self, path):
@@ -79,8 +82,8 @@ class Hg(RCS):
         revision = match.groups()[0]
         return revision
 
-class HgTestCase(RCStestCase):
-    Class = Hg
+    
+rcs.make_rcs_testcase_subclasses(Hg, sys.modules[__name__])
 
-unitsuite = unittest.TestLoader().loadTestsFromTestCase(HgTestCase)
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
