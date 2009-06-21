@@ -114,18 +114,24 @@ def execute(args, test=False):
     if len(bugs) == 0:
         print "No matching bugs found"
     
-    def list_bugs(cur_bugs, title=None, just_uuids=False):
+    def list_bugs(cur_bugs, title=None, just_uuids=False, xml=False):
         cur_bugs.sort(bug.cmp_full)
+        if xml == True:
+            print "<bugs>"
         if len(cur_bugs) > 0:
-            if title != None:
+            if title != None and xml == False:
                 print cmdutil.underlined(title)
             for bg in cur_bugs:
-                if just_uuids:
+                if xml == True:
+                    print bg.xml(show_comments=True)
+                elif just_uuids:
                     print bg.uuid
                 else:
                     print bg.string(shortlist=True)
+        if xml == True:
+            print "</bugs>"
     
-    list_bugs(bugs, just_uuids=options.uuids)
+    list_bugs(bugs, just_uuids=options.uuids, xml=options.xml)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be list [options]")
@@ -137,7 +143,7 @@ def get_parser():
                       help="List options matching ASSIGNED", default=None)
     parser.add_option("-t", "--target", metavar="TARGET", dest="target",
                       help="List options matching TARGET", default=None)
-    # boolean options.  All but uuids are special cases of long forms
+    # boolean options.  All but uuids and xml are special cases of long forms
     bools = (("u", "uuids", "Only print the bug UUIDS"),
              ("w", "wishlist", "List bugs with 'wishlist' severity"),
              ("i", "important", "List bugs with >= 'serious' severity"),
@@ -146,7 +152,8 @@ def get_parser():
              ("o", "open", "List open bugs"),
              ("T", "test", "List bugs in testing"),
              ("m", "mine", "List bugs assigned to you"),
-             ("c", "cur-target", "List bugs for the current target"))
+             ("c", "cur-target", "List bugs for the current target"),
+             ("x", "xml", "Dump as XML"))
     for s in bools:
         attr = s[1].replace('-','_')
         short = "-%c" % s[0]
