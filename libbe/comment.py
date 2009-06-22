@@ -19,6 +19,7 @@
 import os
 import os.path
 import time
+import xml.sax.saxutils
 import textwrap
 import doctest
 
@@ -234,16 +235,17 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         if shortname == None:
             shortname = self.uuid
-        lines = ["<comment>",
-                 "  <uuid>%s</uuid>" % self.uuid,
-                 "  <short-name>%s</short-name>" % (shortname,),]
-        if self.in_reply_to != settings_object.EMPTY:
-            lines.append("  <in-reply-to>%s</in-reply-to>" % self.in_reply_to)
-        lines.extend([
-                "  <from>%s</from>" % self._setting_attr_string("From"),
-                "  <date>%s</date>" % self.time_string,
-                "  <body>%s</body>" % (self.body or "").rstrip('\n'),
-                "</comment>\n"])
+        info = [("uuid", self.uuid),
+                ("short-name", shortname),
+                ("in-reply-to", self.in_reply_to),
+                ("from", self._setting_attr_string("From")),
+                ("date", self.time_string),
+                ("body", (self.body or "").rstrip('\n'))]
+        lines = ["<comment>"]
+        for (k,v) in info:
+            if v not in [settings_object.EMPTY, None]:
+                lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
+        lines.append("</comment>")
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')

@@ -18,6 +18,7 @@ import os
 import os.path
 import errno
 import time
+import xml.sax.saxutils
 import doctest
 
 from beuuid import uuid_gen
@@ -261,7 +262,7 @@ class Bug(settings_object.SavedSettingsObject):
         ret = '<bug>\n'
         for (k,v) in info:
             if v is not settings_object.EMPTY:
-                ret += '  <%s>%s</%s>\n' % (k,v,k)
+                ret += '  <%s>%s</%s>\n' % (k,xml.sax.saxutils.escape(v),k)
 
         if show_comments == True:
             comout = self.comment_root.xml_thread(auto_name_map=True,

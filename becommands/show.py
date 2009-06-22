@@ -35,17 +35,14 @@ def execute(args, test=False):
          Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
     Bug A
     <BLANKLINE>
-    >>> execute (["--xml", "a"], test=True)
+    >>> execute (["--xml", "a"], test=True) # doctest: +ELLIPSIS
     <bug>
       <uuid>a</uuid>
       <short-name>a</short-name>
       <severity>minor</severity>
       <status>open</status>
-      <assigned><class 'libbe.settings_object.EMPTY'></assigned>
-      <target><class 'libbe.settings_object.EMPTY'></target>
-      <reporter><class 'libbe.settings_object.EMPTY'></reporter>
-      <creator>John Doe <jdoe@example.com></creator>
-      <created>Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)</created>
+      <creator>John Doe &lt;jdoe@example.com&gt;</creator>
+      <created>...</created>
       <summary>Bug A</summary>
     </bug>
     """
