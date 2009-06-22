@@ -237,7 +237,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         lines = ["<comment>",
                  "  <uuid>%s</uuid>" % self.uuid,
                  "  <short-name>%s</short-name>" % (shortname,),]
-        if self.in_reply_to != None:
+        if self.in_reply_to != settings_object.EMPTY:
             lines.append("  <in-reply-to>%s</in-reply-to>" % self.in_reply_to)
         lines.extend([
                 "  <from>%s</from>" % self._setting_attr_string("From"),

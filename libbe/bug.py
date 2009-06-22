@@ -260,7 +260,7 @@ class Bug(settings_object.SavedSettingsObject):
                 ("summary", self.summary)]
         ret = '<bug>\n'
         for (k,v) in info:
-            if v is not None:
+            if v is not settings_object.EMPTY:
                 ret += '  <%s>%s</%s>\n' % (k,v,k)
 
         if show_comments == True:
