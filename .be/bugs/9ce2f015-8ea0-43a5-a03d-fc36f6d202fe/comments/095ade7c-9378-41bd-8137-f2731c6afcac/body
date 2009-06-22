@@ -1,0 +1,19 @@
+Presumably this would be to allow sorting of bugs by last-modified
+date instead of by creation date.  With the xml output, this is no
+longer needed.  For example, I view bugs in mutt with
+  $ be list | xml/be-xml-to-mbox | xml/catmutt
+and use mutt to sort the threads by last-modified, e.g. by adding
+  set sort=threads
+  set sort_aux=last-date
+to my ~/.muttrc.
+
+That being said, I could go for a user-specified sort command in
+becommands/list.py, rather than the current bug.cmp_full, since other
+mail readers may suck more than mutt ;), and even mutt might not have
+that perfect sort you desire coded into it :p.  The problem is that
+while the cmp_* functions in bug are short, they are not really the
+sort of thing you'd want to type in on the command line.  Perhaps we
+can just slowly accumulate a rich array of bug.cmp_* functions as
+they are requested, and allow the user to prepend their favorites to
+the default cmp_full list...
+

@@ -1,0 +1,30 @@
+Excerpt from my mail to the list on Sat, 20 Jun 2009 21:55:54 -0400:
+
+On Mon, Nov 24, 2008 at 07:15:08PM -0500, Aaron Bentley wrote:
+> 576:om: Allow attachments
+> Sensible.
+
+I'm not as convinced they are a good idea as I once was.  I've just
+added comments-from-stdin, e.g.
+  some-invalid-command | be comment <bug-id> -
+Which is mostly what I'd be using attachments for anyway.  If you
+really want to support the attachments/mime-types etc. like we had
+maybe been leaning towards before, you'd need to look at the output of
+`be show ...' with an email client, which seems a bit excessive.  Do
+we even want mime types at all?  With the xml output a la Thomas, you
+should be able to pipe into whatever sort of `viewer' you want, and it
+doesn't end up being hardcoded into the main repo.
+
+
+Notes since my email:
+
+be->xml->mutt has since been implemented, and it preserves comment
+mime-type.  This allows those that want to go crazy to attach whatever
+they want to their comments:
+
+  $ echo "<html><head></head><body>Hello world</body></html>" | be comment --content-type text/html 576:2 -
+
+I think non-text attachments without a browser/mail-viewer don't make
+sense, so I'm closing this bug.  Feel free to keep it open in your own
+repo, or argue with me on the list ;).
+

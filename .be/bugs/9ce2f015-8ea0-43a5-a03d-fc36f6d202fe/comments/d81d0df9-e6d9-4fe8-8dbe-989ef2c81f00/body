@@ -1,0 +1,9 @@
+User specfied sort added, along with bug.cmp_last_modified.
+
+Hmm, perhaps you don't want the last comment date, but e.g. the last
+time one of the bug attributes are changed.  In that case, I suggest
+  bzr log .be/bugs/9ce2f015-8ea0-43a5-a03d-fc36f6d202fe/
+
+Maybe log(file) functionality should be incorperated into libbe/rcs...
+Perhaps accessed through a --history.  I'm not sure I remember enough
+Arch to do that ;).

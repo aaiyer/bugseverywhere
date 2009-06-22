@@ -1,0 +1,10 @@
+In Aaron's Tue, 25 Nov 2008 09:32:29 -0500 email:
+
+I think that approach doesn't give features the richness they need.
+Features also have severities-- some features are important, and others
+are just nice-to-have.  And there should be a way to list *only* bugs,
+or *only* features.
+
+In a bug tracker, "wishlist" is either an aberration, or it means a very
+low severity.
+

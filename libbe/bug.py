@@ -276,8 +276,8 @@ class Bug(settings_object.SavedSettingsObject):
         else:
             shortname = self.bugdir.bug_shortname(self)
         if shortlist == False:
-            if self.time_string == "":
-                timestring = self.time_string
+            if self.time == None:
+                timestring = ""
             else:
                 htime = utility.handy_time(self.time)
                 timestring = "%s (%s)" % (htime, self.time_string)
@@ -466,19 +466,37 @@ cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
-def cmp_full(bug_1, bug_2, cmp_list=(cmp_status,cmp_severity,cmp_assigned,
-                                     cmp_time,cmp_creator)):
-    for comparison in cmp_list :
-        val = comparison(bug_1, bug_2)
-        if val != 0 :
-            return val
-    return 0
+DEFAULT_CMP_FULL_CMP_LIST = \
+    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator)
 
-class InvalidValue(ValueError):
-    def __init__(self, name, value):
-        msg = "Cannot assign value %s to %s" % (value, name)
-        Exception.__init__(self, msg)
-        self.name = name
-        self.value = value
+class BugCompoundComparator (object):
+    def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):
+        self.cmp_list = cmp_list
+    def __call__(self, bug_1, bug_2):
+        for comparison in self.cmp_list :
+            val = comparison(bug_1, bug_2)
+            if val != 0 :
+                return val
+        return 0
+        
+cmp_full = BugCompoundComparator()
+
+
+# define some bonus cmp_* functions
+def cmp_last_modified(bug_1, bug_2):
+    """
+    Like cmp_time(), but use most recent comment instead of bug
+    creation for the timestamp.
+    """
+    def last_modified(bug):
+        time = bug.time
+        for comment in bug.comment_root.traverse():
+            if comment.time > time:
+                time = comment.time
+        return time
+    val_1 = last_modified(bug_1)
+    val_2 = last_modified(bug_2)
+    return -cmp(val_1, val_2)
+
 
 suite = doctest.DocTestSuite()

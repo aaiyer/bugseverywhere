@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: list X most recent entries
 
 
-
-
-
-status=open
-
-
-
-
-
-
-summary=list X most recent entries
-
-
-
-
-
-
-time=Wed, 25 Jan 2006 15:44:18 +0000
-
-
+time: Wed, 25 Jan 2006 15:44:18 +0000
 

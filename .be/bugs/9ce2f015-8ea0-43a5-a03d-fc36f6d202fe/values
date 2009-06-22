@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: open
 
 
-
-severity=minor
-
+summary: Add last-modified field to bugs
 
 
-
-
-
-status=open
-
-
-
-
-
-
-summary=Add last-modified field to bugs
-
-
-
-
-
-
-time=Thu, 14 Sep 2006 18:08:53 +0000
-
-
+time: Thu, 14 Sep 2006 18:08:53 +0000
 

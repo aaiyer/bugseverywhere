@@ -19,6 +19,10 @@ from libbe import cmdutil, bugdir, bug
 import os
 __desc__ = __doc__
 
+# get a list of * for cmp_*() comparing two bugs. 
+AVAILABLE_CMPS = [fn[4:] for fn in dir(bug) if fn[:4] == 'cmp_']
+AVAILABLE_CMPS.remove("attr") # a cmp_* template.
+
 def execute(args, test=False):
     """
     >>> import os
@@ -35,6 +39,13 @@ def execute(args, test=False):
     complete(options, args, parser)    
     if len(args) > 0:
         raise cmdutil.UsageError("Too many arguments.")
+    cmp_list = []
+    if options.sort_by != None:
+        for cmp in options.sort_by.split(','):
+            if cmp not in AVAILABLE_CMPS:
+                raise cmdutil.UserError("Invalid sort on '%s'.\nValid sorts:\n  %s"
+                                        % (cmp, '\n  '.join(AVAILABLE_CMPS)))
+            cmp_list.append(eval('bug.cmp_%s' % cmp))
     
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bd.load_all_bugs()
@@ -115,7 +126,6 @@ def execute(args, test=False):
         print "No matching bugs found"
     
     def list_bugs(cur_bugs, title=None, just_uuids=False, xml=False):
-        cur_bugs.sort(bug.cmp_full)
         if xml == True:
             print "<bugs>"
         if len(cur_bugs) > 0:
@@ -130,7 +140,13 @@ def execute(args, test=False):
                     print bg.string(shortlist=True)
         if xml == True:
             print "</bugs>"
-    
+
+    # sort bugs
+    cmp_list.extend(bug.DEFAULT_CMP_FULL_CMP_LIST)
+    cmp_fn = bug.BugCompoundComparator(cmp_list=cmp_list)
+    bugs.sort(cmp_fn)
+
+    # print list of bugs
     list_bugs(bugs, just_uuids=options.uuids, xml=options.xml)
 
 def get_parser():
@@ -143,6 +159,8 @@ def get_parser():
                       help="List options matching ASSIGNED", default=None)
     parser.add_option("-t", "--target", metavar="TARGET", dest="target",
                       help="List options matching TARGET", default=None)
+    parser.add_option("-S", "--sort", metavar="SORT-BY", dest="sort_by",
+                      help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
     # boolean options.  All but uuids and xml are special cases of long forms
     bools = (("u", "uuids", "Only print the bug UUIDS"),
              ("w", "wishlist", "List bugs with 'wishlist' severity"),
