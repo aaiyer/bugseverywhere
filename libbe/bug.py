@@ -245,9 +245,7 @@ class Bug(settings_object.SavedSettingsObject):
         if self.time == None:
             timestring = ""
         else:
-            htime = utility.handy_time(self.time)
-            ftime = utility.time_to_str(self.time)
-            timestring = "%s (%s)" % (htime, ftime)
+            timestring = utility.time_to_str(self.time)
 
         info = [("uuid", self.uuid),
                 ("short-name", shortname),
