@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# catmutt - wrap mutt allowing mboxes read from stdin.
+#
+# Copyright (C) 1998-1999 Moritz Barsnick <barsnick (at) gmx (dot) net>,
+#               2009 William Trevor King <wking (at) drexel (dot) edu>
+#
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of the GNU General Public License
+#    version 2 as published by the Free Software Foundation.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# developed from grepm-0.6
+#   http://www.barsnick.net/sw/grepm.html
+
+PROGNAME=`basename "$0"`
+export TMPDIR="${TMPDIR-/tmp}" # used by mktemp
+umask 077
+
+if [ $# -gt 0 ] && [ "$1" = "--help" ]; then
+  echo 1>&2 "Usage: ${PROGNAME} [--help] mutt-arguments"
+  echo 1>&2 ""
+  echo 1>&2 "Read a mailbox file from stdin and opens it with mutt."
+  echo 1>&2 "For example: cat somefile.mbox | ${PROGNAME}"
+  exit 0
+fi
+
+# Note: the -t/-p options to mktemp are deprecated for mktemp (GNU
+# coreutils) 7.1 in favor of --tmpdir but the --tmpdir option does not
+# exist yet for my 6.10-3ubuntu2 coreutils
+TMPFILE=`mktemp -t catmutt.XXXXXX` || exit 1
+
+trap "rm -f ${TMPFILE}; exit 1" 1 2 3 13 15
+
+cat > "${TMPFILE}" || exit 1
+
+# Now that we've read in the mailbox file, reopen stdin for mutt/user
+# interaction.  We're not technically in a tty, so use a little hack
+# from "greno" at
+# http://www.linuxforums.org/forum/linux-programming-scripting/98607-bash-stdin-problem.html
+tty="/dev/$(ps -p$$ --no-heading | awk '{print $2}')"
+exec < ${tty}
+
+if [ `wc -c "${TMPFILE}" | awk '{print $1}'` -gt 0 ]; then
+  echo 1>&2 "Calling mutt on mailbox file (${TMPFILE})."
+  mutt -R -f "${TMPFILE}" "$@"
+else
+  echo 1>&2 "Empty mailbox input."
+fi
+
+rm -f "${TMPFILE}" && echo 1>&2 "Deleted results file (${TMPFILE})."
