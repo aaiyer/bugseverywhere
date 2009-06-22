@@ -41,10 +41,7 @@ def execute(args, test=False):
       <short-name>a</short-name>
       <severity>minor</severity>
       <status>open</status>
-      <assigned><class 'libbe.settings_object.EMPTY'></assigned>
-      <target><class 'libbe.settings_object.EMPTY'></target>
-      <reporter><class 'libbe.settings_object.EMPTY'></reporter>
-      <creator>John Doe <jdoe@example.com></creator>
+      <creator>John Doe &lt;jdoe@example.com&gt;</creator>
       <created>...</created>
       <summary>Bug A</summary>
     </bug>

@@ -18,6 +18,7 @@ import os
 import os.path
 import errno
 import time
+import xml.sax.saxutils
 import doctest
 
 from beuuid import uuid_gen
@@ -244,9 +245,7 @@ class Bug(settings_object.SavedSettingsObject):
         if self.time == None:
             timestring = ""
         else:
-            htime = utility.handy_time(self.time)
-            ftime = utility.time_to_str(self.time)
-            timestring = "%s (%s)" % (htime, ftime)
+            timestring = utility.time_to_str(self.time)
 
         info = [("uuid", self.uuid),
                 ("short-name", shortname),
@@ -260,8 +259,8 @@ class Bug(settings_object.SavedSettingsObject):
                 ("summary", self.summary)]
         ret = '<bug>\n'
         for (k,v) in info:
-            if v is not None:
-                ret += '  <%s>%s</%s>\n' % (k,v,k)
+            if v is not settings_object.EMPTY:
+                ret += '  <%s>%s</%s>\n' % (k,xml.sax.saxutils.escape(v),k)
 
         if show_comments == True:
             comout = self.comment_root.xml_thread(auto_name_map=True,

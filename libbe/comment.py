@@ -19,6 +19,7 @@
 import os
 import os.path
 import time
+import xml.sax.saxutils
 import textwrap
 import doctest
 
@@ -223,8 +224,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> comm.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> print comm.xml(indent=2, shortname="com-1")
           <comment>
-            <name>com-1</name>
             <uuid>0123</uuid>
+            <short-name>com-1</short-name>
             <from></from>
             <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
             <body>Some
@@ -234,16 +235,17 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         if shortname == None:
             shortname = self.uuid
-        lines = ["<comment>",
-                 "  <name>%s</name>" % (shortname,),
-                 "  <uuid>%s</uuid>" % self.uuid,]
-        if self.in_reply_to != None:
-            lines.append("  <in_reply_to>%s</in_reply_to>" % self.in_reply_to)
-        lines.extend([
-                "  <from>%s</from>" % self._setting_attr_string("From"),
-                "  <date>%s</date>" % self.time_string,
-                "  <body>%s</body>" % (self.body or "").rstrip('\n'),
-                "</comment>\n"])
+        info = [("uuid", self.uuid),
+                ("short-name", shortname),
+                ("in-reply-to", self.in_reply_to),
+                ("from", self._setting_attr_string("From")),
+                ("date", self.time_string),
+                ("body", (self.body or "").rstrip('\n'))]
+        lines = ["<comment>"]
+        for (k,v) in info:
+            if v not in [settings_object.EMPTY, None]:
+                lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
+        lines.append("</comment>")
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
