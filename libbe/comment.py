@@ -223,8 +223,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> comm.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> print comm.xml(indent=2, shortname="com-1")
           <comment>
-            <name>com-1</name>
             <uuid>0123</uuid>
+            <short-name>com-1</short-name>
             <from></from>
             <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
             <body>Some
@@ -235,10 +235,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if shortname == None:
             shortname = self.uuid
         lines = ["<comment>",
-                 "  <name>%s</name>" % (shortname,),
-                 "  <uuid>%s</uuid>" % self.uuid,]
+                 "  <uuid>%s</uuid>" % self.uuid,
+                 "  <short-name>%s</short-name>" % (shortname,),]
         if self.in_reply_to != None:
-            lines.append("  <in_reply_to>%s</in_reply_to>" % self.in_reply_to)
+            lines.append("  <in-reply-to>%s</in-reply-to>" % self.in_reply_to)
         lines.extend([
                 "  <from>%s</from>" % self._setting_attr_string("From"),
                 "  <date>%s</date>" % self.time_string,
