@@ -45,7 +45,7 @@ def execute(args, test=False):
     >>> a.load_comments()
     >>> mergeA = a.comment_from_shortname(":3")
     >>> mergeA.time = 3
-    >>> print a.string(show_comments=True)
+    >>> print a.string(show_comments=True) # doctest: +ELLIPSIS
               ID : a
       Short name : a
         Severity : minor
@@ -54,43 +54,43 @@ def execute(args, test=False):
           Target : 
         Reporter : 
          Creator : John Doe <jdoe@example.com>
-         Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
+         Created : ...
     Bug A
     --------- Comment ---------
     Name: a:1
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:01 +0000
+    From: ...
+    Date: ...
     <BLANKLINE>
     Testing
       --------- Comment ---------
       Name: a:2
-      From: wking <wking@thor.yang.physics.drexel.edu>
-      Date: Thu, 01 Jan 1970 00:00:02 +0000
+      From: ...
+      Date: ...
     <BLANKLINE>
       Testing...
     --------- Comment ---------
     Name: a:3
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:03 +0000
+    From: ...
+    Date: ...
     <BLANKLINE>
     Merged from bug b
       --------- Comment ---------
       Name: a:4
-      From: wking <wking@thor.yang.physics.drexel.edu>
-      Date: Thu, 01 Jan 1970 00:00:01 +0000
+      From: ...
+      Date: ...
     <BLANKLINE>
       1 2
         --------- Comment ---------
         Name: a:5
-        From: wking <wking@thor.yang.physics.drexel.edu>
-        Date: Thu, 01 Jan 1970 00:00:02 +0000
+        From: ...
+        Date: ...
     <BLANKLINE>
         1 2 3 4
     >>> b = bd.bug_from_shortname("b")
     >>> b.load_comments()
     >>> mergeB = b.comment_from_shortname(":3")
     >>> mergeB.time = 3
-    >>> print b.string(show_comments=True)
+    >>> print b.string(show_comments=True) # doctest: +ELLIPSIS
               ID : b
       Short name : b
         Severity : minor
@@ -99,24 +99,24 @@ def execute(args, test=False):
           Target : 
         Reporter : 
          Creator : Jane Doe <jdoe@example.com>
-         Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
+         Created : ...
     Bug B
     --------- Comment ---------
     Name: b:1
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:01 +0000
+    From: ...
+    Date: ...
     <BLANKLINE>
     1 2
       --------- Comment ---------
       Name: b:2
-      From: wking <wking@thor.yang.physics.drexel.edu>
-      Date: Thu, 01 Jan 1970 00:00:02 +0000
+      From: ...
+      Date: ...
     <BLANKLINE>
       1 2 3 4
     --------- Comment ---------
     Name: b:3
-    From: wking <wking@thor.yang.physics.drexel.edu>
-    Date: Thu, 01 Jan 1970 00:00:03 +0000
+    From: ...
+    Date: ...
     <BLANKLINE>
     Merged into bug a
     >>> print b.status

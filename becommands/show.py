@@ -23,7 +23,7 @@ def execute(args, test=False):
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute (["a",], test=True)
+    >>> execute (["a",], test=True) # doctest: +ELLIPSIS
               ID : a
       Short name : a
         Severity : minor
@@ -32,10 +32,10 @@ def execute(args, test=False):
           Target : 
         Reporter : 
          Creator : John Doe <jdoe@example.com>
-         Created : Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)
+         Created : ...
     Bug A
     <BLANKLINE>
-    >>> execute (["--xml", "a"], test=True)
+    >>> execute (["--xml", "a"], test=True) # doctest: +ELLIPSIS
     <bug>
       <uuid>a</uuid>
       <short-name>a</short-name>
@@ -45,7 +45,7 @@ def execute(args, test=False):
       <target><class 'libbe.settings_object.EMPTY'></target>
       <reporter><class 'libbe.settings_object.EMPTY'></reporter>
       <creator>John Doe <jdoe@example.com></creator>
-      <created>Wed, 31 Dec 1969 19:00 (Thu, 01 Jan 1970 00:00:00 +0000)</created>
+      <created>...</created>
       <summary>Bug A</summary>
     </bug>
     """
