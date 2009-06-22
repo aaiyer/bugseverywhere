@@ -228,6 +228,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             <short-name>com-1</short-name>
             <from></from>
             <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
+            <content-type>text/plain</content-type>
             <body>Some
         insightful
         remarks</body>
@@ -240,6 +241,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 ("in-reply-to", self.in_reply_to),
                 ("from", self._setting_attr_string("From")),
                 ("date", self.time_string),
+                ("content-type", self.content_type),
                 ("body", (self.body or "").rstrip('\n'))]
         lines = ["<comment>"]
         for (k,v) in info:

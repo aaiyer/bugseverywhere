@@ -28,6 +28,7 @@ followed by a blank line.
 import email.utils
 import types
 
+from libbe.encoding import get_encoding, set_IO_stream_encodings
 from libbe.utility import str_to_time as rfc2822_to_gmtime_integer
 from time import asctime, gmtime
 from xml.sax import make_parser
@@ -37,6 +38,8 @@ from xml.sax.saxutils import unescape
 
 DEFAULT_DOMAIN = "invalid.com"
 DEFAULT_EMAIL = "dummy@" + DEFAULT_DOMAIN
+DEFAULT_ENCODING = get_encoding()
+set_IO_stream_encodings(DEFAULT_ENCODING)
 
 def rfc2822_to_asctime(rfc2822_string):
     """Convert an RFC 2822-fomatted string into a asctime string.
@@ -85,7 +88,7 @@ class Bug (LimitedAttrDict):
         print "Message-ID: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
         print "Date: %s" % self["created"]
         print "From: %s" % self["creator"]
-        print "Content-Type: %s" % "text/plain; charset=utf-8"
+        print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
         print "Content-Transfer-Encoding: 8bit"
         print "Subject: %s: %s" % (self["short-name"], self["summary"])
         print ""
@@ -100,6 +103,7 @@ class Comment (LimitedAttrDict):
               u"in-reply-to",
               u"from",
               u"date",
+              u"content-type",
               u"body"]
     def print_to_mbox(self, bug):
         name,addr = email.utils.parseaddr(self["from"])
@@ -107,7 +111,7 @@ class Comment (LimitedAttrDict):
         print "Message-ID: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
         print "Date: %s" % self["date"]
         print "From: %s" % self["from"]
-        print "Content-Type: %s" % "text/plain; charset=utf-8"
+        print "Content-Type: %s; charset=%s" % (self["content-type"], DEFAULT_ENCODING)
         print "Content-Transfer-Encoding: 8bit"
         print "Subject: %s: %s" % (self["short-name"], bug["summary"])
         if "in-reply-to" not in self.keys():
