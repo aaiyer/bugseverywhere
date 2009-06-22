@@ -1,0 +1,17 @@
+No need for RCS-expansion for the history.  If the user is versioning
+their code with some RCS, they presumably know how to use the RCS to
+investigate the history already.  The .be/ directory structure is not
+so complicated that it's worth much work to avoid their having to peer
+inside it by hand.
+
+In rare cases where people really do want to peer into history using
+only BE or sort by e.g. bug closing time, they could add those
+comments by hand, e.g.
+  $ echo 'bug closed' | be comment <bug> -
+  $ be close <bug>
+So the already-implemented cmp_last_modified would handle it.
+
+If you want, you could add (optional) comment-generation to the
+becommands themselves.  For example becommand/merge.py already does
+this.
+

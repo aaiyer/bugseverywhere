@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: Indicate bug dependencies
 
 
-
-
-
-status=open
-
-
-
-
-
-
-summary=Indicate bug dependencies
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:05:37 +0000
-
-
+time: Wed, 04 Jan 2006 21:05:37 +0000
 

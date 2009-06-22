@@ -1,0 +1,55 @@
+In Aaron's Tue, 25 Nov 2008 09:32:29 -0500 email:
+
+>> 7ec:om: Arbitrary tags
+>> Sensible
+>
+> Implemented as a free-form value field similar to target?  A
+> comma-seperated list of tags?
+
+I believe I planned to store it as an alpha-sorted, one-entry-per-line
+list, so it would support merging easily.
+
+>  Perhaps once we have per-bug/comment
+> attribute searching it would be easier to have a 'create-attribute'
+> becommand, e.g.
+>   be create-attribute [-valid=X,Y,Z] [bugdir|bug|comment] [NAME] [DEFAULT]
+
+Well, it really depends how much semantics you want to embed in the data
+format.  Some values are scalars, some may be sets (i.e. tags), some may
+be ordered lists or even mappings.  How much you want to reflect that in
+the data format is up to you.
+
+> Extend and make more consitent the settings_property() attributes.
+> Create becommand/(create/remove)-attribute for logic-less attributes.
+> Create a few mix-ins for logic-ed attributes
+
+I don't find the term mix-in very intuitive here.
+
+> Usage example:
+>   Goal:
+>     set up for `be depends BUGA BUGB`, `be depends --tree BUGA`, etc
+>   Procedure:
+>     be set --apend mixins bug:dependency
+
+"append" usually has two "p"s.  Is the omission deliberate?
+
+>   Where we've defined
+>     becommands/depends.py, but it is hidden until the mixin is activated
+>     libbe/mixins/bug/dependency.Mixin (inheriting from BugMixin)
+>       to
+>       parse/generate comma seperated dependency uuids for saving/loading
+>       pretty-print the dependency list (e.g. uuid->shortname)
+>       walk the dependency tree and check target bug status.
+>
+> With more complicated mixins, there could be inter-mixin dependencies,
+> e.g. a dependency tracker that searches depends based on bug.status
+> might depend on the base dependency mixin.  This way people who need
+> it could make rich interfaces without confusing the people who don't.
+>
+> How does that sound?
+
+It sounds pretty complicated.  I would probably use a type system rather
+than "mixins", and define types as "scalar", "set" and maybe "list" and
+"map".  Dependencies would be a set, and their special behaviour would
+be hardcoded according to their name, not a property of their type.
+

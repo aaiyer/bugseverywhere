@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: open
 
 
-
-severity=minor
-
+summary: Arbitrary tags
 
 
-
-
-
-status=open
-
-
-
-
-
-
-summary=Arbitrary tags
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:06:38 +0000
-
-
+time: Wed, 04 Jan 2006 21:06:38 +0000
 
