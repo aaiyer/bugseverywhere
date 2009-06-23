@@ -54,9 +54,9 @@ class AlreadyInitialized(Exception):
 class MultipleBugMatches(ValueError):
     def __init__(self, shortname, matches):
         msg = ("More than one bug matches %s.  "
-               "Please be more specific.\n%s" % shortname, matches)
+               "Please be more specific.\n%s" % (shortname, matches))
         ValueError.__init__(self, msg)
-        self.shortname = shortnamename
+        self.shortname = shortname
         self.matches = matches
 
 

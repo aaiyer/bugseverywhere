@@ -26,12 +26,15 @@ and
 for more information on decorators.
 """
 
+import types
 import unittest
-
 
 class ValueCheckError (ValueError):
     def __init__(self, name, value, allowed):
-        msg = "%s not in %s for %s" % (value, allowed, name)
+        action = "in" # some list of allowed values
+        if type(allowed) == types.FunctionType:
+            action = "allowed by" # some allowed-value check function
+        msg = "%s not %s %s for %s" % (value, action, allowed, name)
         ValueError.__init__(self, msg)
         self.name = name
         self.value = value
@@ -258,12 +261,29 @@ def primed_property(primer, initVal=None):
         return funcs
     return decorator
 
-def change_hook_property(hook):
+def change_hook_property(hook, mutable=False):
     """
     Call the function hook(instance, old_value, new_value) whenever a
     value different from the current value is set (instance is a a
     reference to the class instance to which this property belongs).
-    This is useful for saving changes to disk, etc.
+    This is useful for saving changes to disk, etc.  This function is
+    called _after_ the new value has been stored, allowing you to
+    change the stored value if you want.
+
+    If mutable=True, store a string-representation of the old_value
+    for use in comparisions, since
+
+    >>> a = []
+    >>> b = a
+    >>> b.append(1)
+    >>> a
+    [1]
+    >>> a==b
+    True
+
+    The string-value-changed test may miss the first write, since
+    there will not have been an opportunity to cache a string version
+    of the old value.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -273,9 +293,23 @@ def change_hook_property(hook):
         name = funcs.get("name", "<unknown>")
         def _fset(self, value):
             old_value = fget(self)
-            if value != old_value:
-                hook(self, old_value, value)
             fset(self, value)
+            change_detected = False
+            if value != old_value:
+                change_detected = True
+            elif mutable == True:
+                if True: #hasattr(self, "_change_hook_property_mutable_cache_%s" % name):
+                    # compare cached string with new value
+                    #old_string = getattr(self, "_change_hook_property_mutable_cache_%s" % name)
+                    old_string = "dummy"
+                    #print "comparing", name, "mutable strings", old_string, repr(value)
+                    if repr(value) != old_string:
+                        change_detected = True
+            #print "testing", name, "change hook property", change_detected, value
+            if change_detected:
+                hook(self, old_value, value)
+            if mutable == True: # cache the new value for next time
+                setattr(self, "_change_hook_property_mutable_cache_%s" % name, repr(value))
         funcs["fset"] = _fset
         return funcs
     return decorator

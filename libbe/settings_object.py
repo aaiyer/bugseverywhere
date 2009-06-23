@@ -87,6 +87,7 @@ def attr_name_to_setting_name(self, name):
 def versioned_property(name, doc,
                        default=None, generator=None,
                        change_hook=prop_save_settings,
+                       mutable=False,
                        primer=prop_load_settings,
                        allowed=None, check_fn=None,
                        settings_properties=[],
@@ -137,7 +138,7 @@ def versioned_property(name, doc,
             checked = checked_property(allowed=allowed)
             fulldoc += "\n\nThe allowed values for this property are: %s." \
                        % (', '.join(allowed))
-        hooked      = change_hook_property(hook=change_hook)
+        hooked      = change_hook_property(hook=change_hook, mutable=mutable)
         primed      = primed_property(primer=primer, initVal=UNPRIMED)
         settings    = settings_property(name=name, null=UNPRIMED)
         docp        = doc_property(doc=fulldoc)

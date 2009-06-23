@@ -151,10 +151,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if self.rcs != None and self.sync_with_disk == True:
             import rcs
             return self.rcs.get_file_contents(self.get_path("body"))
-    def _set_comment_body(self, value, force=False):
+    def _set_comment_body(self, old=None, new=None, force=False):
         if (self.rcs != None and self.sync_with_disk == True) or force==True:
-            assert value != None, "Can't save empty comment"
-            self.rcs.set_file_contents(self.get_path("body"), value)
+            assert new != None, "Can't save empty comment"
+            self.rcs.set_file_contents(self.get_path("body"), new)
 
     @Property
     @change_hook_property(hook=_set_comment_body)
@@ -323,7 +323,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         #    raise Exception, str(self)+'\n'+str(self.settings)+'\n'+str(self._settings_loaded)
         #assert self.in_reply_to != None, "Comment must be a reply to something"
         self.save_settings()
-        self._set_comment_body(self.body, force=True)
+        self._set_comment_body(new=self.body, force=True)
 
     def remove(self):
         for comment in self.traverse():
