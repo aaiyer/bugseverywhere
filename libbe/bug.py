@@ -185,6 +185,8 @@ class Bug(settings_object.SavedSettingsObject):
                     fset=_set_time,
                     doc="An integer version of .time_string")
 
+    def _extra_strings_generator(self):
+        return []
     def _extra_strings_check_fn(value):
         "Require an iterable full of strings"
         if not hasattr(value, "__iter__"):
@@ -198,7 +200,7 @@ class Bug(settings_object.SavedSettingsObject):
         self._prop_save_settings(old, new)
     @_versioned_property(name="extra_strings",
                          doc="Space for an array of extra strings.  Useful for storing state for functionality implemented purely in becommands/<some_function>.py.",
-                         default=[],
+                         generator=_extra_strings_generator,
                          check_fn=_extra_strings_check_fn,
                          change_hook=_extra_strings_change_hook,
                          mutable=True)
