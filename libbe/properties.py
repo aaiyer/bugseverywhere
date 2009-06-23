@@ -26,8 +26,10 @@ and
 for more information on decorators.
 """
 
+import copy
 import types
 import unittest
+
 
 class ValueCheckError (ValueError):
     def __init__(self, name, value, allowed):
@@ -130,12 +132,18 @@ def defaulting_property(default=None, null=None):
         if hasattr(funcs, "__call__"):
             funcs = funcs()
         fget = funcs.get("fget")
+        fset = funcs.get("fset")
         def _fget(self):
             value = fget(self)
             if value == null:
                 return default
             return value
+        def _fset(self, value):
+            if value == default:
+                value = null
+            fset(self, value)
         funcs["fget"] = _fget
+        funcs["fset"] = _fset
         return funcs
     return decorator
 
@@ -291,25 +299,48 @@ def change_hook_property(hook, mutable=False):
         fget = funcs.get("fget")
         fset = funcs.get("fset")
         name = funcs.get("name", "<unknown>")
+        def hash_value(value): # only used if mutable == True
+            return repr(value)
+        def _fget(self, new_value=None, from_fset=False): # only used if mutable == True
+            value = fget(self)
+            if not hasattr(self, "_change_hook_property_mutable_cache_hash"):
+                # first call to _fget for any mutable property
+                self._change_hook_property_mutable_cache_hash = {}
+                self._change_hook_property_mutable_cache_copy = {}
+            if name not in self._change_hook_property_mutable_cache_hash:
+                # first call to _fget for this particular mutable property
+                self._change_hook_property_mutable_cache_hash[name] = \
+                    hash_value(new_value)
+                self._change_hook_property_mutable_cache_copy[name] = \
+                    copy.deepcopy(new_value)
+            elif from_fset == True: # return cached value, and cache new value
+                old_hash = self._change_hook_property_mutable_cache_hash[name]
+                if hash_value(value) != old_hash:
+                    value = self._change_hook_property_mutable_cache_copy[name]
+                    self._change_hook_property_mutable_cache_hash[name] = \
+                        hash_value(new_value)
+                    self._change_hook_property_mutable_cache_copy[name] = \
+                        copy.deepcopy(new_value)
+            else: # check for a change in value while we weren't looking
+                old_hash = self._change_hook_property_mutable_cache_hash[name]
+                if hash_value(value) != old_hash:
+                    old_val=self._change_hook_property_mutable_cache_copy[name]
+                    self._change_hook_property_mutable_cache_hash[name] = \
+                        hash_value(value)
+                    self._change_hook_property_mutable_cache_copy[name] = \
+                        copy.deepcopy(value)
+                    hook(self, old_val, value)
+            return value
         def _fset(self, value):
-            old_value = fget(self)
+            if mutable == True: # get cached previous value
+                old_value = _fget(self, new_value=value, from_fset=True)
+            else:
+                old_value = fget(self)
             fset(self, value)
-            change_detected = False
             if value != old_value:
-                change_detected = True
-            elif mutable == True:
-                if True: #hasattr(self, "_change_hook_property_mutable_cache_%s" % name):
-                    # compare cached string with new value
-                    #old_string = getattr(self, "_change_hook_property_mutable_cache_%s" % name)
-                    old_string = "dummy"
-                    #print "comparing", name, "mutable strings", old_string, repr(value)
-                    if repr(value) != old_string:
-                        change_detected = True
-            #print "testing", name, "change hook property", change_detected, value
-            if change_detected:
                 hook(self, old_value, value)
-            if mutable == True: # cache the new value for next time
-                setattr(self, "_change_hook_property_mutable_cache_%s" % name, repr(value))
+        if mutable == True:
+            funcs["fget"] = _fget
         funcs["fset"] = _fset
         return funcs
     return decorator
@@ -508,6 +539,57 @@ class DecoratorTests(unittest.TestCase):
         t.x = 2
         self.failUnless(t.old == 1, t.old)
         self.failUnless(t.new == 2, t.new)
+    def testChangeHookMutableProperty(self):
+        class Test(object):
+            def _hook(self, old, new):
+                self.old = old
+                self.new = new
+                self.hook_calls += 1
+
+            @Property
+            @change_hook_property(_hook, mutable=True)
+            @local_property(name="HOOKED")
+            def x(): return {}
+        t = Test()
+        t.hook_calls = 0
+        t.x = []
+        self.failUnless(t.old == None, t.old)
+        self.failUnless(t.new == [], t.new)
+        a = t.x
+        a.append(5)
+        t.x = a
+        self.failUnless(t.old == [], t.old)
+        self.failUnless(t.new == [5], t.new)
+        t.x = []
+        self.failUnless(t.old == [5], t.old)
+        self.failUnless(t.new == [], t.new)
+        # now append without reassigning.  this doesn't trigger the
+        # change, since we don't ever set t.x, only get it and mess
+        # with it.  It does, however, update our t.new, since t.new =
+        # t.x and is not a static copy.
+        t.x.append(5)
+        self.failUnless(t.old == [5], t.old)
+        self.failUnless(t.new == [5], t.new)
+        # however, the next t.x get _will_ notice the change...
+        a = t.x
+        self.failUnless(t.old == [], t.old)
+        self.failUnless(t.new == [5], t.new)
+        self.failUnless(t.hook_calls == 5, t.hook_calls)
+        t.x.append(6) # this append(6) is not noticed yet
+        self.failUnless(t.old == [], t.old)
+        self.failUnless(t.new == [5,6], t.new)
+        self.failUnless(t.hook_calls == 5, t.hook_calls)
+        # this append(7) is not noticed, but the t.x get causes the
+        # append(6) to be noticed
+        t.x.append(7)
+        self.failUnless(t.old == [5], t.old)
+        self.failUnless(t.new == [5,6,7], t.new)
+        self.failUnless(t.hook_calls == 6, t.hook_calls)
+        a = t.x # now the append(7) is noticed
+        self.failUnless(t.old == [5,6], t.old)
+        self.failUnless(t.new == [5,6,7], t.new)
+        self.failUnless(t.hook_calls == 7, t.hook_calls)
+
 
 suite = unittest.TestLoader().loadTestsFromTestCase(DecoratorTests)
 
