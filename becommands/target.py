@@ -28,6 +28,8 @@ def execute(args, test=False):
     >>> execute(["a", "tomorrow"], test=True)
     >>> execute(["a"], test=True)
     tomorrow
+    >>> execute(["--list"], test=True)
+    tomorrow
     >>> execute(["a", "none"], test=True)
     >>> execute(["a"], test=True)
     No target assigned.
@@ -38,9 +40,10 @@ def execute(args, test=False):
                              bugid_args={0: lambda bug : bug.active==True})
                              
     if len(args) not in (1, 2):
-        raise cmdutil.UsageError
+        if not (options.list == True and len(args) == 0):
+            raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    if len(args) == 1 and args[0] == 'list':
+    if options.list:
         ts = set([bd.bug_from_uuid(bug).target for bug in bd.list_uuids()])
         for target in sorted(ts):
             if target and isinstance(target,str):
@@ -61,7 +64,9 @@ def execute(args, test=False):
         bd.save()
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be target BUG-ID [TARGET]")
+    parser = cmdutil.CmdOptionParser("be target BUG-ID [TARGET]\nor:    be target --list")
+    parser.add_option("-l", "--list", action="store_true", dest="list",
+                      help="List all available targets and exit")
     return parser
 
 longhelp="""
@@ -74,6 +79,11 @@ Targets are freeform; any text may be specified.  They will generally be
 milestone names or release numbers.
 
 The value "none" can be used to unset the target.
+
+In the alternative `be target --list` form print a list of all
+currently specified targets.  Note that bug status
+(i.e. opened/closed) is ignored.  If you want to list all bugs
+matching a current target, see `be list --target TARGET'.
 """
 
 def help():
