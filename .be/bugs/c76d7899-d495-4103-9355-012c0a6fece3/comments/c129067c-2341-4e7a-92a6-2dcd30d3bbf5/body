@@ -1,0 +1,14 @@
+If you want more granularity than just `wishlist' what about the
+`severities':
+  todo-critical
+  todo-minor
+  todo-...
+Then get a list of available severities with
+  $ be list --help | grep -A1 '^severity'
+  severity
+    wishlist,minor,serious,critical,fatal,todo-critical,todo-minor
+And show all the todos:
+  $ be list --severity todo-critical,todo-minor
+
+You can configure all the severities you'd like with
+  $ be set severity wishlist,minor,...

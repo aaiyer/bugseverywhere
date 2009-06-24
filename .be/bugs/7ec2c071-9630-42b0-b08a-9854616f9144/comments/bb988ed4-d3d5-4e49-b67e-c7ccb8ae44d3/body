@@ -1,0 +1,47 @@
+From my Tue, 25 Nov 2008 13:27:12 -0500 email:
+
+> >> 7ec:om: Arbitrary tags
+> >> Sensible
+> >
+> > Implemented as a free-form value field similar to target?  A
+> > comma-seperated list of tags?
+>
+
+That is a much better format than my unmergable one ;).
+
+> "append" usually has two "p"s.  Is the omission deliberate?
+
+Nope, sorry :p
+
+> It sounds pretty complicated.  I would probably use a type system rather
+> than "mixins", and define types as "scalar", "set" and maybe "list" and
+> "map".  Dependencies would be a set, and their special behaviour would
+> be hardcoded according to their name, not a property of their type.
+
+Ok.  I'm just worried about bloat.  It's pretty easy to move things
+around at the moment, but I'm worried that adding lots of attributes
+with special code will start a slippery slope of trying to satisfy
+everybody internally.  Then things start looking more like Arch, with
+newbies scared off by the confusion.  I know the Arch people like the
+power, but it took me several hours to figure out how to create a
+repository ;).  Some people like bug dependencies, and some do not
+  e.g.
+    https://bugs.launchpad.net/malone/+bug/95419
+    http://trac.edgewall.org/ticket/31
+
+From the *long* Trac post, you can see that this is divisive issue.
+
+I would be in favor of emulating TracCrossReferences
+(http://trac.edgewall.org/wiki/TracCrossReferences) in our core.  We
+could have references and backlinks fields for bugs (and comments?).
+But I'd rather not add blocking, etc.  However, having a seperate
+plugin obviously doesn't work for some people ;).  We'd like to bundle
+lots of functionality, but keep the core fairly clean and flexible.
+
+Therefore, I'd like a way to put non-core implememtation code in a
+seperate submod.  We already call our libbe code "plugins", and we're
+extending the builtin BugDir, Bug, etc code, so I thought we'd call
+the non-core submods mixins (see http://en.wikipedia.org/wiki/Mixin).
+
+Anyhow, just my 2c.
+

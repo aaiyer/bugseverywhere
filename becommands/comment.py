@@ -102,10 +102,14 @@ def execute(args, test=False):
             body+='\n'
     
     comment = parent.new_reply(body=body)
+    if options.content_type != None:
+        comment.content_type = options.content_type
     bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
+    parser.add_option("-c", "--content-type", metavar="MIME", dest="content_type",
+                      help="Set comment content-type (e.g. text/plain)", default=None)
     return parser
 
 longhelp="""

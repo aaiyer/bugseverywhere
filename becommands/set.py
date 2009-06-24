@@ -63,12 +63,7 @@ def execute(args, test=False):
                 msg += '\n  '.join(bd.settings_properties)
                 raise cmdutil.UserError(msg)
             old_setting = bd.settings.get(args[0])
-            try:
-                setattr(bd, args[0], args[1])
-            except bugdir.InvalidValue, e:
-                bd.settings[args[0]] = old_setting
-                bd.save()
-                raise cmdutil.UserError(e)
+            setattr(bd, args[0], args[1])
         else:
             del bd.settings[args[0]]
         bd.save()

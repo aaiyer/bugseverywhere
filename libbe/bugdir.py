@@ -51,13 +51,6 @@ class AlreadyInitialized(Exception):
         Exception.__init__(self, 
                            "Specified root is already initialized: %s" % path)
 
-class InvalidValue(ValueError):
-    def __init__(self, name, value):
-        msg = "Cannot assign value %s to %s" % (value, name)
-        Exception.__init__(self, msg)
-        self.name = name
-        self.value = value
-
 class MultipleBugMatches(ValueError):
     def __init__(self, shortname, matches):
         msg = ("More than one bug matches %s.  "

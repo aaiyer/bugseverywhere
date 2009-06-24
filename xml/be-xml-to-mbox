@@ -1,0 +1,185 @@
+#!/usr/bin/env python
+# Copyright (C) 2009 William Trevor King <wking@drexel.edu>
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""
+Convert xml output of `be list --xml` into mbox format for browsing
+with a mail reader.  For example
+  $ be list --xml --status=all | be-xml-to-mbox | catmutt
+
+mbox is a flat-file format, consisting of a series of messages.
+Messages begin with a a From_ line, followed by RFC 822 email,
+followed by a blank line.
+"""
+
+#from mailbox import mbox, Message  # the mailbox people really want an on-disk copy
+import email.utils
+import types
+
+from libbe.encoding import get_encoding, set_IO_stream_encodings
+from libbe.utility import str_to_time as rfc2822_to_gmtime_integer
+from time import asctime, gmtime
+from xml.sax import make_parser
+from xml.sax.handler import ContentHandler
+from xml.sax.saxutils import unescape
+
+
+DEFAULT_DOMAIN = "invalid.com"
+DEFAULT_EMAIL = "dummy@" + DEFAULT_DOMAIN
+DEFAULT_ENCODING = get_encoding()
+set_IO_stream_encodings(DEFAULT_ENCODING)
+
+def rfc2822_to_asctime(rfc2822_string):
+    """Convert an RFC 2822-fomatted string into a asctime string.
+    >>> rfc2822_to_asctime("Thu, 01 Jan 1970 00:00:00 +0000")
+    "Thu Jan 01 00:00:00 1970"
+    """
+    if rfc2822_string == "":
+        return asctime(gmtime(0))
+    return asctime(gmtime(rfc2822_to_gmtime_integer(rfc2822_string)))
+
+class LimitedAttrDict (dict):
+    """
+    Dict with error checking, to avoid invalid bug/comment fields.
+    """
+    _attrs = [] # override with list of valid attribute names
+    def __init__(self, **kwargs):
+        dict.__init__(self)
+        for key,value in kwargs.items():
+            self[key] = value
+    def __setitem__(self, key, item):
+        self._validate_key(key)
+        dict.__setitem__(self, key, item)
+    def _validate_key(self, key):
+        if key in self._attrs:
+            return
+        elif type(key) not in types.StringTypes:
+            raise TypeError, "Invalid attribute type %s for '%s'" % (type(key), key)
+        else:
+            raise ValueError, "Invalid attribute name '%s'" % key
+
+class Bug (LimitedAttrDict):
+    _attrs = [u"uuid",
+              u"short-name",
+              u"severity",
+              u"status",
+              u"assigned",
+              u"target",
+              u"reporter",
+              u"creator",
+              u"created",
+              u"summary",
+              u"comments"]
+    def print_to_mbox(self):
+        name,addr = email.utils.parseaddr(self["creator"])
+        print "From %s %s" % (addr, rfc2822_to_asctime(self["created"]))
+        print "Message-ID: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
+        print "Date: %s" % self["created"]
+        print "From: %s" % self["creator"]
+        print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
+        print "Content-Transfer-Encoding: 8bit"
+        print "Subject: %s: %s" % (self["short-name"], self["summary"])
+        print ""
+        print self["summary"]
+        print ""
+        for comment in self["comments"]:
+            comment.print_to_mbox(self)
+
+class Comment (LimitedAttrDict):
+    _attrs = [u"uuid",
+              u"short-name",
+              u"in-reply-to",
+              u"from",
+              u"date",
+              u"content-type",
+              u"body"]
+    def print_to_mbox(self, bug):
+        name,addr = email.utils.parseaddr(self["from"])
+        print "From %s %s" % (addr, rfc2822_to_asctime(self["date"]))
+        print "Message-ID: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
+        print "Date: %s" % self["date"]
+        print "From: %s" % self["from"]
+        print "Content-Type: %s; charset=%s" % (self["content-type"], DEFAULT_ENCODING)
+        print "Content-Transfer-Encoding: 8bit"
+        print "Subject: %s: %s" % (self["short-name"], bug["summary"])
+        if "in-reply-to" not in self.keys():
+            self["in-reply-to"] = bug["uuid"]
+        print "In-Reply-To: <%s@%s>" % (self["in-reply-to"], DEFAULT_DOMAIN)
+        print ""
+        print self["body"]
+        print ""
+
+class BE_list_handler (ContentHandler):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.bug = None
+        self.comment = None
+        self.text_field = None
+
+    def startElement(self, name, attributes):
+        if name == "bug":
+            assert self.bug == None, "Nested bugs?!"
+            assert self.comment == None
+            assert self.text_field == None
+            self.bug = Bug(comments=[])
+        elif name == "comment":
+            assert self.bug != None, "<comment> not in <bug>?"
+            assert self.text_field == None, "<comment> in text field %s?" % self.text_field
+            self.comment = Comment()
+        elif self.bug != None and self.comment == None:
+            # parse bug text field
+            if name != "comment":
+                self.text_field = name
+                self.text_data = ""
+        elif self.bug != None and self.comment != None:
+            # parse comment text field
+            self.text_field = name
+            self.text_data = ""
+
+    def endElement(self, name):
+        if name == "bug":
+            assert self.bug != None, "Invalid XML?"
+            self.bug.print_to_mbox()
+            self.bug = None
+        elif name == "comment":
+            assert self.bug != None, "<comment> not in <bug>?"
+            assert self.text_field == None, "<comment> in text field %s?" % self.text_field
+            assert self.comment != None, "Invalid XML?"
+            self.bug["comments"].append(self.comment)
+            # comments printed by bug.print_to_mbox()
+            self.comment = None 
+        elif self.bug != None and self.comment == None:
+            # parse bug text field
+            self.bug[self.text_field] = unescape(self.text_data.strip())
+            self.text_field = None
+            self.text_data = None
+        elif self.bug != None and self.comment != None:
+            # parse comment text field
+            self.comment[self.text_field] = unescape(self.text_data.strip())
+            self.text_field = None
+            self.text_data = None
+
+    def characters(self, data):
+        if self.text_field != None:
+            self.text_data += data
+
+if __name__ == "__main__":
+    import sys
+    
+    parser = make_parser()
+    parser.setContentHandler(BE_list_handler())
+    parser.parse(sys.stdin)
