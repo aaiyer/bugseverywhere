@@ -42,7 +42,7 @@ def execute(args, test=False):
     if len(args) == 1 and args[0] == "list":
         ts = set([bd.bug_from_uuid(bug).target for bug in bd.list_uuids()])
         for target in sorted(ts):
-            if target:
+            if target and isinstance(target, str):
                 print target
         return
     bug = bd.bug_from_shortname(args[0])
