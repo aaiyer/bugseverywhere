@@ -28,6 +28,8 @@ def execute(args, test=False):
     >>> execute(["a", "tomorrow"], test=True)
     >>> execute(["a"], test=True)
     tomorrow
+    >>> execute(["list"], test=True)
+    tomorrow
     >>> execute(["a", "none"], test=True)
     >>> execute(["a"], test=True)
     No target assigned.
@@ -73,6 +75,8 @@ Targets are freeform; any text may be specified.  They will generally be
 milestone names or release numbers.
 
 The value "none" can be used to unset the target.
+
+"list" can be used in place of a bug-ID to show all existing targets.
 """
 
 def help():
