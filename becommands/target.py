@@ -39,6 +39,12 @@ def execute(args, test=False):
     if len(args) not in (1, 2):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    if len(args) == 1 and args[0] == "list":
+        ts = set([bd.bug_from_uuid(bug).target for bug in bd.list_uuids()])
+        for target in sorted(ts):
+            if target:
+                print target
+        return
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         if bug.target is None or bug.target is settings_object.EMPTY:
