@@ -9,6 +9,7 @@ def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
     """Takes a timestamp and revormats it into a human-readable string."""
     return datetime.fromtimestamp(value).strftime(format)
 
+
 class WebInterface:
     """The web interface to CFBE."""
     
