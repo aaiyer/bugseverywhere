@@ -18,7 +18,7 @@
 
 
 import sys
-from libbe import cmdutil
+from libbe import cmdutil, _version
 
 __doc__ == cmdutil.help()
 
@@ -28,6 +28,8 @@ elif sys.argv[1] == '--complete':
     for command, module in cmdutil.iter_commands():
         print command
     print '\n'.join(["--help","--complete","--options"])
+elif sys.argv[1] == '--version':
+    print _version.version_info["revision_id"]
 else:
     try:
         try:

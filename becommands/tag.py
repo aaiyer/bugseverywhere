@@ -89,7 +89,8 @@ def execute(args, test=False):
                     if tag not in tags:
                         tags.append(tag)
         tags.sort()
-        print '\n'.join(tags)
+        if len(tags) > 0:
+            print '\n'.join(tags)
         return
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 2:

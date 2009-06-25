@@ -18,7 +18,7 @@ PATH = /usr/bin:/bin
 DOC_DIR := doc
 
 # Variables that will be extended by module include files
-GENERATED_FILES :=
+GENERATED_FILES := libbe/_version.py build
 CODE_MODULES :=
 CODE_PROGRAMS :=
 
@@ -26,6 +26,9 @@ CODE_PROGRAMS :=
 MODULES += ${DOC_DIR}
 
 RM = rm
+
+PREFIX = ${HOME}
+INSTALL_OPTIONS = "--prefix=${PREFIX}"
 
 
 .PHONY: all
@@ -36,12 +39,18 @@ include $(patsubst %,%/module.mk,${MODULES})
 
 
 .PHONY: build
-build:
+build: libbe/_version.py
+	python setup.py build
 
 .PHONY: install
-install:
+install: doc build
+	python setup.py install ${INSTALL_OPTIONS}
+	cp -v xml/* ${PREFIX}/bin
 
 
 .PHONY: clean
 clean:
 	$(RM) -rf ${GENERATED_FILES}
+
+libbe/_version.py:
+	bzr version-info --format python > $@

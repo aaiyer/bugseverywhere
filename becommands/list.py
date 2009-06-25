@@ -17,6 +17,7 @@
 """List bugs"""
 from libbe import cmdutil, bugdir, bug
 import os
+import re
 __desc__ = __doc__
 
 # get a list of * for cmp_*() comparing two bugs. 
@@ -110,8 +111,8 @@ def execute(args, test=False):
         if target == []: # set the default value
             target = "all"
     if options.extra_strings != None:
-        required_extra_strings = options.extra_strings.split(',')
-    
+        extra_string_regexps = [re.compile(x) for x in options.extra_strings.split(',')]
+
     def filter(bug):
         if status != "all" and not bug.status in status:
             return False
@@ -122,9 +123,12 @@ def execute(args, test=False):
         if target != "all" and not bug.target in target:
             return False
         if options.extra_strings != None:
+            if len(bug.extra_strings) == 0 and len(extra_string_regexps) > 0:
+                return False
             for string in bug.extra_strings:
-                if string not in required_extra_strings:
-                    return False
+                for regexp in extra_string_regexps:
+                    if not regexp.match(string):
+                        return False
         return True
 
     bugs = [b for b in bd if filter(b) ]
