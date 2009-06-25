@@ -1,35 +1,14 @@
+assigned: abentley
 
 
-
-assigned=abentley
-
+creator: abentley
 
 
+severity: minor
 
 
-
-creator=abentley
-
+status: closed
 
 
-
-
-
-severity=minor
-
-
-
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Organize list by whether it's assigned to the current target
-
-
+summary: Organize list by whether it's assigned to the current target
 

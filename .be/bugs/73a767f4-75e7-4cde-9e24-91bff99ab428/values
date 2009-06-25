@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: serious
 
 
+status: fixed
 
 
-
-severity=serious
-
-
-
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=implement comments
-
-
+summary: implement comments
 

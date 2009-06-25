@@ -18,6 +18,7 @@ import os
 import os.path
 import errno
 import time
+import types
 import xml.sax.saxutils
 import doctest
 
@@ -183,6 +184,27 @@ class Bug(settings_object.SavedSettingsObject):
     time = property(fget=_get_time,
                     fset=_set_time,
                     doc="An integer version of .time_string")
+
+    def _extra_strings_check_fn(value):
+        "Require an iterable full of strings"
+        if value == settings_object.EMPTY:
+            return True
+        elif not hasattr(value, "__iter__"):
+            return False
+        for x in value:
+            if type(x) not in types.StringTypes:
+                return False
+        return True
+    def _extra_strings_change_hook(self, old, new):
+        self.extra_strings.sort() # to make merging easier
+        self._prop_save_settings(old, new)
+    @_versioned_property(name="extra_strings",
+                         doc="Space for an array of extra strings.  Useful for storing state for functionality implemented purely in becommands/<some_function>.py.",
+                         default=[],
+                         check_fn=_extra_strings_check_fn,
+                         change_hook=_extra_strings_change_hook,
+                         mutable=True)
+    def extra_strings(): return {}
 
     @_versioned_property(name="summary",
                          doc="A one-line bug description")

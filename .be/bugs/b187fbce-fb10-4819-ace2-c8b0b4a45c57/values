@@ -1,42 +1,17 @@
+assigned: benf
 
 
-
-assigned=benf
-
+creator: benf
 
 
+severity: minor
 
 
-
-creator=benf
-
+status: fixed
 
 
+summary: Manual page for 'be' command
 
 
-
-severity=minor
-
-
-
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Manual page for 'be' command
-
-
-
-
-
-
-time=Mon, 21 Apr 2008 03:21:35 +0000
-
-
+time: Mon, 21 Apr 2008 03:21:35 +0000
 

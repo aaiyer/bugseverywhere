@@ -1,35 +1,14 @@
+creator: W. Trevor King <wking@drexel.edu>
 
 
-
-creator=W. Trevor King <wking@drexel.edu>
-
+severity: critical
 
 
+status: fixed
 
 
-
-severity=critical
-
+summary: Slow be commands due to bugdir loading, go back to lazy bug loading.
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Slow be commands due to bugdir loading, go back to lazy bug loading.
-
-
-
-
-
-
-time=Sun, 23 Nov 2008 13:48:01 +0000
-
-
+time: Sun, 23 Nov 2008 13:48:01 +0000
 

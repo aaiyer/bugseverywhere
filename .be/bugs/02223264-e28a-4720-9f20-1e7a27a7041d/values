@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Needs more test cases
-
-
+summary: Needs more test cases
 

@@ -109,6 +109,8 @@ def execute(args, test=False):
             target.append(bd.target)
         if target == []: # set the default value
             target = "all"
+    if options.extra_strings != None:
+        required_extra_strings = options.extra_strings.split(',')
     
     def filter(bug):
         if status != "all" and not bug.status in status:
@@ -119,6 +121,10 @@ def execute(args, test=False):
             return False
         if target != "all" and not bug.target in target:
             return False
+        if options.extra_strings != None:
+            for string in bug.extra_strings:
+                if string not in required_extra_strings:
+                    return False
         return True
 
     bugs = [b for b in bd if filter(b) ]
@@ -152,13 +158,15 @@ def execute(args, test=False):
 def get_parser():
     parser = cmdutil.CmdOptionParser("be list [options]")
     parser.add_option("-s", "--status", metavar="STATUS", dest="status",
-                      help="List options matching STATUS", default=None)
+                      help="List bugs matching STATUS", default=None)
     parser.add_option("-v", "--severity", metavar="SEVERITY", dest="severity",
-                      help="List options matching SEVERITY", default=None)
+                      help="List bugs matching SEVERITY", default=None)
     parser.add_option("-a", "--assigned", metavar="ASSIGNED", dest="assigned",
-                      help="List options matching ASSIGNED", default=None)
+                      help="List bugs matching ASSIGNED", default=None)
     parser.add_option("-t", "--target", metavar="TARGET", dest="target",
-                      help="List options matching TARGET", default=None)
+                      help="List bugs matching TARGET", default=None)
+    parser.add_option("-e", "--extra-strings", metavar="STRINGS", dest="extra_strings",
+                      help="List bugs matching _all_ extra strings in comma-seperated list STRINGS.  e.g. --extra-strings TAG:working,TAG:xml", default=None)
     parser.add_option("-S", "--sort", metavar="SORT-BY", dest="sort_by",
                       help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
     # boolean options.  All but uuids and xml are special cases of long forms

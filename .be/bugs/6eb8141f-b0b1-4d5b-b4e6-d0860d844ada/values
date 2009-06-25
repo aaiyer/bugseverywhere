@@ -1,35 +1,15 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: serious
 
 
+status: closed
 
 
-
-severity=serious
-
-
+summary: On a new bug, if I add or edit a comment, then click "Update", the Summary
+  goes missing.
 
 
-
-
-status=closed
-
-
-
-
-
-
-summary=On a new bug, if I add or edit a comment, then click "Update", the Summary goes missing.
-
-
-
-
-
-
-time=Fri, 27 Jan 2006 14:29:51 +0000
-
-
+time: Fri, 27 Jan 2006 14:29:51 +0000
 

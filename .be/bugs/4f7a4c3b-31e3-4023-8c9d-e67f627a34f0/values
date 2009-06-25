@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Automatically set .be as source for arch
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Automatically set .be as source for arch
-
-
-
-
-
-
-time=Thu, 07 Apr 2005 16:07:51 +0000
-
-
+time: Thu, 07 Apr 2005 16:07:51 +0000
 

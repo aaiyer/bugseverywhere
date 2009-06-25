@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: target (and others?) aren't parsed properly
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=target (and others?) aren't parsed properly
-
-
-
-
-
-
-time=Sat, 01 Apr 2006 18:29:33 +0000
-
-
+time: Sat, 01 Apr 2006 18:29:33 +0000
 

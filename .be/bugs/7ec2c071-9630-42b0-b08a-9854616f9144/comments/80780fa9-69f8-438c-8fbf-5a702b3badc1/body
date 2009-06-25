@@ -1,0 +1,2 @@
+Arbitrary tagging now supported via `be tag'.
+Dependencies supported via `be depend'.

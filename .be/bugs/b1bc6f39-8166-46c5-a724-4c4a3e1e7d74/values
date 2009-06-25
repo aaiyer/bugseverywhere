@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Comments do not appear in web UI
-
-
+summary: Comments do not appear in web UI
 

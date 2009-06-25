@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Add a reporter field
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Add a reporter field
-
-
-
-
-
-
-time=Thu, 14 Sep 2006 16:47:57 +0000
-
-
+time: Thu, 14 Sep 2006 16:47:57 +0000
 

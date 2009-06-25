@@ -1,35 +1,14 @@
+creator: wking
 
 
-
-creator=wking
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: elementtree module moved in Python 2.5
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=elementtree module moved in Python 2.5
-
-
-
-
-
-
-time=Thu, 13 Nov 2008 16:45:24 +0000
-
-
+time: Thu, 13 Nov 2008 16:45:24 +0000
 
