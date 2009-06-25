@@ -1,7 +1,9 @@
 import cherrypy
-from libbe import bugdir
+from libbe import bugdir, settings_object
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
+
+EMPTY = settings_object.EMPTY
 
 def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
     """Takes a timestamp and revormats it into a human-readable string."""
@@ -21,11 +23,11 @@ class WebInterface:
     def get_common_information(self):
         """Returns a dict of common information that most pages will need."""
         possible_assignees = list(set(
-          [unicode(bug.assigned) for bug in self.bd if bug.assigned != 'None']))
+          [unicode(bug.assigned) for bug in self.bd if bug.assigned != EMPTY]))
         possible_assignees.sort(key=unicode.lower)
         
         possible_targets = list(set(
-          [unicode(bug.target) for bug in self.bd if bug.target != 'None']))
+          [unicode(bug.target) for bug in self.bd if bug.target != EMPTY]))
         possible_targets.sort(key=unicode.lower)
         
         possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed', 
@@ -45,7 +47,7 @@ class WebInterface:
         bugs = [bug for bug in self.bd if bug.status in status]
         
         if assignee != '':
-            assignee = None if assignee == 'None' else assignee
+            assignee = EMPTY if assignee == 'None' else assignee
             bugs = [bug for bug in bugs if bug.assigned == assignee]
         
         if target != '':
@@ -71,9 +73,11 @@ class WebInterface:
             label = 'All Closed Bugs'
         
         if assignee != '':
-            label += ' Currently Unassigned' if assignee == 'None' else ' Assigned to %s' % (assignee,)
+            label += ' Currently Unassigned' if assignee == 'None' \
+                else ' Assigned to %s' % (assignee,)
         if target != '':
-            label += ' Currently Unschdeuled' if target == 'None' else ' Scheduled for %s' % (target,)
+            label += ' Currently Unschdeuled' if target == 'None' \
+                else ' Scheduled for %s' % (target,)
         
         template = self.env.get_template('list.html')
         bugs = self.filter_bugs(status, assignee, target)
@@ -98,6 +102,8 @@ class WebInterface:
         template = self.env.get_template('bug.html')
         common_info = self.get_common_information()
         return template.render(bug=bug, bd=self.bd, 
+                               assignee='' if bug.assigned == EMPTY else bug.assigned,
+                               target='' if bug.target == EMPTY else bug.target,
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
                                statuses=common_info['possible_statuses'],
