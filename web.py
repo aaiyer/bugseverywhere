@@ -20,10 +20,12 @@ class WebInterface:
     
     def get_common_information(self):
         """Returns a dict of common information that most pages will need."""
-        possible_assignees = list(set([bug.assigned for bug in self.bd if unicode(bug.assigned) != 'None']))
+        possible_assignees = list(set(
+          [unicode(bug.assigned) for bug in self.bd if bug.assigned != 'None']))
         possible_assignees.sort(key=unicode.lower)
         
-        possible_targets = list(set([bug.target for bug in self.bd if unicode(bug.target) != 'None']))
+        possible_targets = list(set(
+          [unicode(bug.target) for bug in self.bd if bug.target != 'None']))
         possible_targets.sort(key=unicode.lower)
         
         possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed', 
