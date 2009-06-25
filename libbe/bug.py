@@ -283,7 +283,8 @@ class Bug(settings_object.SavedSettingsObject):
         for (k,v) in info:
             if v is not settings_object.EMPTY:
                 ret += '  <%s>%s</%s>\n' % (k,xml.sax.saxutils.escape(v),k)
-
+        for estr in self.extra_strings:
+            ret += '  <extra-string>%s</extra-string>\n' % estr
         if show_comments == True:
             comout = self.comment_root.xml_thread(auto_name_map=True,
                                                   bug_shortname=shortname)
