@@ -10,35 +10,30 @@
         <link rel="stylesheet" type="text/css" media="screen"
               href="/static/style/cfbe.css" />
         
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.1/jquery.min.js"></script>
-        <script type="text/javascript" src="/static/scripts/jquery.corners.min.js"></script>
+        <script type="text/javascript"
+        src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js">
+        </script>
+        
+        <script type="text/javascript" 
+        src="/static/scripts/jquery.corners.min.js">
+        </script>
+        
         <script type="text/javascript">
             $(function() {
-                $('#content-pane').corners('bottom 8px');
-                
-                $('#external-pane').hide();
-                $('#external-pane-content').corners('bottom 8px');
-                
-                $('#show-rhythm').click(function(e) {
-                    $('body').addClass('rhythm');
-                    $('#content-pane').addClass('rhythm');
-                    $('#external-pane-content').addClass('rhythm');
-                    e.preventDefault();
-                });
-                
                 $('#filter-assignee').click(function(e) {
-                    $('#external-pane-content').html($('#assignees').html());
-                    $('#external-pane').fadeIn('fast');
+                    $('#filter-pane').html($('#assignees').html());
+                    $('#filter-pane').fadeIn('fast');
                     e.preventDefault();
                 });
                 
                 $('#filter-target').click(function(e) {
-                    $('#external-pane-content').html($('#targets').html());
-                    $('#external-pane').fadeIn('fast');
+                    $('#filter-pane').html($('#targets').html());
+                    $('#filter-pane').fadeIn('fast');
                     e.preventDefault();
                 });
                 
                 $('#create-bug').click(function(e) {
+                    $('#create-bug').hide();
                     $('#create-form').fadeIn('fast');
                     e.preventDefault();
                 });
@@ -51,66 +46,62 @@
     </head>
     
     <body>
-        <div id="header">
-            <div class="center-column">
+        <div id="main-pane">
+            <div id="header" class="inside-main-pane">
                 <h1>{{ repository_name }}</h1>
             </div>
-        </div>
-        <div id="content-wrap">
-            <div id="content-pane" class="center-column">
-                <div id="nav">
-                    <span id="filters">
-                        <a href="/">Open</a>
-                        <a href="/?status=closed">Closed</a>
-                        <a href="" id="filter-assignee">Assigned to...</a>
-                        <a href="" id="filter-target">Scheduled for...</a>
-                    </span>
-                    <span id="create">
-                        <a href="" id="create-bug">&#43; Create a new bug</a>
-                    </span>
-                </div>
-                <form id="create-form" action="/create" method="post">
-                    <fieldset>
-                        <div class="field">
-                            <input type="text" class="text" id="create-summary" name="summary" />
-                            <button id="create-button" type="submit">Create</button>
-                        </div>
-                    </fieldset>
-                </form>
+            <div id="navigation" class="inside-main-pane">
+                <span id="filters">
+                    <a href="/">Open</a>
+                    <a href="/?status=closed">Closed</a>
+                    <a href="" id="filter-assignee">Assigned to...</a>
+                    <a href="" id="filter-target">Scheduled for...</a>
+                </span>
+                <span id="create">
+                    <a href="" id="create-bug">&#43; Create a new bug</a>
+                </span>
+                <span id="create-form">
+                    <form action="/create" method="post">
+                        <fieldset>
+                            <input type="text" 
+                                   id="create-summary" name="summary" />
+                            <button id="create-button"
+                                    type="submit">Create</button>
+                        </fieldset>
+                    </form>
+                </span>
+            </div>
+            <div id="filter-pane" class="inside-main-pane"></div>
+            <div id="content-pane" class="inside-main-pane">
                 <h2>{% block page_title %}&nbsp;{% endblock %}</h2>
                 {% block content %}{% endblock %}
             </div>
-            <div id="footer" class="center-column">
+            <div id="footer" class="inside-main-pane">
                 <p>
                     <a href="">Cherry Flavored Bugs Everywhere</a>
-                    was created by <a href="http://stevelosh.com">Steve Losh</a>
+                    was created by <a href="http://stevelosh.com">Steve Losh</a> and a very nice <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvark</a>
                     using <a href="http://cherrypy.org">CherryPy</a>,
                     <a href="http://jinja.pocoo.org/2/">Jinja2</a>,
                     and <a href="http://jquery.com">jQuery</a>.
-                    <br/>
-                    He asked <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvarks</a> for help
-                    to make it all <a href="" id="show-rhythm">line up</a>.
+                    It all <a href="" id="show-rhythm">lines up</a>.
                 </p>
             </div>
         </div>
-        <div id="external-pane">
-            <div id="external-pane-content"></div>
-        </div>
         <div id="assignees">
-            <p>
-                <a href="/?assignee=None">Unassigned</a><br /><br />
+            <ul class="filter-items">
+                <li><a href="/?assignee=None">Unassigned</a></li>
                 {% for assignee in assignees %}
-                    <a href="/?assignee={{ assignee|e }}">{{ assignee|e }}</a><br />
+                    <li><a href="/?assignee={{ assignee|e }}">{{ assignee|e }}</a></li>
                 {% endfor %}
-            </p>
+            </ul>
         </div>
         <div id="targets">
-            <p>
-                <a href="/?target=None">Unscheduled</a><br /><br />
+            <ul class="filter-items">
+                <li><a href="/?target=None">Unscheduled</a></li>
                 {% for target in targets %}
-                    <a href="/?target={{ target }}">{{ target }}</a><br />
+                    <li><a href="/?target={{ target }}">{{ target }}</a></li>
                 {% endfor %}
-            </p>
+            </ul>
         </div>
     </body>
 </html>
