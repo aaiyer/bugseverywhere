@@ -27,14 +27,14 @@ def execute(args, test=False):
     >>> print a.extra_strings
     []
     >>> execute(["a", "GUI"], test=True)
-    Tagging bug a:
+    Tags for a:
     GUI
     >>> bd._clear_bugs() # resync our copy of bug
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
     ['TAG:GUI']
     >>> execute(["a", "later"], test=True)
-    Tagging bug a:
+    Tags for a:
     GUI
     later
     >>> execute(["a"], test=True)
@@ -45,7 +45,7 @@ def execute(args, test=False):
     GUI
     later
     >>> execute(["a", "Alphabetically first"], test=True)
-    Tagging bug a:
+    Tags for a:
     Alphabetically first
     GUI
     later
@@ -58,16 +58,14 @@ def execute(args, test=False):
     []
     >>> a.save()
     >>> execute(["a"], test=True)
-    Tags for a:
     >>> bd._clear_bugs() # resync our copy of bug
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
     []
     >>> execute(["a", "Alphabetically first"], test=True)
-    Tagging bug a:
+    Tags for a:
     Alphabetically first
     >>> execute(["--remove", "a", "Alphabetically first"], test=True)
-    Tags for a:
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -94,32 +92,25 @@ def execute(args, test=False):
         print '\n'.join(tags)
         return
     bug = bd.bug_from_shortname(args[0])
-
-    new_tag = None
     if len(args) == 2:
         given_tag = args[1]
-        tags = bug.extra_strings
+        estrs = bug.extra_strings
         tag_string = "TAG:%s" % given_tag
         if options.remove == True:
-            tags.remove(tag_string)
+            estrs.remove(tag_string)
         else: # add the tag
-            new_tag = given_tag
-            tags.append(tag_string)
-        bug.extra_strings = tags # reassign to notice change
-
-    bug.save()
+            estrs.append(tag_string)
+        bug.extra_strings = estrs # reassign to notice change
+        bug.save()
 
     tags = []
     for estr in bug.extra_strings:
         if estr.startswith("TAG:"):
             tags.append(estr[4:])
 
-    if new_tag == None:
+    if len(tags) > 0:
         print "Tags for %s:" % bug.uuid
-    else:
-        print "Tagging bug %s:" % bug.uuid
-    for tag in tags:
-        print tag
+        print '\n'.join(tags)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be tag BUG-ID [TAG]\nor:    be tag --list")
@@ -132,6 +123,9 @@ def get_parser():
 longhelp="""
 If TAG is given, add TAG to BUG-ID.  If it is not specified, just
 print the tags for BUG-ID.
+
+To search for bugs with a particular tag, try
+  $ be list --extra-strings TAG:<your-tag>
 """
 
 def help():
