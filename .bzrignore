@@ -1,11 +1,12 @@
-Bugs-Everywhere-Web/beweb/config.py
 ./build
-Bugs-Everywhere-Web/beweb/database.sqlite
-Bugs-Everywhere-Web/beweb/catwalk-session
+libbe/_version.py
+./doc/*.1
 *.pyc
 *.sw[pon]
 fte.dsk
 *~
 ./.shelf
 Bugs-Everywhere-Web/devdata.sqlite
-./doc/*.1
+Bugs-Everywhere-Web/beweb/config.py
+Bugs-Everywhere-Web/beweb/database.sqlite
+Bugs-Everywhere-Web/beweb/catwalk-session

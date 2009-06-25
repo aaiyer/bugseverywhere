@@ -18,7 +18,7 @@ PATH = /usr/bin:/bin
 DOC_DIR := doc
 
 # Variables that will be extended by module include files
-GENERATED_FILES :=
+GENERATED_FILES := libbe/_version.py build
 CODE_MODULES :=
 CODE_PROGRAMS :=
 
