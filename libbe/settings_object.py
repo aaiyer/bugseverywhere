@@ -126,10 +126,12 @@ def versioned_property(name, doc,
     def decorator(funcs):
         fulldoc = doc
         if default != None:
-            defaulting  = defaulting_property(default=default, null=EMPTY)
+            defaulting  = defaulting_property(default=default, null=EMPTY,
+                                              default_mutable=mutable)
             fulldoc += "\n\nThis property defaults to %s" % default
         if generator != None:
-            cached = cached_property(generator=generator, initVal=EMPTY)
+            cached = cached_property(generator=generator, initVal=EMPTY,
+                                     mutable=mutable)
             fulldoc += "\n\nThis property is generated with %s" % generator
         if check_fn != None:
             fn_checked = fn_checked_property(value_allowed_fn=check_fn)

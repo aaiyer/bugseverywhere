@@ -61,6 +61,11 @@ def execute(args, test=False):
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
     []
+    >>> execute(["a", "Alphabetically first"], test=True)
+    Tagging bug a:
+    Alphabetically first
+    >>> execute(["--remove", "a", "Alphabetically first"], test=True)
+    Tags for a:
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -79,7 +84,6 @@ def execute(args, test=False):
     new_tag = None
     if len(args) == 2:
         given_tag = args[1]
-        # reassign list so the change_hook realizes we've altered it.
         tags = bug.extra_strings
         tag_string = "TAG:%s" % given_tag
         if options.remove == True:
@@ -87,14 +91,14 @@ def execute(args, test=False):
         else: # add the tag
             new_tag = given_tag
             tags.append(tag_string)
-        bug.extra_strings = tags
+        bug.extra_strings = tags # reassign to notice change
+
+    bug.save()
 
     tags = []
     for estr in bug.extra_strings:
         if estr.startswith("TAG:"):
             tags.append(estr[4:])
-
-    bd.save()
 
     if new_tag == None:
         print "Tags for %s:" % bug.uuid
