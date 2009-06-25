@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: More types of closed bugs
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=More types of closed bugs
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:03:27 +0000
-
-
+time: Wed, 04 Jan 2006 21:03:27 +0000
 

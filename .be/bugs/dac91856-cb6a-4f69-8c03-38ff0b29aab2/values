@@ -1,35 +1,14 @@
+creator: wking
 
 
-
-creator=wking
-
+severity: serious
 
 
+status: fixed
 
 
-
-severity=serious
-
+summary: BE not notifying git of some changed files
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=BE not notifying git of some changed files
-
-
-
-
-
-
-time=Mon, 17 Nov 2008 15:02:15 +0000
-
-
+time: Mon, 17 Nov 2008 15:02:15 +0000
 

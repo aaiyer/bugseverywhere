@@ -1,5 +1,4 @@
-# Copyright (C) 2005 Aaron Bentley and Panometrics, Inc.
-# <abentley@panoramicfeedback.com>
+# Copyright (C) 2009 W. Trevor King <wking@drexel.edu>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -42,6 +41,9 @@ def execute(args, test=False):
     Tags for a:
     GUI
     later
+    >>> execute(["--list"], test=True)
+    GUI
+    later
     >>> execute(["a", "Alphabetically first"], test=True)
     Tagging bug a:
     Alphabetically first
@@ -72,13 +74,25 @@ def execute(args, test=False):
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==True})
 
-    if len(args) < 1:
+    if len(args) == 0 and options.list == False:
         raise cmdutil.UsageError("Please specify a bug id.")
-    if len(args) > 2:
+    elif len(args) > 2 or (len(args) > 0 and options.list == True):
         help()
         raise cmdutil.UsageError("Too many arguments.")
     
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    if options.list:
+        bd.load_all_bugs()
+        tags = []
+        for bug in bd:
+            for estr in bug.extra_strings:
+                if estr.startswith("TAG:"):
+                    tag = estr[4:]
+                    if tag not in tags:
+                        tags.append(tag)
+        tags.sort()
+        print '\n'.join(tags)
+        return
     bug = bd.bug_from_shortname(args[0])
 
     new_tag = None
@@ -108,9 +122,11 @@ def execute(args, test=False):
         print tag
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be tag BUG-ID [TAG]")
+    parser = cmdutil.CmdOptionParser("be tag BUG-ID [TAG]\nor:    be tag --list")
     parser.add_option("-r", "--remove", action="store_true", dest="remove",
                       help="Remove TAG (instead of adding it)")
+    parser.add_option("-l", "--list", action="store_true", dest="list",
+                      help="List all available tags and exit")
     return parser
 
 longhelp="""

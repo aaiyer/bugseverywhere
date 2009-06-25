@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=implement severity on bug creation
-
-
+summary: implement severity on bug creation
 

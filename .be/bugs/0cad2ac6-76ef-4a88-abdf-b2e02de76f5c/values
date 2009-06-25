@@ -1,35 +1,14 @@
+creator: hubert
 
 
-
-creator=hubert
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: set-root in git repository fails
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=set-root in git repository fails
-
-
-
-
-
-
-time=Mon, 23 Jun 2008 04:57:22 +0000
-
-
+time: Mon, 23 Jun 2008 04:57:22 +0000
 

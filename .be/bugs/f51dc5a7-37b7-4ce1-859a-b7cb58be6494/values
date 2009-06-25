@@ -1,28 +1,11 @@
+severity: fatal
 
 
-
-severity=fatal
-
+status: fixed
 
 
+summary: Can't create bugs
 
 
-
-status=fixed
-
-
-
-
-
-
-summary=Can't create bugs
-
-
-
-
-
-
-target=0.1
-
-
+target: '0.1'
 

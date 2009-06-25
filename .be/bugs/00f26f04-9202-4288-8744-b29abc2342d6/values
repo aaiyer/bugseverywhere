@@ -1,42 +1,17 @@
+assigned: Ben Finney <ben+python@benfinney.id.au>
 
 
-
-assigned=Ben Finney <ben+python@benfinney.id.au>
-
+creator: benf
 
 
+severity: minor
 
 
-
-creator=benf
-
+status: closed
 
 
+summary: Address is outdated for FSF offices
 
 
-
-severity=minor
-
-
-
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Address is outdated for FSF offices
-
-
-
-
-
-
-time=Fri, 18 Apr 2008 11:18:58 +0000
-
-
+time: Fri, 18 Apr 2008 11:18:58 +0000
 
