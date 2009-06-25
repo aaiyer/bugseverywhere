@@ -40,8 +40,7 @@ def _get_matching_rcs(matchfn):
         rcs = module.new()
         if matchfn(rcs) == True:
             return rcs
-        else:
-            del(rcs)
+        del(rcs)
     return RCS()
     
 def rcs_by_name(rcs_name):
@@ -205,7 +204,8 @@ class RCS(object):
         except OSError, e:
             if e.errno == errno.ENOENT:
                 return False
-            raise e
+        except CommandError:
+            return False
     def detect(self, path="."):
         """
         Detect whether a directory is revision controlled with this RCS.
