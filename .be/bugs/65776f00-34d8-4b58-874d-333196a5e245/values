@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Select severity filter
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Select severity filter
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:07:08 +0000
-
-
+time: Wed, 04 Jan 2006 21:07:08 +0000
 

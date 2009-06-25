@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Ensure .be is source in Arch
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Ensure .be is source in Arch
-
-
-
-
-
-
-time=Tue, 17 May 2005 13:39:02 +0000
-
-
+time: Tue, 17 May 2005 13:39:02 +0000
 

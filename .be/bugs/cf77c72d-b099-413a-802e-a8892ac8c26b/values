@@ -1,35 +1,14 @@
+assigned: abentley
 
 
-
-assigned=abentley
-
+creator: abentley
 
 
+severity: minor
 
 
-
-creator=abentley
-
+status: fixed
 
 
-
-
-
-severity=minor
-
-
-
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=date-stamp bugs
-
-
+summary: date-stamp bugs
 

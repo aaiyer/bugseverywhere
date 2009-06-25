@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: Support RST
 
 
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Support RST
-
-
-
-
-
-
-time=Thu, 06 Apr 2006 16:45:52 +0000
-
-
+time: Thu, 06 Apr 2006 16:45:52 +0000
 

@@ -1,35 +1,14 @@
+creator: W. Trevor King <wking@drexel.edu>
 
 
-
-creator=W. Trevor King <wking@drexel.edu>
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: UTF-8 encoding trouble with pipes in becommands/show
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=UTF-8 encoding trouble with pipes in becommands/show
-
-
-
-
-
-
-time=Tue, 25 Nov 2008 02:30:35 +0000
-
-
+time: Tue, 25 Nov 2008 02:30:35 +0000
 

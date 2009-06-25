@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: Support rcs configuration
 
 
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Support rcs configuration
-
-
-
-
-
-
-target=patch-52
-
-
+target: patch-52
 

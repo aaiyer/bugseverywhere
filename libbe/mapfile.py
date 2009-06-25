@@ -113,7 +113,7 @@ def parse(contents):
             else:
                 newlines.append(line)
         contents = '\n'.join(newlines)
-    return yaml.load(contents)
+    return yaml.load(contents) or {}
 
 def map_save(rcs, path, map, allow_no_rcs=False):
     """Save the map as a mapfile to the specified path"""

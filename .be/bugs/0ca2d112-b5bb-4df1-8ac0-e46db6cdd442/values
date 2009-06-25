@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Organize list by target, and whether it's assigned to current be id
-
-
+summary: Organize list by target, and whether it's assigned to current be id
 

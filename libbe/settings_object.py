@@ -87,6 +87,7 @@ def attr_name_to_setting_name(self, name):
 def versioned_property(name, doc,
                        default=None, generator=None,
                        change_hook=prop_save_settings,
+                       mutable=False,
                        primer=prop_load_settings,
                        allowed=None, check_fn=None,
                        settings_properties=[],
@@ -125,10 +126,12 @@ def versioned_property(name, doc,
     def decorator(funcs):
         fulldoc = doc
         if default != None:
-            defaulting  = defaulting_property(default=default, null=EMPTY)
+            defaulting  = defaulting_property(default=default, null=EMPTY,
+                                              default_mutable=mutable)
             fulldoc += "\n\nThis property defaults to %s" % default
         if generator != None:
-            cached = cached_property(generator=generator, initVal=EMPTY)
+            cached = cached_property(generator=generator, initVal=EMPTY,
+                                     mutable=mutable)
             fulldoc += "\n\nThis property is generated with %s" % generator
         if check_fn != None:
             fn_checked = fn_checked_property(value_allowed_fn=check_fn)
@@ -137,7 +140,7 @@ def versioned_property(name, doc,
             checked = checked_property(allowed=allowed)
             fulldoc += "\n\nThe allowed values for this property are: %s." \
                        % (', '.join(allowed))
-        hooked      = change_hook_property(hook=change_hook)
+        hooked      = change_hook_property(hook=change_hook, mutable=mutable)
         primed      = primed_property(primer=primer, initVal=UNPRIMED)
         settings    = settings_property(name=name, null=UNPRIMED)
         docp        = doc_property(doc=fulldoc)
@@ -146,12 +149,10 @@ def versioned_property(name, doc,
             deco = defaulting(deco)
         if generator != None:
             deco = cached(deco)
-        if default != None:
-            deco = defaulting(deco)
-        if allowed != None:
-            deco = checked(deco)
         if check_fn != None:
             deco = fn_checked(deco)
+        if allowed != None:
+            deco = checked(deco)
         return Property(deco)
     return decorator
 
@@ -219,6 +220,7 @@ class SavedSettingsObject(object):
 
 class SavedSettingsObjectTests(unittest.TestCase):
     def testSimpleProperty(self):
+        """Testing a minimal versioned property"""
         class Test(SavedSettingsObject):
             settings_properties = []
             required_saved_properties = []
@@ -276,6 +278,7 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(t.settings["Content-type"] == EMPTY,
                         t.settings["Content-type"])
     def testDefaultingProperty(self):
+        """Testing a defaulting versioned property"""
         class Test(SavedSettingsObject):
             settings_properties = []
             required_saved_properties = []
@@ -305,6 +308,7 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(t._get_saved_settings()=={"Content-type":"text/html"},
                         t._get_saved_settings())
     def testRequiredDefaultingProperty(self):
+        """Testing a required defaulting versioned property"""
         class Test(SavedSettingsObject):
             settings_properties = []
             required_saved_properties = []
@@ -324,6 +328,7 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(t._get_saved_settings()=={"Content-type":"text/html"},
                         t._get_saved_settings())
     def testClassVersionedPropertyDefinition(self):
+        """Testing a class-specific _versioned property decorator"""
         class Test(SavedSettingsObject):
             settings_properties = []
             required_saved_properties = []
@@ -348,6 +353,59 @@ class SavedSettingsObjectTests(unittest.TestCase):
         t.content_type = "text/html"
         self.failUnless(t._get_saved_settings()=={"Content-type":"text/html"},
                         t._get_saved_settings())
+    def testMutableChangeHookedProperty(self):
+        """Testing a mutable change-hooked property"""
+        SAVES = []
+        def prop_log_save_settings(self, old, new, saves=SAVES):
+            saves.append("'%s' -> '%s'" % (str(old), str(new)))
+            prop_save_settings(self, old, new)
+        class Test(SavedSettingsObject):
+            settings_properties = []
+            required_saved_properties = []
+            @versioned_property(name="List-type",
+                                doc="A test property",
+                                mutable=True,
+                                change_hook=prop_log_save_settings,
+                                settings_properties=settings_properties,
+                                required_saved_properties=required_saved_properties)
+            def list_type(): return {}
+            def __init__(self):
+                SavedSettingsObject.__init__(self)
+        t = Test()
+        self.failUnless(t._settings_loaded == False, t._settings_loaded)
+        t.load_settings()
+        self.failUnless(SAVES == [], SAVES)
+        self.failUnless(t._settings_loaded == True, t._settings_loaded)
+        self.failUnless(t.list_type == EMPTY, t.list_type)
+        self.failUnless(SAVES == [
+                "'None' -> '<class 'libbe.settings_object.EMPTY'>'"
+                ], SAVES)
+        self.failUnless(t.settings["List-type"]==EMPTY,t.settings["List-type"])
+        t.list_type = []
+        self.failUnless(t.settings["List-type"] == [], t.settings["List-type"])
+        self.failUnless(SAVES == [
+                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'"
+                ], SAVES)
+        t.list_type.append(5)
+        self.failUnless(SAVES == [
+                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'" # <- TODO.  Where did this come from?
+                ], SAVES)
+        self.failUnless(t.settings["List-type"] == [5],t.settings["List-type"])
+        self.failUnless(SAVES == [ # the append(5) has not yet been saved
+                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                ], SAVES)
+        self.failUnless(t.list_type == [5], t.list_type) # <-get triggers saved
+        self.failUnless(SAVES == [ # now the append(5) has been saved.
+                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                "'[]' -> '[5]'"
+                ], SAVES)
 
 unitsuite=unittest.TestLoader().loadTestsFromTestCase(SavedSettingsObjectTests)
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

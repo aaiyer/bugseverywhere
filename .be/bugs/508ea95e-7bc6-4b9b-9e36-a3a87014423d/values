@@ -1,35 +1,14 @@
+creator: jelmer
 
 
-
-creator=jelmer
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: should check not just EDITOR but also VISUAL.
 
 
-
-
-
-status=closed
-
-
-
-
-
-
-summary=should check not just EDITOR but also VISUAL.
-
-
-
-
-
-
-time=Sun, 15 Jul 2007 13:33:03 +0000
-
-
+time: Sun, 15 Jul 2007 13:33:03 +0000
 

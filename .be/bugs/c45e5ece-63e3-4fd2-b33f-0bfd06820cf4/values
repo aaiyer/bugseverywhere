@@ -1,35 +1,14 @@
+creator: j
 
 
-
-creator=j
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: use python instead of python2.4 in Bugs-Everywhere-Web/start-beweb.py
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=use python instead of python2.4 in Bugs-Everywhere-Web/start-beweb.py
-
-
-
-
-
-
-time=Mon, 14 Apr 2008 16:42:37 +0000
-
-
+time: Mon, 14 Apr 2008 16:42:37 +0000
 

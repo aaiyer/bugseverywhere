@@ -1,28 +1,11 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
-
-
-
-
-
-status=closed
-
-
-
-
-
-
-summary=BEweb fails to set bug creation date
-
-
+summary: BEweb fails to set bug creation date
 

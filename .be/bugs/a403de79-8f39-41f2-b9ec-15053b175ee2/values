@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Beweb should support declaring username
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Beweb should support declaring username
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:07:25 +0000
-
-
+time: Wed, 04 Jan 2006 21:07:25 +0000
 

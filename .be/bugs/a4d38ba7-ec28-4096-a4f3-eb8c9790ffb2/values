@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: be diff doesn't work with bzr in directories that have no commits
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=be diff doesn't work with bzr in directories that have no commits
-
-
-
-
-
-
-time=Mon, 10 Apr 2006 23:22:17 +0000
-
-
+time: Mon, 10 Apr 2006 23:22:17 +0000
 

@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Implement bug tree diff
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Implement bug tree diff
-
-
-
-
-
-
-target=0.2
-
-
+target: '0.2'
 

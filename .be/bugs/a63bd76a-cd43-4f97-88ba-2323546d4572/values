@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: closed
 
 
-
-severity=minor
-
+summary: 'Beweb: New comment button should save any changes'
 
 
-
-
-
-status=closed
-
-
-
-
-
-
-summary=Beweb: New comment button should save any changes
-
-
-
-
-
-
-time=Wed, 04 Jan 2006 21:05:20 +0000
-
-
+time: Wed, 04 Jan 2006 21:05:20 +0000
 

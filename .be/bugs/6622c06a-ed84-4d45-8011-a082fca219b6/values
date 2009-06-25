@@ -1,35 +1,14 @@
+creator: abentley
 
 
-
-creator=abentley
-
+severity: minor
 
 
+status: fixed
 
 
-
-severity=minor
-
+summary: Better word wrapping in comments.  (kill <pre>.)
 
 
-
-
-
-status=fixed
-
-
-
-
-
-
-summary=Better word wrapping in comments.  (kill <pre>.)
-
-
-
-
-
-
-time=Mon, 30 Jan 2006 20:03:25 +0000
-
-
+time: Mon, 30 Jan 2006 20:03:25 +0000
 
