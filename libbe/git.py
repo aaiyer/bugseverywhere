@@ -70,9 +70,9 @@ class Git(RCS):
             self._u_invoke_client("rm", "-f", path)
     def _rcs_update(self, path):
         self._rcs_add(path)
-    def _rcs_get_file_contents(self, path, revision=None):
+    def _rcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return RCS._rcs_get_file_contents(self, path, revision)
+            return RCS._rcs_get_file_contents(self, path, revision, binary=binary)
         else:
             arg = "%s:%s" % (revision,path)
             status,output,error = self._u_invoke_client("show", arg)

@@ -240,9 +240,9 @@ class Arch(RCS):
             self._u_invoke_client("delete-id", path)
     def _rcs_update(self, path):
         pass
-    def _rcs_get_file_contents(self, path, revision=None):
+    def _rcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return RCS._rcs_get_file_contents(self, path, revision)
+            return RCS._rcs_get_file_contents(self, path, revision, binary=binary)
         else:
             status,output,error = \
                 self._invoke_client("file-find", path, revision)
