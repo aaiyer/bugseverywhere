@@ -16,6 +16,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA 02110-1301, USA
+import email.mime.base, email.encoders
 import os
 import os.path
 import time
@@ -150,11 +151,13 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     def _get_comment_body(self):
         if self.rcs != None and self.sync_with_disk == True:
             import rcs
-            return self.rcs.get_file_contents(self.get_path("body"))
+            binary = not self.content_type.startswith("text/")
+            return self.rcs.get_file_contents(self.get_path("body"), binary=binary)
     def _set_comment_body(self, old=None, new=None, force=False):
         if (self.rcs != None and self.sync_with_disk == True) or force==True:
             assert new != None, "Can't save empty comment"
-            self.rcs.set_file_contents(self.get_path("body"), new)
+            binary = not self.content_type.startswith("text/")
+            self.rcs.set_file_contents(self.get_path("body"), new, binary=binary)
 
     @Property
     @change_hook_property(hook=_set_comment_body)
@@ -236,13 +239,21 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         if shortname == None:
             shortname = self.uuid
+        if self.content_type.startswith("text/"):
+            body = (self.body or "").rstrip('\n')
+        else:
+            maintype,subtype = self.content_type.split('/',1)
+            msg = email.mime.base.MIMEBase(maintype, subtype)
+            msg.set_payload(self.body or "")
+            email.encoders.encode_base64(msg)
+            body = msg.as_string()
         info = [("uuid", self.uuid),
                 ("short-name", shortname),
                 ("in-reply-to", self.in_reply_to),
                 ("from", self._setting_attr_string("From")),
                 ("date", self.time_string),
                 ("content-type", self.content_type),
-                ("body", (self.body or "").rstrip('\n'))]
+                ("body", body)]
         lines = ["<comment>"]
         for (k,v) in info:
             if v not in [settings_object.EMPTY, None]:
@@ -276,7 +287,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         lines.append("")
         #lines.append(textwrap.fill(self.body or "",
         #                           width=(79-indent)))
-        lines.extend((self.body or "").splitlines())
+        if self.content_type.startswith("text/"):
+            lines.extend((self.body or "").splitlines())
+        else:
+            lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)
         # some comments shouldn't be wrapped...
         
         istring = ' '*indent

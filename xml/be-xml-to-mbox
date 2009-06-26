@@ -116,14 +116,17 @@ class Comment (LimitedAttrDict):
         print "Message-ID: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
         print "Date: %s" % self["date"]
         print "From: %s" % self["from"]
-        print "Content-Type: %s; charset=%s" % (self["content-type"], DEFAULT_ENCODING)
-        print "Content-Transfer-Encoding: 8bit"
         print "Subject: %s: %s" % (self["short-name"], bug["summary"])
         if "in-reply-to" not in self.keys():
             self["in-reply-to"] = bug["uuid"]
         print "In-Reply-To: <%s@%s>" % (self["in-reply-to"], DEFAULT_DOMAIN)
-        print ""
-        print self["body"]
+        if self["content-type"].startswith("text/"):
+            print "Content-Transfer-Encoding: 8bit"
+            print "Content-Type: %s; charset=%s" % (self["content-type"], DEFAULT_ENCODING)
+            print ""
+            print self["body"]
+        else: # content type and transfer encoding already in XML MIME output
+            print self["body"]
         print ""
 
 class BE_list_handler (ContentHandler):

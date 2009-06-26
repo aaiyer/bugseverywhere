@@ -40,8 +40,7 @@ def _get_matching_rcs(matchfn):
         rcs = module.new()
         if matchfn(rcs) == True:
             return rcs
-        else:
-            del(rcs)
+        del(rcs)
     return RCS()
     
 def rcs_by_name(rcs_name):
@@ -173,14 +172,17 @@ class RCS(object):
         at path.
         """
         pass
-    def _rcs_get_file_contents(self, path, revision=None):
+    def _rcs_get_file_contents(self, path, revision=None, binary=False):
         """
         Get the file contents as they were in a given revision.
         Revision==None specifies the current revision.
         """
         assert revision == None, \
             "The %s RCS does not support revision specifiers" % self.name
-        f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
+        if binary == False:
+            f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
+        else:
+            f = open(path, "rb")
         contents = f.read()
         f.close()
         return contents
@@ -205,7 +207,8 @@ class RCS(object):
         except OSError, e:
             if e.errno == errno.ENOENT:
                 return False
-            raise e
+        except CommandError:
+            return False
     def detect(self, path="."):
         """
         Detect whether a directory is revision controlled with this RCS.
@@ -290,7 +293,7 @@ class RCS(object):
         at path.
         """
         self._rcs_update(self._u_rel_path(path))
-    def get_file_contents(self, path, revision=None, allow_no_rcs=False):
+    def get_file_contents(self, path, revision=None, allow_no_rcs=False, binary=False):
         """
         Get the file as it was in a given revision.
         Revision==None specifies the current revision.
@@ -299,18 +302,21 @@ class RCS(object):
             raise NoSuchFile(path)
         if self._use_rcs(path, allow_no_rcs):
             relpath = self._u_rel_path(path)
-            contents = self._rcs_get_file_contents(relpath,revision)
+            contents = self._rcs_get_file_contents(relpath,revision,binary=binary)
         else:
             f = codecs.open(path, "r", self.encoding)
             contents = f.read()
             f.close()
         return contents
-    def set_file_contents(self, path, contents, allow_no_rcs=False):
+    def set_file_contents(self, path, contents, allow_no_rcs=False, binary=False):
         """
         Set the file contents under version control.
         """
         add = not os.path.exists(path)
-        f = codecs.open(path, "w", self.encoding)
+        if binary == False:
+            f = codecs.open(path, "w", self.encoding)
+        else:
+            f = open(path, "wb")
         f.write(contents)
         f.close()
         

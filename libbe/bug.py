@@ -288,7 +288,7 @@ class Bug(settings_object.SavedSettingsObject):
         if show_comments == True:
             comout = self.comment_root.xml_thread(auto_name_map=True,
                                                   bug_shortname=shortname)
-            ret += comout
+            ret += comout+'\n'
 
         ret += '</bug>'
         return ret
