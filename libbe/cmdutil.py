@@ -79,11 +79,17 @@ def help(cmd=None):
         for name, module in iter_commands():
             cmdlist.append((name, module.__desc__))
         longest_cmd_len = max([len(name) for name,desc in cmdlist])
-        ret = ["Bugs Everywhere - Distributed bug tracking\n",
+        ret = ["Bugs Everywhere - Distributed bug tracking",
+               "",
+               "usage: be [command]  [command_options ...]  [command_args ...]",
+               "or:    be help",
+               "or:    be help [command]",
+               "",
                "Supported commands"]
         for name, desc in cmdlist:
             numExtraSpaces = longest_cmd_len-len(name)
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
+
         return "\n".join(ret)
 
 def completions(cmd):

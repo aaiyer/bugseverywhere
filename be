@@ -27,7 +27,7 @@ if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
 elif sys.argv[1] == '--complete':
     for command, module in cmdutil.iter_commands():
         print command
-    print '\n'.join(["--help","--complete","--options"])
+    print '\n'.join(["--help","--complete","--options","--version"])
 elif sys.argv[1] == '--version':
     print _version.version_info["revision_id"]
 else:

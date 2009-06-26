@@ -18,7 +18,7 @@ be.1: be.1.sgml
   <!ENTITY dhfirstname "<firstname>Ben</firstname>">
   <!ENTITY dhsurname   "<surname>Finney</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>2008-04-21</date>">
+  <!ENTITY dhdate      "<date>2009-06-25</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
@@ -45,7 +45,7 @@ be.1: be.1.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2008</year>
+      <year>2009</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -88,125 +88,12 @@ be.1: be.1.sgml
   </refsect1>
   <refsect1>
     <title>COMMANDS</title>
-
     <variablelist>
-      <varlistentry>
-        <term><command>assign</command>
-        </term>
-        <listitem>
-          <para>Assign an individual or group to fix a bug
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>close</command>
-        </term>
-        <listitem>
-          <para>Close a bug
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>comment</command>
-        </term>
-        <listitem>
-          <para>Add a comment to a bug
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>diff</command>
-        </term>
-        <listitem>
-          <para>Compare bug reports with older tree
-          </para>
-        </listitem>
-      </varlistentry>
       <varlistentry>
         <term><command>help</command>
         </term>
         <listitem>
-          <para>Print help for given subcommand
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>inprogress</command>
-        </term>
-        <listitem>
-          <para>Bug fixing in progress
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>list</command>
-        </term>
-        <listitem>
-          <para>List bugs
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>new</command>
-        </term>
-        <listitem>
-          <para>Create a new bug
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>open</command>
-        </term>
-        <listitem>
-          <para>Re-open a bug
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>set</command>
-        </term>
-        <listitem>
-          <para>Change tree settings
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>set-root</command>
-        </term>
-        <listitem>
-          <para>Assign the root directory for bug tracking
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>severity</command>
-        </term>
-        <listitem>
-          <para>Show or change a bug's severity level
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>show</command>
-        </term>
-        <listitem>
-          <para>Show a particular bug
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>target</command>
-        </term>
-        <listitem>
-          <para>Show or change a bug's target for fixing
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><command>upgrade</command>
-        </term>
-        <listitem>
-          <para>Upgrade the bugs to the latest format
+          <para>Print help for be and a list of all available commands.
           </para>
         </listitem>
       </varlistentry>
