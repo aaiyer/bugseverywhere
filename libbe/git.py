@@ -55,7 +55,14 @@ class Git(RCS):
         name = output.rstrip('\n')
         status,output,error = self._u_invoke_client("config", "user.email")
         email = output.rstrip('\n')
-        return self._u_create_id(name, email)
+        if name != "" or email != "": # got something!
+            # guess missing info, if necessary
+            if name == "":
+                name = self._u_get_fallback_username()
+            if email == "":
+                email = self._u_get_fallback_email()
+            return self._u_create_id(name, email)
+        return None # Git has no infomation
     def _rcs_set_user_id(self, value):
         name,email = self._u_parse_id(value)
         if email != None:

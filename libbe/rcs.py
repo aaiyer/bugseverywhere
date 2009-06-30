@@ -34,9 +34,10 @@ def _get_matching_rcs(matchfn):
     """Return the first module for which matchfn(RCS_instance) is true"""
     import arch
     import bzr
-    import hg
+    import darcs
     import git
-    for module in [arch, bzr, hg, git]:
+    import hg
+    for module in [arch, bzr, darcs, git, hg]:
         rcs = module.new()
         if matchfn(rcs) == True:
             return rcs
@@ -383,7 +384,7 @@ class RCS(object):
         pass
     def postcommit(self, directory):
         pass
-    def _u_invoke(self, args, expect=(0,), cwd=None):
+    def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None):
         if cwd == None:
             cwd = self.rootdir
         if self.verboseInvoke == True:
@@ -398,7 +399,7 @@ class RCS(object):
         except OSError, e :
             strerror = "%s\nwhile executing %s" % (e.args[1], args)
             raise CommandError(strerror, e.args[0])
-        output, error = q.communicate()
+        output, error = q.communicate(input=stdin)
         status = q.wait()
         if self.verboseInvoke == True:
             print >> sys.stderr, "%d\n%s%s" % (status, output, error)
@@ -409,9 +410,10 @@ class RCS(object):
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)
         expect = kwargs.get('expect', (0,))
+        stdin = kwargs.get('stdin', None)
         cl_args = [self.client]
         cl_args.extend(args)
-        return self._u_invoke(cl_args, expect, cwd=directory)
+        return self._u_invoke(cl_args, stdin=stdin,expect=expect,cwd=directory)
     def _u_search_parent_directories(self, path, filename):
         """
         Find the file (or directory) named filename in path or in any
@@ -567,10 +569,12 @@ def setup_rcs_test_fixtures(testcase):
     testcase.dir = Dir()
     testcase.dirname = testcase.dir.path
 
+    rcs_not_supporting_uninitialized_user_id = []
+    rcs_not_supporting_set_user_id = ["None", "hg"]
     testcase.rcs_supports_uninitialized_user_id = (
-        testcase.rcs.name not in ["git"])
+        testcase.rcs.name not in rcs_not_supporting_uninitialized_user_id)
     testcase.rcs_supports_set_user_id = (
-        testcase.rcs.name not in ["None", "hg"])
+        testcase.rcs.name not in rcs_not_supporting_set_user_id)
 
     if not testcase.rcs.installed():
         testcase.fail(

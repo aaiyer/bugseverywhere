@@ -30,6 +30,9 @@ def execute(args, test=False):
     >>> execute(["a"], test=True)
     Blocks on a:
     b
+    >>> execute(["--show-status", "a"], test=True) # doctest: +NORMALIZE_WHITESPACE
+    Blocks on a:
+    b closed
     >>> execute(["-r", "a", "b"], test=True)
     """
     parser = get_parser()
@@ -60,7 +63,13 @@ def execute(args, test=False):
     depends = []
     for estr in bugA.extra_strings:
         if estr.startswith("BLOCKED-BY:"):
-            depends.append(estr[11:])
+            uuid = estr[11:]
+            if options.show_status == True:
+                blocker = bd.bug_from_uuid(uuid)
+                block_string = "%s\t%s" % (uuid, blocker.status)
+            else:
+                block_string = uuid
+            depends.append(block_string)
     if len(depends) > 0:
         print "Blocks on %s:" % bugA.uuid
         print '\n'.join(depends)
@@ -69,6 +78,9 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be depend BUG-ID [BUG-ID]")
     parser.add_option("-r", "--remove", action="store_true", dest="remove",
                       help="Remove dependency (instead of adding it)")
+    parser.add_option("-s", "--show-status", action="store_true",
+                      dest="show_status",
+                      help="Show status of blocking bugs")
     return parser
 
 longhelp="""

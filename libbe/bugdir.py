@@ -181,7 +181,7 @@ that the Arch RCS backend *enforces* ids with this format.""",
 settings easy.  Don't set this attribute.  Set .rcs instead, and
 .rcs_name will be automatically adjusted.""",
                          default="None",
-                         allowed=["None", "Arch", "bzr", "git", "hg"])
+                         allowed=["None", "Arch", "bzr", "darcs", "git", "hg"])
     def rcs_name(): return {}
 
     def _get_rcs(self, rcs_name=None):
