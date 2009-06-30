@@ -93,7 +93,8 @@ def execute(args, test=False):
             raise cmdutil.UserError("No comment entered.")
         body = body.decode('utf-8')
     elif args[1] == '-': # read body from stdin
-        binary = not options.content_type.startswith("text/")
+        binary = not (options.content_type == None
+                      or options.content_type.startswith("text/"))
         if not binary:
             body = sys.stdin.read()
             if not body.endswith('\n'):
