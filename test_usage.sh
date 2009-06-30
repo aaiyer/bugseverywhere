@@ -23,14 +23,14 @@ then
     echo "usage: test_usage.sh [RCS]"
     echo ""
     echo "where RCS is one of"
-    for RCS in bzr git hg arch none
+    for RCS in arch bzr darcs git hg none
     do
 	echo "  $RCS"
     done
     exit 1
 elif [ $# -eq 0 ]
 then
-    for RCS in bzr git hg arch none
+    for RCS in arch bzr darcs git hg none
     do
 	echo -e "\n\nTesting $RCS\n\n"
 	$0 "$RCS" || exit 1
@@ -43,21 +43,7 @@ RCS="$1"
 TESTDIR=`mktemp -d /tmp/BEtest.XXXXXXXXXX`
 cd $TESTDIR
 
-if [ "$RCS" == "bzr" ]
-then
-    ID=`bzr whoami`
-    bzr init
-elif [ "$RCS" == "git" ]
-then
-    NAME=`git-config user.name`
-    EMAIL=`git-config user.email`
-    ID="$NAME <$EMAIL>"
-    git init
-elif [ "$RCS" == "hg" ]
-then
-    ID=`hg showconfig ui.username`
-    hg init
-elif [ "$RCS" == "arch" ]
+if [ "$RCS" == "arch" ]
 then
     ID=`tla my-id`
     ARCH_PARAM_DIR="$HOME/.arch-params"
@@ -76,6 +62,27 @@ then
     sed -i 's/^source .*/source ^[._=a-zA-X0-9].*$/' '{arch}/=tagging-method'
     echo "tla import -A $ARCH_ARCHIVE --summary 'Began versioning'"
     tla import -A $ARCH_ARCHIVE --summary 'Began versioning'
+elif [ "$RCS" == "bzr" ]
+then
+    ID=`bzr whoami`
+    bzr init
+elif [ "$RCS" == "darcs" ]
+then
+    if [ -z "$DARCS_EMAIL" ]; then
+	export DARCS_EMAIL="J. Doe <jdoe@example.com>"
+    fi
+    ID="$DARCS_EMAIL"
+    darcs init
+elif [ "$RCS" == "git" ]
+then
+    NAME=`git-config user.name`
+    EMAIL=`git-config user.email`
+    ID="$NAME <$EMAIL>"
+    git init
+elif [ "$RCS" == "hg" ]
+then
+    ID=`hg showconfig ui.username`
+    hg init
 elif [ "$RCS" == "none" ]
 then
     ID=`id -nu`
