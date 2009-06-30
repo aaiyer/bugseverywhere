@@ -13,7 +13,7 @@ Getting started
 To get started, you must set the bugtracker root.  Typically, you will want to
 set the bug root to your project root, so that Bugs Everywhere works in any
 part of your project tree.
-$ be set-root $PROJECT_ROOT
+$ be init $PROJECT_ROOT
 
 To create bugs, use "be new $DESCRIPTION".  To comment on bugs, you can can use
 "be comment $BUG_ID".  To close a bug, use "be close $BUG_ID".  For more

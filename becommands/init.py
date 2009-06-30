@@ -79,7 +79,7 @@ def execute(args, test=False):
     print "Directory initialized."
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be set-root [DIRECTORY]")
+    parser = cmdutil.CmdOptionParser("be init [DIRECTORY]")
     return parser
 
 longhelp="""
@@ -90,7 +90,7 @@ system.  You can use "be set rcs_name" to change the rcs being used.
 The directory defaults to your current working directory.
 
 It is usually a good idea to put the Bugs Everywhere root at the source code
-root, but you can put it anywhere.  If you run "be set-root" in a subdirectory,
+root, but you can put it anywhere.  If you run "be init" in a subdirectory,
 then only bugs created in that subdirectory (and its children) will appear
 there.
 """
