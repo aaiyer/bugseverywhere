@@ -30,7 +30,7 @@ def execute(args, test=False):
     ... except bugdir.NoBugDir, e:
     ...     True
     True
-    >>> execute([dir.path], test=True)
+    >>> execute(['--root', dir.path], test=True)
     No revision control detected.
     Directory initialized.
     >>> del(dir)
@@ -47,11 +47,11 @@ def execute(args, test=False):
     >>> rcs.cleanup()
 
     >>> try:
-    ...     execute(['.'], test=True)
+    ...     execute(['--root', '.'], test=True)
     ... except cmdutil.UserError, e:
     ...     str(e).startswith("Directory already initialized: ")
     True
-    >>> execute(['/highly-unlikely-to-exist'], test=True)
+    >>> execute(['--root', '/highly-unlikely-to-exist'], test=True)
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
     >>> os.chdir('/')
@@ -59,19 +59,17 @@ def execute(args, test=False):
     parser = get_parser()
     options, args = parser.parse_args(args)
     cmdutil.default_complete(options, args, parser)
-    if len(args) > 1:
+    if len(args) > 0:
         raise cmdutil.UsageError
-    if len(args) == 1:
-        basedir = args[0]
-    else:
-        basedir = "."
     try:
-        bd = bugdir.BugDir(basedir, from_disk=False, sink_to_existing_root=False, assert_new_BugDir=True,
+        bd = bugdir.BugDir(options.root_dir, from_disk=False,
+                           sink_to_existing_root=False,
+                           assert_new_BugDir=True,
                            manipulate_encodings=not test)
     except bugdir.NoRootEntry:
-        raise cmdutil.UserError("No such directory: %s" % basedir)
+        raise cmdutil.UserError("No such directory: %s" % options.root_dir)
     except bugdir.AlreadyInitialized:
-        raise cmdutil.UserError("Directory already initialized: %s" % basedir)
+        raise cmdutil.UserError("Directory already initialized: %s" % options.root_dir)
     bd.save()
     if bd.rcs.name is not "None":
         print "Using %s for revision control." % bd.rcs.name
@@ -80,7 +78,10 @@ def execute(args, test=False):
     print "Directory initialized."
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be init [DIRECTORY]")
+    parser = cmdutil.CmdOptionParser("be init")
+    parser.add_option("-r", "--root", metavar="DIR", dest="root_dir",
+                      help="Set root dir to something other than the current directory.",
+                      default=".")
     return parser
 
 longhelp="""
@@ -91,9 +92,9 @@ system.  You can use "be set rcs_name" to change the rcs being used.
 The directory defaults to your current working directory.
 
 It is usually a good idea to put the Bugs Everywhere root at the source code
-root, but you can put it anywhere.  If you run "be init" in a subdirectory,
-then only bugs created in that subdirectory (and its children) will appear
-there.
+root, but you can put it anywhere.  If you root Bugs Everywhere in a
+subdirectory, then only bugs created in that subdirectory (and its children)
+will appear there.
 """
 
 def help():
