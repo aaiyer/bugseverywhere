@@ -1,4 +1,8 @@
-# Copyright (C) 2005 Aaron Bentley and Panometrics, Inc.
+# Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
+#                         Chris Ball <cjb@laptop.org>
+#                         Marien Zwart <marienz@gentoo.org>
+#                         Thomas Gerigk <tgerigk@gmx.de>
+#                         W. Trevor King <wking@drexel.edu>
 # <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
