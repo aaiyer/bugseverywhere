@@ -1,5 +1,4 @@
-# Copyright (C) 2007 Chris Ball <chris@printf.net>,
-#               2009 W. Trevor King <wking@drexel.edu>
+# Copyright (C) 2009 W. Trevor King <wking@drexel.edu>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -131,8 +130,7 @@ class Darcs(RCS):
         if revision==None:
             RCS._rcs_duplicate_repo(self, directory, revision)
         else:
-            self._u_invoke_client("put", "--no-pristine-tree",
-                                  "--to-patch", revision, directory)
+            self._u_invoke_client("put", "--to-patch", revision, directory)
     def _rcs_commit(self, commitfile):
         id = self.get_user_id()
         if '@' not in id:

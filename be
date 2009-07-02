@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright (C) 2005 Aaron Bentley and Panometrics, Inc.
+# Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
+#                         Chris Ball <cjb@laptop.org>
+#                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
+#                         W. Trevor King <wking@drexel.edu>
 # <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify

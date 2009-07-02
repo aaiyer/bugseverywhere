@@ -1,4 +1,6 @@
-# Copyright (C) 2006 Thomas Gerigk
+# Copyright (C) 2006-2009 Aaron Bentley and Panometrics, Inc.
+#                         Thomas Gerigk <tgerigk@gmx.de>
+#                         W. Trevor King <wking@drexel.edu>
 # <tgerigk@gmx.de>
 #
 #    This program is free software; you can redistribute it and/or modify

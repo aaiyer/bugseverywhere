@@ -1,4 +1,6 @@
-# Copyright (C) 2007 Chris Ball <chris@printf.net>
+# Copyright (C) 2008-2009 Ben Finney <ben+python@benfinney.id.au>
+#                         Chris Ball <cjb@laptop.org>
+#                         W. Trevor King <wking@drexel.edu>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by

@@ -1,4 +1,6 @@
-# Copyright (C) 2007 Steve Borho <steve@borho.org>
+# Copyright (C) 2007-2009 Aaron Bentley and Panometrics, Inc.
+#                         Ben Finney <ben+python@benfinney.id.au>
+#                         W. Trevor King <wking@drexel.edu>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
