@@ -130,8 +130,7 @@ class Darcs(RCS):
         if revision==None:
             RCS._rcs_duplicate_repo(self, directory, revision)
         else:
-            self._u_invoke_client("put", "--no-pristine-tree",
-                                  "--to-patch", revision, directory)
+            self._u_invoke_client("put", "--to-patch", revision, directory)
     def _rcs_commit(self, commitfile):
         id = self.get_user_id()
         if '@' not in id:
