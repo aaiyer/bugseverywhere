@@ -1,0 +1,20 @@
+-*- markdown -*-
+
+Cherry Flavored Bugs Everywhere
+===============================
+
+CFBE is a quick web interface to [BugsEverywhere](http://bugseverywhere.org/).  It's still very much a work-in-progress.
+
+Installing
+----------
+
+I intend to streamline the installation once I'm satisfied with the interface itself.  For now, the install process goes something like this:
+
+* Install [CherryPy](http://cherrypy.org/) if you don't have it.
+* Install [Jinja2](http://jinja.pocoo.org/2/) if you don't have it.
+* Install [BugsEverywhere](http://bugseverywhere.org/) if you don't have it.
+* Download a zip/tar of CFBE (or hg clone) from the [Mercurial repository](http://bitbucket.org/sjl/cherryflavoredbugseverywhere/).
+* Unzip (if you grabbed a zip) and put the folder in your Python site-packages directory (or put it anywhere and symlink it to site-packages).
+* Symlink `site-packages/cherryflavoredbugseverywhere/cfbe.py` to `/usr/ local/bin/cfbe`
+* Use `cfbe [project_root]` to start up the web interface for that project.
+* Visit http://localhost:8080/ in a browser.
