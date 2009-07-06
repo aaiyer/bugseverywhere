@@ -141,7 +141,7 @@ def option_value_pairs(options, parser):
 
 def default_complete(options, args, parser, bugid_args={}):
     """
-    A dud complete implementation for becommands to that the
+    A dud complete implementation for becommands so that the
     --complete argument doesn't cause any problems.  Use this
     until you've set up a command-specific complete function.
     
@@ -149,15 +149,25 @@ def default_complete(options, args, parser, bugid_args={}):
     arguments taking bug shortnames and the values are functions for
     filtering, since that's a common enough operation.
     e.g. for "be open [options] BUGID"
-    bugid_args = {0: lambda bug : bug.active == False}
+      bugid_args = {0: lambda bug : bug.active == False}
+    A positional argument of -1 specifies all remaining arguments
+    (e.g in the case of "be show BUGID BUGID ...").
     """
     for option,value in option_value_pairs(options, parser):
         if value == "--complete":
             raise cmdutil.GetCompletions()
+    if len(bugid_args.keys()) > 0:
+        max_pos_arg = max(bugid_args.keys())
+    else:
+        max_pos_arg = -1
     for pos,value in enumerate(args):
         if value == "--complete":
+            filter = None
             if pos in bugid_args:
                 filter = bugid_args[pos]
+            if pos > max_pos_arg and -1 in bugid_args:
+                filter = bugid_args[-1]
+            if filter != None:
                 bugshortnames = []
                 try:
                     bd = bugdir.BugDir(from_disk=True,
