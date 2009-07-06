@@ -19,6 +19,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show a particular bug"""
+import sys
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
@@ -79,7 +80,10 @@ def execute(args, test=False):
             if options.dumpXML:
                 print comment.xml(shortname=shortname)
             else:
-                print comment.string(shortname=shortname)
+                if len(args) == 1 and options.only_raw_body == True:
+                    sys.__stdout__.write(comment.body)
+                else:
+                    print comment.string(shortname=shortname)
         if shortname != args[-1] and options.dumpXML == False:
             print "" # add a blank line between bugs/comments
 
@@ -87,6 +91,8 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be show [options] ID [ID ...]")
     parser.add_option("-x", "--xml", action="store_true",
                       dest='dumpXML', help="Dump as XML")
+    parser.add_option("--only-raw-body", action="store_true",
+                      dest='only_raw_body', help="When printing only a single comment, just print it's body.  This allows extraction of non-text content types.")
     return parser
 
 longhelp="""
