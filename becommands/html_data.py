@@ -317,9 +317,10 @@ html_index = """
     </tbody>
   </table>
 </td>
+
 <td>
 
-  <h2>Open issues by severity</h2>
+  <h2>Issues list by severity</h2>
   <table>
     <tbody>
         <tr class="even-row">
@@ -380,6 +381,18 @@ html_index = """
     </tbody>
   </table>
 </td>
+<td>
+
+  <h2>Last 10 Open bugs</h2>
+  <table>
+    <tbody>
+
+_LAST_ACTVITY_
+
+    </tbody>
+  </table>
+</td>
+
 </tr>
 </tbody>
 </table>
@@ -393,3 +406,8 @@ html_index = """
 </html>
 """
 
+last_activity = """
+        <tr class="_ROW_">
+            <td><a href="_BUG_ID_.html">_BUG_ on _DATE_</a></td>
+        </tr>
+"""

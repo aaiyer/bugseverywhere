@@ -20,7 +20,7 @@
 """Re-open a bug"""
 from libbe import cmdutil, bugdir, bug
 from html_data import *
-import os,  re
+import os,  re,  time
 
 __desc__ = __doc__
 
@@ -54,46 +54,20 @@ def execute(args, test=False):
     severity_list = bug.severity_values
     st = {}
     se = {}
-    
+    stime = {}
     for s in status_list:
         st[s] = 0
     for s in severity_list:
         se[s] = 0
+    
     for b in bd:
+        stime[b.uuid]  = b.time
         st[b.status] += 1
         se[b.severity] += 1
-    create_index_file(out_dir,  st,  se)
+    stime_sorted = sorted([(value,key) for (key,value) in stime.items()])
 
-def create_index_file(out_dir_path,  summary,  severity):
-    try:
-        os.stat(out_dir_path)
-    except:
-        try:
-            os.mkdir(out_dir_path)
-        except:
-            raise  cmdutil.UsageError, "Cannot create output directory."
-    try:
-        FO = open(out_dir_path+"/style.css", "w")
-        FO.write(css_file)
-        FO.close()
-    except:
-        raise  cmdutil.UsageError, "Cannot create the style.css file."
-    value = html_index
-    for stat in summary:
-        rep = "_"+stat+"_"
-        val = str(summary[stat])
-        value = re.sub(rep,  val,  value)
-    for sev in severity:
-        rep = "_"+sev+"_"
-        val = str(severity[sev])
-        value = re.sub(rep,  val, value)
-    try:
-        FO = open(out_dir_path+"/index.html", "w")
-        FO.write(value)
-        FO.close()
-    except:
-        raise  cmdutil.UsageError, "Cannot create the index.html file."
-    
+    html_gen = BEHTMLGen()
+    html_gen.create_index_file(out_dir,  st,  se,  stime_sorted)
     
 def get_parser():
     parser = cmdutil.CmdOptionParser("be open OUTPUT_DIR")
@@ -105,3 +79,58 @@ Generate a set of html pages.
 
 def help():
     return get_parser().help_str() + longhelp
+    
+    
+class BEHTMLGen():
+    def __init__(self):
+        self.index_value = ""        
+        
+    def create_index_file(self, out_dir_path,  summary,  severity,  last_bug):
+        try:
+            os.stat(out_dir_path)
+        except:
+            try:
+                os.mkdir(out_dir_path)
+            except:
+                raise  cmdutil.UsageError, "Cannot create output directory."
+        try:
+            FO = open(out_dir_path+"/style.css", "w")
+            FO.write(css_file)
+            FO.close()
+        except:
+            raise  cmdutil.UsageError, "Cannot create the style.css file."
+        value = html_index
+        for stat in summary:
+            rep = "_"+stat+"_"
+            val = str(summary[stat])
+            value = re.sub(rep,  val,  value)
+        for sev in severity:
+            rep = "_"+sev+"_"
+            val = str(severity[sev])
+            value = re.sub(rep,  val, value)
+        
+        c = 0
+        t = len(last_bug)-1
+        for l in range(t,  0,  -1):
+            line = ""
+            line = re.sub('_BUG_ID_', last_bug[l][1], last_activity)
+            line1 = re.sub('_BUG_', last_bug[l][1][0:3], line)
+            line2 = re.sub('_DATE_',  time.ctime(last_bug[l][0]),  line1)
+            if c%2 == 0:
+                linef = re.sub('_ROW_',  "even-row",  line2)
+            else:
+                linef = re.sub('_ROW_',  "odd-row",  line2)
+            self.index_value += linef
+            c += 1
+            if c == 10:
+                break
+        
+        value = re.sub("_LAST_ACTVITY_", self.index_value, value)
+
+        try:
+            FO = open(out_dir_path+"/index.html", "w")
+            FO.write(value)
+            FO.close()
+        except:
+            raise  cmdutil.UsageError, "Cannot create the index.html file."
+            
