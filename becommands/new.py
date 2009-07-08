@@ -45,7 +45,11 @@ def execute(args, test=False):
     if len(args) != 1:
         raise cmdutil.UsageError("Please supply a summary message")
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.new_bug(summary=args[0])
+    if args[0] == '-': # read summary from stdin
+        summary = sys.stdin.readline()
+    else:
+        summary = args[0]
+    bug = bd.new_bug(summary=summary.strip())
     if options.reporter != None:
         bug.reporter = options.reporter
     else:
@@ -66,8 +70,9 @@ def get_parser():
     return parser
 
 longhelp="""
-Create a new bug, with a new ID.  The summary specified on the commandline
-is a string that describes the bug briefly.
+Create a new bug, with a new ID.  The summary specified on the
+commandline is a string (only one line) that describes the bug briefly
+or "-", in which case the string will be read from stdin.
 """
 
 def help():
