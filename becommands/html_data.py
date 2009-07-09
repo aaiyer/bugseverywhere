@@ -155,11 +155,11 @@ padding-left: 0.5em;
 }
 
 
-.even-row {
+.selected-cell {
 background-color: #e9e9e2;
 }
 
-.odd-row {
+.plain-cell {
 background-color: #f9f9f9;
 }
 
@@ -218,186 +218,50 @@ html_index = """
 
 
 <div class="main">
-<h1>BugsEverywhere Issue Tracker</h1>
+<h1>BugsEverywhere Bug List</h1>
 <table>
 <tbody>
 <tr>
 <td>
-  <h2>Issues list by status</h2>
-  <table>
+  <h2>Bugs summary divided by status</h2>
+  <table  width=100%>
     <tbody>
-        <tr class="even-row">
-            <td>
-                <a href="unconfirmed.html">unconfirmed</a>
+        <tr>
+            <td class="plain-cell">
+                <a href="unconfirmed.html">_unconfirmed_ unconfirmed</a>
             </td>
-            <td align="right">
-                _unconfirmed_ 
+            <td class="plain-cell">
+                <a href="open.html">_open_ open</a>
             </td>
-            <td>
-                issues
+            <td class="plain-cell">
+                <a href="assigned.html">_assigned_ assigned</a>
             </td>
-        </tr>
-        <tr class="odd-row">
-            <td>
-                <a href="open.html">open</a>
+            <td class="plain-cell">
+                <a href="test.html">_test_ test</a>
             </td>
-            <td align="right">
-                _open_ 
+            <td class="plain-cell">
+                <a href="closed.html">_closed_ closed</a>
             </td>
-            <td>
-                 issues
+            <td class="plain-cell">
+                <a href="fixed.html">_fixed_ fixed</a>
             </td>
-        </tr>
-        <tr class="even-row">
-            <td>
-                <a href="assigned.html">assigned</a>
+            <td class="plain-cell">
+                <a href="wontfix.html">_wontfix_ wontfix</a>
             </td>
-            <td align="right">
-                _assigned_
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-        <tr class="odd-row">
-            <td>
-                <a href="test.html">test</a>
-            </td>
-            <td align="right">
-                _test_
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-        <tr class="even-row">
-            <td>
-                <a href="closed.html">closed</a>
-            </td>
-            <td align="right">
-                _closed_
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-        <tr class="odd-row">
-            <td>
-                <a href="fixed.html">fixed</a>
-            </td>
-            <td align="right">
-                _fixed_
-            </td>
-            <td>
-                 issues
-            </td>
-        </tr>
-        <tr class="even-row">
-            <td>
-                <a href="wontfix.html">wontfix</a>
-            </td>
-            <td align="right">
-                _wontfix_
-            </td>
-            <td>
-                 issues
-            </td>
-        </tr>
-        <tr class="odd-row">
-            <td>
-                <a href="disabled.html">disabled</a>
-            </td>
-            <td align="right">
-                _disabled_
-            </td>
-            <td>
-                 issues
+            <td class="plain-cell">
+                <a href="disabled.html">_disabled_ disabled</a>
             </td>
         </tr>    
     </tbody>
   </table>
 </td>
-
-<td>
-
-  <h2>Issues list by severity</h2>
-  <table>
-    <tbody>
-        <tr class="even-row">
-            <td>
-                <a href="serious.html">serious</a>
-            </td>
-            <td align="right">
-                _serious_ 
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-        <tr class="odd-row">
-            <td>
-                <a href="critical.html">critical</a>
-            </td>
-            <td align="right">
-                _critical_ 
-            </td>
-            <td>
-                 issues
-            </td>
-        </tr>
-        <tr class="even-row">
-            <td>
-                <a href="fatal.html">fatal</a>
-            </td>
-            <td align="right">
-                _fatal_
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-        <tr class="odd-row">
-            <td>
-                <a href="wishlist.html">wishlist</a>
-            </td>
-            <td align="right">
-                _wishlist_
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-        <tr class="even-row">
-            <td>
-                <a href="minor.html">minor</a>
-            </td>
-            <td align="right">
-                _minor_
-            </td>
-            <td>
-                issues
-            </td>
-        </tr>
-    </tbody>
-  </table>
-</td>
-<td>
-
-  <h2>Last 10 Open bugs</h2>
-  <table>
-    <tbody>
-
-_LAST_ACTVITY_
-
-    </tbody>
-  </table>
-</td>
-
 </tr>
 </tbody>
 </table>
 
 </div>
+
+<h2>Showing all bugs</h2>
 
 <div class="footer">Generated by <a href="http://www.bugseverywhere.org/">BugsEverywhere</a>.</div>
 
