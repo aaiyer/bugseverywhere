@@ -32,10 +32,10 @@ class UserError(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
-class UserErrorWrap(UserError):
-    def __init__(self, exception):
-        UserError.__init__(self, str(exception))
-        self.exception = exception
+class UnknownCommand(UserError):
+    def __init__(self, cmd):
+        Exception.__init__(self, "Unknown command '%s'" % cmd)
+        self.cmd = cmd
 
 class UsageError(Exception):
     pass
@@ -58,13 +58,13 @@ def get_command(command_name):
 
     >>> get_command("asdf")
     Traceback (most recent call last):
-    UserError: Unknown command asdf
+    UnknownCommand: Unknown command asdf
     >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
     True
     """
     cmd = plugin.get_plugin("becommands", command_name.replace("-", "_"))
     if cmd is None:
-        raise UserError("Unknown command %s" % command_name)
+        raise UnknownCommand(command_name)
     return cmd
 
 

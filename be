@@ -35,21 +35,21 @@ elif sys.argv[1] == '--version':
     print _version.version_info["revision_id"]
 else:
     try:
-        try:
-            sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
-        except KeyError, e:
-            raise cmdutil.UserError("Unknown command \"%s\"" % e.args[0])
-        except cmdutil.GetHelp:
-            print cmdutil.help(sys.argv[1])
-            sys.exit(0)
-        except cmdutil.GetCompletions, e:
-            print '\n'.join(e.completions)
-            sys.exit(0)
-        except cmdutil.UsageError, e:
-            print "Invalid usage:", e
-            print "\nArgs:", sys.argv[1:]
-            print cmdutil.help(sys.argv[1])
-            sys.exit(1)
+        sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
+    except cmdutil.GetHelp:
+        print cmdutil.help(sys.argv[1])
+        sys.exit(0)
+    except cmdutil.GetCompletions, e:
+        print '\n'.join(e.completions)
+        sys.exit(0)
+    except cmdutil.UnknownCommand, e:
+        print e
+        sys.exit(1)
+    except cmdutil.UsageError, e:
+        print "Invalid usage:", e
+        print "\nArgs:", sys.argv[1:]
+        print cmdutil.help(sys.argv[1])
+        sys.exit(1)
     except cmdutil.UserError, e:
         print "ERROR:"
         print e
