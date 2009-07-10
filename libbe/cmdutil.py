@@ -56,9 +56,11 @@ def iter_commands():
 def get_command(command_name):
     """Retrieves the module for a user command
 
-    >>> get_command("asdf")
-    Traceback (most recent call last):
-    UnknownCommand: Unknown command asdf
+    >>> try:
+    ...     get_command("asdf")
+    ... except UnknownCommand, e:
+    ...     print e
+    Unknown command asdf
     >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
     True
     """

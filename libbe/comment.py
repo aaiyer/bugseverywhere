@@ -2,7 +2,6 @@
 # Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -22,8 +21,11 @@ import email.mime.base, email.encoders
 import os
 import os.path
 import time
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
 import xml.sax.saxutils
-import textwrap
 import doctest
 
 from beuuid import uuid_gen
@@ -43,16 +45,25 @@ class InvalidShortname(KeyError):
         self.shortname = shortname
         self.shortnames = shortnames
 
+class InvalidXML(ValueError):
+    def __init__(self, element, comment):
+        msg = "Invalid comment xml: %s\n  %s\n" \
+            % (comment, ElementTree.tostring(element))
+        ValueError.__init__(self, msg)
+        self.element = element
+        self.comment = comment
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def _list_to_root(comments, bug):
+def list_to_root(comments, bug, root=None):
     """
-    Convert a raw list of comments to single (dummy) root comment.  We
-    use a dummy root comment, because there can be several comment
-    threads rooted on the same parent bug.  To simplify comment
-    interaction, we condense these threads into a single thread with a
-    Comment dummy root.
+    Convert a raw list of comments to single root comment.  We use a
+    dummy root comment by default, because there can be several
+    comment threads rooted on the same parent bug.  To simplify
+    comment interaction, we condense these threads into a single
+    thread with a Comment dummy root.  Can also be used to append
+    a list of subcomments to a non-dummy root comment, so long as
+    all the new comments are descendants of the root comment.
     
     No Comment method should use the dummy comment.
     """
@@ -61,6 +72,10 @@ def _list_to_root(comments, bug):
     for comment in comments:
         assert comment.uuid != None
         uuid_map[comment.uuid] = comment
+    if root == None:
+        root = Comment(bug, uuid=INVALID_UUID)
+    else:
+        uuid_map[root.uuid] = root
     for comm in comments:
         rep = comm.in_reply_to
         if rep == None or rep == settings_object.EMPTY or rep == bug.uuid:
@@ -69,9 +84,8 @@ def _list_to_root(comments, bug):
             parentUUID = comm.in_reply_to
             parent = uuid_map[parentUUID]
             parent.add_reply(comm)
-    dummy_root = Comment(bug, uuid=INVALID_UUID)
-    dummy_root.extend(root_comments)
-    return dummy_root
+    root.extend(root_comments)
+    return root
 
 def loadComments(bug, load_full=False):
     """
@@ -90,7 +104,7 @@ def loadComments(bug, load_full=False):
             comm.load_settings()
             dummy = comm.body # force the body to load
         comments.append(comm)
-    return _list_to_root(comments, bug)
+    return list_to_root(comments, bug)
 
 def saveComments(bug):
     path = bug.get_path("comments")
@@ -265,6 +279,47 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
+    def from_xml(self, xml_string, verbose=True):
+        """
+        Warning: does not check for comment uuid collision.
+        >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
+        >>> commA.uuid = "0123"
+        >>> commA.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> xml = commA.xml(shortname="com-1")
+        >>> commB = Comment()
+        >>> commB.from_xml(xml)
+        >>> attrs=['uuid','in_reply_to','From','time_string','content_type','body']
+        >>> for attr in attrs:
+        ...     if getattr(commB, attr) != getattr(commA, attr):
+        ...         estr = "Mismatch on %s: '%s' should be '%s'"
+        ...         args = (attr, getattr(commB, attr), getattr(commA, attr))
+        ...         print estr % args
+        """
+        comment = ElementTree.XML(xml_string)
+        if comment.tag != "comment":
+            raise InvalidXML(comment, "root element must be <comment>")
+        tags=['uuid','in-reply-to','from','date','content-type','body']
+        for child in comment.getchildren():
+            if child.tag == "short-name":
+                pass
+            elif child.tag in tags:
+                if child.text == None:
+                    text = settings_object.EMPTY
+                else:
+                    text = xml.sax.saxutils.unescape(child.text.strip())
+                if child.tag == 'from':
+                    attr_name = "From"
+                elif child.tag == 'date':
+                    attr_name = 'time_string'
+                else:
+                    attr_name = child.tag.replace('-','_')
+                if attr_name == "body":
+                    text += '\n' # replace strip()ed trailing newline
+                setattr(self, attr_name, text)
+            elif verbose == True:
+                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                    % (child.tag, comment.tag)
+
     def string(self, indent=0, shortname=None):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
@@ -287,13 +342,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         lines.append("From: %s" % (self._setting_attr_string("From")))
         lines.append("Date: %s" % self.time_string)
         lines.append("")
-        #lines.append(textwrap.fill(self.body or "",
-        #                           width=(79-indent)))
         if self.content_type.startswith("text/"):
             lines.extend((self.body or "").splitlines())
         else:
             lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)
-        # some comments shouldn't be wrapped...
         
         istring = ' '*indent
         sep = '\n' + istring
@@ -335,9 +387,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def save(self):
         assert self.body != None, "Can't save blank comment"
-        #if self.in_reply_to == None:
-        #    raise Exception, str(self)+'\n'+str(self.settings)+'\n'+str(self._settings_loaded)
-        #assert self.in_reply_to != None, "Comment must be a reply to something"
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
 
@@ -362,7 +411,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         reply = Comment(self.bug, body=body)
         self.add_reply(reply)
-        #raise Exception, "new reply added (%s),\n%s\n%s\n\t--%s--" % (body, self, reply, reply.in_reply_to)
         return reply
 
     def string_thread(self, string_method_name="string", name_map={},
