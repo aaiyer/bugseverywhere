@@ -1,7 +1,6 @@
 # Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
