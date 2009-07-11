@@ -60,7 +60,7 @@ def get_command(command_name):
     ...     get_command("asdf")
     ... except UnknownCommand, e:
     ...     print e
-    Unknown command asdf
+    Unknown command 'asdf'
     >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
     True
     """
