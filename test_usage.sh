@@ -124,7 +124,13 @@ BUGB=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
 be comment $BUGB "Blissfully unaware of a similar bug"
 be merge $BUG $BUGB     # join BUGB to BUG
 be show $BUG            # show bug details & comments
+# you can also export/import XML bugs/comments
+OUT=`be new 'yet more fun'`
+BUGC=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
+be comment $BUGC "The ants go marching..."
+be show --xml $BUGC | be comment --xml ${BUG}:2 -
 be remove $BUG # decide that you don't like that bug after all
+
 cd /
 rm -rf $TESTDIR
 
