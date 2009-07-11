@@ -60,7 +60,9 @@ def execute(args, test=False):
     elif len(args) == 1:
         print _value_string(bd, args[0])
     else:
-        if args[1] != "none":
+        if args[1] == "none":
+            del bd.settings[args[0]]
+        else:
             if args[0] not in bd.settings_properties:
                 msg = "Invalid setting %s\n" % args[0]
                 msg += 'Allowed settings:\n  '
@@ -68,8 +70,6 @@ def execute(args, test=False):
                 raise cmdutil.UserError(msg)
             old_setting = bd.settings.get(args[0])
             setattr(bd, args[0], args[1])
-        else:
-            del bd.settings[args[0]]
         bd.save()
 
 def get_parser():

@@ -4,7 +4,7 @@ creator: jelmer
 severity: minor
 
 
-status: closed
+status: fixed
 
 
 summary: should check not just EDITOR but also VISUAL.
