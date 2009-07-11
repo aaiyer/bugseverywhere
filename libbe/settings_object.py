@@ -125,7 +125,7 @@ def versioned_property(name, doc,
         required_saved_properties.append(name)
     def decorator(funcs):
         fulldoc = doc
-        if default != None:
+        if default != None or generator == None:
             defaulting  = defaulting_property(default=default, null=EMPTY,
                                               default_mutable=mutable)
             fulldoc += "\n\nThis property defaults to %s" % default
@@ -145,7 +145,7 @@ def versioned_property(name, doc,
         settings    = settings_property(name=name, null=UNPRIMED)
         docp        = doc_property(doc=fulldoc)
         deco = hooked(primed(settings(docp(funcs))))
-        if default != None:
+        if default != None or generator == None:
             deco = defaulting(deco)
         if generator != None:
             deco = cached(deco)
@@ -235,7 +235,7 @@ class SavedSettingsObjectTests(unittest.TestCase):
         # access missing setting
         self.failUnless(t._settings_loaded == False, t._settings_loaded)
         self.failUnless(len(t.settings) == 0, len(t.settings))
-        self.failUnless(t.content_type == EMPTY, t.content_type)
+        self.failUnless(t.content_type == None, t.content_type)
         # accessing t.content_type triggers the priming, which runs
         # t._setup_saved_settings, which fills out t.settings with
         # EMPTY data.  t._settings_loaded is still false though, since
@@ -250,16 +250,16 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(t._settings_loaded == True, t._settings_loaded)
         self.failUnless(t.settings["Content-type"] == EMPTY,
                         t.settings["Content-type"])
-        self.failUnless(t.content_type == EMPTY, t.content_type)
+        self.failUnless(t.content_type == None, t.content_type)
         self.failUnless(len(t.settings) == 1, len(t.settings))
         self.failUnless(t.settings["Content-type"] == EMPTY,
                         t.settings["Content-type"])
         # now we set a value
-        t.content_type = None
-        self.failUnless(t.settings["Content-type"] == None,
+        t.content_type = 5
+        self.failUnless(t.settings["Content-type"] == 5,
                         t.settings["Content-type"])
-        self.failUnless(t.content_type == None, t.content_type)
-        self.failUnless(t.settings["Content-type"] == None,
+        self.failUnless(t.content_type == 5, t.content_type)
+        self.failUnless(t.settings["Content-type"] == 5,
                         t.settings["Content-type"])
         # now we set another value
         t.content_type = "text/plain"
@@ -273,7 +273,7 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(t._settings_loaded == True, t._settings_loaded)
         self.failUnless(t.settings["Content-type"] == EMPTY,
                         t.settings["Content-type"])
-        self.failUnless(t.content_type == EMPTY, t.content_type)
+        self.failUnless(t.content_type == None, t.content_type)
         self.failUnless(len(t.settings) == 1, len(t.settings))
         self.failUnless(t.settings["Content-type"] == EMPTY,
                         t.settings["Content-type"])
@@ -376,7 +376,7 @@ class SavedSettingsObjectTests(unittest.TestCase):
         t.load_settings()
         self.failUnless(SAVES == [], SAVES)
         self.failUnless(t._settings_loaded == True, t._settings_loaded)
-        self.failUnless(t.list_type == EMPTY, t.list_type)
+        self.failUnless(t.list_type == None, t.list_type)
         self.failUnless(SAVES == [
                 "'None' -> '<class 'libbe.settings_object.EMPTY'>'"
                 ], SAVES)
