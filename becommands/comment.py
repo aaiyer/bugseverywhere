@@ -16,7 +16,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Add a comment to a bug"""
-from libbe import cmdutil, bugdir, comment, settings_object, editor
+from libbe import cmdutil, bugdir, comment, editor
 import os
 import sys
 try: # import core module, Python >= 2.5
@@ -42,7 +42,7 @@ def execute(args, test=False):
     True
     >>> comment.time <= int(time.time())
     True
-    >>> comment.in_reply_to is settings_object.EMPTY
+    >>> comment.in_reply_to is None
     True
 
     >>> if 'EDITOR' in os.environ:
@@ -131,7 +131,7 @@ def execute(args, test=False):
                     raise cmdutil.UserError(
                         "Clashing comment uuids: %s" % new.uuid)
                 uuids.append(new.uuid)
-                if new.in_reply_to in [settings_object.EMPTY, None]:
+                if new.in_reply_to == None:
                     new.in_reply_to = parent.uuid
                 new_comments.append(new)
             else:

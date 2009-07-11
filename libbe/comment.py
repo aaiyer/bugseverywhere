@@ -72,13 +72,16 @@ def list_to_root(comments, bug, root=None):
     for comment in comments:
         assert comment.uuid != None
         uuid_map[comment.uuid] = comment
+    for comment in comments:
+        if comment.alt_id != None and comment.alt_id not in uuid_map:
+            uuid_map[comment.alt_id] = comment
     if root == None:
         root = Comment(bug, uuid=INVALID_UUID)
     else:
         uuid_map[root.uuid] = root
     for comm in comments:
         rep = comm.in_reply_to
-        if rep == None or rep == settings_object.EMPTY or rep == bug.uuid:
+        if rep == None or rep == bug.uuid:
             root_comments.append(comm)
         else:
             parentUUID = comm.in_reply_to
@@ -135,6 +138,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if "required_saved_properties" not in kwargs:
             kwargs["required_saved_properties"]=required_saved_properties
         return settings_object.versioned_property(**kwargs)
+
+    @_versioned_property(name="Alt-id",
+                         doc="Alternate ID for linking imported comments.  Internally comments are linked (via In-reply-to) to the parent's UUID.  However, these UUIDs are generated internally, so Alt-id is provided as a user-controlled linking target.")
+    def alt_id(): return {}
 
     @_versioned_property(name="From",
                          doc="The author of the comment")
@@ -231,7 +238,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value == settings_object.EMPTY:
+        if value in [None, settings_object.EMPTY]:
             return ""
         else:
             return str(value)
@@ -264,6 +271,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             email.encoders.encode_base64(msg)
             body = msg.as_string()
         info = [("uuid", self.uuid),
+                ("alt-id", self.alt_id),
                 ("short-name", shortname),
                 ("in-reply-to", self.in_reply_to),
                 ("from", self._setting_attr_string("From")),
@@ -272,7 +280,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 ("body", body)]
         lines = ["<comment>"]
         for (k,v) in info:
-            if v not in [settings_object.EMPTY, None]:
+            if v != None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
         lines.append("</comment>")
         istring = ' '*indent
@@ -281,33 +289,44 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def from_xml(self, xml_string, verbose=True):
         """
-        Warning: does not check for comment uuid collision.
+        Note: If alt-id is not given, translates any <uuid> fields to
+        <alt-id> fields.
         >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
         >>> commA.uuid = "0123"
         >>> commA.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> xml = commA.xml(shortname="com-1")
         >>> commB = Comment()
         >>> commB.from_xml(xml)
-        >>> attrs=['uuid','in_reply_to','From','time_string','content_type','body']
-        >>> for attr in attrs:
+        >>> attrs=['uuid','alt_id','in_reply_to','From','time_string','content_type','body']
+        >>> for attr in attrs: # doctest: +ELLIPSIS
         ...     if getattr(commB, attr) != getattr(commA, attr):
         ...         estr = "Mismatch on %s: '%s' should be '%s'"
         ...         args = (attr, getattr(commB, attr), getattr(commA, attr))
         ...         print estr % args
+        Mismatch on uuid: '...' should be '0123'
+        Mismatch on alt_id: '0123' should be 'None'
+        >>> print commB.alt_id
+        0123
+        >>> commA.From
+        >>> commB.From
         """
         comment = ElementTree.XML(xml_string)
         if comment.tag != "comment":
             raise InvalidXML(comment, "root element must be <comment>")
-        tags=['uuid','in-reply-to','from','date','content-type','body']
+        tags=['uuid','alt-id','in-reply-to','from','date','content-type','body']
+        uuid = None
         for child in comment.getchildren():
             if child.tag == "short-name":
                 pass
             elif child.tag in tags:
-                if child.text == None:
+                if child.text == None or len(child.text) == 0:
                     text = settings_object.EMPTY
                 else:
                     text = xml.sax.saxutils.unescape(child.text.strip())
-                if child.tag == 'from':
+                if child.tag == "uuid":
+                    uuid = text
+                    continue # don't set the bug's uuid tag.
+                elif child.tag == 'from':
                     attr_name = "From"
                 elif child.tag == 'date':
                     attr_name = 'time_string'
@@ -319,6 +338,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             elif verbose == True:
                 print >> sys.stderr, "Ignoring unknown tag %s in %s" \
                     % (child.tag, comment.tag)
+        if self.alt_id == None and uuid != None:
+            self.alt_id = uuid
 
     def string(self, indent=0, shortname=None):
         """

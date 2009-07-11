@@ -20,7 +20,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Show or change a bug's target for fixing"""
-from libbe import cmdutil, bugdir, settings_object
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args, test=False):
@@ -56,7 +56,7 @@ def execute(args, test=False):
         return
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
-        if bug.target is None or bug.target is settings_object.EMPTY:
+        if bug.target is None:
             print "No target assigned."
         else:
             print bug.target

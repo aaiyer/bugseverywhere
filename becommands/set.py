@@ -26,7 +26,7 @@ def _value_string(bd, setting):
     val = bd.settings.get(setting, settings_object.EMPTY)
     if val == settings_object.EMPTY:
         default = getattr(bd, bd._setting_name_to_attr_name(setting))
-        if default != settings_object.EMPTY:
+        if default not in [None, settings_object.EMPTY]:
             val = "None (%s)" % default
         else:
             val = None
