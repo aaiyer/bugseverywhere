@@ -128,14 +128,14 @@ def versioned_property(name, doc,
         if default != None or generator == None:
             defaulting  = defaulting_property(default=default, null=EMPTY,
                                               default_mutable=mutable)
-            fulldoc += "\n\nThis property defaults to %s" % default
+            fulldoc += "\n\nThis property defaults to %s." % default
         if generator != None:
             cached = cached_property(generator=generator, initVal=EMPTY,
                                      mutable=mutable)
-            fulldoc += "\n\nThis property is generated with %s" % generator
+            fulldoc += "\n\nThis property is generated with %s." % generator
         if check_fn != None:
             fn_checked = fn_checked_property(value_allowed_fn=check_fn)
-            fulldoc += "\n\nThis property is checked with %s" % check_fn
+            fulldoc += "\n\nThis property is checked with %s." % check_fn
         if allowed != None:
             checked = checked_property(allowed=allowed)
             fulldoc += "\n\nThe allowed values for this property are: %s." \

@@ -135,7 +135,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
         return settings_object.versioned_property(**kwargs)
 
     @_versioned_property(name="target",
-                         doc="The current project development target")
+                         doc="The current project development target.")
     def target(): return {}
 
     def _guess_encoding(self):

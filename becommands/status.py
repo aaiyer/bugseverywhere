@@ -55,24 +55,39 @@ def get_parser():
 
 
 def help():
-    longhelp=["""
-Show or change a bug's status.
-
-If no status is specified, the current value is printed.  If a status
-is specified, it will be assigned to the bug.
-
-Status levels are:
-"""]
     try: # See if there are any per-tree status configurations
         bd = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
     except bugdir.NoBugDir, e:
         pass # No tree, just show the defaults
     longest_status_len = max([len(s) for s in bug.status_values])
-    for status in bug.status_values :
+    active_statuses = []
+    for status in bug.active_status_values :
         description = bug.status_description[status]
-        s = "%*s : %s\n" % (longest_status_len, status, description)
-        longhelp.append(s)
-    longhelp = ''.join(longhelp)
+        s = "%*s : %s" % (longest_status_len, status, description)
+        active_statuses.append(s)
+    inactive_statuses = []
+    for status in bug.inactive_status_values :
+        description = bug.status_description[status]
+        s = "%*s : %s" % (longest_status_len, status, description)
+        inactive_statuses.append(s)
+    longhelp="""
+Show or change a bug's status.
+
+If no status is specified, the current value is printed.  If a status
+is specified, it will be assigned to the bug.
+
+There are two classes of statuses, active and inactive, which are only
+important for commands like "be list" that show only active bugs by
+default.
+
+Active status levels are:
+  %s
+Inactive status levels are:
+  %s
+
+You can overide the list of allowed statuses on a per-repository basis.
+See "be set --help" for more details.
+""" % ('\n  '.join(active_statuses), '\n  '.join(inactive_statuses))
     return get_parser().help_str() + longhelp
 
 def complete(options, args, parser):

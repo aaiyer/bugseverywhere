@@ -18,7 +18,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Change tree settings"""
-from libbe import cmdutil, bugdir, settings_object
+import textwrap
+from libbe import cmdutil, bugdir, rcs, settings_object
 __desc__ = __doc__
 
 def _value_string(bd, setting):
@@ -75,6 +76,30 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be set [NAME] [VALUE]")
     return parser
 
+def get_bugdir_settings():
+    settings = []
+    for s in bugdir.BugDir.settings_properties:
+        settings.append(s)
+    settings.sort()
+    documented_settings = []
+    for s in settings:
+        set = getattr(bugdir.BugDir, s)
+        dstr = set.__doc__.strip()
+        # per-setting comment adjustments
+        if s == "rcs_name":
+            lines = dstr.split('\n')
+            while lines[0].startswith("This property defaults to") == False:
+                lines.pop(0)
+            assert len(lines) != None, \
+                "Unexpected rcs_name docstring:\n  '%s'" % dstr
+            lines.insert(
+                0, "The name of the revision control system to use.\n")
+            dstr = '\n'.join(lines)
+        doc = textwrap.wrap(dstr, width=70, initial_indent='  ',
+                            subsequent_indent='  ')
+        documented_settings.append("%s\n%s" % (s, '\n'.join(doc)))
+    return documented_settings
+
 longhelp="""
 Show or change per-tree settings. 
 
@@ -82,14 +107,11 @@ If name and value are supplied, the name is set to a new value.
 If no value is specified, the current value is printed.
 If no arguments are provided, all names and values are listed. 
 
-Interesting settings are:
-rcs_name
-  The name of the revision control system.  "Arch" and "None" are supported.
-target
-  The current development goal 
-
 To unset a setting, set it to "none".
-"""
+
+Allowed settings are:
+
+%s""" % ('\n'.join(get_bugdir_settings()),)
 
 def help():
     return get_parser().help_str() + longhelp
