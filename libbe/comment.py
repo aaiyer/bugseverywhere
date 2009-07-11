@@ -338,7 +338,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             elif verbose == True:
                 print >> sys.stderr, "Ignoring unknown tag %s in %s" \
                     % (child.tag, comment.tag)
-        if self.alt_id == None and uuid != None:
+        if self.alt_id == None and uuid not in [None, self.uuid]:
             self.alt_id = uuid
 
     def string(self, indent=0, shortname=None):
