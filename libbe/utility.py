@@ -20,6 +20,7 @@ import os
 import shutil
 import tempfile
 import time
+import types
 import doctest
 
 
@@ -76,17 +77,34 @@ def time_to_str(time_val):
     return time.strftime(RFC_2822_TIME_FMT, time.gmtime(time_val))
 
 def str_to_time(str_time):
-    """Convert an RFC 2822-fomatted string into a time falue.
+    """Convert an RFC 2822-fomatted string into a time value.
     >>> str_to_time("Thu, 01 Jan 1970 00:00:00 +0000")
     0
     >>> q = time.time()
     >>> str_to_time(time_to_str(q)) == int(q)
     True
+    >>> str_to_time("Thu, 01 Jan 1970 00:00:00 -1000")
+    36000
     """
-    return calendar.timegm(time.strptime(str_time, RFC_2822_TIME_FMT))
+    timezone_str = str_time[-5:]
+    if timezone_str != "+0000":
+        str_time = str_time.replace(timezone_str, "+0000")
+    time_val = calendar.timegm(time.strptime(str_time, RFC_2822_TIME_FMT))
+    timesign = -int(timezone_str[0]+"1") # "+" -> time_val ahead of GMT
+    timezone_tuple = time.strptime(timezone_str[1:], "%H%M")
+    timezone = timezone_tuple.tm_hour*3600 + timezone_tuple.tm_min*60 
+    return time_val + timesign*timezone
 
 def handy_time(time_val):
     return time.strftime("%a, %d %b %Y %H:%M", time.localtime(time_val))
+
+def time_to_gmtime(str_time):
+    """Convert an RFC 2822-fomatted string to a GMT string.
+    >>> time_to_gmtime("Thu, 01 Jan 1970 00:00:00 -1000")
+    'Thu, 01 Jan 1970 10:00:00 +0000'
+    """
+    time_val = str_to_time(str_time)
+    return time_to_str(time_val)
 
 
 suite = doctest.DocTestSuite()
