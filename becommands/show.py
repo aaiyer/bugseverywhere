@@ -40,6 +40,7 @@ def execute(args, test=False):
     Bug A
     <BLANKLINE>
     >>> execute (["--xml", "a"], test=True) # doctest: +ELLIPSIS
+    <?xml version="1.0" encoding="..." ?>
     <bug>
       <uuid>a</uuid>
       <short-name>a</short-name>
@@ -70,6 +71,7 @@ def execute(args, test=False):
         bug = bd.bug_from_shortname(bugname)
         if is_comment == False:
             if options.dumpXML:
+                print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
                 print bug.xml(show_comments=True)
             else:
                 print bug.string(show_comments=True)

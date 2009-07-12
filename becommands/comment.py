@@ -117,7 +117,8 @@ def execute(args, test=False):
             new.content_type = options.content_type
     else: # import XML comment [list]
         # read in the comments
-        comment_list = ElementTree.XML(body)
+        str_body = body.strip().encode("unicode_escape")
+        comment_list = ElementTree.XML(str_body)
         if comment_list.tag not in ["bug", "comment-list"]:
             raise comment.InvalidXML(
                 comment_list, "root element must be <bug> or <comment-list>")
@@ -130,7 +131,7 @@ def execute(args, test=False):
         for child in comment_list.getchildren():
             if child.tag == "comment":
                 new = comment.Comment(bug)
-                new.from_xml(ElementTree.tostring(child))
+                new.from_xml(unicode(ElementTree.tostring(child)).decode("unicode_escape"))
                 if new.alt_id in ids:
                     raise cmdutil.UserError(
                         "Clashing comment alt_id: %s" % new.alt_id)

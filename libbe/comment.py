@@ -17,10 +17,11 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA 02110-1301, USA
-import email.mime.base, email.encoders
+import base64
 import os
 import os.path
 import time
+import types
 try: # import core module, Python >= 2.5
     from xml.etree import ElementTree
 except ImportError: # look for non-core module
@@ -80,10 +81,13 @@ def list_to_root(comments, bug, root=None):
     else:
         uuid_map[root.uuid] = root
     for comm in comments:
+        if comm.in_reply_to == INVALID_UUID:
+            comm.in_reply_to = None
         rep = comm.in_reply_to
         if rep == None or rep == bug.uuid:
             root_comments.append(comm)
         else:
+            print comm.in_reply_to
             parentUUID = comm.in_reply_to
             parent = uuid_map[parentUUID]
             parent.add_reply(comm)
@@ -269,7 +273,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             msg = email.mime.base.MIMEBase(maintype, subtype)
             msg.set_payload(self.body or "")
             email.encoders.encode_base64(msg)
-            body = msg.as_string()
+            body = base64.encodestring(self.body or "")
         info = [("uuid", self.uuid),
                 ("alt-id", self.alt_id),
                 ("short-name", shortname),
@@ -310,11 +314,14 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> commA.From
         >>> commB.From
         """
+        if type(xml_string) == types.UnicodeType:
+            xml_string = xml_string.strip().encode("unicode_escape")
         comment = ElementTree.XML(xml_string)
         if comment.tag != "comment":
             raise InvalidXML(comment, "root element must be <comment>")
         tags=['uuid','alt-id','in-reply-to','from','date','content-type','body']
         uuid = None
+        body = None
         for child in comment.getchildren():
             if child.tag == "short-name":
                 pass
@@ -322,24 +329,31 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 if child.text == None or len(child.text) == 0:
                     text = settings_object.EMPTY
                 else:
-                    text = xml.sax.saxutils.unescape(child.text.strip())
+                    text = xml.sax.saxutils.unescape(child.text)
+                    text = unicode(text).decode("unicode_escape").strip()
                 if child.tag == "uuid":
                     uuid = text
                     continue # don't set the bug's uuid tag.
+                if child.tag == "body":
+                    body = text
+                    continue # don't set the bug's body yet.
                 elif child.tag == 'from':
                     attr_name = "From"
                 elif child.tag == 'date':
                     attr_name = 'time_string'
                 else:
                     attr_name = child.tag.replace('-','_')
-                if attr_name == "body":
-                    text += '\n' # replace strip()ed trailing newline
                 setattr(self, attr_name, text)
             elif verbose == True:
                 print >> sys.stderr, "Ignoring unknown tag %s in %s" \
                     % (child.tag, comment.tag)
         if self.alt_id == None and uuid not in [None, self.uuid]:
             self.alt_id = uuid
+        if body != None:
+            if self.content_type.startswith("text/"):
+                self.body = body
+            else:
+                self.body = base64.decodestring(body)
 
     def string(self, indent=0, shortname=None):
         """
