@@ -134,11 +134,12 @@ def execute(args, test=False):
         return True
 
     bugs = [b for b in bd if filter(b) ]
-    if len(bugs) == 0:
+    if len(bugs) == 0 and options.xml == False:
         print "No matching bugs found"
     
     def list_bugs(cur_bugs, title=None, just_uuids=False, xml=False):
         if xml == True:
+            print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
             print "<bugs>"
         if len(cur_bugs) > 0:
             if title != None and xml == False:

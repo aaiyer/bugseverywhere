@@ -27,13 +27,14 @@ followed by a blank line.
 
 #from mailbox import mbox, Message  # the mailbox people really want an on-disk copy
 import email.utils
-import types
-
 from libbe.encoding import get_encoding, set_IO_stream_encodings
 from libbe.utility import str_to_time as rfc2822_to_gmtime_integer
 from time import asctime, gmtime
-from xml.sax import make_parser
-from xml.sax.handler import ContentHandler
+import types
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
 from xml.sax.saxutils import unescape
 
 
@@ -83,7 +84,7 @@ class Bug (LimitedAttrDict):
               u"created",
               u"summary",
               u"comments",
-              u"extra_strings"]
+              u"extra-strings"]
     def print_to_mbox(self):
         name,addr = email.utils.parseaddr(self["creator"])
         print "From %s %s" % (addr, rfc2822_to_asctime(self["created"]))
@@ -96,12 +97,31 @@ class Bug (LimitedAttrDict):
         print ""
         print self["summary"]
         print ""
-        if len(self["extra_strings"]) > 0:
+        if "extra-strings" in self:
             print "extra strings:\n  ",
             print '\n  '.join(self["extra_strings"])
         print ""
-        for comment in self["comments"]:
-            comment.print_to_mbox(self)            
+        if "comments" in self:
+            for comment in self["comments"]:
+                comment.print_to_mbox(self)            
+    def init_from_etree(self, element):
+        assert element.tag == "bug", element.tag
+        for field in element.getchildren():
+            text = unescape(unicode(field.text).decode("unicode_escape").strip())
+            if field.tag == "comment":
+                comm = Comment()
+                comm.init_from_etree(field)
+                if "comments" in self:
+                    self["comments"].append(comm)
+                else:
+                    self["comments"] = [comm]
+            elif field.tag == "extra-string":
+                if "extra-strings" in self:
+                    self["extra-strings"].append(text)
+                else:
+                    self["extra-strings"] = [text]
+            else:
+                self[field.tag] = text
 
 class Comment (LimitedAttrDict):
     _attrs = [u"uuid",
@@ -129,72 +149,38 @@ class Comment (LimitedAttrDict):
         else: # content type and transfer encoding already in XML MIME output
             print self["body"]
         print ""
+    def init_from_etree(self, element):
+        assert element.tag == "comment", element.tag
+        for field in element.getchildren():
+            text = unescape(unicode(field.text).decode("unicode_escape").strip())
+            if field.tag == "body":
+                text+="\n"
+            self[field.tag] = text
 
-class BE_list_handler (ContentHandler):
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.bug = None
-        self.comment = None
-        self.extra_strings = None
-        self.text_field = None
-
-    def startElement(self, name, attributes):
-        if name == "bug":
-            assert self.bug == None, "Nested bugs?!"
-            assert self.comment == None
-            assert self.text_field == None
-            self.bug = Bug(comments=[], extra_strings=[])
-        elif name == "comment":
-            assert self.bug != None, "<comment> not in <bug>?"
-            assert self.comment == None, "Nested comments?!"
-            assert self.text_field == None, "<comment> in text field %s?" % self.text_field
-            self.comment = Comment()
-        elif self.bug != None and self.comment == None:
-            # parse bug text field
-            self.text_field = name
-            self.text_data = ""
-        elif self.bug != None and self.comment != None:
-            # parse comment text field
-            self.text_field = name
-            self.text_data = ""
-
-    def endElement(self, name):
-        if name == "bug":
-            assert self.bug != None, "Invalid XML?"
-            assert self.comment == None, "Invalid XML?"
-            assert self.text_field == None, "Invalid XML?"
-            self.bug.print_to_mbox()
-            self.bug = None
-        elif name == "comment":
-            assert self.bug != None, "<comment> not in <bug>?"
-            assert self.comment != None, "Invalid XML?"
-            assert self.text_field == None, "<comment> in text field %s?" % self.text_field
-            self.bug["comments"].append(self.comment)
-            # comments printed by bug.print_to_mbox()
-            self.comment = None 
-        elif self.bug != None and self.comment == None:
-            # parse bug text field
-            if self.text_field == "extra-string":
-                self.bug["extra_strings"].append(unescape(self.text_data.strip()))
-            else:
-                self.bug[self.text_field] = unescape(self.text_data.strip())
-            self.text_field = None
-            self.text_data = None
-        elif self.bug != None and self.comment != None:
-            # parse comment text field
-            self.comment[self.text_field] = unescape(self.text_data.strip())
-            self.text_field = None
-            self.text_data = None
-
-    def characters(self, data):
-        if self.text_field != None:
-            self.text_data += data
+def print_to_mbox(element):
+    if element.tag == "bug":
+        b = Bug()
+        b.init_from_etree(element)
+        b.print_to_mbox()
+    elif element.tag == "comment":
+        c = Comment()
+        c.init_from_etree(element)
+        c.print_to_mbox()
+    elif element.tag in ["bugs", "bug-list"]:
+        for b_elt in element.getchildren():
+            b = Bug()
+            b.init_from_etree(b_elt)
+            b.print_to_mbox()
+    elif element.tag in ["comments", "comment-list"]:
+        for c_elt in element.getchildren():
+            c = Comment()
+            c.init_from_etree(c_elt)
+            c.print_to_mbox()
 
 if __name__ == "__main__":
     import sys
     
-    parser = make_parser()
-    parser.setContentHandler(BE_list_handler())
-    parser.parse(sys.stdin)
+    xml_unicode = sys.stdin.read()
+    xml_str = xml_unicode.encode("unicode_escape").replace(r"\n", "\n")
+    elist = ElementTree.XML(xml_str)
+    print_to_mbox(elist)
