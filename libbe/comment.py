@@ -87,7 +87,6 @@ def list_to_root(comments, bug, root=None):
         if rep == None or rep == bug.uuid:
             root_comments.append(comm)
         else:
-            print comm.in_reply_to
             parentUUID = comm.in_reply_to
             parent = uuid_map[parentUUID]
             parent.add_reply(comm)
@@ -351,7 +350,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             self.alt_id = uuid
         if body != None:
             if self.content_type.startswith("text/"):
-                self.body = body
+                self.body = body+"\n" # restore trailing newline
             else:
                 self.body = base64.decodestring(body)
 
