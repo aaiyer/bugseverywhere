@@ -20,6 +20,7 @@
 import base64
 import os
 import os.path
+import sys
 import time
 import types
 try: # import core module, Python >= 2.5
@@ -54,9 +55,17 @@ class InvalidXML(ValueError):
         self.element = element
         self.comment = comment
 
+class MissingReference(ValueError):
+    def __init__(self, comment):
+        msg = "Missing reference to %s" % (comment.in_reply_to)
+        ValueError.__init__(self, msg)
+        self.reference = comment.in_reply_to
+        self.comment = comment
+
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def list_to_root(comments, bug, root=None):
+def list_to_root(comments, bug, root=None,
+                 ignore_missing_references=False):
     """
     Convert a raw list of comments to single root comment.  We use a
     dummy root comment by default, because there can be several
@@ -88,8 +97,17 @@ def list_to_root(comments, bug, root=None):
             root_comments.append(comm)
         else:
             parentUUID = comm.in_reply_to
-            parent = uuid_map[parentUUID]
-            parent.add_reply(comm)
+            try:
+                parent = uuid_map[parentUUID]
+                parent.add_reply(comm)
+            except KeyError, e:
+                if ignore_missing_references == True:
+                    print >> sys.stderr, \
+                        "Ignoring missing reference to %s" % parentUUID
+                    comm.in_reply_to = None
+                    root_comments.append(comm)
+                else:
+                    raise MissingReference(comm)
     root.extend(root_comments)
     return root
 
