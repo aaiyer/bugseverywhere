@@ -117,7 +117,7 @@ def execute(args, test=False):
             new.content_type = options.content_type
     else: # import XML comment [list]
         # read in the comments
-        str_body = body.strip().encode("unicode_escape")
+        str_body = body.encode("unicode_escape").replace(r'\n', '\n')
         comment_list = ElementTree.XML(str_body)
         if comment_list.tag not in ["bug", "comment-list"]:
             raise comment.InvalidXML(
