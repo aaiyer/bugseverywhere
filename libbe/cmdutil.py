@@ -1,7 +1,6 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
 #                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+import glob
 import optparse
 import os
 from textwrap import TextWrapper
@@ -32,10 +32,10 @@ class UserError(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
-class UserErrorWrap(UserError):
-    def __init__(self, exception):
-        UserError.__init__(self, str(exception))
-        self.exception = exception
+class UnknownCommand(UserError):
+    def __init__(self, cmd):
+        Exception.__init__(self, "Unknown command '%s'" % cmd)
+        self.cmd = cmd
 
 class UsageError(Exception):
     pass
@@ -56,24 +56,27 @@ def iter_commands():
 def get_command(command_name):
     """Retrieves the module for a user command
 
-    >>> get_command("asdf")
-    Traceback (most recent call last):
-    UserError: Unknown command asdf
+    >>> try:
+    ...     get_command("asdf")
+    ... except UnknownCommand, e:
+    ...     print e
+    Unknown command 'asdf'
     >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
     True
     """
     cmd = plugin.get_plugin("becommands", command_name.replace("-", "_"))
     if cmd is None:
-        raise UserError("Unknown command %s" % command_name)
+        raise UnknownCommand(command_name)
     return cmd
 
 
 def execute(cmd, args):
     enc = encoding.get_encoding()
-    get_command(cmd).execute([a.decode(enc) for a in args])
+    cmd = get_command(cmd)
+    cmd.execute([a.decode(enc) for a in args])
     return 0
 
-def help(cmd=None):
+def help(cmd=None, parser=None):
     if cmd != None:
         return get_command(cmd).help()
     else:
@@ -82,17 +85,15 @@ def help(cmd=None):
             cmdlist.append((name, module.__desc__))
         longest_cmd_len = max([len(name) for name,desc in cmdlist])
         ret = ["Bugs Everywhere - Distributed bug tracking",
-               "",
-               "usage: be [command]  [command_options ...]  [command_args ...]",
-               "or:    be help",
-               "or:    be help [command]",
-               "",
-               "Supported commands"]
+               "", "Supported commands"]
         for name, desc in cmdlist:
             numExtraSpaces = longest_cmd_len-len(name)
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
-
-        return "\n".join(ret)
+        ret.extend(["", "Run", "  be help [command]", "for more information."])
+        longhelp = "\n".join(ret)
+        if parser == None:
+            return longhelp
+        return parser.help_str() + "\n" + longhelp
 
 def completions(cmd):
     parser = get_command(cmd).get_parser()
@@ -106,6 +107,13 @@ def raise_get_help(option, opt, value, parser):
 
 def raise_get_completions(option, opt, value, parser):
     print "got completion arg"
+    if hasattr(parser, "command") and parser.command == "be":
+        comps = []
+        for command, module in iter_commands():
+            comps.append(command)
+        for opt in parser.option_list:
+            comps.append(opt.get_opt_string())
+        raise GetCompletions(comps)
     raise GetCompletions(completions(sys.argv[1]))
 
 class CmdOptionParser(optparse.OptionParser):
@@ -141,7 +149,7 @@ def option_value_pairs(options, parser):
 
 def default_complete(options, args, parser, bugid_args={}):
     """
-    A dud complete implementation for becommands to that the
+    A dud complete implementation for becommands so that the
     --complete argument doesn't cause any problems.  Use this
     until you've set up a command-specific complete function.
     
@@ -149,15 +157,25 @@ def default_complete(options, args, parser, bugid_args={}):
     arguments taking bug shortnames and the values are functions for
     filtering, since that's a common enough operation.
     e.g. for "be open [options] BUGID"
-    bugid_args = {0: lambda bug : bug.active == False}
+      bugid_args = {0: lambda bug : bug.active == False}
+    A positional argument of -1 specifies all remaining arguments
+    (e.g in the case of "be show BUGID BUGID ...").
     """
     for option,value in option_value_pairs(options, parser):
         if value == "--complete":
             raise cmdutil.GetCompletions()
+    if len(bugid_args.keys()) > 0:
+        max_pos_arg = max(bugid_args.keys())
+    else:
+        max_pos_arg = -1
     for pos,value in enumerate(args):
         if value == "--complete":
+            filter = None
             if pos in bugid_args:
                 filter = bugid_args[pos]
+            if pos > max_pos_arg and -1 in bugid_args:
+                filter = bugid_args[-1]
+            if filter != None:
                 bugshortnames = []
                 try:
                     bd = bugdir.BugDir(from_disk=True,
@@ -169,6 +187,13 @@ def default_complete(options, args, parser, bugid_args={}):
                     pass
                 raise GetCompletions(bugshortnames)
             raise GetCompletions()
+
+def complete_path(path):
+    """List possible path completions for path."""
+    comps = glob.glob(path+"*") + glob.glob(path+"/*")
+    if len(comps) == 1 and os.path.isdir(comps[0]):
+        comps.extend(glob.glob(comps[0]+"/*"))
+    return comps
 
 def underlined(instring):
     """Produces a version of a string that is underlined with '='

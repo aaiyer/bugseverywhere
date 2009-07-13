@@ -2,7 +2,6 @@
 #                         Marien Zwart <marienz@gentoo.org>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -18,7 +17,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Assign an individual or group to fix a bug"""
-from libbe import cmdutil, bugdir, settings_object
+from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
 def execute(args, test=False):
@@ -26,7 +25,7 @@ def execute(args, test=False):
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> bd.bug_from_shortname("a").assigned is settings_object.EMPTY
+    >>> bd.bug_from_shortname("a").assigned is None
     True
 
     >>> execute(["a"], test=True)
@@ -41,7 +40,7 @@ def execute(args, test=False):
 
     >>> execute(["a","none"], test=True)
     >>> bd._clear_bugs()
-    >>> bd.bug_from_shortname("a").assigned is settings_object.EMPTY
+    >>> bd.bug_from_shortname("a").assigned is None
     True
     """
     parser = get_parser()

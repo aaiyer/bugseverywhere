@@ -1,7 +1,6 @@
 # Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -68,7 +67,7 @@ def load_severities(severity_def):
     global severity_values
     global severity_description
     global severity_index
-    if severity_def == settings_object.EMPTY:
+    if severity_def == None:
         return
     severity_values = tuple([val for val,description in severity_def])
     severity_description = dict(severity_def)
@@ -88,9 +87,9 @@ def load_status(active_status_def, inactive_status_def):
     global status_values
     global status_description
     global status_index
-    if active_status_def == settings_object.EMPTY:
+    if active_status_def == None:
         active_status_def = globals()["active_status_def"]
-    if inactive_status_def == settings_object.EMPTY:
+    if inactive_status_def == None:
         inactive_status_def = globals()["inactive_status_def"]
     active_status_values = tuple([val for val,description in active_status_def])
     inactive_status_values = tuple([val for val,description in inactive_status_def])
@@ -178,7 +177,7 @@ class Bug(settings_object.SavedSettingsObject):
     def time_string(): return {}
 
     def _get_time(self):
-        if self.time_string == None or self.time_string == settings_object.EMPTY:
+        if self.time_string in [None, settings_object.EMPTY]:
             return None
         return utility.str_to_time(self.time_string)
     def _set_time(self, value):
@@ -255,7 +254,7 @@ class Bug(settings_object.SavedSettingsObject):
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value == settings_object.EMPTY:
+        if value in [None, settings_object.EMPTY]:
             return ""
         else:
             return str(value)
@@ -283,7 +282,7 @@ class Bug(settings_object.SavedSettingsObject):
                 ("summary", self.summary)]
         ret = '<bug>\n'
         for (k,v) in info:
-            if v is not settings_object.EMPTY:
+            if v is not None:
                 ret += '  <%s>%s</%s>\n' % (k,xml.sax.saxutils.escape(v),k)
         for estr in self.extra_strings:
             ret += '  <extra-string>%s</extra-string>\n' % estr
@@ -477,8 +476,8 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
         return 1
     val_1 = getattr(bug_1, attr)
     val_2 = getattr(bug_2, attr)
-    if val_1 == settings_object.EMPTY: val_1 = None
-    if val_2 == settings_object.EMPTY: val_2 = None
+    if val_1 == None: val_1 = None
+    if val_2 == None: val_2 = None
     
     if invert == True :
         return -cmp(val_1, val_2)

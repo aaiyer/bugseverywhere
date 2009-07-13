@@ -1,0 +1,8 @@
+<type 'unicode'> <body>�</body>
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/usr/lib/python2.5/xml/etree/ElementTree.py", line 963, in XML
+    parser.feed(text)
+  File "/usr/lib/python2.5/xml/etree/ElementTree.py", line 1245, in feed
+    self._parser.Parse(data, 0)
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u1234' in position 6: ordinal not in range(128)

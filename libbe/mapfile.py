@@ -1,6 +1,5 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -68,9 +67,9 @@ def generate(map):
             assert(':' not in key)
             assert(len(key) > 0)
         except AssertionError:
-            raise IllegalKey(key.encode('string_escape'))
+            raise IllegalKey(unicode(key).encode('unicode_escape'))
         if "\n" in map[key]:
-            raise IllegalValue(map[key].encode('string_escape'))
+            raise IllegalValue(unicode(map[key]).encode('unicode_escape'))
 
     lines = []
     for key in keys:

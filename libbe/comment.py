@@ -2,7 +2,6 @@
 # Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -18,12 +17,17 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #    MA 02110-1301, USA
-import email.mime.base, email.encoders
+import base64
 import os
 import os.path
+import sys
 import time
+import types
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
 import xml.sax.saxutils
-import textwrap
 import doctest
 
 from beuuid import uuid_gen
@@ -43,16 +47,33 @@ class InvalidShortname(KeyError):
         self.shortname = shortname
         self.shortnames = shortnames
 
+class InvalidXML(ValueError):
+    def __init__(self, element, comment):
+        msg = "Invalid comment xml: %s\n  %s\n" \
+            % (comment, ElementTree.tostring(element))
+        ValueError.__init__(self, msg)
+        self.element = element
+        self.comment = comment
+
+class MissingReference(ValueError):
+    def __init__(self, comment):
+        msg = "Missing reference to %s" % (comment.in_reply_to)
+        ValueError.__init__(self, msg)
+        self.reference = comment.in_reply_to
+        self.comment = comment
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def _list_to_root(comments, bug):
+def list_to_root(comments, bug, root=None,
+                 ignore_missing_references=False):
     """
-    Convert a raw list of comments to single (dummy) root comment.  We
-    use a dummy root comment, because there can be several comment
-    threads rooted on the same parent bug.  To simplify comment
-    interaction, we condense these threads into a single thread with a
-    Comment dummy root.
+    Convert a raw list of comments to single root comment.  We use a
+    dummy root comment by default, because there can be several
+    comment threads rooted on the same parent bug.  To simplify
+    comment interaction, we condense these threads into a single
+    thread with a Comment dummy root.  Can also be used to append
+    a list of subcomments to a non-dummy root comment, so long as
+    all the new comments are descendants of the root comment.
     
     No Comment method should use the dummy comment.
     """
@@ -61,17 +82,34 @@ def _list_to_root(comments, bug):
     for comment in comments:
         assert comment.uuid != None
         uuid_map[comment.uuid] = comment
+    for comment in comments:
+        if comment.alt_id != None and comment.alt_id not in uuid_map:
+            uuid_map[comment.alt_id] = comment
+    if root == None:
+        root = Comment(bug, uuid=INVALID_UUID)
+    else:
+        uuid_map[root.uuid] = root
     for comm in comments:
+        if comm.in_reply_to == INVALID_UUID:
+            comm.in_reply_to = None
         rep = comm.in_reply_to
-        if rep == None or rep == settings_object.EMPTY or rep == bug.uuid:
+        if rep == None or rep == bug.uuid:
             root_comments.append(comm)
         else:
             parentUUID = comm.in_reply_to
-            parent = uuid_map[parentUUID]
-            parent.add_reply(comm)
-    dummy_root = Comment(bug, uuid=INVALID_UUID)
-    dummy_root.extend(root_comments)
-    return dummy_root
+            try:
+                parent = uuid_map[parentUUID]
+                parent.add_reply(comm)
+            except KeyError, e:
+                if ignore_missing_references == True:
+                    print >> sys.stderr, \
+                        "Ignoring missing reference to %s" % parentUUID
+                    comm.in_reply_to = None
+                    root_comments.append(comm)
+                else:
+                    raise MissingReference(comm)
+    root.extend(root_comments)
+    return root
 
 def loadComments(bug, load_full=False):
     """
@@ -90,7 +128,7 @@ def loadComments(bug, load_full=False):
             comm.load_settings()
             dummy = comm.body # force the body to load
         comments.append(comm)
-    return _list_to_root(comments, bug)
+    return list_to_root(comments, bug)
 
 def saveComments(bug):
     path = bug.get_path("comments")
@@ -121,6 +159,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if "required_saved_properties" not in kwargs:
             kwargs["required_saved_properties"]=required_saved_properties
         return settings_object.versioned_property(**kwargs)
+
+    @_versioned_property(name="Alt-id",
+                         doc="Alternate ID for linking imported comments.  Internally comments are linked (via In-reply-to) to the parent's UUID.  However, these UUIDs are generated internally, so Alt-id is provided as a user-controlled linking target.")
+    def alt_id(): return {}
 
     @_versioned_property(name="From",
                          doc="The author of the comment")
@@ -217,7 +259,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value == settings_object.EMPTY:
+        if value in [None, settings_object.EMPTY]:
             return ""
         else:
             return str(value)
@@ -248,8 +290,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             msg = email.mime.base.MIMEBase(maintype, subtype)
             msg.set_payload(self.body or "")
             email.encoders.encode_base64(msg)
-            body = msg.as_string()
+            body = base64.encodestring(self.body or "")
         info = [("uuid", self.uuid),
+                ("alt-id", self.alt_id),
                 ("short-name", shortname),
                 ("in-reply-to", self.in_reply_to),
                 ("from", self._setting_attr_string("From")),
@@ -258,12 +301,76 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 ("body", body)]
         lines = ["<comment>"]
         for (k,v) in info:
-            if v not in [settings_object.EMPTY, None]:
+            if v != None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
         lines.append("</comment>")
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
+
+    def from_xml(self, xml_string, verbose=True):
+        """
+        Note: If alt-id is not given, translates any <uuid> fields to
+        <alt-id> fields.
+        >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
+        >>> commA.uuid = "0123"
+        >>> commA.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> xml = commA.xml(shortname="com-1")
+        >>> commB = Comment()
+        >>> commB.from_xml(xml)
+        >>> attrs=['uuid','alt_id','in_reply_to','From','time_string','content_type','body']
+        >>> for attr in attrs: # doctest: +ELLIPSIS
+        ...     if getattr(commB, attr) != getattr(commA, attr):
+        ...         estr = "Mismatch on %s: '%s' should be '%s'"
+        ...         args = (attr, getattr(commB, attr), getattr(commA, attr))
+        ...         print estr % args
+        Mismatch on uuid: '...' should be '0123'
+        Mismatch on alt_id: '0123' should be 'None'
+        >>> print commB.alt_id
+        0123
+        >>> commA.From
+        >>> commB.From
+        """
+        if type(xml_string) == types.UnicodeType:
+            xml_string = xml_string.strip().encode("unicode_escape")
+        comment = ElementTree.XML(xml_string)
+        if comment.tag != "comment":
+            raise InvalidXML(comment, "root element must be <comment>")
+        tags=['uuid','alt-id','in-reply-to','from','date','content-type','body']
+        uuid = None
+        body = None
+        for child in comment.getchildren():
+            if child.tag == "short-name":
+                pass
+            elif child.tag in tags:
+                if child.text == None or len(child.text) == 0:
+                    text = settings_object.EMPTY
+                else:
+                    text = xml.sax.saxutils.unescape(child.text)
+                    text = unicode(text).decode("unicode_escape").strip()
+                if child.tag == "uuid":
+                    uuid = text
+                    continue # don't set the bug's uuid tag.
+                if child.tag == "body":
+                    body = text
+                    continue # don't set the bug's body yet.
+                elif child.tag == 'from':
+                    attr_name = "From"
+                elif child.tag == 'date':
+                    attr_name = 'time_string'
+                else:
+                    attr_name = child.tag.replace('-','_')
+                setattr(self, attr_name, text)
+            elif verbose == True:
+                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                    % (child.tag, comment.tag)
+        if self.alt_id == None and uuid not in [None, self.uuid]:
+            self.alt_id = uuid
+        if body != None:
+            if self.content_type.startswith("text/"):
+                self.body = body+"\n" # restore trailing newline
+            else:
+                self.body = base64.decodestring(body)
 
     def string(self, indent=0, shortname=None):
         """
@@ -287,13 +394,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         lines.append("From: %s" % (self._setting_attr_string("From")))
         lines.append("Date: %s" % self.time_string)
         lines.append("")
-        #lines.append(textwrap.fill(self.body or "",
-        #                           width=(79-indent)))
         if self.content_type.startswith("text/"):
             lines.extend((self.body or "").splitlines())
         else:
             lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)
-        # some comments shouldn't be wrapped...
         
         istring = ' '*indent
         sep = '\n' + istring
@@ -335,9 +439,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def save(self):
         assert self.body != None, "Can't save blank comment"
-        #if self.in_reply_to == None:
-        #    raise Exception, str(self)+'\n'+str(self.settings)+'\n'+str(self._settings_loaded)
-        #assert self.in_reply_to != None, "Comment must be a reply to something"
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
 
@@ -362,7 +463,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         reply = Comment(self.bug, body=body)
         self.add_reply(reply)
-        #raise Exception, "new reply added (%s),\n%s\n%s\n\t--%s--" % (body, self, reply, reply.in_reply_to)
         return reply
 
     def string_thread(self, string_method_name="string", name_map={},

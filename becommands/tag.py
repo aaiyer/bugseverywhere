@@ -102,7 +102,7 @@ def execute(args, test=False):
         else: # add the tag
             estrs.append(tag_string)
         bug.extra_strings = estrs # reassign to notice change
-        bug.save()
+        bd.save()
 
     tags = []
     for estr in bug.extra_strings:

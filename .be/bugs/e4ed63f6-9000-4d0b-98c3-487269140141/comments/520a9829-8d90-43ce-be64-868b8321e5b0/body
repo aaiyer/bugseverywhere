@@ -1,0 +1,1 @@
+It looks like etree wants a byte string, not unicode input

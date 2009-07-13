@@ -3,7 +3,6 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -136,7 +135,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
         return settings_object.versioned_property(**kwargs)
 
     @_versioned_property(name="target",
-                         doc="The current project development target")
+                         doc="The current project development target.")
     def target(): return {}
 
     def _guess_encoding(self):
