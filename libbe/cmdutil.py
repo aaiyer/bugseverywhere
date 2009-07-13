@@ -75,7 +75,7 @@ def execute(cmd, args):
     cmd.execute([a.decode(enc) for a in args])
     return 0
 
-def help(cmd=None):
+def help(cmd=None, parser=None):
     if cmd != None:
         return get_command(cmd).help()
     else:
@@ -84,17 +84,15 @@ def help(cmd=None):
             cmdlist.append((name, module.__desc__))
         longest_cmd_len = max([len(name) for name,desc in cmdlist])
         ret = ["Bugs Everywhere - Distributed bug tracking",
-               "",
-               "usage: be [command]  [command_options ...]  [command_args ...]",
-               "or:    be help",
-               "or:    be help [command]",
-               "",
-               "Supported commands"]
+               "", "Supported commands"]
         for name, desc in cmdlist:
             numExtraSpaces = longest_cmd_len-len(name)
             ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
-
-        return "\n".join(ret)
+        ret.extend(["", "Run", "  be help [command]", "for more information."])
+        longhelp = "\n".join(ret)
+        if parser == None:
+            return longhelp
+        return parser.help_str() + "\n" + longhelp
 
 def completions(cmd):
     parser = get_command(cmd).get_parser()
@@ -108,6 +106,13 @@ def raise_get_help(option, opt, value, parser):
 
 def raise_get_completions(option, opt, value, parser):
     print "got completion arg"
+    if hasattr(parser, "command") and parser.command == "be":
+        comps = []
+        for command, module in iter_commands():
+            comps.append(command)
+        for opt in parser.option_list:
+            comps.append(opt.get_opt_string())
+        raise GetCompletions(comps)
     raise GetCompletions(completions(sys.argv[1]))
 
 class CmdOptionParser(optparse.OptionParser):

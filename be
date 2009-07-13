@@ -19,38 +19,54 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
 import sys
+
 from libbe import cmdutil, _version
 
-__doc__ == cmdutil.help()
+__doc__ = cmdutil.help()
 
-if len(sys.argv) == 1 or sys.argv[1] in ('--help', '-h'):
-    print cmdutil.help()
-elif sys.argv[1] == '--complete':
-    for command, module in cmdutil.iter_commands():
-        print command
-    print '\n'.join(["--help","--complete","--options","--version"])
-elif sys.argv[1] == '--version':
+usage = "be [options] [command] [command_options ...] [command_args ...]"
+
+parser = cmdutil.CmdOptionParser(usage)
+parser.command = "be"
+parser.add_option("--version", action="store_true", dest="version",
+                  help="Print version string and exit")
+
+try:
+    options,args = parser.parse_args()
+except cmdutil.GetHelp:
+    print cmdutil.help(parser=parser)
+    sys.exit(0)
+except cmdutil.GetCompletions, e:
+    print '\n'.join(e.completions)
+    sys.exit(0)
+
+if options.version == True:
     print _version.version_info["revision_id"]
-else:
-    try:
-        sys.exit(cmdutil.execute(sys.argv[1], sys.argv[2:]))
-    except cmdutil.GetHelp:
+    sys.exit(0)
+
+try:
+    if len(args) == 0:
+        raise cmdutil.UsageError, "must supply a command"
+    sys.exit(cmdutil.execute(args[0], args[1:]))
+except cmdutil.GetHelp:
+    print cmdutil.help(sys.argv[1])
+    sys.exit(0)
+except cmdutil.GetCompletions, e:
+    print '\n'.join(e.completions)
+    sys.exit(0)
+except cmdutil.UnknownCommand, e:
+    print e
+    sys.exit(1)
+except cmdutil.UsageError, e:
+    print "Invalid usage:", e
+    if len(args) == 0:
+        print cmdutil.help(parser=parser)
+    else:
+        print "\nArgs:", args
         print cmdutil.help(sys.argv[1])
-        sys.exit(0)
-    except cmdutil.GetCompletions, e:
-        print '\n'.join(e.completions)
-        sys.exit(0)
-    except cmdutil.UnknownCommand, e:
-        print e
-        sys.exit(1)
-    except cmdutil.UsageError, e:
-        print "Invalid usage:", e
-        print "\nArgs:", sys.argv[1:]
-        print cmdutil.help(sys.argv[1])
-        sys.exit(1)
-    except cmdutil.UserError, e:
-        print "ERROR:"
-        print e
-        sys.exit(1)
+    sys.exit(1)
+except cmdutil.UserError, e:
+    print "ERROR:"
+    print e
+    sys.exit(1)
