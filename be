@@ -19,6 +19,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import os
 import sys
 
 from libbe import cmdutil, _version
@@ -30,7 +31,9 @@ usage = "be [options] [command] [command_options ...] [command_args ...]"
 parser = cmdutil.CmdOptionParser(usage)
 parser.command = "be"
 parser.add_option("--version", action="store_true", dest="version",
-                  help="Print version string and exit")
+                  help="Print version string and exit.")
+parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
+                  help="Run this command from DIR instead of the current directory.")
 
 try:
     options,args = parser.parse_args()
@@ -44,6 +47,8 @@ except cmdutil.GetCompletions, e:
 if options.version == True:
     print _version.version_info["revision_id"]
     sys.exit(0)
+if options.dir != None:
+    os.chdir(options.dir)
 
 try:
     if len(args) == 0:
