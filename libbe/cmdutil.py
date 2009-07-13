@@ -15,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+import glob
 import optparse
 import os
 from textwrap import TextWrapper
@@ -186,6 +187,13 @@ def default_complete(options, args, parser, bugid_args={}):
                     pass
                 raise GetCompletions(bugshortnames)
             raise GetCompletions()
+
+def complete_path(path):
+    """List possible path completions for path."""
+    comps = glob.glob(path+"*") + glob.glob(path+"/*")
+    if len(comps) == 1 and os.path.isdir(comps[0]):
+        comps.extend(glob.glob(comps[0]+"/*"))
+    return comps
 
 def underlined(instring):
     """Produces a version of a string that is underlined with '='

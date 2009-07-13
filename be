@@ -37,6 +37,13 @@ parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
 
 try:
     options,args = parser.parse_args()
+    for option,value in cmdutil.option_value_pairs(options, parser):
+        if value == "--complete":
+            if option == "dir":
+                if len(args) == 0:
+                    args = ["."]
+                paths = cmdutil.complete_path(args[0])
+                raise cmdutil.GetCompletions(paths)
 except cmdutil.GetHelp:
     print cmdutil.help(parser=parser)
     sys.exit(0)
