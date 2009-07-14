@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+#
+# Copyright
+"""Provide and email interface to the distributed bugtracker Bugs
+Everywhere.  Recieves incoming email via procmail and allows users to
+select actions with their subject lines.  Subject lines follow the
+format
+  [be-bug] command (options) (args)
+With the body of the email being used as the final argument for the
+commands "new" and "comment", and ignored otherwise.  The options and
+arguments are split on whitespace, so don't use whitespace inside a
+single argument.
+
+Eventually we'll commit after every message.
+"""
+
+import libbe.cmdutil
+import email
+import sys
+
+ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
+
+class InvalidEmail (ValueError):
+    def __init__(self, msg, message):
+        ValueError.__init__(self, message)
+        self.msg = msg
+
+class InvalidSubject (InvalidEmail):
+    pass
+
+class InvalidCommand (InvalidEmail):
+    def __init__(self, msg, command):
+        message = "Invalid command '%s'" % command
+        ValueError.__init__(self, msg, message)
+        self.command = command
+
+def get_body_type(msg):
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+        return (part.get_payload(decode=1), part.get_content_type())
+
+def handle_message(msg_text):
+    p=email.Parser.Parser()
+    msg=p.parsestr(msg_text)
+    
+    if "subject" not in msg:
+        raise InvalidSubject(msg, "Email must contain a subject")
+    author = msg['from']
+    args = msg["subject"].split()
+    if len(args) < 1 or args[0] != "[be-bug]":
+        raise InvalidSubject(msg, "Subject must start with '[be-bug] '")        
+    elif len(args) < 2:
+        raise InvalidCommand(msg, "")
+    command = args[1]
+    if command not in ALLOWED_COMMANDS:
+        raise InvalidCommand(msg, command)
+    if len(args) > 2:
+        command_args = args[2:]
+    else:
+        command_args = []
+    if command in ["new", "comment"]:
+        body,type = get_body_type(msg)
+        if command == "new":
+            if "--reporter" not in args and "-r" not in args:
+                command_args = ["--reporter", author] + command_args
+            body = body.strip().split("\n", 1)[0] # only take first line
+        elif command == "comment":
+            if "--author" not in args and "-a" not in args:
+                command_args = ["--author", author] + command_args                
+            if "--content-type" not in args and "-c" not in args:
+                command_args = ["--content-type", type] + command_args
+            if "--alt-id" not in args:
+                command_args = ["--alt-id", msg["message-id"]] + command_args
+        command_args.append(body)
+    return libbe.cmdutil.execute(command, command_args)
+
+def main():
+    msg_text = sys.stdin.read()
+    sys.exit(handle_message(msg_text))
+
+if __name__ == "__main__":
+    main()
