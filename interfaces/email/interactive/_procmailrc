@@ -1,0 +1,19 @@
+# .procmailrc
+#
+# see man procmail, procmailrc, and procmailex
+#
+# If you already have a ~/.procmailrc file, you probably only need to
+# insert the bug-email grabbing stanza in your ~/.procmailrc.
+
+MAILDIR=$HOME/be-mail
+LOGFILE=$MAILDIR/procmail.log
+
+# Grab all incoming bug emails.  This rule eats matching emails
+# (i.e. no further procmail processing).
+:0
+* ^Subject: [be-mail]
+| be-handle-mail
+
+# Drop everything else
+:0
+/dev/null
