@@ -28,9 +28,6 @@ from libbe.encoding import get_encoding, set_IO_stream_encodings
 from mailbox import mbox, Message  # the mailbox people really want an on-disk copy
 from time import asctime, gmtime
 import types
-from xml.sax import make_parser
-from xml.sax.handler import ContentHandler
-from xml.sax.saxutils import escape
 
 DEFAULT_ENCODING = get_encoding()
 set_IO_stream_encodings(DEFAULT_ENCODING)
