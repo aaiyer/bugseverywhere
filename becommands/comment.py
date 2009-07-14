@@ -113,6 +113,10 @@ def execute(args, test=False):
     
     if options.XML == False:
         new = parent.new_reply(body=body)
+        if options.author != None:
+            new.From = options.author
+        if options.alt_id != None:
+            new.alt_id = options.alt_id
         if options.content_type != None:
             new.content_type = options.content_type
     else: # import XML comment [list]
@@ -157,6 +161,10 @@ def execute(args, test=False):
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
+    parser.add_option("-a", "--author", metavar="AUTHOR", dest="author",
+                      help="Set the comment author", default=None)
+    parser.add_option("--alt-id", metavar="ID", dest="alt_id",
+                      help="Set an alternate comment ID", default=None)
     parser.add_option("-c", "--content-type", metavar="MIME", dest="content_type",
                       help="Set comment content-type (e.g. text/plain)", default=None)
     parser.add_option("-x", "--xml", action="store_true", default=False,
