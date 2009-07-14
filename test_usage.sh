@@ -75,8 +75,8 @@ then
     darcs init
 elif [ "$RCS" == "git" ]
 then
-    NAME=`git-config user.name`
-    EMAIL=`git-config user.email`
+    NAME=`git config user.name`
+    EMAIL=`git config user.email`
     ID="$NAME <$EMAIL>"
     git init
 elif [ "$RCS" == "hg" ]
