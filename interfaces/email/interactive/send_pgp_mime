@@ -17,12 +17,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 Python module and command line tool for sending pgp/mime email.
+
+Mostly uses subprocess to call gpg and a sendmail-compatible mailer
+(defaults to msmtp).  If you lack gpg, either don't use the encryption
+functions or adjust the pgp_* commands.  If you don't use msmtp,
+adjust the sendmail command.
 """
 
 from cStringIO import StringIO
 import os
 import re
-#import GnuPGInterface
+#import GnuPGInterface # Maybe should use this instead of subprocess
 import smtplib
 import subprocess
 import sys
