@@ -30,6 +30,7 @@ Eventually we'll commit after every message.
 
 import libbe.cmdutil
 import email
+import send_pgp_mime
 import sys
 
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
@@ -54,7 +55,7 @@ def get_body_type(msg):
             continue
         return (part.get_payload(decode=1), part.get_content_type())
 
-def handle_message(msg_text):
+def run_message(msg_text):
     p=email.Parser.Parser()
     msg=p.parsestr(msg_text)
     
@@ -87,11 +88,23 @@ def handle_message(msg_text):
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
         command_args.append(body)
-    return libbe.cmdutil.execute(command, command_args)
+    # catch stdout, stderr
+    ret = libbe.cmdutil.execute(command, command_args)
+    # restore stdout, stderr
+    response_header = """From: John Doe <jdoe@example.com>
+To: wking@drexel.edu
+Date: Fri, 18 Apr 2008 12:00:00 +0000
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Subject: [be-bug] Re: show --xml 123"""
+    response_body = "Dummy content"
+    response_email = send_pgp_mime.Mail(response_header, response_body)
+    return response_email
 
 def main():
     msg_text = sys.stdin.read()
-    sys.exit(handle_message(msg_text))
+    response_email = handle_message(msg_text)
+    send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
 
 if __name__ == "__main__":
     main()
