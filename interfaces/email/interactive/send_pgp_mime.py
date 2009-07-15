@@ -18,10 +18,10 @@
 """
 Python module and command line tool for sending pgp/mime email.
 
-Mostly uses subprocess to call gpg and a sendmail-compatible mailer
-(defaults to msmtp).  If you lack gpg, either don't use the encryption
-functions or adjust the pgp_* commands.  If you don't use msmtp,
-adjust the sendmail command.
+Mostly uses subprocess to call gpg and a sendmail-compatible mailer.
+If you lack gpg, either don't use the encryption functions or adjust
+the pgp_* commands.  You may need to adjust the sendmail command to
+point to whichever sendmail-compatible mailer you have on your system.
 """
 
 from cStringIO import StringIO
@@ -112,7 +112,7 @@ pgp_stdin_passphrase_arg='--passphrase-fd 0'
 pgp_sign_command='/usr/bin/gpg --no-verbose --quiet --batch %p --output - --detach-sign --armor --textmode %?a?-u "%a"? %f'
 pgp_encrypt_only_command='/usr/bin/gpg --no-verbose --quiet --batch --output - --encrypt --armor --textmode --always-trust --encrypt-to "%a" %R -- %f'
 pgp_encrypt_sign_command='/usr/bin/gpg --no-verbose --quiet --batch %p --output - --encrypt --sign %?a?-u "%a"? --armor --textmode --always-trust --encrypt-to "%a" %R -- %f'
-sendmail='/usr/bin/msmtp -t'
+sendmail='/usr/sbin/sendmail -t'
 
 def execute(args, stdin=None, expect=(0,)):
     """
@@ -339,6 +339,14 @@ class Mail (object):
         if passphrase == None:
             return (None,'')
         return (passphrase, pgp_stdin_passphrase_arg)
+    def plain(self):
+        """
+        text/plain
+        """        
+        msg = MIMEText(self.body)
+        for k,v in self.headermsg.items():
+            msg[k] = v
+        return msg
     def sign(self, passphrase=None):
         """
         multipart/signed
@@ -496,7 +504,7 @@ if __name__ == '__main__':
                       type="int", metavar='DESCRIPTOR')
     
     parser.add_option('--mode', dest='mode', default='sign',
-                      help="One of 'sign', 'encrypt', or 'sign-encrypt'.  Defaults to %default.",
+                      help="One of 'sign', 'encrypt', 'sign-encrypt', or 'plain'.  Defaults to %default.",
                       metavar='MODE')
 
     parser.add_option('-a', '--sign-as', dest='sign_as',
@@ -554,6 +562,8 @@ if __name__ == '__main__':
         message = m.encrypt()
     elif options.mode == "sign-encrypt":
         message = m.signAndEncrypt()
+    elif options.mode == "plain":
+        message = m.plain()
     else:
         print "Unrecognized mode '%s'" % options.mode
     

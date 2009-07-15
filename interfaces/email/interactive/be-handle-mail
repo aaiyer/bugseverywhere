@@ -28,8 +28,9 @@ single argument.
 Eventually we'll commit after every message.
 """
 
-import libbe.cmdutil, libbe.utility
+import cStringIO as StringIO
 import email
+import libbe.cmdutil, libbe.utility
 import send_pgp_mime
 import sys
 import time
@@ -111,11 +112,11 @@ def run_message(msg_text):
 
     response_header = [u"From: %s" % HANDLER_ADDRESS,
                        u"To: %s" % author,
-                       u"Date: %s" % , libbe.utility.time_to_str(time.time()),
+                       u"Date: %s" % libbe.utility.time_to_str(time.time()),
                        u"Content-Type: text/plain; charset=%s" % encoding,
                        u"Content-Transfer-Encoding: 8bit",
                        u"In-reply-to: %s" % (id),
-                       u"Subject: %s Re: %s" % (SUBJECT_COMMENT, command),
+                       u"Subject: Re: %s %s" % (SUBJECT_COMMENT, command),
                        ]
     response_body = [u"Results of running: (exit code %d)" % ret,
                      u"  %s %s" % (command, " ".join(command_args)),]
@@ -130,7 +131,7 @@ def run_message(msg_text):
 
 def main():
     msg_text = sys.stdin.read()
-    response_email = handle_message(msg_text)
+    response_email = run_message(msg_text)
     send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
 
 if __name__ == "__main__":
