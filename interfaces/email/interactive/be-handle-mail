@@ -139,10 +139,10 @@ def run_message(msg_text):
     author_addr = "wking"
     response_header = [u"From: %s" % HANDLER_ADDRESS,
                        u"To: %s" % author_addr,
-                       "Date: %s" % libbe.utility.time_to_str(time.time()),
-                       "Content-Type: text/plain; charset=%s" % encoding,
-                       "Content-Transfer-Encoding: 8bit",
-                       "In-reply-to: %s" % (id),
+                       u"Date: %s" % libbe.utility.time_to_str(time.time()),
+                       u"Content-Type: text/plain; charset=%s" % encoding,
+                       u"Content-Transfer-Encoding: 8bit",
+                       u"In-reply-to: %s" % (id),
                        u"Subject: %s Re: %s" % (SUBJECT_COMMENT, command),
                        ]
     response_body = [u"Results of running: (exit code %d)" % ret,
