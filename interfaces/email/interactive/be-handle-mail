@@ -110,10 +110,6 @@ def run_message(msg_text):
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
         command_args.append(body)
-    if LOGFILE != None:
-        f = file(LOGFILE, "a+")
-        f.write("ping\n")
-        f.close()
     # catch stdout and stderr
     new_stdout = StringIO.StringIO()
     new_stderr = StringIO.StringIO()
@@ -132,10 +128,6 @@ def run_message(msg_text):
     out_text = new_stdout.getvalue()
     err_text = new_stderr.getvalue()
 
-    if LOGFILE != None:
-        f = file(LOGFILE, "a+")
-        f.write("pong\n")
-        f.close()
     author_addr = "wking"
     response_header = [u"From: %s" % HANDLER_ADDRESS,
                        u"To: %s" % author_addr,
