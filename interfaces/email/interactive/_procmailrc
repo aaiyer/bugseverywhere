@@ -10,10 +10,11 @@
 MAILDIR=$HOME/be-mail
 LOGFILE=$MAILDIR/procmail.log
 
-# Grab all incoming bug emails.  This rule eats matching emails
-# (i.e. no further procmail processing).
+# Grab all incoming bug emails (but not replies).  This rule eats
+# matching emails (i.e. no further procmail processing).
 :0
 * ^Subject: [be-mail]
+* !^Subject:.*[be-bug].*Re:
 | be-handle-mail
 
 # Drop everything else
