@@ -28,10 +28,14 @@ single argument.
 Eventually we'll commit after every message.
 """
 
-import libbe.cmdutil
+import libbe.cmdutil, libbe.utility
 import email
 import send_pgp_mime
 import sys
+import time
+
+SUBJECT_COMMENT = "[be-bug]"
+HANDLER_ADDRESS = "wking@thor.physics.drexel.edu"
 
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
 
@@ -56,15 +60,19 @@ def get_body_type(msg):
         return (part.get_payload(decode=1), part.get_content_type())
 
 def run_message(msg_text):
+    encoding = libbe.encoding.get_encoding()
+    libbe.encoding.set_IO_stream_encodings(encoding)
+    
     p=email.Parser.Parser()
     msg=p.parsestr(msg_text)
     
     if "subject" not in msg:
         raise InvalidSubject(msg, "Email must contain a subject")
-    author = msg['from']
+    author = msg["from"]
+    id = msg["message-id"]
     args = msg["subject"].split()
-    if len(args) < 1 or args[0] != "[be-bug]":
-        raise InvalidSubject(msg, "Subject must start with '[be-bug] '")        
+    if len(args) < 1 or args[0] != SUBJECT_COMMENT:
+        raise InvalidSubject(msg, "Subject must start with '%s '" % SUBJECT_COMMENT)        
     elif len(args) < 2:
         raise InvalidCommand(msg, "")
     command = args[1]
@@ -82,23 +90,42 @@ def run_message(msg_text):
             body = body.strip().split("\n", 1)[0] # only take first line
         elif command == "comment":
             if "--author" not in args and "-a" not in args:
-                command_args = ["--author", author] + command_args                
+                command_args = ["--author", author] + command_args
             if "--content-type" not in args and "-c" not in args:
                 command_args = ["--content-type", type] + command_args
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
         command_args.append(body)
-    # catch stdout, stderr
+    # catch stdout and stderr
+    orig_stdout = sys.stdout
+    orig_stderr = sys.stderr
+    sys.stdout = StringIO.StringIO()
+    sys.stderr = StringIO.StringIO()
+    # run the command
     ret = libbe.cmdutil.execute(command, command_args)
-    # restore stdout, stderr
-    response_header = """From: John Doe <jdoe@example.com>
-To: wking@drexel.edu
-Date: Fri, 18 Apr 2008 12:00:00 +0000
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-Subject: [be-bug] Re: show --xml 123"""
-    response_body = "Dummy content"
-    response_email = send_pgp_mime.Mail(response_header, response_body)
+    # restore stdout and stderr
+    out_text = sys.stdout.getvalue()
+    err_text = sys.stderr.getvalue()
+    sys.stdout = orig_stdout
+    sys.stderr = orig_stderr
+
+    response_header = [u"From: %s" % HANDLER_ADDRESS,
+                       u"To: %s" % author,
+                       u"Date: %s" % , libbe.utility.time_to_str(time.time()),
+                       u"Content-Type: text/plain; charset=%s" % encoding,
+                       u"Content-Transfer-Encoding: 8bit",
+                       u"In-reply-to: %s" % (id),
+                       u"Subject: %s Re: %s" % (SUBJECT_COMMENT, command),
+                       ]
+    response_body = [u"Results of running: (exit code %d)" % ret,
+                     u"  %s %s" % (command, " ".join(command_args)),]
+    if len(out_text) > 0:
+        response_body.extend([u"", u"stdout:", u"", out_text])
+    if len(err_text) > 0:
+        response_body.extend([u"", u"stderr:", u"", err_text])
+    response_body.append(u"")
+    response_email = send_pgp_mime.Mail(u"\n".join(response_header),
+                                        u"\n".join(response_body))
     return response_email
 
 def main():
