@@ -160,7 +160,7 @@ def flatten(msg):
     """
     assert msg != None
     fp = StringIO()
-    g = Generator(fp, mangle_from_=False, maxheaderlen=60)
+    g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
     text = fp.getvalue()
     return text    
@@ -329,9 +329,7 @@ class Mail (object):
         return target_emails(self.headermsg)
     def clearBodyPart(self):
         body = MIMEText(self.body)
-        body.add_header('Content-Type', 'text/plain')
         body.add_header('Content-Disposition', 'inline')
-        body.set_charset('us-ascii')
         return body
     def passphrase_arg(self, passphrase=None):
         if passphrase == None and PASSPHRASE != None:
