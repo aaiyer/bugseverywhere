@@ -32,24 +32,25 @@ import smtplib
 import subprocess
 import sys
 import tempfile
+import types
 
 try:
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
     from email.mime.application import MIMEApplication
-    from email.generator import Generator
     from email.encoders import encode_7or8bit
+    from email.generator import Generator
+    from email.parser import Parser
     from email.utils import getaddress
-    from email import message_from_string
 except ImportError:
     # adjust to old python 2.4
     from email.MIMEText import MIMEText
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMENonMultipart import MIMENonMultipart
-    from email.Generator import Generator
     from email.Encoders import encode_7or8bit
+    from email.Generator import Generator
+    from email.parser import Parser
     from email.Utils import getaddresses
-    from email import message_from_string
     
     getaddress = getaddresses
     class MIMEApplication (MIMENonMultipart):
@@ -165,7 +166,7 @@ def flatten(msg):
     text = fp.getvalue()
     return text    
 
-def source_email(msg):
+def source_email(msg, return_realname=False):
     """
     Search the header of an email Message instance to find the
     sender's email address.
@@ -173,7 +174,9 @@ def source_email(msg):
     froms = msg.get_all('from', [])
     from_tuples = getaddresses(froms) # [(realname, email_address), ...]
     assert len(from_tuples) == 1
-    return [addr[1] for addr in from_tuples][0]
+    if return_realname == True:
+        return from_tuples[0] # (realname, email_address)
+    return from_tuples[0][1]  # email_address
 
 def target_emails(msg):
     """
@@ -219,13 +222,23 @@ class Mail (object):
     Content-Type: text/plain; charset="us-ascii"
     MIME-Version: 1.0
     Content-Transfer-Encoding: 7bit
-    Content-Type: text/plain
     Content-Disposition: inline
     <BLANKLINE>
     check 1 2
     check 1 2
     <BLANKLINE>
-    >>> signed = m.sign()
+    >>> print flatten(m.plain())
+    Content-Type: text/plain; charset="us-ascii"
+    MIME-Version: 1.0
+    Content-Transfer-Encoding: 7bit
+    From: me@big.edu
+    To: you@big.edu
+    Subject: testing
+    <BLANKLINE>
+    check 1 2
+    check 1 2
+    <BLANKLINE>
+    >>> m.sign()
     >>> signed.set_boundary('boundsep')
     >>> print m.stripSig(flatten(signed)).replace('\\t', ' '*4)
     Content-Type: multipart/signed;
@@ -319,10 +332,12 @@ class Mail (object):
     --boundsep--
     """
     def __init__(self, header, body):
-        self.header = header
+        self.header = header.strip()
         self.body = body
-
-        self.headermsg = message_from_string(self.header)
+        if type(self.header) == types.UnicodeType:
+            self.header = self.header.encode("ascii")
+        p = Parser()
+        self.headermsg = p.parsestr(self.header, headersonly=True)
     def sourceEmail(self):
         return source_email(self.headermsg)
     def targetEmails(self):
