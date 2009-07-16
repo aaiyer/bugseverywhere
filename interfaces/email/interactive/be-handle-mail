@@ -119,7 +119,8 @@ def run_message(msg_text):
     sys.stderr = new_stderr
     # run the command
     os.chdir(BE_DIR)
-    ret = libbe.cmdutil.execute(command, command_args)
+    ret = libbe.cmdutil.execute(command, command_args,
+                                manipulate_encodings=False)
     # restore stdout and stderr
     sys.stdout.flush()
     sys.stderr.flush()
