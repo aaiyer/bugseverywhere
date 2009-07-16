@@ -177,7 +177,6 @@ def run_message(msg_text):
     return (ret, out_text, err_text, info)
 
 def compose_response(ret, out_text, err_text, info):
-    info["author_addr"] = "wking" # for local testing
     assert "encoding" in info
     if "author_addr" not in info:
         return None
