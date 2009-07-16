@@ -20,17 +20,17 @@
 from libbe import cmdutil, bugdir, bug
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a"], test=True)
+    >>> execute(["a"], manipulate_encodings=False)
     minor
-    >>> execute(["a", "wishlist"], test=True)
-    >>> execute(["a"], test=True)
+    >>> execute(["a", "wishlist"], manipulate_encodings=False)
+    >>> execute(["a"], manipulate_encodings=False)
     wishlist
-    >>> execute(["a", "none"], test=True)
+    >>> execute(["a", "none"], manipulate_encodings=False)
     Traceback (most recent call last):
     UserError: Invalid severity level: none
     """
@@ -39,7 +39,8 @@ def execute(args, test=False):
     complete(options, args, parser)
     if len(args) not in (1,2):
         raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         print bug.severity

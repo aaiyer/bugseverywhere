@@ -18,7 +18,7 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
@@ -37,7 +37,7 @@ def execute(args, test=False):
     >>> dummy.time = 2
     >>> bd.save()
     >>> os.chdir(bd.root)
-    >>> execute(["a", "b"], test=True)
+    >>> execute(["a", "b"], manipulate_encodings=False)
     Merging bugs a and b
     >>> bd._clear_bugs()
     >>> a = bd.bug_from_shortname("a")
@@ -133,7 +133,8 @@ def execute(args, test=False):
         help()
         raise cmdutil.UsageError("Too many arguments.")
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     bugA = bd.bug_from_shortname(args[0])
     bugA.load_comments()
     bugB = bd.bug_from_shortname(args[1])

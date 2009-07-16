@@ -25,12 +25,12 @@ except ImportError: # look for non-core module
     from elementtree import ElementTree
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import time
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a", "This is a comment about a"], test=True)
+    >>> execute(["a", "This is a comment about a"], manipulate_encodings=False)
     >>> bd._clear_bugs()
     >>> bug = bd.bug_from_shortname("a")
     >>> bug.load_comments(load_full=False)
@@ -47,12 +47,12 @@ def execute(args, test=False):
 
     >>> if 'EDITOR' in os.environ:
     ...     del os.environ["EDITOR"]
-    >>> execute(["b"], test=True)
+    >>> execute(["b"], manipulate_encodings=False)
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
 
     >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
-    >>> execute(["b"], test=True)
+    >>> execute(["b"], manipulate_encodings=False)
     >>> bd._clear_bugs()
     >>> bug = bd.bug_from_shortname("b")
     >>> bug.load_comments(load_full=False)
@@ -80,7 +80,8 @@ def execute(args, test=False):
         bugname = shortname
         is_reply = False
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     bug = bd.bug_from_shortname(bugname)
     bug.load_comments(load_full=False)
     if is_reply:

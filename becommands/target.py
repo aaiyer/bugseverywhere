@@ -22,20 +22,20 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["a"], test=True)
+    >>> execute(["a"], manipulate_encodings=False)
     No target assigned.
-    >>> execute(["a", "tomorrow"], test=True)
-    >>> execute(["a"], test=True)
+    >>> execute(["a", "tomorrow"], manipulate_encodings=False)
+    >>> execute(["a"], manipulate_encodings=False)
     tomorrow
-    >>> execute(["--list"], test=True)
+    >>> execute(["--list"], manipulate_encodings=False)
     tomorrow
-    >>> execute(["a", "none"], test=True)
-    >>> execute(["a"], test=True)
+    >>> execute(["a", "none"], manipulate_encodings=False)
+    >>> execute(["a"], manipulate_encodings=False)
     No target assigned.
     """
     parser = get_parser()
@@ -46,7 +46,8 @@ def execute(args, test=False):
     if len(args) not in (1, 2):
         if not (options.list == True and len(args) == 0):
             raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     if options.list:
         ts = set([bd.bug_from_uuid(bug).target for bug in bd.list_uuids()])
         for target in sorted(ts):
