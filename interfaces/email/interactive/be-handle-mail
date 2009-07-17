@@ -40,8 +40,10 @@ import time
 
 SUBJECT_COMMENT = "[be-bug]"
 HANDLER_ADDRESS = "BE Bugs <wking@thor.physics.drexel.edu>"
-LOGFILE = os.path.join(os.path.dirname(__file__), "be-handle-mail.log")
-BE_DIR = os.path.abspath(os.path.dirname(__file__))
+_THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+LOGPATH = os.path.join(_THIS_DIR, "be-handle-mail.log")
+LOGFILE = None
+BE_DIR = _THIS_DIR
 
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
 
@@ -109,10 +111,8 @@ def run_message(msg_text):
         (info["author_name"], info["author_email"]))
     info["message-id"] = msg["message-id"]
     if LOGFILE != None:
-        f = file(LOGFILE, "w+")
-        f.write("handling %s\n" % (info["author_addr"]))
-        f.write("\n%s\n\n" % msg_text)
-        f.close()
+        LOGFILE.write("handling %s\n" % (info["author_addr"]))
+        LOGFILE.write("\n%s\n\n" % msg_text)
     if "subject" not in msg:
         raise InvalidSubject(msg, info, "Email must contain a subject")
     args = msg["subject"].split()
@@ -204,12 +204,38 @@ def compose_response(ret, out_text, err_text, info):
     response_email = send_pgp_mime.Mail(u"\n".join(response_header),
                                         u"\n".join(response_body))
     if LOGFILE != None:
-        f = file(LOGFILE, "a+")
-        f.write("responding to %s: %s\n"
+        LOGFILE.write("responding to %s: %s\n"
                 % (info["author_addr"], info["command"]))
-        f.write("\n%s\n\n" % send_pgp_mime.flatten(response_email.plain()))
-        f.close()
+        LOGFILE.write("\n%s\n\n" % send_pgp_mime.flatten(response_email.plain()))
     return response_email
+
+def open_logfile(logpath=None):
+    """
+    If logpath=None, default to global LOGPATH.
+    Special logpath strings:
+     "-"     set LOGFILE to sys.stderr
+     "none"  disable logging
+    Relative logpaths are expanded relative to _THIS_DIR
+    """
+    global LOGPATH, LOGFILE
+    if logpath != None:
+        if logpath == "-":
+            LOGPATH = "stderr"
+            LOGFILE = sys.stderr
+        elif logpath == "none":
+            LOGPATH = "none"
+            LOGFILE = None
+        elif os.path.isabs(logpath):
+            LOGPATH = options.path
+        else:
+            LOGPATH = os.path.join(_THIS_DIR, logpath)
+    if LOGFILE == None and LOGPATH != "none":
+        LOGFILE = file(LOGPATH, "a+")
+    
+def close_logfile():
+    if LOGFILE != None and LOGPATH not in ["stderr", "none"]:
+        LOGFILE.close()
+
 
 def main():
     from optparse import OptionParser
@@ -218,9 +244,12 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-o', '--output', dest='output', action='store_true',
                       help="Don't mail the generated message, print it to stdout instead.  Useful for testing be-handle-mail functionality without the whole mail transfer agent and procmail setup.")
+    parser.add_option('-l', '--logfile', dest='logfile', metavar='LOGFILE',
+                      help='Set the logfile to LOGFILE.  Relative paths are relative to the location of this be-handle-mail file (%s).  The special value of "-" directs the log output to stderr, and "none" disables logging.' % _THIS_DIR)
 
     options,args = parser.parse_args()
 
+    open_logfile(options.logfile)
     msg_text = sys.stdin.read()
     try: 
         ret,out_text,err_text,info = run_message(msg_text)
@@ -228,15 +257,16 @@ def main():
         ret,out_text,err_text,info = e.response()
     except Exception, e:
         if LOGFILE != None:
-            f = file(LOGFILE, "a+")
-            f.write("Uncaught exception:\n%s\n" % (e,))
-            f.close()
+            LOGFILE.write("Uncaught exception:\n%s\n" % (e,))
+            close_logfile()
         sys.exit(1)
     response_email = compose_response(ret, out_text, err_text, info).plain()
     if options.output == True:
         print send_pgp_mime.flatten(response_email)
     else:
         send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
+
+    close_logfile()
 
 if __name__ == "__main__":
     main()
