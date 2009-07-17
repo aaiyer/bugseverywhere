@@ -212,6 +212,15 @@ def compose_response(ret, out_text, err_text, info):
     return response_email
 
 def main():
+    from optparse import OptionParser
+
+    usage="be-handle-mail [options]\n\n%s" % (__doc__)
+    parser = OptionParser(usage=usage)
+    parser.add_option('-o', '--output', dest='output', action='store_true',
+                      help="Don't mail the generated message, print it to stdout instead.  Useful for testing be-handle-mail functionality without the whole mail transfer agent and procmail setup.")
+
+    options,args = parser.parse_args()
+
     msg_text = sys.stdin.read()
     try: 
         ret,out_text,err_text,info = run_message(msg_text)
@@ -223,8 +232,11 @@ def main():
             f.write("Uncaught exception:\n%s\n" % (e,))
             f.close()
         sys.exit(1)
-    response_email = compose_response(ret, out_text, err_text, info)
-    send_pgp_mime.mail(response_email.plain(), send_pgp_mime.sendmail)
+    response_email = compose_response(ret, out_text, err_text, info).plain()
+    if options.output == True:
+        print send_pgp_mime.flatten(response_email)
+    else:
+        send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
 
 if __name__ == "__main__":
     main()
