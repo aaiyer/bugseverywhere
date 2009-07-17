@@ -41,7 +41,7 @@ import time
 SUBJECT_COMMENT = "[be-bug]"
 HANDLER_ADDRESS = "BE Bugs <wking@thor.physics.drexel.edu>"
 LOGFILE = os.path.join(os.path.dirname(__file__), "be-handle-mail.log")
-BE_DIR = os.path.expanduser("~/src/fun/be/be.email")
+BE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
 
