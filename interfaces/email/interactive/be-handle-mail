@@ -149,13 +149,14 @@ def run_message(msg_text):
             stdin = body
     info["command-args"] = command_args
     # set stdin and catch stdout and stderr
-    new_stdin = StringIO.StringIO(stdin)
+    if stdin != None:
+        new_stdin = StringIO.StringIO(stdin)
+        orig_stdin = sys.stdin
+        sys.stdin = new_stdin
     new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
     new_stderr = codecs.getwriter(ENCODING)(StringIO.StringIO())
-    orig_stdin = sys.stdin
     orig_stdout = sys.stdout
     orig_stderr = sys.stderr
-    sys.stdin = new_stdin
     sys.stdout = new_stdout
     sys.stderr = new_stderr
     # run the command
@@ -173,9 +174,10 @@ def run_message(msg_text):
     except libbe.cmdutil.UserError, e:
         err = InvalidCommand(msg, info, e)
     # restore stdin, stdout, and stderr
+    if stdin != None:
+        sys.stdin = orig_stdin
     sys.stdout.flush()
     sys.stderr.flush()
-    sys.stdin = orig_stdin
     sys.stdout = orig_stdout
     sys.stderr = orig_stderr
     out_text = codecs.decode(new_stdout.getvalue(), ENCODING)
