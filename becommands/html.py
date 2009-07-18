@@ -55,19 +55,19 @@ def execute(args, test=False):
     st = {}
     se = {}
     stime = {}
+    bugs = []
     for s in status_list:
         st[s] = 0
-    for s in severity_list:
-        se[s] = 0
-    
     for b in bd:
         stime[b.uuid]  = b.time
+        if b.status == "open":
+            bugs.append(b)
         st[b.status] += 1
-        se[b.severity] += 1
-    stime_sorted = sorted([(value,key) for (key,value) in stime.items()])
-
+    ordered_bug_list = sorted([(value,key) for (key,value) in stime.items()])
+    #open_bug_list = sorted([(value,key) for (key,value) in bugs.items()])
+    
     html_gen = BEHTMLGen()
-    html_gen.create_index_file(out_dir,  st,  se,  stime_sorted)
+    html_gen.create_index_file(out_dir,  st, bugs, ordered_bug_list)
     
 def get_parser():
     parser = cmdutil.CmdOptionParser("be open OUTPUT_DIR")
@@ -85,7 +85,7 @@ class BEHTMLGen():
     def __init__(self):
         self.index_value = ""        
         
-    def create_index_file(self, out_dir_path,  summary,  severity,  last_bug):
+    def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug):
         try:
             os.stat(out_dir_path)
         except:
@@ -99,38 +99,52 @@ class BEHTMLGen():
             FO.close()
         except:
             raise  cmdutil.UsageError, "Cannot create the style.css file."
-        value = html_index
-        for stat in summary:
-            rep = "_"+stat+"_"
-            val = str(summary[stat])
-            value = re.sub(rep,  val,  value)
-        for sev in severity:
-            rep = "_"+sev+"_"
-            val = str(severity[sev])
-            value = re.sub(rep,  val, value)
         
+        try:
+            os.mkdir(out_dir_path+"/bugs")
+        except:
+            pass
+        
+        try:
+            FO = open(out_dir_path+"/index.html", "w")
+        except:
+            raise  cmdutil.UsageError, "Cannot create the index.html file."
+        
+        FO.write(index_first)
         c = 0
-        t = len(last_bug)-1
+        t = len(bugs) - 1
         for l in range(t,  0,  -1):
-            line = ""
-            line = re.sub('_BUG_ID_', last_bug[l][1], last_activity)
-            line1 = re.sub('_BUG_', last_bug[l][1][0:3], line)
-            line2 = re.sub('_DATE_',  time.ctime(last_bug[l][0]),  line1)
+            line = bug_line
+            line1 = re.sub('_bug_id_link_', bugs[l].uuid, line)
+            line = line1
+            line1 = re.sub('_bug_id_', bugs[l].uuid[0:3], line)
+            line = line1
+            line1 = re.sub('_status_', bugs[l].status, line)
+            line = line1
+            line1 = re.sub('_sev_', bugs[l].severity, line)
+            line = line1
+            line1 = re.sub('_descr_', bugs[l].summary, line)
+            line = line1
+            line2 = re.sub('_time_',  time.ctime(bugs[l].time),  line1)
             if c%2 == 0:
                 linef = re.sub('_ROW_',  "even-row",  line2)
             else:
                 linef = re.sub('_ROW_',  "odd-row",  line2)
-            self.index_value += linef
+            FO.write(linef)
             c += 1
-            if c == 10:
-                break
-        
-        value = re.sub("_LAST_ACTVITY_", self.index_value, value)
+            self.CreateDetailFile(bugs[l], out_dir_path)
+        FO.write(index_last)
 
+
+    def CreateDetailFile(self, bug, out_dir_path):
+        f = "%s.html"%bug.uuid
+        p = out_dir_path+"/bugs/"+f
         try:
-            FO = open(out_dir_path+"/index.html", "w")
-            FO.write(value)
-            FO.close()
+            FD = open(p, "w")
         except:
-            raise  cmdutil.UsageError, "Cannot create the index.html file."
-            
+            raise  cmdutil.UsageError, "Cannot create the detail html file."
+        
+        FD.write(index_first)
+        
+        FD.write(index_last)
+        FD.close()
