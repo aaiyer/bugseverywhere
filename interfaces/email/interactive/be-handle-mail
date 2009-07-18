@@ -69,9 +69,9 @@ class InvalidEmail (ValueError):
 class InvalidSubject (InvalidEmail):
     def stderr_msg(self):
         err_text = u"\n".join([u"InvalidSubject:\n",
-                               unicode(e), u"",
+                               unicode(self), u"",
                                u"full subject was:",
-                               e.msg["subject"]])
+                               self.msg["subject"]])
         return err_text
 
 class InvalidCommand (InvalidEmail):
