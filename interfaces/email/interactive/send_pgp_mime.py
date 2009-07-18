@@ -51,7 +51,7 @@ except ImportError:
     from email.Generator import Generator
     from email.parser import Parser
     from email.Utils import getaddresses
-    
+
     getaddress = getaddresses
     class MIMEApplication (MIMENonMultipart):
         def __init__(self, _data, _subtype, _encoder, **params):
@@ -72,7 +72,7 @@ in your shell before invoking this script.  See gpg-agent(1) for more
 details.  Alternatively, you can send your passphrase in on stdin
   echo 'passphrase' | %prog [options]
 or use the --passphrase-file option
-  %prog [options] --passphrase-file FILE [more options]  
+  %prog [options] --passphrase-file FILE [more options]
 Both of these alternatives are much less secure than gpg-agent.  You
 have been warned.
 """
@@ -82,7 +82,7 @@ PGP_SIGN_AS = None
 PASSPHRASE = None
 
 # The following commands are adapted from my .mutt/pgp configuration
-# 
+#
 # Printf-like sequences:
 #   %a The value of PGP_SIGN_AS.
 #   %f Expands to the name of a file with text to be signed/encrypted.
@@ -91,7 +91,7 @@ PASSPHRASE = None
 #      strings.
 #   %r One key ID (e.g. recipient email address) to build a
 #      pgp_reciepient_arg string.
-# 
+#
 # The above sequences can be used to optionally print a string if
 # their length is nonzero. For example, you may only want to pass the
 # -u/--local-user argument to gpg if PGP_SIGN_AS is defined.  To
@@ -146,7 +146,7 @@ def replace(template, format_char, replacement_text):
     """
     if replacement_text == None:
         replacement_text = ""
-    regexp = re.compile('%[?]'+format_char+'[?]([^?]*)[?]') 
+    regexp = re.compile('%[?]'+format_char+'[?]([^?]*)[?]')
     if len(replacement_text) > 0:
         str = regexp.sub('\g<1>', template)
     else:
@@ -198,7 +198,7 @@ def target_emails(msg):
 def mail(msg, sendmail=None):
     """
     Send an email Message instance on its merry way.
-    
+
     We can shell out to the user specified sendmail in case
     the local host doesn't have an SMTP server set up
     for easy smtplib usage.
@@ -362,7 +362,7 @@ class Mail (object):
         if encoding == "US-ASCII":
             return MIMEText(body)
         else:
-            return MIMEText(body.encode(encoding), 'plain', encoding)            
+            return MIMEText(body.encode(encoding), 'plain', encoding)
     def clearBodyPart(self):
         body = self.encodedMIMEText(self.body)
         body.add_header('Content-Disposition', 'inline')
@@ -376,7 +376,7 @@ class Mail (object):
     def plain(self):
         """
         text/plain
-        """        
+        """
         msg = self.encodedMIMEText(self.body)
         for k,v in self.headermsg.items():
             msg[k] = v
@@ -386,7 +386,7 @@ class Mail (object):
         multipart/signed
           +-> text/plain                 (body)
           +-> application/pgp-signature  (signature)
-        """        
+        """
         passphrase,pass_arg = self.passphrase_arg(passphrase)
         body = self.clearBodyPart()
         bfile = tempfile.NamedTemporaryFile()
@@ -402,15 +402,15 @@ class Mail (object):
         args = replace(args, 'p', pass_arg)
         status,output,error = execute(args, stdin=passphrase)
         signature = output
-        
+
         sig = MIMEApplication(_data=signature, _subtype='pgp-signature; name="signature.asc"', _encoder=encode_7or8bit)
         sig['Content-Description'] = 'signature'
         sig.set_charset('us-ascii')
-        
+
         msg = MIMEMultipart('signed', micalg='pgp-sha1', protocol='application/pgp-signature')
         msg.attach(body)
         msg.attach(sig)
-        
+
         for k,v in self.headermsg.items():
             msg[k] = v
         msg['Content-Disposition'] = 'inline'
@@ -425,7 +425,7 @@ class Mail (object):
         bfile = tempfile.NamedTemporaryFile()
         bfile.write(flatten(body))
         bfile.flush()
-        
+
         recipient_string = ' '.join([replace(pgp_recipient_arg, 'r', recipient) for recipient in self.targetEmails()])
         args = replace(pgp_encrypt_only_command, 'R', recipient_string)
         args = replace(args, 'f', bfile.name)
@@ -436,16 +436,16 @@ class Mail (object):
         args = replace(args, 'a', pgp_sign_as)
         status,output,error = execute(args)
         encrypted = output
-        
+
         enc = MIMEApplication(_data=encrypted, _subtype='octet-stream', _encoder=encode_7or8bit)
         enc.set_charset('us-ascii')
-        
+
         control = MIMEApplication(_data='Version: 1\n', _subtype='pgp-encrypted', _encoder=encode_7or8bit)
-        
+
         msg = MIMEMultipart('encrypted', micalg='pgp-sha1', protocol='application/pgp-encrypted')
         msg.attach(control)
         msg.attach(enc)
-        
+
         for k,v in self.headermsg.items():
             msg[k] = v
         msg['Content-Disposition'] = 'inline'
@@ -462,7 +462,7 @@ class Mail (object):
         bfile = tempfile.NamedTemporaryFile()
         bfile.write(flatten(body))
         bfile.flush()
-        
+
         recipient_string = ' '.join([replace(pgp_recipient_arg, 'r', recipient) for recipient in self.targetEmails()])
         args = replace(pgp_encrypt_only_command, 'R', recipient_string)
         args = replace(args, 'f', bfile.name)
@@ -474,16 +474,16 @@ class Mail (object):
         args = replace(args, 'p', pass_arg)
         status,output,error = execute(args, stdin=passphrase)
         encrypted = output
-        
+
         enc = MIMEApplication(_data=encrypted, _subtype='octet-stream', _encoder=encode_7or8bit)
         enc.set_charset('us-ascii')
-        
+
         control = MIMEApplication(_data='Version: 1\n', _subtype='pgp-encrypted', _encoder=encode_7or8bit)
-        
+
         msg = MIMEMultipart('encrypted', micalg='pgp-sha1', protocol='application/pgp-encrypted')
         msg.attach(control)
         msg.attach(enc)
-        
+
         for k,v in self.headermsg.items():
             msg[k] = v
         msg['Content-Disposition'] = 'inline'
@@ -521,22 +521,22 @@ def test():
 
 if __name__ == '__main__':
     from optparse import OptionParser
-    
+
     parser = OptionParser(usage=usage)
     parser.add_option('-t', '--test', dest='test', action='store_true',
                       help='Run doctests and exit')
-    
+
     parser.add_option('-H', '--header-file', dest='header_filename',
                       help='file containing email header', metavar='FILE')
     parser.add_option('-B', '--body-file', dest='body_filename',
                       help='file containing email body', metavar='FILE')
-    
+
     parser.add_option('-P', '--passphrase-file', dest='passphrase_file',
                       help='file containing gpg passphrase', metavar='FILE')
     parser.add_option('-p', '--passphrase-fd', dest='passphrase_fd',
                       help='file descriptor from which to read gpg passphrase (0 for stdin)',
                       type="int", metavar='DESCRIPTOR')
-    
+
     parser.add_option('--mode', dest='mode', default='sign',
                       help="One of 'sign', 'encrypt', 'sign-encrypt', or 'plain'.  Defaults to %default.",
                       metavar='MODE')
@@ -544,14 +544,14 @@ if __name__ == '__main__':
     parser.add_option('-a', '--sign-as', dest='sign_as',
                       help="The gpg key to sign with (gpg's -u/--local-user)",
                       metavar='KEY')
-    
+
     parser.add_option('--output', dest='output', action='store_true',
                       help="Don't mail the generated message, print it to stdout instead.")
-    
+
     (options, args) = parser.parse_args()
-    
+
     stdin_used = False
-    
+
     if options.passphrase_file != None:
         PASSPHRASE = file(options.passphrase_file, 'r').read()
     elif options.passphrase_fd != None:
@@ -560,18 +560,18 @@ if __name__ == '__main__':
             PASSPHRASE = sys.stdin.read()
         else:
             PASSPHRASE = os.read(options.passphrase_fd)
-    
+
     if options.sign_as:
         PGP_SIGN_AS = options.sign_as
 
     if options.test == True:
         test()
         sys.exit(0)
-    
+
     header = None
     if options.header_filename != None:
         if options.header_filename == '-':
-            assert stdin_used == False 
+            assert stdin_used == False
             stdin_used = True
             header = sys.stdin.read()
         else:
@@ -581,7 +581,7 @@ if __name__ == '__main__':
     body = None
     if options.body_filename != None:
         if options.body_filename == '-':
-            assert stdin_used == False 
+            assert stdin_used == False
             stdin_used = True
             body = sys.stdin.read()
         else:
@@ -600,7 +600,7 @@ if __name__ == '__main__':
         message = m.plain()
     else:
         print "Unrecognized mode '%s'" % options.mode
-    
+
     if options.output == True:
         message = flatten(message)
         print message

@@ -24,8 +24,6 @@ With the body of the email being used as the final argument for the
 commands "new" and "comment", and ignored otherwise.  The options and
 arguments are split on whitespace, so don't use whitespace inside a
 single argument.
-
-Eventually we'll commit after every message.
 """
 
 import codecs
@@ -103,7 +101,7 @@ def run_message(msg_text):
     """
     p=email.Parser.Parser()
     msg=p.parsestr(msg_text)
-    
+
     info = {}
     author = send_pgp_mime.source_email(msg, return_realname=True)
     info["author_name"] = author[0]
@@ -271,7 +269,7 @@ def main():
     msg_text = sys.stdin.read()
     libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
     open_logfile(options.logfile)
-    try: 
+    try:
         ret,out_text,err_text,info = run_message(msg_text)
     except InvalidEmail, e:
         ret,out_text,err_text,info = e.response()
