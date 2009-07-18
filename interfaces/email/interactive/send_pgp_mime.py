@@ -155,7 +155,7 @@ def replace(template, format_char, replacement_text):
     str = regexp.sub(replacement_text, str)
     return str
 
-def flatten(msg):
+def flatten(msg, to_unicode=False):
     """
     Produce flat text output from an email Message instance.
     """
@@ -164,8 +164,10 @@ def flatten(msg):
     g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
     text = fp.getvalue()
-    encoding = msg.get_content_charset()
-    return unicode(text, encoding=encoding)
+    if to_unicode == True:
+        encoding = msg.get_content_charset()
+        text = unicode(text, encoding=encoding)
+    return text
 
 def source_email(msg, return_realname=False):
     """

@@ -62,7 +62,7 @@ class InvalidEmail (ValueError):
     def stderr_msg(self):
         err_text = [u"Invalid email (particular type unknown):\n",
                     unicode(self), u"",
-                    send_pgp_mime.flatten(self.msg)]
+                    send_pgp_mime.flatten(self.msg, to_unicode=True)]
         return u"\n".join(err_text)
 
 class InvalidSubject (InvalidEmail):
@@ -205,7 +205,9 @@ def compose_response(ret, out_text, err_text, info):
     if LOGFILE != None:
         LOGFILE.write("responding to %s: %s\n"
                 % (info["author_addr"], info["command"]))
-        LOGFILE.write("\n%s\n\n" % send_pgp_mime.flatten(response_email.plain()))
+        LOGFILE.write("\n%s\n\n"
+                      % send_pgp_mime.flatten(response_email.plain(),
+                                              to_unicode=True))
     return response_email
 
 def open_logfile(logpath=None):
@@ -263,7 +265,7 @@ def main():
         sys.exit(1)
     response_email = compose_response(ret, out_text, err_text, info).plain()
     if options.output == True:
-        print send_pgp_mime.flatten(response_email)
+        print send_pgp_mime.flatten(response_email, to_unicode=True)
     else:
         send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
     close_logfile()
