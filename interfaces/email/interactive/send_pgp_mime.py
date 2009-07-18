@@ -212,7 +212,7 @@ def flatten(msg, to_unicode=False):
     g.flatten(msg)
     text = fp.getvalue()
     if to_unicode == True:
-        encoding = msg.get_content_charset()
+        encoding = msg.get_content_charset() or "utf-8"
         text = unicode(text, encoding=encoding)
     return text
 

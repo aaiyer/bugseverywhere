@@ -56,15 +56,16 @@ class InvalidEmail (ValueError):
         ValueError.__init__(self, message)
         self.msg = msg
     def response(self):
-        header = self.msg._response_header
-        body = u"Error processing command.\n\n" + self.response_body()
-        response_body.append(u"") # trailing endline
+        header = self.msg.response_header
+        body = [u"Error processing email:\n",
+                self.response_body(), u""]
         response_generator = \
-            send_pgp_mime.PGPMimeMessageFactory(u"\n".join(response_body))
+            send_pgp_mime.PGPMimeMessageFactory(u"\n".join(body))
         response = MIMEMultipart()
         response.attach(response_generator.plain())
-        response.attach(self.msg)
-        return response
+        response.attach(self.msg.msg)
+        ret = send_pgp_mime.attach_root(header, response)
+        return ret
     def response_body(self):
         err_text = [u"Invalid email:\n",
                     unicode(self)]
@@ -78,7 +79,7 @@ class InvalidSubject (InvalidEmail):
     def response_body(self):
         err_text = u"\n".join([unicode(self), u"",
                                u"full subject was:",
-                               self.msg["subject"]])
+                               self.msg.subject()])
         return err_text
 
 class InvalidEmailCommand (InvalidSubject):
@@ -86,7 +87,6 @@ class InvalidEmailCommand (InvalidSubject):
         if message == None:
             message = "Invalid command '%s'" % msg.subject_command()
         InvalidSubject.__init__(self, msg, message)
-        self.command = command
 
 class InvalidExecutionCommand (InvalidEmail):
     def __init__(self, msg, command, message=None):
@@ -126,7 +126,7 @@ class Command (object):
         self.stdin = stdin
         self.ret = None
         self.stdout = None
-        self.stdin = None
+        self.stderr = None
         self.err = None
     def __str__(self):
         return "<command: %s %s>" % (self.command, " ".join(self.args))
@@ -248,10 +248,10 @@ class Message (object):
         if tag != SUBJECT_TAG:
             raise InvalidSubject(
                 self, "Subject must start with '%s '" % SUBJECT_TAG)
-        elif command == None:
-            raise InvalidCommand(self, "") # don't accept blank commands
+        elif command == None: # don't accept blank commands
+            raise InvalidEmailCommand(self)
         if command not in ALLOWED_COMMANDS:
-            raise InvalidCommand(self, command)
+            raise InvalidEmailCommand(self)
     def subject_command(self):
         tag,command,args = self._split_subject()
         return command
@@ -279,18 +279,18 @@ class Message (object):
         args = list(args)
         commands = []
         if command == "new":
-            body,mime_type = get_bodies_and_mime_types(msg)[0]
+            body,mime_type = list(self._get_bodies_and_mime_types())[0]
             body = body.strip().split("\n", 1)[0] # only take first line
             if "--reporter" not in args and "-r" not in args:
-                args = ["--reporter", info["author_addr"]]+args
+                args = ["--reporter", self.author_addr()]+args
             args.append(body)
             commands.append(Command(self, command, args))
         elif command == "comment":
             if "--author" not in args and "-a" not in args:
-                args = ["--author", info["author_addr"]] + args
+                args = ["--author", self.author_addr()] + args
             if "--alt-id" not in args:
-                args = ["--alt-id", msg["message-id"]] + args
-            body,mime_type = get_bodies_and_mime_types(msg)[0]
+                args = ["--alt-id", self.message_id()] + args
+            body,mime_type = list(self._get_bodies_and_mime_types())[0]
             if "--content-type" not in args and "-c" not in args:
                 args = ["--content-type", mime_type] + args
             args.append("-")
@@ -316,7 +316,7 @@ class Message (object):
                            ]
         if self.message_id() != None:
             response_header.append(u"In-reply-to: %s" % self.message_id())
-        self._response_header = \
+        self.response_header = \
             send_pgp_mime.header_from_text(text=u"\n".join(response_header))
         self._response_messages = []
     def _add_response(self, response_message):
@@ -324,7 +324,7 @@ class Message (object):
     def response_email(self):
         assert len(self._response_messages) > 0
         if len(self._response_messages) == 1:
-            ret = send_pgp_mime.attach_root(self._response_header,
+            ret = send_pgp_mime.attach_root(self.response_header,
                                             self._response_messages[0])
         else:
             ret = MIMEMultipart()
@@ -376,6 +376,11 @@ def main():
     msg_text = sys.stdin.read()
     libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
     open_logfile(options.logfile)
+    if len(msg_text.strip()) == 0: # blank email!?
+        if LOGFILE != None:
+            LOGFILE.write("Blank email!")
+            close_logfile()
+        sys.exit(1)
     try:
         m = Message(msg_text)
         m.run()
@@ -387,7 +392,8 @@ def main():
             traceback.print_tb(sys.exc_traceback, file=LOGFILE)
             close_logfile()
         sys.exit(1)
-    response = m.response_email()
+    else:
+        response = m.response_email()
     if options.output == True:
         print send_pgp_mime.flatten(response, to_unicode=True)
     else:
