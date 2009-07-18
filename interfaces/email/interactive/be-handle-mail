@@ -37,6 +37,7 @@ import os.path
 import send_pgp_mime
 import sys
 import time
+import traceback
 
 SUBJECT_COMMENT = "[be-bug]"
 HANDLER_ADDRESS = "BE Bugs <wking@thor.physics.drexel.edu>"
@@ -258,6 +259,7 @@ def main():
     except Exception, e:
         if LOGFILE != None:
             LOGFILE.write("Uncaught exception:\n%s\n" % (e,))
+            traceback.print_tb(sys.exc_traceback, file=LOGFILE)
             close_logfile()
         sys.exit(1)
     response_email = compose_response(ret, out_text, err_text, info).plain()
@@ -265,7 +267,6 @@ def main():
         print send_pgp_mime.flatten(response_email)
     else:
         send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
-
     close_logfile()
 
 if __name__ == "__main__":
