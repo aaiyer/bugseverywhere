@@ -80,7 +80,6 @@ have been warned.
 verboseInvoke = False
 PGP_SIGN_AS = None
 PASSPHRASE = None
-DEFAULT_BODY_ENCODING = "UTF-8"
 
 # The following commands are adapted from my .mutt/pgp configuration
 # 
@@ -346,11 +345,22 @@ class Mail (object):
         return target_emails(self.headermsg)
     def encodedMIMEText(self, body, encoding=None):
         if encoding == None:
-            encoding = DEFAULT_BODY_ENCODING
-        if type(body) == types.StringType:
-            encoding = "US-ASCII"
+            if type(body) == types.StringType:
+                encoding = "US-ASCII"
+            elif type(body) == types.UnicodeType:
+                for encoding in ["US-ASCII", "ISO-8859-1", "UTF-8"]:
+                    try:
+                        body.encode(encoding)
+                    except UnicodeError:
+                        pass
+                    else:
+                        break
+                assert encoding != None
         # Create the message ('plain' stands for Content-Type: text/plain)
-        return MIMEText(body.encode(encoding), 'plain', encoding)
+        if encoding == "US-ASCII":
+            return MIMEText(body)
+        else:
+            return MIMEText(body.encode(encoding), 'plain', encoding)            
     def clearBodyPart(self):
         body = self.encodedMIMEText(self.body)
         body.add_header('Content-Disposition', 'inline')
