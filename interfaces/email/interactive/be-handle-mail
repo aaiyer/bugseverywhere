@@ -46,7 +46,8 @@ _THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 BE_DIR = _THIS_DIR
 LOGPATH = os.path.join(_THIS_DIR, "be-handle-mail.log")
 LOGFILE = None
-ENCODING = libbe.encoding.get_encoding()
+#ENCODING = libbe.encoding.get_encoding()
+ENCODING = "utf-8"
 
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
 
@@ -232,7 +233,8 @@ def open_logfile(logpath=None):
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != "none":
         LOGFILE = codecs.open(LOGPATH, "a+", ENCODING)
-    
+    LOGFILE.write("Default encoding: %s\n" % ENCODING)
+
 def close_logfile():
     if LOGFILE != None and LOGPATH not in ["stderr", "none"]:
         LOGFILE.close()
