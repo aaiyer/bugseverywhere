@@ -80,6 +80,7 @@ have been warned.
 verboseInvoke = False
 PGP_SIGN_AS = None
 PASSPHRASE = None
+DEFAULT_BODY_ENCODING = "UTF-8"
 
 # The following commands are adapted from my .mutt/pgp configuration
 # 
@@ -164,7 +165,8 @@ def flatten(msg):
     g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
     text = fp.getvalue()
-    return text    
+    encoding = msg.get_content_charset()
+    return unicode(text, encoding=encoding)
 
 def source_email(msg, return_realname=False):
     """
@@ -342,8 +344,15 @@ class Mail (object):
         return source_email(self.headermsg)
     def targetEmails(self):
         return target_emails(self.headermsg)
+    def encodedMIMEText(self, body, encoding=None):
+        if encoding == None:
+            encoding = DEFAULT_BODY_ENCODING
+        if type(body) == types.StringType:
+            encoding = "US-ASCII"
+        # Create the message ('plain' stands for Content-Type: text/plain)
+        return MIMEText(body.encode(encoding), 'plain', encoding)
     def clearBodyPart(self):
-        body = MIMEText(self.body)
+        body = self.encodedMIMEText(self.body)
         body.add_header('Content-Disposition', 'inline')
         return body
     def passphrase_arg(self, passphrase=None):
@@ -356,7 +365,7 @@ class Mail (object):
         """
         text/plain
         """        
-        msg = MIMEText(self.body)
+        msg = self.encodedMIMEText(self.body)
         for k,v in self.headermsg.items():
             msg[k] = v
         return msg
