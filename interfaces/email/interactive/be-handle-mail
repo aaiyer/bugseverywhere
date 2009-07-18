@@ -28,10 +28,11 @@ single argument.
 Eventually we'll commit after every message.
 """
 
+import codecs
 import cStringIO as StringIO
 import email
 import email.utils
-import libbe.cmdutil, libbe.utility
+import libbe.cmdutil, libbe.encoding, libbe.utility
 import os
 import os.path
 import send_pgp_mime
@@ -42,9 +43,10 @@ import traceback
 SUBJECT_COMMENT = "[be-bug]"
 HANDLER_ADDRESS = "BE Bugs <wking@thor.physics.drexel.edu>"
 _THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+BE_DIR = _THIS_DIR
 LOGPATH = os.path.join(_THIS_DIR, "be-handle-mail.log")
 LOGFILE = None
-BE_DIR = _THIS_DIR
+ENCODING = libbe.encoding.get_encoding()
 
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
 
@@ -97,14 +99,10 @@ def run_message(msg_text):
     produced by the command, as well as a dictionary of information
     gleaned from the email.
     """
-    encoding = libbe.encoding.get_encoding()
-    libbe.encoding.set_IO_stream_encodings(encoding)
-    
     p=email.Parser.Parser()
     msg=p.parsestr(msg_text)
     
     info = {}
-    info["encoding"] = encoding
     author = send_pgp_mime.source_email(msg, return_realname=True)
     info["author_name"] = author[0]
     info["author_email"] = author[1]
@@ -131,7 +129,7 @@ def run_message(msg_text):
     else:
         command_args = []
     if command in ["new", "comment"]:
-        body,type = get_body_type(msg)
+        body,mime_type = get_body_type(msg)
         if command == "new":
             if "--reporter" not in args and "-r" not in args:
                 command_args = ["--reporter", author_addr] + command_args
@@ -140,14 +138,14 @@ def run_message(msg_text):
             if "--author" not in args and "-a" not in args:
                 command_args = ["--author", author_addr] + command_args
             if "--content-type" not in args and "-c" not in args:
-                command_args = ["--content-type", type] + command_args
+                command_args = ["--content-type", mime_type] + command_args
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
         command_args.append(body)
     info["command-args"] = command_args
     # catch stdout and stderr
-    new_stdout = StringIO.StringIO()
-    new_stderr = StringIO.StringIO()
+    new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
+    new_stderr = codecs.getwriter(ENCODING)(StringIO.StringIO())
     orig_stdout = sys.stdout
     orig_stderr = sys.stderr
     sys.stdout = new_stdout
@@ -171,14 +169,16 @@ def run_message(msg_text):
     sys.stderr.flush()
     sys.stdout = orig_stdout
     sys.stderr = orig_stderr
-    out_text = new_stdout.getvalue()
-    err_text = new_stderr.getvalue()
+    out_text = codecs.decode(new_stdout.getvalue(), ENCODING)
+    err_text = codecs.decode(new_stderr.getvalue(), ENCODING)
     if err != None:
         raise err
+    if LOGFILE != None:
+        LOGFILE.write(u"stdout? " + str(type(out_text)))
+        LOGFILE.write(u"\n%s\n\n" % out_text)
     return (ret, out_text, err_text, info)
 
 def compose_response(ret, out_text, err_text, info):
-    assert "encoding" in info
     if "author_addr" not in info:
         return None
     if "command" not in info:
@@ -188,7 +188,7 @@ def compose_response(ret, out_text, err_text, info):
     response_header = [u"From: %s" % HANDLER_ADDRESS,
                        u"To: %s" % info["author_addr"],
                        u"Date: %s" % libbe.utility.time_to_str(time.time()),
-                       u"Content-Type: text/plain; charset=%s"%info["encoding"],
+                       u"Content-Type: text/plain; charset=%s" % ENCODING,
                        u"Content-Transfer-Encoding: 8bit",
                        u"Subject: %s Re: %s"%(SUBJECT_COMMENT,info["command"]),
                        ]
@@ -231,7 +231,7 @@ def open_logfile(logpath=None):
         else:
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != "none":
-        LOGFILE = file(LOGPATH, "a+")
+        LOGFILE = codecs.open(LOGPATH, "a+", ENCODING)
     
 def close_logfile():
     if LOGFILE != None and LOGPATH not in ["stderr", "none"]:
@@ -250,8 +250,9 @@ def main():
 
     options,args = parser.parse_args()
 
-    open_logfile(options.logfile)
     msg_text = sys.stdin.read()
+    libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
+    open_logfile(options.logfile)
     try: 
         ret,out_text,err_text,info = run_message(msg_text)
     except InvalidEmail, e:
