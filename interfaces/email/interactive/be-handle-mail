@@ -137,6 +137,7 @@ def run_message(msg_text):
             if "--reporter" not in args and "-r" not in args:
                 command_args = ["--reporter", info["author_addr"]]+command_args
             body = body.strip().split("\n", 1)[0] # only take first line
+            command_args.append(body)
         elif command == "comment":
             if "--author" not in args and "-a" not in args:
                 command_args = ["--author", info["author_addr"]] + command_args
@@ -144,8 +145,8 @@ def run_message(msg_text):
                 command_args = ["--content-type", mime_type] + command_args
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
-        command_args.append("-")
-        stdin = body
+            command_args.append("-")
+            stdin = body
     info["command-args"] = command_args
     # set stdin and catch stdout and stderr
     new_stdin = StringIO.StringIO(stdin)
