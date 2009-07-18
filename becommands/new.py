@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Create a new bug"""
 from libbe import cmdutil, bugdir
+import sys
 __desc__ = __doc__
 
 def execute(args, manipulate_encodings=True):

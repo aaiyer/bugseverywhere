@@ -186,7 +186,7 @@ class RCS(object):
         if binary == False:
             f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
         else:
-            f = open(path, "rb")
+            f = open(os.path.join(self.rootdir, path), "rb")
         contents = f.read()
         f.close()
         return contents
