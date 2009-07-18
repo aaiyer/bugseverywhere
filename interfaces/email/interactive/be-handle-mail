@@ -227,7 +227,7 @@ def open_logfile(logpath=None):
             LOGPATH = "none"
             LOGFILE = None
         elif os.path.isabs(logpath):
-            LOGPATH = options.path
+            LOGPATH = logpath
         else:
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != "none":
