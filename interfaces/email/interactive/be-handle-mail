@@ -34,6 +34,7 @@ import email.utils
 import libbe.cmdutil, libbe.encoding, libbe.utility
 import os
 import os.path
+import re
 import send_pgp_mime
 import sys
 import time
@@ -102,6 +103,24 @@ class InvalidOption (InvalidExecutionCommand):
         InvalidCommand.__init__(self, msg, info, command, message)
         self.option = option
 
+class ID (object):
+    """
+    Sometimes you want to reference the output of a command that
+    hasn't been executed yet.  ID is there for situations like
+    > a = Command(msg, "new", ["create a bug"])
+    > b = Command(msg, "comment", [ID(a), "and comment on it"])
+    """
+    def __init__(self, command):
+        self.command = command
+    def extract_id(self):
+        assert self.command.ret == 0, self.command.ret
+        if self.command.command == "new":
+            regexp = re.compile("Created bug with ID (.*)")
+        else:
+            raise NotImplementedError, self.command.command
+        match = regexp.match(self.command.stdout)
+        assert len(match.groups()) == 1, str(match.groups())
+        return match.group(1)
 
 class Command (object):
     """
@@ -130,6 +149,13 @@ class Command (object):
         self.err = None
     def __str__(self):
         return "<command: %s %s>" % (self.command, " ".join(self.args))
+    def normalize_args(self):
+        """
+        Expand any ID placeholders in self.args.
+        """
+        for i,arg in enumerate(self.args):
+            if isinstance(arg, ID):
+                self.args[i] = arg.extract_id()
     def run(self):
         """
         Attempt to execute the command whose info is given in the dictionary
@@ -137,6 +163,7 @@ class Command (object):
         command.
         """
         assert self.ret == None, "running %s twice!" % str(self)
+        self.normalize_args()
         # set stdin and catch stdout and stderr
         if self.stdin != None:
             new_stdin = StringIO.StringIO(self.stdin)
@@ -275,16 +302,25 @@ class Message (object):
         otherwise returns a list of suggested commands to run.
         """
         self.validate_subject()
-        tag,command,args = self._split_subject()
-        args = list(args)
+        tag,command,arg_tuple = self._split_subject()
+        args = list(arg_tuple)
         commands = []
         if command == "new":
             body,mime_type = list(self._get_bodies_and_mime_types())[0]
-            body = body.strip().split("\n", 1)[0] # only take first line
+            lines = body.strip().split("\n", 1)
+            summary = lines[0]
             if "--reporter" not in args and "-r" not in args:
                 args = ["--reporter", self.author_addr()]+args
-            args.append(body)
+            args.append(summary)
             commands.append(Command(self, command, args))
+            if len(lines) == 2:
+                comment = lines[1]
+                args = ["--author", self.author_addr(),
+                        "--alt-id", self.message_id(),
+                        "--content-type", mime_type]
+                args.append(ID(commands[0]))
+                args.append("-")
+                commands.append(Command(self, "comment", args, stdin=comment))
         elif command == "comment":
             if "--author" not in args and "-a" not in args:
                 args = ["--author", self.author_addr()] + args
