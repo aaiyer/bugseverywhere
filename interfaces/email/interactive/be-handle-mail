@@ -85,24 +85,31 @@ class InvalidCommand (InvalidEmail):
                                self.msg["subject"]])
         return err_text
 
-def get_body_type(msg):
+def get_body_type(msg, only_first_part=True):
+    if only_first_part != True:
+        parts = []
     for part in msg.walk():
         if part.is_multipart():
             continue
-        return (part.get_payload(decode=1), part.get_content_type())
+        body,mime_type = (part.get_payload(decode=1), part.get_content_type())
+        if only_first_part == True:
+            return (body, mime_type)
+        else:
+            parts.append((body, mime_type))
+    if only_first_part != True:
+        return parts
 
-def run_message(msg_text):
+def parse_message(msg_text):
     """
-    Attempt to execute the email given in the email string msg_text.
-    Raises assorted subclasses of InvalidEmail in the case of invalid
-    messages, otherwise return the exit code, stdout, and stderr
-    produced by the command, as well as a dictionary of information
-    gleaned from the email.
+    Parse the command given in the email string msg_text.  Raises
+    assorted subclasses of InvalidEmail in the case of invalid
+    messages, otherwise returns a dictionary of information gleaned
+    from the email.
     """
     p=email.Parser.Parser()
     msg=p.parsestr(msg_text)
 
-    info = {}
+    info = {"msg":msg}
     author = send_pgp_mime.source_email(msg, return_realname=True)
     info["author_name"] = author[0]
     info["author_email"] = author[1]
@@ -128,9 +135,10 @@ def run_message(msg_text):
         command_args = args[2:]
     else:
         command_args = []
-    stdin = None
     if command in ["new", "comment"]:
         body,mime_type = get_body_type(msg)
+        info["body"] = body
+        info["mime_type"] = mime_type
         if command == "new":
             if "--reporter" not in args and "-r" not in args:
                 command_args = ["--reporter", info["author_addr"]]+command_args
@@ -144,13 +152,19 @@ def run_message(msg_text):
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
             command_args.append("-")
-            stdin = body
-            if LOGFILE != None:
-                LOGFILE.write("len comment body: %d\n" % len(stdin))
     info["command-args"] = command_args
+    return info
+
+
+def run_command(info):
+    """
+    Attempt to execute the command whose info is given in the dictionary
+    info.  Returns the exit code, stdout, and stderr produced by the
+    command.
+    """
     # set stdin and catch stdout and stderr
-    if stdin != None:
-        new_stdin = StringIO.StringIO(stdin)
+    if info["command"] == "comment":
+        new_stdin = StringIO.StringIO(info["body"])
         orig___stdin = sys.__stdin__
         sys.__stdin__ = new_stdin
         orig_stdin = sys.stdin
@@ -165,18 +179,18 @@ def run_message(msg_text):
     err = None
     os.chdir(BE_DIR)
     try:
-        ret = libbe.cmdutil.execute(command, command_args,
+        ret = libbe.cmdutil.execute(info["command"], info["command-args"],
                                     manipulate_encodings=False)
     except libbe.cmdutil.GetHelp:
         print libbe.cmdutil.help(command)
     except libbe.cmdutil.GetCompletions:
-        err = InvalidCommand(msg, info, "invalid option '--complete'")
+        err = InvalidCommand(info["msg"], info, "invalid option '--complete'")
     except libbe.cmdutil.UsageError, e:
-        err = InvalidCommand(msg, info, e)
+        err = InvalidCommand(info["msg"], info, e)
     except libbe.cmdutil.UserError, e:
-        err = InvalidCommand(msg, info, e)
+        err = InvalidCommand(info["msg"], info, e)
     # restore stdin, stdout, and stderr
-    if stdin != None:
+    if info["command"] == "comment":
         sys.__stdin__ = new_stdin
         sys.__stdin__ = orig___stdin
         sys.stdin = orig_stdin
@@ -188,10 +202,7 @@ def run_message(msg_text):
     err_text = codecs.decode(new_stderr.getvalue(), ENCODING)
     if err != None:
         raise err
-    if LOGFILE != None:
-        LOGFILE.write(u"stdout? " + str(type(out_text)))
-        LOGFILE.write(u"\n%s\n\n" % out_text)
-    return (ret, out_text, err_text, info)
+    return (ret, out_text, err_text)
 
 def compose_response(ret, out_text, err_text, info):
     if "author_addr" not in info:
@@ -270,7 +281,8 @@ def main():
     libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
     open_logfile(options.logfile)
     try:
-        ret,out_text,err_text,info = run_message(msg_text)
+        info = parse_message(msg_text)
+        ret,out_text,err_text = run_command(info)
     except InvalidEmail, e:
         ret,out_text,err_text,info = e.response()
     except Exception, e:
