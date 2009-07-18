@@ -246,8 +246,8 @@ def target_emails(msg):
 class EncryptedMessageFactory (object):
     """
     See http://www.ietf.org/rfc/rfc3156.txt for specification details.
-    >>> from_addr = "wking@drexel.edu"
-    >>> to_addr = "wking@drexel.edu"
+    >>> from_addr = "me@big.edu"
+    >>> to_addr = "you@you.edu"
     >>> header = header_from_text('\\n'.join(['From: %s'%from_addr,'To: %s'%to_addr,'Subject: testing']))
     >>> source_email(header) == from_addr
     True
