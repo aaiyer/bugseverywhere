@@ -147,10 +147,14 @@ def run_message(msg_text):
                 command_args = ["--alt-id", msg["message-id"]] + command_args
             command_args.append("-")
             stdin = body
+            if LOGFILE != None:
+                LOGFILE.write("len comment body: %d\n" % len(stdin))
     info["command-args"] = command_args
     # set stdin and catch stdout and stderr
     if stdin != None:
         new_stdin = StringIO.StringIO(stdin)
+        orig___stdin = sys.__stdin__
+        sys.__stdin__ = new_stdin
         orig_stdin = sys.stdin
         sys.stdin = new_stdin
     new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
@@ -175,6 +179,8 @@ def run_message(msg_text):
         err = InvalidCommand(msg, info, e)
     # restore stdin, stdout, and stderr
     if stdin != None:
+        sys.__stdin__ = new_stdin
+        sys.__stdin__ = orig___stdin
         sys.stdin = orig_stdin
     sys.stdout.flush()
     sys.stderr.flush()
