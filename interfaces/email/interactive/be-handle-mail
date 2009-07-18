@@ -134,11 +134,11 @@ def run_message(msg_text):
         body,mime_type = get_body_type(msg)
         if command == "new":
             if "--reporter" not in args and "-r" not in args:
-                command_args = ["--reporter", author_addr] + command_args
+                command_args = ["--reporter", info["author_addr"]]+command_args
             body = body.strip().split("\n", 1)[0] # only take first line
         elif command == "comment":
             if "--author" not in args and "-a" not in args:
-                command_args = ["--author", author_addr] + command_args
+                command_args = ["--author", info["author_addr"]] + command_args
             if "--content-type" not in args and "-c" not in args:
                 command_args = ["--content-type", mime_type] + command_args
             if "--alt-id" not in args:
