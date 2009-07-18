@@ -39,8 +39,8 @@ MODULES += ${DOC_DIR}
 RM = rm
 
 PREFIX = /usr/local
-#PREFIX = ${HOME}
-INSTALL_OPTIONS = "--prefix=${PREFIX}"
+PREFIX = ${HOME}
+#INSTALL_OPTIONS = "--prefix=${PREFIX}"
 
 
 .PHONY: all

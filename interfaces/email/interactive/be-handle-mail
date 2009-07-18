@@ -125,7 +125,7 @@ def run_message(msg_text):
     command = args[1]
     info["command"] = command
     if command not in ALLOWED_COMMANDS:
-        raise InvalidCommand(msg, command)
+        raise InvalidCommand(msg, info, command)
     if len(args) > 2:
         command_args = args[2:]
     else:
