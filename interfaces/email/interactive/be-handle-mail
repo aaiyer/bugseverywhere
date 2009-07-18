@@ -29,6 +29,7 @@ single argument.
 import codecs
 import cStringIO as StringIO
 import email
+from email.mime.multipart import MIMEMultipart
 import email.utils
 import libbe.cmdutil, libbe.encoding, libbe.utility
 import os
@@ -38,7 +39,7 @@ import sys
 import time
 import traceback
 
-SUBJECT_COMMENT = "[be-bug]"
+SUBJECT_TAG = "[be-bug]"
 HANDLER_ADDRESS = "BE Bugs <wking@thor.physics.drexel.edu>"
 _THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 BE_DIR = _THIS_DIR
@@ -51,190 +52,285 @@ ENCODING = libbe.encoding.get_encoding()
 ALLOWED_COMMANDS = ["new", "comment", "list", "show", "help"]
 
 class InvalidEmail (ValueError):
-    def __init__(self, msg, info, message):
+    def __init__(self, msg, message):
         ValueError.__init__(self, message)
         self.msg = msg
-        self.info = info
     def response(self):
-        ret = 1
-        out_text = None
-        return (ret, out_text, self.stderr_msg(), self.info)
-    def stderr_msg(self):
-        err_text = [u"Invalid email (particular type unknown):\n",
-                    unicode(self), u"",
-                    send_pgp_mime.flatten(self.msg, to_unicode=True)]
+        header = self.msg._response_header
+        body = u"Error processing command.\n\n" + self.response_body()
+        response_body.append(u"") # trailing endline
+        response_generator = \
+            send_pgp_mime.PGPMimeMessageFactory(u"\n".join(response_body))
+        response = MIMEMultipart()
+        response.attach(response_generator.plain())
+        response.attach(self.msg)
+        return response
+    def response_body(self):
+        err_text = [u"Invalid email:\n",
+                    unicode(self)]
         return u"\n".join(err_text)
 
 class InvalidSubject (InvalidEmail):
-    def stderr_msg(self):
-        err_text = u"\n".join([u"InvalidSubject:\n",
-                               unicode(self), u"",
+    def __init__(self, msg, message=None):
+        if message == None:
+            message = "Invalid subject"
+        InvalidEmail.__init__(self, msg, message)
+    def response_body(self):
+        err_text = u"\n".join([unicode(self), u"",
                                u"full subject was:",
                                self.msg["subject"]])
         return err_text
 
-class InvalidCommand (InvalidEmail):
-    def __init__(self, msg, info, command):
-        message = "Invalid command '%s'" % command
-        InvalidEmail.__init__(self, msg, info, message)
+class InvalidEmailCommand (InvalidSubject):
+    def __init__(self, msg, message=None):
+        if message == None:
+            message = "Invalid command '%s'" % msg.subject_command()
+        InvalidSubject.__init__(self, msg, message)
         self.command = command
-    def stderr_msg(self):
-        err_text = u"\n".join([u"InvalidCommand:\n",
-                               unicode(self), u"",
-                               u"full subject was:",
-                               self.msg["subject"]])
-        return err_text
 
-def get_body_type(msg, only_first_part=True):
-    if only_first_part != True:
-        parts = []
-    for part in msg.walk():
-        if part.is_multipart():
-            continue
-        body,mime_type = (part.get_payload(decode=1), part.get_content_type())
-        if only_first_part == True:
-            return (body, mime_type)
+class InvalidExecutionCommand (InvalidEmail):
+    def __init__(self, msg, command, message=None):
+        if message == None:
+            message = "Invalid execution command '%s'" % command
+        InvalidEmail.__init__(self, msg, message)
+        self.command = command
+
+class InvalidOption (InvalidExecutionCommand):
+    def __init__(self, msg, option, message=None):
+        if message == None:
+            message = "Invalid option '%s' to command '%s'" % (option, command)
+        InvalidCommand.__init__(self, msg, info, command, message)
+        self.option = option
+
+
+class Command (object):
+    """
+    A becommands command wrapper.
+    Doesn't validate input, so do that before initializing.
+
+    Initialize with
+      Command(msg, command, args=None, stdin=None)
+    where
+      msg:     the Message instance prompting this command
+      command: name of becommand to execute, e.g. "new"
+      args:    list of arguments to pass to the command
+      stdin:   if non-null, a string to pipe into the command's stdin
+    """
+    def __init__(self, msg, command, args=None, stdin=None):
+        self.msg = msg
+        self.command = command
+        if args == None:
+            self.args = []
         else:
-            parts.append((body, mime_type))
-    if only_first_part != True:
-        return parts
+            self.args = args
+        self.stdin = stdin
+        self.ret = None
+        self.stdout = None
+        self.stdin = None
+        self.err = None
+    def __str__(self):
+        return "<command: %s %s>" % (self.command, " ".join(self.args))
+    def run(self):
+        """
+        Attempt to execute the command whose info is given in the dictionary
+        info.  Returns the exit code, stdout, and stderr produced by the
+        command.
+        """
+        assert self.ret == None, "running %s twice!" % str(self)
+        # set stdin and catch stdout and stderr
+        if self.stdin != None:
+            new_stdin = StringIO.StringIO(self.stdin)
+            orig___stdin = sys.__stdin__
+            sys.__stdin__ = new_stdin
+            orig_stdin = sys.stdin
+            sys.stdin = new_stdin
+        new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
+        new_stderr = codecs.getwriter(ENCODING)(StringIO.StringIO())
+        orig_stdout = sys.stdout
+        orig_stderr = sys.stderr
+        sys.stdout = new_stdout
+        sys.stderr = new_stderr
+        # run the command
+        os.chdir(BE_DIR)
+        try:
+            self.ret = libbe.cmdutil.execute(self.command, self.args,
+                                             manipulate_encodings=False)
+        except libbe.cmdutil.GetHelp:
+            print libbe.cmdutil.help(command)
+        except libbe.cmdutil.GetCompletions:
+            self.err = InvalidOption(self.msg, self.command, "--complete")
+        except libbe.cmdutil.UsageError, e:
+            self.err = InvalidCommand(self.msg, self.command, e)
+        except libbe.cmdutil.UserError, e:
+            self.err = InvalidCommand(self.msg, self.command, e)
+        # restore stdin, stdout, and stderr
+        if self.stdin != None:
+            sys.__stdin__ = new_stdin
+            sys.__stdin__ = orig___stdin
+            sys.stdin = orig_stdin
+        sys.stdout.flush()
+        sys.stderr.flush()
+        sys.stdout = orig_stdout
+        sys.stderr = orig_stderr
+        self.stdout = codecs.decode(new_stdout.getvalue(), ENCODING)
+        self.stderr = codecs.decode(new_stderr.getvalue(), ENCODING)
+        if self.err != None:
+            raise self.err
+        return (self.ret, self.stdout, self.stderr)
+    def response_msg(self):
+        response_body = [u"Results of running: (exit code %d)" % self.ret,
+                         u"  %s %s" % (self.command, u" ".join(self.args))]
+        if self.stdout != None and len(self.stdout) > 0:
+            response_body.extend([u"", u"stdout:", u"", self.stdout])
+        if self.stderr != None and len(self.stderr) > 0:
+            response_body.extend([u"", u"stderr:", u"", self.stderr])
+        response_body.append(u"") # trailing endline
+        response_generator = \
+            send_pgp_mime.PGPMimeMessageFactory(u"\n".join(response_body))
+        return response_generator.plain()
 
-def parse_message(msg_text):
-    """
-    Parse the command given in the email string msg_text.  Raises
-    assorted subclasses of InvalidEmail in the case of invalid
-    messages, otherwise returns a dictionary of information gleaned
-    from the email.
-    """
-    p=email.Parser.Parser()
-    msg=p.parsestr(msg_text)
-
-    info = {"msg":msg}
-    author = send_pgp_mime.source_email(msg, return_realname=True)
-    info["author_name"] = author[0]
-    info["author_email"] = author[1]
-    info["author_addr"] = email.utils.formataddr(
-        (info["author_name"], info["author_email"]))
-    info["message-id"] = msg["message-id"]
-    if LOGFILE != None:
-        LOGFILE.write("handling %s\n" % (info["author_addr"]))
-        LOGFILE.write("\n%s\n\n" % msg_text)
-    if "subject" not in msg:
-        raise InvalidSubject(msg, info, "Email must contain a subject")
-    args = msg["subject"].split()
-    if len(args) < 1 or args[0] != SUBJECT_COMMENT:
-        raise InvalidSubject(
-            msg, info, "Subject must start with '%s '" % SUBJECT_COMMENT)
-    elif len(args) < 2:
-        raise InvalidCommand(msg, info, "") # don't accept blank commands
-    command = args[1]
-    info["command"] = command
-    if command not in ALLOWED_COMMANDS:
-        raise InvalidCommand(msg, info, command)
-    if len(args) > 2:
-        command_args = args[2:]
-    else:
-        command_args = []
-    if command in ["new", "comment"]:
-        body,mime_type = get_body_type(msg)
-        info["body"] = body
-        info["mime_type"] = mime_type
+class Message (object):
+    def __init__(self, email_text):
+        self.text = email_text
+        p=email.Parser.Parser()
+        self.msg=p.parsestr(self.text)
+        if LOGFILE != None:
+            LOGFILE.write("handling %s\n" % self.author_addr())
+            LOGFILE.write("\n%s\n\n" % self.text)
+    def author_tuple(self):
+        """
+        Extract and normalize the sender's email address.  Returns a
+        (name, email) tuple.
+        """
+        if not hasattr(self, "author_tuple_cache"):
+            self.author_tuple_cache = \
+                send_pgp_mime.source_email(self.msg, return_realname=True)
+        return self.author_tuple_cache
+    def author_addr(self):
+        return email.utils.formataddr(self.author_tuple())
+    def author_name(self):
+        return self.author_tuple()[0]
+    def author_email(self):
+        return self.author_tuple()[1]
+    def default_msg_attribute_access(self, attr_name, default=None):
+        if attr_name in self.msg:
+            return self.msg[attr_name]
+        return default
+    def message_id(self, default=None):
+        return self.default_msg_attribute_access("message-id", default=default)
+    def subject(self):
+        if "subject" not in self.msg:
+            raise InvalidSubject(self, "Email must contain a subject")
+        return self.msg["subject"]
+    def _split_subject(self):
+        """
+        Returns (tag, command, arg), with missing values replaced by
+        None.
+        """
+        if hasattr(self, "_split_subject_cache"):
+            return self._split_subject_cache
+        args = self.subject().split()
+        if len(args) < 1:
+            self._split_subject_cache = (None, None, None)
+        elif len(args) < 2:
+            self._split_subject_cache = (args[0], None, None)
+        elif len(args) > 2:
+            self._split_subject_cache = (args[0], args[1], tuple(args[2:]))
+        else:
+            self._split_subject_cache = (args[0], args[1], tuple())
+        return self._split_subject_cache
+    def validate_subject(self):
+        """
+        Validate the subject line as best we can without attempting
+        command execution.
+        """
+        tag,command,args = self._split_subject()
+        if tag != SUBJECT_TAG:
+            raise InvalidSubject(
+                self, "Subject must start with '%s '" % SUBJECT_TAG)
+        elif command == None:
+            raise InvalidCommand(self, "") # don't accept blank commands
+        if command not in ALLOWED_COMMANDS:
+            raise InvalidCommand(self, command)
+    def subject_command(self):
+        tag,command,args = self._split_subject()
+        return command
+    def subject_args(self):
+        tag,command,args = self._split_subject()
+        return args
+    def _get_bodies_and_mime_types(self):
+        """
+        Traverse the email message returning (body, mime_type) for
+        each non-mulitpart portion of the message.
+        """
+        for part in self.msg.walk():
+            if part.is_multipart():
+                continue
+            body,mime_type = (part.get_payload(decode=1), part.get_content_type())
+            yield (body, mime_type)
+    def parse(self):
+        """
+        Parse the commands given in the email.  Raises assorted
+        subclasses of InvalidEmail in the case of invalid messages,
+        otherwise returns a list of suggested commands to run.
+        """
+        self.validate_subject()
+        tag,command,args = self._split_subject()
+        args = list(args)
+        commands = []
         if command == "new":
-            if "--reporter" not in args and "-r" not in args:
-                command_args = ["--reporter", info["author_addr"]]+command_args
+            body,mime_type = get_bodies_and_mime_types(msg)[0]
             body = body.strip().split("\n", 1)[0] # only take first line
-            command_args.append(body)
+            if "--reporter" not in args and "-r" not in args:
+                args = ["--reporter", info["author_addr"]]+args
+            args.append(body)
+            commands.append(Command(self, command, args))
         elif command == "comment":
             if "--author" not in args and "-a" not in args:
-                command_args = ["--author", info["author_addr"]] + command_args
-            if "--content-type" not in args and "-c" not in args:
-                command_args = ["--content-type", mime_type] + command_args
+                args = ["--author", info["author_addr"]] + args
             if "--alt-id" not in args:
-                command_args = ["--alt-id", msg["message-id"]] + command_args
-            command_args.append("-")
-    info["command-args"] = command_args
-    return info
-
-
-def run_command(info):
-    """
-    Attempt to execute the command whose info is given in the dictionary
-    info.  Returns the exit code, stdout, and stderr produced by the
-    command.
-    """
-    # set stdin and catch stdout and stderr
-    if info["command"] == "comment":
-        new_stdin = StringIO.StringIO(info["body"])
-        orig___stdin = sys.__stdin__
-        sys.__stdin__ = new_stdin
-        orig_stdin = sys.stdin
-        sys.stdin = new_stdin
-    new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
-    new_stderr = codecs.getwriter(ENCODING)(StringIO.StringIO())
-    orig_stdout = sys.stdout
-    orig_stderr = sys.stderr
-    sys.stdout = new_stdout
-    sys.stderr = new_stderr
-    # run the command
-    err = None
-    os.chdir(BE_DIR)
-    try:
-        ret = libbe.cmdutil.execute(info["command"], info["command-args"],
-                                    manipulate_encodings=False)
-    except libbe.cmdutil.GetHelp:
-        print libbe.cmdutil.help(command)
-    except libbe.cmdutil.GetCompletions:
-        err = InvalidCommand(info["msg"], info, "invalid option '--complete'")
-    except libbe.cmdutil.UsageError, e:
-        err = InvalidCommand(info["msg"], info, e)
-    except libbe.cmdutil.UserError, e:
-        err = InvalidCommand(info["msg"], info, e)
-    # restore stdin, stdout, and stderr
-    if info["command"] == "comment":
-        sys.__stdin__ = new_stdin
-        sys.__stdin__ = orig___stdin
-        sys.stdin = orig_stdin
-    sys.stdout.flush()
-    sys.stderr.flush()
-    sys.stdout = orig_stdout
-    sys.stderr = orig_stderr
-    out_text = codecs.decode(new_stdout.getvalue(), ENCODING)
-    err_text = codecs.decode(new_stderr.getvalue(), ENCODING)
-    if err != None:
-        raise err
-    return (ret, out_text, err_text)
-
-def compose_response(ret, out_text, err_text, info):
-    if "author_addr" not in info:
-        return None
-    if "command" not in info:
-        info["command"] = u"-BLANK-"
-    if "command_args" not in info:
-        info["command_args"] = []
-    response_header = [u"From: %s" % HANDLER_ADDRESS,
-                       u"To: %s" % info["author_addr"],
-                       u"Date: %s" % libbe.utility.time_to_str(time.time()),
-                       u"Subject: %s Re: %s"%(SUBJECT_COMMENT,info["command"]),
-                       ]
-    if "message-id" in info:
-        response_header.append(u"In-reply-to: %s" % info["message-id"])
-    response_body = [u"Results of running: (exit code %d)" % ret,
-                     u"  %s %s" % (info["command"],
-                                   u" ".join(info["command_args"]))]
-    if out_text != None and len(out_text) > 0:
-        response_body.extend([u"", u"stdout:", u"", out_text])
-    if err_text != None and len(err_text) > 0:
-        response_body.extend([u"", u"stderr:", u"", err_text])
-    response_body.append(u"") # trailing endline
-    response_email = send_pgp_mime.Mail(u"\n".join(response_header),
-                                        u"\n".join(response_body))
-    if LOGFILE != None:
-        LOGFILE.write("responding to %s: %s\n"
-                % (info["author_addr"], info["command"]))
-        LOGFILE.write("\n%s\n\n"
-                      % send_pgp_mime.flatten(response_email.plain(),
-                                              to_unicode=True))
-    return response_email
+                args = ["--alt-id", msg["message-id"]] + args
+            body,mime_type = get_bodies_and_mime_types(msg)[0]
+            if "--content-type" not in args and "-c" not in args:
+                args = ["--content-type", mime_type] + args
+            args.append("-")
+            commands.append(Command(self, command, args, stdin=body))
+        else:
+            commands.append(Command(self, command, args))
+        return commands
+    def run(self):
+        self._begin_response()
+        commands = self.parse()
+        for command in commands:
+            command.run()
+            self._add_response(command.response_msg())
+    def _begin_response(self):
+        tag,command,args = self._split_subject()
+        if args == None:
+            args = []
+        response_header = [u"From: %s" % HANDLER_ADDRESS,
+                           u"To: %s" % self.author_addr(),
+                           u"Date: %s" % libbe.utility.time_to_str(time.time()),
+                           u"Subject: %s Re: %s %s"%(SUBJECT_TAG, command,
+                                                     u"\n".join(args)),
+                           ]
+        if self.message_id() != None:
+            response_header.append(u"In-reply-to: %s" % self.message_id())
+        self._response_header = \
+            send_pgp_mime.header_from_text(text=u"\n".join(response_header))
+        self._response_messages = []
+    def _add_response(self, response_message):
+        self._response_messages.append(response_message)
+    def response_email(self):
+        assert len(self._response_messages) > 0
+        if len(self._response_messages) == 1:
+            ret = send_pgp_mime.attach_root(self._response_header,
+                                            self._response_messages[0])
+        else:
+            ret = MIMEMultipart()
+            for message in self._response_messages:
+                ret.attach(message)
+        return ret
 
 def open_logfile(logpath=None):
     """
@@ -258,7 +354,7 @@ def open_logfile(logpath=None):
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != "none":
         LOGFILE = codecs.open(LOGPATH, "a+", ENCODING)
-    LOGFILE.write("Default encoding: %s\n" % ENCODING)
+        LOGFILE.write("Default encoding: %s\n" % ENCODING)
 
 def close_logfile():
     if LOGFILE != None and LOGPATH not in ["stderr", "none"]:
@@ -281,21 +377,21 @@ def main():
     libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
     open_logfile(options.logfile)
     try:
-        info = parse_message(msg_text)
-        ret,out_text,err_text = run_command(info)
+        m = Message(msg_text)
+        m.run()
     except InvalidEmail, e:
-        ret,out_text,err_text,info = e.response()
+        response = e.response()
     except Exception, e:
         if LOGFILE != None:
             LOGFILE.write("Uncaught exception:\n%s\n" % (e,))
             traceback.print_tb(sys.exc_traceback, file=LOGFILE)
             close_logfile()
         sys.exit(1)
-    response_email = compose_response(ret, out_text, err_text, info).plain()
+    response = m.response_email()
     if options.output == True:
-        print send_pgp_mime.flatten(response_email, to_unicode=True)
+        print send_pgp_mime.flatten(response, to_unicode=True)
     else:
-        send_pgp_mime.mail(response_email, send_pgp_mime.sendmail)
+        send_pgp_mime.mail(response, send_pgp_mime.sendmail)
     close_logfile()
 
 if __name__ == "__main__":

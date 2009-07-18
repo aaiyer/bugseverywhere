@@ -158,7 +158,7 @@ def attach_root(header, root_part):
     Attach the email.Message root_part to the email.Message header
     without generating a multi-part message.
     """
-    for k,v in self.header.items():
+    for k,v in header.items():
         root_part[k] = v
     return root_part    
 
@@ -243,7 +243,7 @@ def target_emails(msg):
                                   + resent_ccs + resent_bccs)
     return [addr[1] for addr in all_recipients]
 
-class EncryptedMessageFactory (object):
+class PGPMimeMessageFactory (object):
     """
     See http://www.ietf.org/rfc/rfc3156.txt for specification details.
     >>> from_addr = "me@big.edu"
