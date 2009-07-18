@@ -130,6 +130,7 @@ def run_message(msg_text):
         command_args = args[2:]
     else:
         command_args = []
+    stdin = None
     if command in ["new", "comment"]:
         body,mime_type = get_body_type(msg)
         if command == "new":
@@ -143,13 +144,17 @@ def run_message(msg_text):
                 command_args = ["--content-type", mime_type] + command_args
             if "--alt-id" not in args:
                 command_args = ["--alt-id", msg["message-id"]] + command_args
-        command_args.append(body)
+        command_args.append("-")
+        stdin = body
     info["command-args"] = command_args
-    # catch stdout and stderr
+    # set stdin and catch stdout and stderr
+    new_stdin = StringIO.StringIO(stdin)
     new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
     new_stderr = codecs.getwriter(ENCODING)(StringIO.StringIO())
+    orig_stdin = sys.stdin
     orig_stdout = sys.stdout
     orig_stderr = sys.stderr
+    sys.stdin = new_stdin
     sys.stdout = new_stdout
     sys.stderr = new_stderr
     # run the command
@@ -166,9 +171,10 @@ def run_message(msg_text):
         err = InvalidCommand(msg, info, e)
     except libbe.cmdutil.UserError, e:
         err = InvalidCommand(msg, info, e)
-    # restore stdout and stderr
+    # restore stdin, stdout, and stderr
     sys.stdout.flush()
     sys.stderr.flush()
+    sys.stdin = orig_stdin
     sys.stdout = orig_stdout
     sys.stderr = orig_stderr
     out_text = codecs.decode(new_stdout.getvalue(), ENCODING)
