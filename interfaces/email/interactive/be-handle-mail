@@ -451,7 +451,12 @@ class Message (object):
         finally:
             if AUTOCOMMIT == True:
                 tag,subject = self._split_subject()
-                command = Command(self, "commit", [self.subject])
+                command = Command(self, "commit", [subject])
+                command.run()
+                if LOGFILE != None:
+                    LOGFILE.write("Autocommit:\n%s\n\n" %
+                                  send_pgp_mime.flatten(command.response_msg(),
+                                                        to_unicode=True))
     def _begin_response(self):
         tag,subject = self._split_subject()
         response_header = [u"From: %s" % HANDLER_ADDRESS,
