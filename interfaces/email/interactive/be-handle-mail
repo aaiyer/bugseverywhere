@@ -15,15 +15,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Provide and email interface to the distributed bugtracker Bugs
-Everywhere.  Recieves incoming email via procmail and allows users to
-select actions with their subject lines.  Subject lines follow the
-format
-  [be-bug] command (options) (args)
-With the body of the email being used as the final argument for the
-commands "new" and "comment", and ignored otherwise.  The options and
-arguments are split on whitespace, so don't use whitespace inside a
-single argument.
+"""
+Provide and email interface to the distributed bugtracker Bugs
+Everywhere.  Recieves incoming email via procmail.  Provides an
+interface similar to the Debian Bug Tracker.  There are currently
+three distinct email types: submits, comments, and controls.  The
+email types are differentiated by tags in the email subject.  See
+SUBJECT_TAG* for the current values.
+
+Submit emails create a bug (and optionally add some intitial
+comments).  The post-tag subject is used as the bug summary,
+and the email body is parsed for a pseudo-header.  Any text
+after the psuedo-header but before to allow the submitter y should be of the form
+
+
+
 """
 
 import codecs
@@ -47,17 +53,16 @@ LOGPATH = os.path.join(_THIS_DIR, u"be-handle-mail.log")
 LOGFILE = None
 
 SUBJECT_TAG_BASE = u"[be-bug"
+SUBJECT_TAG_RESPONSE = u"%s]" % SUBJECT_TAG_BASE
 SUBJECT_TAG_NEW = u"%s:submit]" % SUBJECT_TAG_BASE
 SUBJECT_TAG_COMMENT = re.compile(u"%s:([\-0-9a-z]*)]"
                                  % SUBJECT_TAG_BASE.replace("[","\["))
-SUBJECT_TAG_CONTROL = u"%s]" % SUBJECT_TAG_BASE
+SUBJECT_TAG_CONTROL = SUBJECT_TAG_RESPONSE
 
+BREAK = u"--"
 NEW_REQUIRED_PSEUDOHEADERS = [u"Version"]
 NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter"]
-
 CONTROL_COMMENT = u"#"
-CONTROL_BREAK = u"--"
-
 ALLOWED_COMMANDS = [u"new", u"comment", u"list", u"show", u"help"]
 
 
@@ -80,8 +85,7 @@ class InvalidEmail (ValueError):
         ret = send_pgp_mime.attach_root(header, response)
         return ret
     def response_body(self):
-        err_text = [u"Invalid email:\n",
-                    unicode(self)]
+        err_text = [unicode(self)]
         return u"\n".join(err_text)
 
 class InvalidSubject (InvalidEmail):
@@ -101,18 +105,20 @@ class InvalidPseudoHeader (InvalidEmail):
                     unicode(self)]
         return u"\n".join(err_text)
 
-class InvalidExecutionCommand (InvalidEmail):
+class InvalidCommand (InvalidEmail):
     def __init__(self, msg, command, message=None):
+        bigmessage = u"Invalid execution command '%s'" % command
         if message == None:
-            message = u"Invalid execution command '%s'" % command
-        InvalidEmail.__init__(self, msg, message)
+            bigmessage += u"\n%s" % message
+        InvalidEmail.__init__(self, msg, bigmessage)
         self.command = command
 
-class InvalidOption (InvalidExecutionCommand):
+class InvalidOption (InvalidCommand):
     def __init__(self, msg, option, message=None):
+        bigmessage = u"Invalid option '%s'" % (option)
         if message == None:
-            message = u"Invalid option '%s' to command '%s'" % (option, command)
-        InvalidCommand.__init__(self, msg, info, command, message)
+            bigmessage += u"\n%s" % message
+        InvalidCommand.__init__(self, msg, info, command, bigmessage)
         self.option = option
 
 class ID (object):
@@ -203,9 +209,9 @@ class Command (object):
         except libbe.cmdutil.GetCompletions:
             self.err = InvalidOption(self.msg, self.command, u"--complete")
         except libbe.cmdutil.UsageError, e:
-            self.err = InvalidCommand(self.msg, self.command, e)
+            self.err = InvalidCommand(self.msg, self, type(e))
         except libbe.cmdutil.UserError, e:
-            self.err = InvalidCommand(self.msg, self.command, e)
+            self.err = InvalidCommand(self.msg, self, type(e))
         # restore stdin, stdout, and stderr
         if self.stdin != None:
             sys.__stdin__ = new_stdin
@@ -359,6 +365,12 @@ class Message (object):
                                       % u", ".join(missing))
         remaining_body = u"\n".join(body_lines[i:]).strip()
         return (remaining_body, dictionary)
+    def _strip_footer(self, body):
+        body_lines = body.splitlines()
+        for i,line in enumerate(body_lines):
+            if line.startswith(BREAK):
+                break
+        return u"\n".join(body_lines[:i]).strip()
     def parse(self):
         """
         Parse the commands given in the email.  Raises assorted
@@ -382,6 +394,7 @@ class Message (object):
             args = [u"--reporter", options[u"Reporter"]]
             args.append(summary)
             commands.append(Command(self, command, args))
+            comment_body = self._strip_footer(comment_body)
             if len(comment_body) > 0:
                 command = u"comment"
                 comment = u"Version: %s\n\n"%options[u"Version"] + comment_body
@@ -397,6 +410,8 @@ class Message (object):
             author = self.author_addr()
             alt_id = self.message_id()
             body,mime_type = list(self._get_bodies_and_mime_types())[0]
+            if mime_type == "text/plain":
+                body = self._strip_footer(body)
             content_type = mime_type
             args = [u"--author", author, u"--alt-id", alt_id,
                     u"--content-type", content_type, bug_id, u"-"]
@@ -407,9 +422,10 @@ class Message (object):
                 line = line.strip()
                 if line.startswith(CONTROL_COMMENT) or len(line) == 0:
                     continue
-                if line.startswith(CONTROL_BREAK):
+                if line.startswith(BREAK):
                     break
-                command,args = line.split(u" ",1)
+                fields = line.split()
+                command,args = (fields[0], fields[1:])
                 commands.append(Command(self, command, args))
             if len(commands) == 0:
                 raise InvalidEmail(self, u"No commands in control email.")
@@ -423,14 +439,11 @@ class Message (object):
             command.run()
             self._add_response(command.response_msg())
     def _begin_response(self):
-        tag,command,args = self._split_subject()
-        if args == None:
-            args = []
+        tag,subject = self._split_subject()
         response_header = [u"From: %s" % HANDLER_ADDRESS,
                            u"To: %s" % self.author_addr(),
                            u"Date: %s" % libbe.utility.time_to_str(time.time()),
-                           u"Subject: %s Re: %s %s"%(SUBJECT_TAG, command,
-                                                     u"\n".join(args)),
+                           u"Subject: %s Re: %s"%(SUBJECT_TAG_RESPONSE,subject)
                            ]
         if self.message_id() != None:
             response_header.append(u"In-reply-to: %s" % self.message_id())
