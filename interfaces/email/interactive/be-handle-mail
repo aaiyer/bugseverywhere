@@ -468,13 +468,12 @@ class Message (object):
     def response_email(self):
         assert len(self._response_messages) > 0
         if len(self._response_messages) == 1:
-            ret = send_pgp_mime.attach_root(self.response_header,
-                                            self._response_messages[0])
+            response_body = self._response_messages[0])
         else:
-            ret = MIMEMultipart()
+            repsonse_body = MIMEMultipart()
             for message in self._response_messages:
-                ret.attach(message)
-        return ret
+                resposne_body.attach(message)
+        return send_pgp_mime.attach_root(self.response_header, response_body)
 
 def open_logfile(logpath=None):
     """
