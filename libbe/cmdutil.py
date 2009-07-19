@@ -163,7 +163,7 @@ def default_complete(options, args, parser, bugid_args={}):
     """
     for option,value in option_value_pairs(options, parser):
         if value == "--complete":
-            raise cmdutil.GetCompletions()
+            raise GetCompletions()
     if len(bugid_args.keys()) > 0:
         max_pos_arg = max(bugid_args.keys())
     else:

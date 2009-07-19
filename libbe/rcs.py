@@ -201,7 +201,7 @@ class RCS(object):
         """
         Commit the current working directory, using the contents of
         commitfile as the comment.  Return the name of the old
-        revision.
+        revision (or None if commits are not supported).
         """
         return None
     def installed(self):
@@ -370,8 +370,9 @@ class RCS(object):
         string summary and body.  Return the name of the old revision
         (or None if versioning is not supported).
         """
+        summary = summary.strip()
         if body is not None:
-            summary += '\n' + body
+            summary += '\n\n' + body.strip() + '\n'
         descriptor, filename = tempfile.mkstemp()
         revision = None
         try:
