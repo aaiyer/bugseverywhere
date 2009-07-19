@@ -31,7 +31,7 @@ class CantFindEditor(Exception):
         Exception.__init__(self, "Can't find editor to get string from")
 
 def editor_string(comment=None, encoding=None):
-    """Invokes the editor, and returns the user_produced text as a string
+    """Invokes the editor, and returns the user-produced text as a string
 
     >>> if "EDITOR" in os.environ:
     ...     del os.environ["EDITOR"]
