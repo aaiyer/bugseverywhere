@@ -1,0 +1,16 @@
+Note for public interfaces that commit after every change:
+
+In the case that some spam or inappropriate comment makes its way
+through you interface, you can remove the offending commit XYZ with:
+  If the offending commit is the last commit:
+    bzr: bzr uncommit && bzr revert
+    git: git reset --hard HEAD^
+    other VCSs?
+  If the offending commit is not the last commit:
+    bzr: bzr rebase -r <XYZ+1>..-1 --onto before:XYZ .
+      (requires bzr-rebase plugin, note, you have to increment XYZ by
+      hand for <XYZ+1>, because bzr does not support "after:XYZ".)
+    git: git rebase --onto XYZ~1 XYZ
+    other VCSs?
+Note that all of these _change_the_repo_history_, so only do this on
+your interface-specific repo before it interacts with any other repo.
