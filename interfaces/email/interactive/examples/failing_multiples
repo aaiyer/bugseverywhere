@@ -1,0 +1,18 @@
+From jdoe@example.com Fri Apr 18 11:18:58 2008
+Message-ID: <abcd@example.com>
+Date: Fri, 18 Apr 2008 12:00:00 +0000
+From: John Doe <jdoe@example.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Subject: [be-bug] Commit message...
+
+new "test_bug"
+new "test_bug_2"
+failing-command
+new "test_bug_3"
+
+--
+This message fails partway through, but the partial changes should be
+recorded in a commit...
+
+Note the lack of spaces in the bug summary strings.
