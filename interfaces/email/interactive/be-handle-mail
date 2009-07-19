@@ -61,10 +61,12 @@ SUBJECT_TAG_CONTROL = SUBJECT_TAG_RESPONSE
 
 BREAK = u"--"
 NEW_REQUIRED_PSEUDOHEADERS = [u"Version"]
-NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter"]
+NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter", u"Assign", u"Depend", u"Severity",
+                              u"Status", u"Tag", u"Target"]
 CONTROL_COMMENT = u"#"
-ALLOWED_COMMANDS = [u"new", u"comment", u"list", u"show", u"help"]
-
+ALLOWED_COMMANDS = [u"assign", u"comment", u"depend", u"help", u"list",
+                    u"merge", u"new", u"open", u"severity", u"status", u"tag",
+                    u"target"]
 
 libbe.encoding.ENCODING = u"utf-8" # force default encoding
 ENCODING = libbe.encoding.get_encoding()
