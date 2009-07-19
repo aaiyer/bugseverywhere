@@ -387,11 +387,11 @@ class Message (object):
         otherwise returns a list of suggested commands to run.
         """
         self.validate_subject()
-        tag,subject = self._split_subject()
         tag_type,value = self._subject_tag_type()
         commands = []
         if tag_type == u"new":
             command = u"new"
+            tag,subject = self._split_subject()
             summary = subject
             options = {u"Reporter": self.author_addr()}
             body,mime_type = list(self._get_bodies_and_mime_types())[0]
@@ -440,17 +440,18 @@ class Message (object):
                 raise InvalidEmail(self, u"No commands in control email.")
         else:
             raise Exception, u"Unrecognized tag type '%s'" % tag_type
-        if AUTOCOMMIT == True:
-            commands.append(Command(self, "commit", [subject]))
         return commands
     def run(self):
         self._begin_response()
         commands = self.parse()
-        if LOGFILE != None:
-            LOGFILE.write("Running:\n  %s\n\n" % "\n  ".join([str(c) for c in commands]))
-        for command in commands:
-            command.run()
-            self._add_response(command.response_msg())
+        try:
+            for command in commands:
+                command.run()
+                self._add_response(command.response_msg())
+        finally:
+            if AUTOCOMMIT == True:
+                tag,subject = self._split_subject()
+                command = Command(self, "commit", [self.subject])
     def _begin_response(self):
         tag,subject = self._split_subject()
         response_header = [u"From: %s" % HANDLER_ADDRESS,
