@@ -58,7 +58,7 @@ class Hg(RCS):
     def _rcs_add(self, path):
         self._u_invoke_client("add", path)
     def _rcs_remove(self, path):
-        self._u_invoke_client("rm", path)
+        self._u_invoke_client("rm", "--force", path)
     def _rcs_update(self, path):
         pass
     def _rcs_get_file_contents(self, path, revision=None, binary=False):
@@ -73,8 +73,13 @@ class Hg(RCS):
             return RCS._rcs_duplicate_repo(self, directory, revision)
         else:
             self._u_invoke_client("archive", "--rev", revision, directory)
-    def _rcs_commit(self, commitfile):
-        self._u_invoke_client('commit', '--logfile', commitfile)
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        args = ['commit', '--logfile', commitfile]
+        status,output,error = self._u_invoke_client(*args)
+        if allow_empty == False:
+            strings = ["nothing changed"]
+            if self._u_any_in_string(strings, output) == True:
+                raise rcs.EmptyCommit()
         status,output,error = self._u_invoke_client('identify')
         revision = None
         revline = re.compile("(.*) tip")

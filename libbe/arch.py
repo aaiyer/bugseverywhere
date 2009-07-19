@@ -260,16 +260,17 @@ class Arch(RCS):
         else:
             status,output,error = \
                 self._u_invoke_client("get", revision,directory)
-    def _rcs_commit(self, commitfile):
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        if allow_empty == False:
+            # arch applies empty commits without complaining, so check first
+            status,output,error = self._u_invoke_client("changes",expect=(0,1))
+            if status == 0:
+                raise rcs.EmptyCommit()
         summary,body = self._u_parse_commitfile(commitfile)
-        #status,output,error = self._invoke_client("make-log")
-        if body == None:
-            status,output,error \
-                = self._u_invoke_client("commit","--summary",summary)
-        else:
-            status,output,error \
-                = self._u_invoke_client("commit","--summary",summary,
-                                        "--log-message",body)
+        args = ["commit", "--summary", summary]
+        if body != None:
+            args.extend(["--log-message",body])
+        status,output,error = self._u_invoke_client(*args)
         revision = None
         revline = re.compile("[*] committed (.*)")
         match = revline.search(output)

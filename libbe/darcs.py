@@ -131,24 +131,25 @@ class Darcs(RCS):
             RCS._rcs_duplicate_repo(self, directory, revision)
         else:
             self._u_invoke_client("put", "--to-patch", revision, directory)
-    def _rcs_commit(self, commitfile):
+    def _rcs_commit(self, commitfile, allow_empty=False):
         id = self.get_user_id()
         if '@' not in id:
             id = "%s <%s@invalid.com>" % (id, id)
-        # Darcs doesn't like commitfiles without trailing endlines.
-        f = codecs.open(commitfile, 'r', self.encoding)
-        contents = f.read()
-        f.close()
-        if contents[-1] != '\n':
-            f = codecs.open(commitfile, 'a', self.encoding)
-            f.write('\n')
-            f.close()
-        status,output,error = self._u_invoke_client('record', '--all',
-                                                    '--author', id,
-                                                    '--logfile', commitfile)
+        args = ['record', '--all', '--author', id, '--logfile', commitfile]
+        status,output,error = self._u_invoke_client(*args)
+        empty_strings = ["No changes!"]
         revision = None
-
-        revline = re.compile("Finished recording patch '(.*)'")
+        if self._u_any_in_string(empty_strings, output) == True:
+            if allow_empty == False:
+                raise rcs.EmptyCommit()
+            else: # we need a extra call to get the current revision
+                args = ["changes", "--last=1", "--xml"]
+                status,output,error = self._u_invoke_client(*args)
+                revline = re.compile("[ \t]*<name>(.*)</name>")
+                # note that darcs does _not_ make an empty revision.
+                # this returns the last non-empty revision id...
+        else:
+            revline = re.compile("Finished recording patch '(.*)'")
         match = revline.search(output)
         assert match != None, output+error
         assert len(match.groups()) == 1
