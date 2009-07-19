@@ -218,9 +218,11 @@ class Command (object):
         except libbe.cmdutil.GetCompletions:
             self.err = InvalidOption(self.msg, self.command, u"--complete")
         except libbe.cmdutil.UsageError, e:
-            self.err = InvalidCommand(self.msg, self, type(e))
+            self.err = InvalidCommand(self.msg, self,
+                                      "%s\n%s" % (type(e), unicode(e)))
         except libbe.cmdutil.UserError, e:
-            self.err = InvalidCommand(self.msg, self, type(e))
+            self.err = InvalidCommand(self.msg, self,
+                                      "%s\n%s" % (type(e), unicode(e)))
         # restore stdin, stdout, and stderr
         if self.stdin != None:
             sys.__stdin__ = new_stdin
