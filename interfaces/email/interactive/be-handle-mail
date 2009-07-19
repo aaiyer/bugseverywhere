@@ -24,12 +24,17 @@ email types are differentiated by tags in the email subject.  See
 SUBJECT_TAG* for the current values.
 
 Submit emails create a bug (and optionally add some intitial
-comments).  The post-tag subject is used as the bug summary,
-and the email body is parsed for a pseudo-header.  Any text
-after the psuedo-header but before to allow the submitter y should be of the form
+comments).  The post-tag subject is used as the bug summary, and the
+email body is parsed for a pseudo-header.  Any text after the
+psuedo-header but before a possible line starting with BREAK is added
+as the initial bug comment.
 
+Comment emails...
 
+Control emails...
 
+Any changes made to the repository are commited after the email is
+executed, with the email's post-tag subject as the commit message.
 """
 
 import codecs
@@ -64,9 +69,9 @@ NEW_REQUIRED_PSEUDOHEADERS = [u"Version"]
 NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter", u"Assign", u"Depend", u"Severity",
                               u"Status", u"Tag", u"Target"]
 CONTROL_COMMENT = u"#"
-ALLOWED_COMMANDS = [u"assign", u"comment", u"depend", u"help", u"list",
-                    u"merge", u"new", u"open", u"severity", u"status", u"tag",
-                    u"target"]
+ALLOWED_COMMANDS = [u"assign", u"comment", u"commit", u"depend", u"help",
+                    u"list", u"merge", u"new", u"open", u"severity", u"status",
+                    u"tag", u"target"]
 
 libbe.encoding.ENCODING = u"utf-8" # force default encoding
 ENCODING = libbe.encoding.get_encoding()
@@ -380,11 +385,11 @@ class Message (object):
         otherwise returns a list of suggested commands to run.
         """
         self.validate_subject()
+        tag,subject = self._split_subject()
         tag_type,value = self._subject_tag_type()
         commands = []
         if tag_type == u"new":
             command = u"new"
-            tag,subject = self._split_subject()
             summary = subject
             options = {u"Reporter": self.author_addr()}
             body,mime_type = list(self._get_bodies_and_mime_types())[0]
@@ -433,6 +438,7 @@ class Message (object):
                 raise InvalidEmail(self, u"No commands in control email.")
         else:
             raise Exception, u"Unrecognized tag type '%s'" % tag_type
+        commands.append(Command(self, "commit", [subject]))
         return commands
     def run(self):
         self._begin_response()
