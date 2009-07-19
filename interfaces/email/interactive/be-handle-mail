@@ -117,7 +117,7 @@ class InvalidPseudoHeader (InvalidEmail):
 class InvalidCommand (InvalidEmail):
     def __init__(self, msg, command, message=None):
         bigmessage = u"Invalid execution command '%s'" % command
-        if message == None:
+        if message != None:
             bigmessage += u"\n%s" % message
         InvalidEmail.__init__(self, msg, bigmessage)
         self.command = command
@@ -125,7 +125,7 @@ class InvalidCommand (InvalidEmail):
 class InvalidOption (InvalidCommand):
     def __init__(self, msg, option, message=None):
         bigmessage = u"Invalid option '%s'" % (option)
-        if message == None:
+        if message != None:
             bigmessage += u"\n%s" % message
         InvalidCommand.__init__(self, msg, info, command, bigmessage)
         self.option = option
@@ -190,9 +190,9 @@ class Command (object):
         command.
         """
         if self.command in [None, u""]: # don't accept blank commands
-            raise InvalidCommand(self.msg, self)
+            raise InvalidCommand(self.msg, self, "Blank")
         elif self.command not in ALLOWED_COMMANDS:
-            raise InvalidCommand(self.msg, self)
+            raise InvalidCommand(self.msg, self, "Not allowed")
         assert self.ret == None, u"running %s twice!" % unicode(self)
         self.normalize_args()
         # set stdin and catch stdout and stderr
