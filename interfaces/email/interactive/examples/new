@@ -4,6 +4,9 @@ Date: Fri, 18 Apr 2008 12:00:00 +0000
 From: John Doe <jdoe@example.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Subject: [be-bug] new
+Subject: [be-bug:submit] Need tests for the email interface.
 
-Need tests for the email interface.
+Version: XYZ
+
+--
+Goofy tagline not included, and no comment added.

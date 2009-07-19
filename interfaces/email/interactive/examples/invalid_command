@@ -4,6 +4,8 @@ Date: Fri, 18 Apr 2008 12:00:00 +0000
 From: John Doe <jdoe@example.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Subject: [be-bug] close
+Subject: [be-bug]
 
-Dummy content
+close
+--
+Close is currently disabled for the email interface.

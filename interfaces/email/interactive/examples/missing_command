@@ -4,6 +4,8 @@ Date: Fri, 18 Apr 2008 12:00:00 +0000
 From: John Doe <jdoe@example.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Subject: [be-bug] abcde
+Subject: [be-bug] Subject ignored
 
-Dummy content
+abcde
+--
+This should elicit a "invalid command 'abcde'" response email.

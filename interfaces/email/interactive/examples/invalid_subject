@@ -6,4 +6,4 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Subject: Spam!
 
-Dummy content
+This should elicit an "invalid header" response email.

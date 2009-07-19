@@ -4,6 +4,8 @@ Date: Fri, 18 Apr 2008 12:00:00 +0000
 From: John Doe <jdoe@example.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Subject: [be-bug] show --xml f7ccd916-b5c7-4890-a2e3-8c8ace17ae3a
+Subject: [be-bug] Subject ignored
 
-Dummy content
+show --xml f7ccd916-b5c7-4890-a2e3-8c8ace17ae3a
+--
+Can we handle unicode output?
