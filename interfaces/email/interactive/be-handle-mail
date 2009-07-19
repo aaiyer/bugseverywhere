@@ -73,6 +73,8 @@ ALLOWED_COMMANDS = [u"assign", u"comment", u"commit", u"depend", u"help",
                     u"list", u"merge", u"new", u"open", u"severity", u"status",
                     u"tag", u"target"]
 
+AUTOCOMMIT = True
+
 libbe.encoding.ENCODING = u"utf-8" # force default encoding
 ENCODING = libbe.encoding.get_encoding()
 
@@ -438,11 +440,14 @@ class Message (object):
                 raise InvalidEmail(self, u"No commands in control email.")
         else:
             raise Exception, u"Unrecognized tag type '%s'" % tag_type
-        commands.append(Command(self, "commit", [subject]))
+        if AUTOCOMMIT == True:
+            commands.append(Command(self, "commit", [subject]))
         return commands
     def run(self):
         self._begin_response()
         commands = self.parse()
+        if LOGFILE != None:
+            LOGFILE.write("Running:\n  %s\n\n" % "\n  ".join([str(c) for c in commands]))
         for command in commands:
             command.run()
             self._add_response(command.response_msg())
@@ -502,6 +507,7 @@ def close_logfile():
 
 def main():
     from optparse import OptionParser
+    global AUTOCOMMIT
 
     usage="be-handle-mail [options]\n\n%s" % (__doc__)
     parser = OptionParser(usage=usage)
@@ -509,8 +515,12 @@ def main():
                       help="Don't mail the generated message, print it to stdout instead.  Useful for testing be-handle-mail functionality without the whole mail transfer agent and procmail setup.")
     parser.add_option('-l', '--logfile', dest='logfile', metavar='LOGFILE',
                       help='Set the logfile to LOGFILE.  Relative paths are relative to the location of this be-handle-mail file (%s).  The special value of "-" directs the log output to stderr, and "none" disables logging.' % _THIS_DIR)
+    parser.add_option('-a', '--disable-autocommit', dest='autocommit',
+                      default=True, action='store_false',
+                      help='Disable the autocommit after parsing the email.')
 
     options,args = parser.parse_args()
+    AUTOCOMMIT = options.autocommit
 
     msg_text = sys.stdin.read()
     libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
@@ -536,6 +546,10 @@ def main():
     if options.output == True:
         print send_pgp_mime.flatten(response, to_unicode=True)
     else:
+        if LOGFILE != None:
+            LOGFILE.write(u"sending response to %s\n" % m.author_addr())
+            LOGFILE.write(u"\n%s\n\n" % send_pgp_mime.flatten(response,
+                                                              to_unicode=True))
         send_pgp_mime.mail(response, send_pgp_mime.sendmail)
     close_logfile()
 
