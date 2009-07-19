@@ -71,9 +71,21 @@ class Bzr(RCS):
         else:
             self._u_invoke_client("branch", "--revision", revision,
                                   ".", directory)
-    def _rcs_commit(self, commitfile):
-        status,output,error = self._u_invoke_client("commit", "--unchanged",
-                                                    "--file", commitfile)
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        args = ["commit", "--file", commitfile]
+        if allow_empty == True:
+            args.append("--unchanged")
+            status,output,error = self._u_invoke_client(*args)
+        else:
+            kwargs = {"expect":(0,3)}
+            status,output,error = self._u_invoke_client(*args, **kwargs)
+            if status != 0:
+                strings = ["ERROR: no changes to commit.", # bzr 1.3.1
+                           "ERROR: No changes to commit."] # bzr 1.15.1
+                if self._u_any_in_string(strings, error) == True:
+                    raise rcs.EmptyCommit()
+                else:
+                    raise rcs.CommandError(args, status, error)
         revision = None
         revline = re.compile("Committed revision (.*)[.]")
         match = revline.search(error)

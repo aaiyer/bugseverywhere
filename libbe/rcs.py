@@ -61,10 +61,13 @@ def installed_rcs():
 
 
 class CommandError(Exception):
-    def __init__(self, err_str, status):
-        Exception.__init__(self, "Command failed (%d): %s" % (status, err_str))
-        self.err_str = err_str
+    def __init__(self, command, status, err_str):
+        strerror = ["Command failed (%d):\n  %s\n" % (status, err_str),
+                    "while executing\n  %s" % command]
+        Exception.__init__(self, "\n".join(strerror))
+        self.command = command
         self.status = status
+        self.err_str = err_str
 
 class SettingIDnotSupported(NotImplementedError):
     pass
@@ -85,6 +88,10 @@ class NoSuchFile(Exception):
     def __init__(self, pathname, root="."):
         path = os.path.abspath(os.path.join(root, pathname))
         Exception.__init__(self, "No such file: %s" % path)
+
+class EmptyCommit(Exception):
+    def __init__(self):
+        Exception.__init__(self, "No changes to commit")
 
 
 def new():
@@ -197,11 +204,14 @@ class RCS(object):
         dir specifies a directory to create the duplicate in.
         """
         shutil.copytree(self.rootdir, directory, True)
-    def _rcs_commit(self, commitfile):
+    def _rcs_commit(self, commitfile, allow_empty=False):
         """
         Commit the current working directory, using the contents of
         commitfile as the comment.  Return the name of the old
         revision (or None if commits are not supported).
+        
+        If allow_empty == False, raise EmptyCommit if there are no
+        changes to commit.
         """
         return None
     def installed(self):
@@ -364,22 +374,25 @@ class RCS(object):
             shutil.rmtree(self._duplicateBasedir)
             self._duplicateBasedir = None
             self._duplicateDirname = None
-    def commit(self, summary, body=None):
+    def commit(self, summary, body=None, allow_empty=False):
         """
         Commit the current working directory, with a commit message
         string summary and body.  Return the name of the old revision
         (or None if versioning is not supported).
+        
+        If allow_empty == False (the default), raise EmptyCommit if
+        there are no changes to commit.
         """
-        summary = summary.strip()
+        summary = summary.strip()+'\n'
         if body is not None:
-            summary += '\n\n' + body.strip() + '\n'
+            summary += '\n' + body.strip() + '\n'
         descriptor, filename = tempfile.mkstemp()
         revision = None
         try:
             temp_file = os.fdopen(descriptor, 'wb')
             temp_file.write(summary)
             temp_file.flush()
-            revision = self._rcs_commit(filename)
+            revision = self._rcs_commit(filename, allow_empty=allow_empty)
             temp_file.close()
         finally:
             os.remove(filename)
@@ -388,7 +401,20 @@ class RCS(object):
         pass
     def postcommit(self, directory):
         pass
+    def _u_any_in_string(self, list, string):
+        """
+        Return True if any of the strings in list are in string.
+        Otherwise return False.
+        """
+        for list_string in list:
+            if list_string in string:
+                return True
+        return False
     def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None):
+        """
+        expect should be a tuple of allowed exit codes.  cwd should be
+        the directory from which the command will be executed.
+        """
         if cwd == None:
             cwd = self.rootdir
         if self.verboseInvoke == True:
@@ -401,15 +427,13 @@ class RCS(object):
                 q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, 
                           shell=True, cwd=cwd)
         except OSError, e :
-            strerror = "%s\nwhile executing %s" % (e.args[1], args)
-            raise CommandError(strerror, e.args[0])
+            raise CommandError(args, e.args[0], e)
         output, error = q.communicate(input=stdin)
         status = q.wait()
         if self.verboseInvoke == True:
             print >> sys.stderr, "%d\n%s%s" % (status, output, error)
         if status not in expect:
-            strerror = "%s\nwhile executing %s\n%s" % (args[1], args, error)
-            raise CommandError(strerror, status)
+            raise CommandError(args, status, error)
         return status, output, error
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)

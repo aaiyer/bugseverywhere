@@ -93,9 +93,18 @@ class Git(RCS):
             #self._u_invoke_client("archive", revision, directory) # makes tarball
             self._u_invoke_client("clone", "--no-checkout",".",directory)
             self._u_invoke_client("checkout", revision, directory=directory)
-    def _rcs_commit(self, commitfile):
-        status,output,error = self._u_invoke_client('commit', '-a',
-                                                    '-F', commitfile)
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        args = ['commit', '--all', '--file', commitfile]
+        if allow_empty == True:
+            args.append("--allow-empty")
+            status,output,error = self._u_invoke_client(*args)
+        else:
+            kwargs = {"expect":(0,1)}
+            status,output,error = self._u_invoke_client(*args, **kwargs)
+            strings = ["nothing to commit",
+                       "nothing added to commit"]
+            if self._u_any_in_string(strings, output) == True:
+                raise rcs.EmptyCommit()
         revision = None
         revline = re.compile("(.*) (.*)[:\]] (.*)")
         match = revline.search(output)

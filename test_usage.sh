@@ -18,6 +18,8 @@ set -v # verbose, echo commands to stdout
 exec 6>&2 # save stderr to file descriptor 6
 exec 2>&1 # fd 2 now writes to stdout
 
+ONLY_TEST_COMMIT="true"
+
 if [ $# -gt 1 ]
 then
     echo "usage: test_usage.sh [RCS]"
@@ -130,6 +132,9 @@ BUGC=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
 be comment $BUGC "The ants go marching..."
 be show --xml $BUGC | be comment --xml ${BUG}:2 -
 be remove $BUG # decide that you don't like that bug after all
+be commit "You can even commit using BE"
+be commit --allow-empty "And you can add empty commits if you like"
+be commit "But this will fail" || echo "Failed"
 
 cd /
 rm -rf $TESTDIR

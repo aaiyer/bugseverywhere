@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Commit the currently pending changes to the repository"""
-from libbe import cmdutil, bugdir, editor
+from libbe import cmdutil, bugdir, editor, rcs
 import sys
 __desc__ = __doc__
 
@@ -49,13 +49,22 @@ def execute(args, manipulate_encodings=True):
         body = editor.editor_string("Please enter your commit message above")
     else:
         body = bd.rcs.get_file_contents(options.body, allow_no_rcs=True)
-    revision = bd.rcs.commit(summary, body=body)
-    print "Committed %s" % revision
+    try:
+        revision = bd.rcs.commit(summary, body=body,
+                                 allow_empty=options.allow_empty)
+    except rcs.EmptyCommit, e:
+        print e
+        return 1
+    else:
+        print "Committed %s" % revision
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be commit COMMENT")
     parser.add_option("-b", "--body", metavar="FILE", dest="body",
                       help='Provide a detailed body for the commit message.  In the special case that FILE == "EDITOR", spawn an editor to enter the body text (in which case you cannot use stdin for the summary)', default=None)
+    parser.add_option("-a", "--allow-empty", dest="allow_empty",
+                      help="Allow empty commits",
+                      default=False, action="store_true")
     return parser
 
 longhelp="""

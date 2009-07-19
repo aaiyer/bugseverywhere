@@ -73,9 +73,11 @@ def get_command(command_name):
 def execute(cmd, args, manipulate_encodings=True):
     enc = encoding.get_encoding()
     cmd = get_command(cmd)
-    cmd.execute([a.decode(enc) for a in args],
-                manipulate_encodings=manipulate_encodings)
-    return 0
+    ret = cmd.execute([a.decode(enc) for a in args],
+                      manipulate_encodings=manipulate_encodings)
+    if ret == None:
+        ret = 0
+    return ret
 
 def help(cmd=None, parser=None):
     if cmd != None:
