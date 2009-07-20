@@ -21,24 +21,24 @@ probably best to create a dedicated user.  Incoming email is filtered
 by procmail, with matching emails being piped into be-handle-mail for
 execution.
 
-Once be-handle-mail recieves the email, the parsing method is selected
+Once be-handle-mail receives the email, the parsing method is selected
 according to the subject tag that procmail used grab the email in the
 first place.  There are three parsing styles:
     Style                 Subject
     creating bugs         [be-bug:submit] new bug summary
     commenting on bugs    [be-bug:<bug-id>] human-specific subject
     control               [be-bug] human-specific subject
-These are analagous to submit@bugs.debian.org, nnn@bugs.debian.org,
+These are analogous to submit@bugs.debian.org, nnn@bugs.debian.org,
 and control@bugs.debian.org respectively.
 
 Creating bugs
 =============
 
-The create-style interface creates a bug whose summary is given by the
-email's post-tag subject.  The body of the email must begin with a
-psuedo-header containing at least the "Version" field.  Anything after
+This interface creates a bug whose summary is given by the email's
+post-tag subject.  The body of the email must begin with a
+pseudo-header containing at least the "Version" field.  Anything after
 the pseudo-header and before a line starting with '--' is, if present,
-attached as the bugs first comment.
+attached as the bug's first comment.
 
     From jdoe@example.com Fri Apr 18 12:00:00 2008
     From: John Doe <jdoe@example.com>
@@ -57,12 +57,15 @@ attached as the bugs first comment.
     --
     Goofy tagline not included.
 
+Available pseudo-headers are Version, Reporter, Assign, Depend,
+Severity, Status, Tag, and Target.
+
 Commenting on bugs
 ==================
 
-The comment-style interface appends a comment to the bug specified in
-the subject tag.  The the first non-multipart body is attached with
-the appropriate content-type.  In the case of "text/plain" contents,
+This interface appends a comment to the bug specified in the subject
+tag.  The the first non-multipart body is attached with the
+appropriate content-type.  In the case of "text/plain" contents,
 anything following a line starting with '--' is stripped.
 
     From jdoe@example.com Fri Apr 18 12:00:00 2008
@@ -81,7 +84,7 @@ anything following a line starting with '--' is stripped.
 Controlling bugs
 ================
 
-The control-style consists of a list of allowed be commands, with one
+This interface consists of a list of allowed be commands, with one
 command per line.  Blank lines and lines beginning with '#' are
 ignored, as well anything following a line starting with '--'.  All the
 listed commands are executed in order and their output returned.
@@ -122,15 +125,15 @@ procmail does will be logged to ~/be-mail/procmail.log.
 
 If you're piggybacking the interface on top of an existing account,
 you probably only need to add the be-handle-mail stanza to your
-existing ~/.procmailrc, since you will still want to recieve non-bug
+existing ~/.procmailrc, since you will still want to receive non-bug
 emails.
 
 Note that you will probably have to add a
-  --be-dir /path/to/served/repo
-option to the be-handle-mail invocation so it knows what repo to
+  --be-dir /path/to/served/repository
+option to the be-handle-mail invocation so it knows what repository to
 serve.
 
-Multiple repos may be served by the same email address by adding
+Multiple repositories may be served by the same email address by adding
 multiple be-handle-mail stanzas, each matching a different tag, for
 example the "[be-bug" portion of the stanza could be "[projectX-bug",
 "[projectY-bug", etc.  If you change the base tag, be sure to add a
