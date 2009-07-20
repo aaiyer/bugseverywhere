@@ -1,4 +1,4 @@
-From jdoe@example.com Fri Apr 18 11:18:58 2008
+From jdoe@example.com Fri Apr 18 12:00:00 2008
 Message-ID: <abcd@example.com>
 Date: Fri, 18 Apr 2008 12:00:00 +0000
 From: John Doe <jdoe@example.com>
@@ -7,6 +7,13 @@ Content-Transfer-Encoding: 8bit
 Subject: [be-bug:submit] Need tests for the email interface.
 
 Version: XYZ
+Reporter: Jane Doe
+Assign: Dick Tracy
+Depend: 00f
+Severity: critical
+Status: assigned
+Tag: topsecret
+Target: Law&Order
 
 --
 Goofy tagline not included, and no comment added.

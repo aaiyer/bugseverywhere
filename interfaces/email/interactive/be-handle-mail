@@ -143,6 +143,8 @@ class ID (object):
     def __init__(self, command):
         self.command = command
     def extract_id(self):
+        if hasattr(self, "cached_id"):
+            return self.cached_id
         assert self.command.ret == 0, self.command.ret
         if self.command.command == u"new":
             regexp = re.compile(u"Created bug with ID (.*)")
@@ -150,7 +152,12 @@ class ID (object):
             raise NotImplementedError, self.command.command
         match = regexp.match(self.command.stdout)
         assert len(match.groups()) == 1, str(match.groups())
-        return match.group(1)
+        self.cached_id = match.group(1)
+        return self.cached_id
+    def __str__(self):
+        if self.command.ret != 0:
+            return "<id for %s>" % repr(self.command)
+        return "<id %s>" % self.extract_id()
 
 class Command (object):
     """
@@ -178,7 +185,7 @@ class Command (object):
         self.stderr = None
         self.err = None
     def __str__(self):
-        return "<command: %s %s>" % (self.command, " ".join(self.args))
+        return "<command: %s %s>" % (self.command, " ".join([str(s) for s in self.args]))
     def normalize_args(self):
         """
         Expand any ID placeholders in self.args.
@@ -409,15 +416,22 @@ class Message (object):
             args.append(summary)
             commands.append(Command(self, command, args))
             comment_body = self._strip_footer(comment_body)
+            id = ID(commands[0])
             if len(comment_body) > 0:
                 command = u"comment"
                 comment = u"Version: %s\n\n"%options[u"Version"] + comment_body
                 args = [u"--author", self.author_addr(),
                         u"--alt-id", self.message_id(),
                         u"--content-type", mime_type]
-                args.append(ID(commands[0]))
+                args.append(id)
                 args.append(u"-")
                 commands.append(Command(self, u"comment", args, stdin=comment))
+            for key,value in options.items():
+                if key in [u"Version", u"Reporter"]:
+                    continue # we've already handled this option
+                command = key.lower()
+                args = [id, value]
+                commands.append(Command(self, command, args))
         elif tag_type == u"comment":
             command = u"comment"
             bug_id = value
