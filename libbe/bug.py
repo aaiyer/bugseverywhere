@@ -177,7 +177,7 @@ class Bug(settings_object.SavedSettingsObject):
     def time_string(): return {}
 
     def _get_time(self):
-        if self.time_string in [None, settings_object.EMPTY]:
+        if self.time_string == None:
             return None
         return utility.str_to_time(self.time_string)
     def _set_time(self, value):
@@ -254,10 +254,9 @@ class Bug(settings_object.SavedSettingsObject):
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value in [None, settings_object.EMPTY]:
+        if value == None:
             return ""
-        else:
-            return str(value)
+        return str(value)
 
     def xml(self, show_comments=False):
         if self.bugdir == None:

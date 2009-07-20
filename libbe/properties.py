@@ -296,7 +296,7 @@ def cached_property(generator, initVal=None, mutable=False):
 
 def primed_property(primer, initVal=None):
     """
-    Just like a generator_property, except that instead of returning a
+    Just like a cached_property, except that instead of returning a
     new value and running fset to cache it, the primer performs some
     background manipulation (e.g. loads data into instance.settings)
     such that a _second_ pass through fget succeeds.

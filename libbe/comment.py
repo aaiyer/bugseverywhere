@@ -258,10 +258,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value in [None, settings_object.EMPTY]:
+        if value == None:
             return ""
-        else:
-            return str(value)
+        return str(value)
 
     def xml(self, indent=0, shortname=None):
         """

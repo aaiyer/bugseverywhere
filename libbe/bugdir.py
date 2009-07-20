@@ -141,10 +141,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def _guess_encoding(self):
         return encoding.get_encoding()
     def _check_encoding(value):
-        if value != None and value != settings_object.EMPTY:
+        if value != None:
             return encoding.known_encoding(value)
     def _setup_encoding(self, new_encoding):
-        if new_encoding != None and new_encoding != settings_object.EMPTY:
+        # change hook called before generator.
+        if new_encoding not in [None, settings_object.EMPTY]:
             if self._manipulate_encodings == True:
                 encoding.set_IO_stream_encodings(new_encoding)
     def _set_encoding(self, old_encoding, new_encoding):
@@ -222,7 +223,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     def _bug_map(): return {}
 
     def _setup_severities(self, severities):
-        if severities != None and severities != settings_object.EMPTY:
+        if severities not in [None, settings_object.EMPTY]:
             bug.load_severities(severities)
     def _set_severities(self, old_severities, new_severities):
         self._setup_severities(new_severities)
