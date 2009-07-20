@@ -1,0 +1,144 @@
+Overview
+========
+
+The interactive email interface to Bugs Everywhere (BE) attempts to
+provide a Debian-bug-tracking-system-style interface to a BE
+repository.  Users can mail in bug reports, comments, or control
+requests, which will be committed to the served repository.
+Developers can then pull the changes they approve of from the served
+repository into their other repositories and push updates back onto
+the served repository.
+
+For details about the Debian bug tracking system that inspired this
+interface, see http://www.debian.org/Bugs .
+
+Architecture
+============
+
+In order to reduce setup costs, the entire interface can piggyback on
+an existing email address, although from a security standpoint it's
+probably best to create a dedicated user.  Incoming email is filtered
+by procmail, with matching emails being piped into be-handle-mail for
+execution.
+
+Once be-handle-mail recieves the email, the parsing method is selected
+according to the subject tag that procmail used grab the email in the
+first place.  There are three parsing styles:
+    Style                 Subject
+    creating bugs         [be-bug:submit] new bug summary
+    commenting on bugs    [be-bug:<bug-id>] human-specific subject
+    control               [be-bug] human-specific subject
+These are analagous to submit@bugs.debian.org, nnn@bugs.debian.org,
+and control@bugs.debian.org respectively.
+
+Creating bugs
+=============
+
+The create-style interface creates a bug whose summary is given by the
+email's post-tag subject.  The body of the email must begin with a
+psuedo-header containing at least the "Version" field.  Anything after
+the pseudo-header and before a line starting with '--' is, if present,
+attached as the bugs first comment.
+
+    From jdoe@example.com Fri Apr 18 12:00:00 2008
+    From: John Doe <jdoe@example.com>
+    Date: Fri, 18 Apr 2008 12:00:00 +0000
+    Content-Type: text/plain; charset=UTF-8
+    Content-Transfer-Encoding: 8bit
+    Subject: [be-bug:submit] Need tests for the email interface.
+    
+    Version: XYZ
+    Severity: minor
+    
+    Someone should write up a series of test emails to send into
+    be-handle mail so we can test changes quickly without having to
+    use procmail.
+    
+    --
+    Goofy tagline not included.
+
+Commenting on bugs
+==================
+
+The comment-style interface appends a comment to the bug specified in
+the subject tag.  The the first non-multipart body is attached with
+the appropriate content-type.  In the case of "text/plain" contents,
+anything following a line starting with '--' is stripped.
+
+    From jdoe@example.com Fri Apr 18 12:00:00 2008
+    From: John Doe <jdoe@example.com>
+    Date: Fri, 18 Apr 2008 12:00:00 +0000
+    Content-Type: text/plain; charset=UTF-8
+    Content-Transfer-Encoding: 8bit
+    Subject: [be-bug:XYZ] Isolated problem in baz()
+    
+    Finally tracked it down to the bar() call.  Some sort of
+    string<->unicode conversion problem.  Solution ideas?
+    
+    --
+    Goofy tagline not included.
+
+Controlling bugs
+================
+
+The control-style consists of a list of allowed be commands, with one
+command per line.  Blank lines and lines beginning with '#' are
+ignored, as well anything following a line starting with '--'.  All the
+listed commands are executed in order and their output returned.
+Note that currently arguments are split on spaces, so
+  "John Doe" -> ['"John', 'Doe"']
+I'm thinking about how to fix this, but for the time being it's best
+to avoid spaces.
+
+    From jdoe@example.com Fri Apr 18 12:00:00 2008
+    From: John Doe <jdoe@example.com>
+    Date: Fri, 18 Apr 2008 12:00:00 +0000
+    Content-Type: text/plain; charset=UTF-8
+    Content-Transfer-Encoding: 8bit
+    Subject: [be-bug] I'll handle XYZ by release 1.2.3
+    
+    assign XYZ John
+    status XYZ assigned
+    severity XYZ critical
+    target XYZ 1.2.3
+    
+    --
+    Goofy tagline ignored.
+
+Example emails
+==============
+
+Take a look at my interfaces/email/interactive/examples for some
+more examples.
+
+Procmail rules
+==============
+
+The file _procmailrc as it stands is fairly appropriate for as a
+dedicated user's ~/.procmailrc.  It forwards matching mail to
+be-handle-mail, which should be installed somewhere in the user's
+path.  All non-matching mail is dumped into /dev/null.  Everything
+procmail does will be logged to ~/be-mail/procmail.log.
+
+If you're piggybacking the interface on top of an existing account,
+you probably only need to add the be-handle-mail stanza to your
+existing ~/.procmailrc, since you will still want to recieve non-bug
+emails.
+
+Note that you will probably have to add a
+  --be-dir /path/to/served/repo
+option to the be-handle-mail invocation so it knows what repo to
+serve.
+
+Multiple repos may be served by the same email address by adding
+multiple be-handle-mail stanzas, each matching a different tag, for
+example the "[be-bug" portion of the stanza could be "[projectX-bug",
+"[projectY-bug", etc.  If you change the base tag, be sure to add a
+  --tag-base "projectX-bug"
+or equivalent to your be-handle-mail invocation.
+
+Testing
+=======
+
+Send test emails in to be-handle-mail with something like
+  cat examples/blank | ./be-handle-mail -o -l - -a
