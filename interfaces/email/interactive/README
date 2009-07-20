@@ -86,12 +86,10 @@ Controlling bugs
 
 This interface consists of a list of allowed be commands, with one
 command per line.  Blank lines and lines beginning with '#' are
-ignored, as well anything following a line starting with '--'.  All the
-listed commands are executed in order and their output returned.
-Note that currently arguments are split on spaces, so
-  "John Doe" -> ['"John', 'Doe"']
-I'm thinking about how to fix this, but for the time being it's best
-to avoid spaces.
+ignored, as well anything following a line starting with '--'.  All
+the listed commands are executed in order and their output returned.
+The commands are split into arguments with the POSIX-compliant
+shlex.split().
 
     From jdoe@example.com Fri Apr 18 12:00:00 2008
     From: John Doe <jdoe@example.com>
@@ -100,7 +98,7 @@ to avoid spaces.
     Content-Transfer-Encoding: 8bit
     Subject: [be-bug] I'll handle XYZ by release 1.2.3
     
-    assign XYZ John
+    assign XYZ "John Doe <jdoe@example.com>"
     status XYZ assigned
     severity XYZ critical
     target XYZ 1.2.3

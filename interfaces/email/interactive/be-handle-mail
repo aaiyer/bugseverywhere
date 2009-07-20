@@ -42,16 +42,18 @@ import cStringIO as StringIO
 import email
 from email.mime.multipart import MIMEMultipart
 import email.utils
-import libbe.cmdutil, libbe.encoding, libbe.utility
 import os
 import os.path
 import re
-import send_pgp_mime
+import shlex
 import sys
 import time
 import traceback
 import doctest
 import unittest
+
+import libbe.cmdutil, libbe.encoding, libbe.utility
+import send_pgp_mime
 
 HANDLER_ADDRESS = u"BE Bugs <wking@thor.physics.drexel.edu>"
 _THIS_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -452,7 +454,7 @@ class Message (object):
                     continue
                 if line.startswith(BREAK):
                     break
-                fields = line.split()
+                fields = shlex.split(line)
                 command,args = (fields[0], fields[1:])
                 commands.append(Command(self, command, args))
             if len(commands) == 0:
