@@ -60,7 +60,7 @@ def execute(args, test=False):
         st[s] = 0
     for b in bd:
         stime[b.uuid]  = b.time
-        if b.status == "open":
+        if b.status in ["open", "test", "unconfirmed", "assigned"]:
             bugs.append(b)
         st[b.status] += 1
     ordered_bug_list = sorted([(value,key) for (key,value) in stime.items()])
@@ -113,24 +113,16 @@ class BEHTMLGen():
         FO.write(index_first)
         c = 0
         t = len(bugs) - 1
-        for l in range(t,  0,  -1):
-            line = bug_line
-            line1 = re.sub('_bug_id_link_', bugs[l].uuid, line)
-            line = line1
-            line1 = re.sub('_bug_id_', bugs[l].uuid[0:3], line)
-            line = line1
-            line1 = re.sub('_status_', bugs[l].status, line)
-            line = line1
-            line1 = re.sub('_sev_', bugs[l].severity, line)
-            line = line1
-            line1 = re.sub('_descr_', bugs[l].summary, line)
-            line = line1
-            line2 = re.sub('_time_',  time.ctime(bugs[l].time),  line1)
-            if c%2 == 0:
-                linef = re.sub('_ROW_',  "even-row",  line2)
-            else:
-                linef = re.sub('_ROW_',  "odd-row",  line2)
-            FO.write(linef)
+        for l in range(t,  -1,  -1):
+            line = bug_line%(bugs[l].status,
+            bugs[l].uuid, bugs[l].uuid[0:3],
+            bugs[l].uuid,  bugs[l].status,
+            bugs[l].uuid,  bugs[l].severity,
+            bugs[l].uuid,  bugs[l].summary,
+            bugs[l].uuid,  bugs[l].time_string
+            )
+            print line
+            FO.write(line)
             c += 1
             self.CreateDetailFile(bugs[l], out_dir_path)
         FO.write(index_last)
@@ -143,8 +135,23 @@ class BEHTMLGen():
             FD = open(p, "w")
         except:
             raise  cmdutil.UsageError, "Cannot create the detail html file."
+
+        detail_first_ = re.sub('_bug_id_', bug.uuid[0:3], detail_first)
+        FD.write(detail_first_)
+        bug.load_comments()
         
-        FD.write(index_first)
-        
-        FD.write(index_last)
+        c = bug.comment_root
+        print c.body
+        FD.write(detail_line%("ID : ", bug.uuid))
+        FD.write(detail_line%("Short name : ", bug.uuid[0:3]))
+        FD.write(detail_line%("Severity : ", bug.severity))
+        FD.write(detail_line%("Status : ", bug.status))
+        FD.write(detail_line%("Assigned : ", bug.assigned))
+        FD.write(detail_line%("Target : ", bug.target))
+        FD.write(detail_line%("Reporter : ", bug.reporter))
+        FD.write(detail_line%("Creator : ", bug.creator))
+        FD.write(detail_line%("Created : ", bug.time_string))
+        FD.write(detail_line%("Summary : ", bug.summary))
+        FD.write("<tr></tr>")
+        FD.write(detail_last)
         FD.close()
