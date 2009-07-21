@@ -218,6 +218,20 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     @doc_property(doc="A revision control system instance.")
     def rcs(): return {}
 
+    def _extra_strings_check_fn(value):
+        return utility.iterable_full_of_strings(value, \
+                         alternative=settings_object.EMPTY)
+    def _extra_strings_change_hook(self, old, new):
+        self.extra_strings.sort() # to make merging easier
+        self._prop_save_settings(old, new)
+    @_versioned_property(name="extra_strings",
+                         doc="Space for an array of extra strings.  Useful for storing state for functionality implemented purely in becommands/<some_function>.py.",
+                         default=[],
+                         check_fn=_extra_strings_check_fn,
+                         change_hook=_extra_strings_change_hook,
+                         mutable=True)
+    def extra_strings(): return {}
+
     def __init__(self, bug=None, uuid=None, from_disk=False,
                  in_reply_to=None, body=None):
         """
