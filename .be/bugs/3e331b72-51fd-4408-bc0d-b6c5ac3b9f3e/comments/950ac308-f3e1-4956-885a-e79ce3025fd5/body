@@ -1,0 +1,10 @@
+This creates an interesting situation:
+  Person P subscribes to bug B in repo R.
+  Repo S merges repo R.
+  Person Q comments on B in S.
+  S notifies P :).
+which is nice.  However
+  Person P subscribes to bug B in repo R.
+  Person Q comments on B in repo S.
+  R merges S.
+  P never notified about Q's comment.
