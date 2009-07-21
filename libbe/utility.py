@@ -23,7 +23,6 @@ import time
 import types
 import doctest
 
-
 def search_parent_directories(path, filename):
     """
     Find the file (or directory) named filename in path or in any
@@ -106,5 +105,25 @@ def time_to_gmtime(str_time):
     time_val = str_to_time(str_time)
     return time_to_str(time_val)
 
+def iterable_full_of_strings(value, alternative=None):
+    """
+    Require an iterable full of strings.
+    >>> iterable_full_of_strings([])
+    True
+    >>> iterable_full_of_strings(["abc", "def", u"hij"])
+    True
+    >>> iterable_full_of_strings(["abc", None, u"hij"])
+    False
+    >>> iterable_full_of_strings(None, alternative=None)
+    True
+    """
+    if value == alternative:
+        return True
+    elif not hasattr(value, "__iter__"):
+        return False
+    for x in value:
+        if type(x) not in types.StringTypes:
+            return False
+    return True
 
 suite = doctest.DocTestSuite()

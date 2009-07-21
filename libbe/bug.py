@@ -187,15 +187,8 @@ class Bug(settings_object.SavedSettingsObject):
                     doc="An integer version of .time_string")
 
     def _extra_strings_check_fn(value):
-        "Require an iterable full of strings"
-        if value == settings_object.EMPTY:
-            return True
-        elif not hasattr(value, "__iter__"):
-            return False
-        for x in value:
-            if type(x) not in types.StringTypes:
-                return False
-        return True
+        return utility.iterable_full_of_strings(value, \
+                         alternative=settings_object.EMPTY)
     def _extra_strings_change_hook(self, old, new):
         self.extra_strings.sort() # to make merging easier
         self._prop_save_settings(old, new)
