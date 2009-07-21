@@ -7,7 +7,7 @@ reporter: gianluca <gian@galactica>
 severity: minor
 
 
-status: open
+status: wontfix
 
 
 summary: Add the html files for the severity detail

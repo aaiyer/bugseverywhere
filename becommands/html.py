@@ -66,7 +66,7 @@ def execute(args, test=False):
     ordered_bug_list = sorted([(value,key) for (key,value) in stime.items()])
     #open_bug_list = sorted([(value,key) for (key,value) in bugs.items()])
     
-    html_gen = BEHTMLGen()
+    html_gen = BEHTMLGen(bd)
     html_gen.create_index_file(out_dir,  st, bugs, ordered_bug_list)
     
 def get_parser():
@@ -82,8 +82,9 @@ def help():
     
     
 class BEHTMLGen():
-    def __init__(self):
-        self.index_value = ""        
+    def __init__(self, bd):
+        self.index_value = ""    
+        self.bd = bd
         
     def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug):
         try:
@@ -121,7 +122,6 @@ class BEHTMLGen():
             bugs[l].uuid,  bugs[l].summary,
             bugs[l].uuid,  bugs[l].time_string
             )
-            print line
             FO.write(line)
             c += 1
             self.CreateDetailFile(bugs[l], out_dir_path)
@@ -138,10 +138,14 @@ class BEHTMLGen():
 
         detail_first_ = re.sub('_bug_id_', bug.uuid[0:3], detail_first)
         FD.write(detail_first_)
-        bug.load_comments()
         
-        c = bug.comment_root
-        print c.body
+        
+        
+        bug_ = self.bd.bug_from_shortname(bug.uuid[0:3])
+        bug_.load_comments(load_full=True)
+        for i in bug_.comments():
+            print i.uuid, i.in_reply_to
+        
         FD.write(detail_line%("ID : ", bug.uuid))
         FD.write(detail_line%("Short name : ", bug.uuid[0:3]))
         FD.write(detail_line%("Severity : ", bug.severity))
