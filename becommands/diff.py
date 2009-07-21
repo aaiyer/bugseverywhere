@@ -24,10 +24,10 @@ def execute(args, manipulate_encodings=True):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> original = bd.rcs.commit("Original status")
     >>> bug = bd.bug_from_uuid("a")
     >>> bug.status = "closed"
-    >>> bd.save()
     >>> changed = bd.rcs.commit("Closed bug a")
     >>> os.chdir(bd.root)
     >>> if bd.rcs.versioned == True:
@@ -89,9 +89,10 @@ def get_parser():
     return parser
 
 longhelp="""
-Uses the RCS to compare the current tree with a previous tree, and prints
-a pretty report.  If specifier is given, it is a specifier for the particular
-previous tree to use.  Specifiers are specific to their RCS.  
+Uses the RCS to compare the current tree with a previous tree, and
+prints a pretty report.  If REVISION is given, it is a specifier for
+the particular previous tree to use.  Specifiers are specific to their
+RCS.
 
 For Arch your specifier must be a fully-qualified revision name.
 

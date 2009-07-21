@@ -48,7 +48,6 @@ def execute(args, manipulate_encodings=True):
             if e.name != "status":
                 raise
             raise cmdutil.UserError ("Invalid status: %s" % e.value)
-        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be status BUG-ID [STATUS]")

@@ -1,0 +1,51 @@
+I don't think anyone's changing their mind ;), so tallying the
+comments so far:
+
+On Wed, Jul 15, 2009 at 12:54:05AM +1000, Ben Finney wrote:
+> I still disagree that a timestamp is the right thing to use there. If
+> you want a monotonically-increasing indicator of which revision we're up
+> to, that's immediately available with the revision number from VCS on
+> the main branch. That also has the advantage of producing consecutive
+> numbers for each revision, by definition.
+
++1 for trunk version number.
+
+On Tue, Jul 14, 2009 at 05:27:52PM +0200, Elena of Valhalla wrote:
+> I also have a weak preference for version numbers, as long as they
+> give useful informations on the state the release.
+
++1 for trunk version number.
+
+On Tue, Jul 14, 2009 at 02:29:10PM -0400, Aaron Bentley wrote:
+> We don't do that.  We have official releases every 4 weeks, but we do
+> believe that running bzr.dev is pretty safe, because it's always tested
+> and our test suite is quite thorough.
+
++1 for by hand version bumps.
+
+On Fri, Jul 17, 2009 at 11:37:49PM +0200, Gianluca Montecchi wrote:
+> The version number of trunk _is_ should be the official version number of the 
+> Bugs Everywhere releases. 
+> The version number in branch does not means nothing outside the branch.
+> At least we can have a mechanism to build a version number scheme that is 
+> consistent for us to be able to merge branch easily.
+
++1 for trunk version number.
+
+And me with my timestamps ;).
+
+Sounds like we should go with trunk version number, but that it should
+be set by hand whenever Chris decides to release something, since the
+rest of us don't know what version the trunk is on.  Unless we do
+something like:
+  bzr log -n 0 | grep -B2 'nick: be$' | head -n1 | sed 's/ *revno: \([0-9]*\).*/\1/'
+to extract the last trunk commit referenced from our branch.
+
+Implementation preferences? (i.e. Chris vs. regexp matching :p)
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

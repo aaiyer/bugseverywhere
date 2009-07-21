@@ -44,7 +44,6 @@ def execute(args, manipulate_encodings=True):
                        manipulate_encodings=manipulate_encodings)
     bug = bd.bug_from_shortname(args[0])
     bug.status = "open"
-    bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be open BUG-ID")

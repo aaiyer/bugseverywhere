@@ -96,7 +96,7 @@ def versioned_property(name, doc,
                        require_save=False):
     """
     Combine the common decorators in a single function.
-    
+
     Use zero or one (but not both) of default or generator, since a
     working default will keep the generator from functioning.  Use the
     default if you know what you want the default value to be at
@@ -104,22 +104,29 @@ def versioned_property(name, doc,
     determine a valid default at run time.  If both default and
     generator are None, then the property will be a defaulting
     property which defaults to None.
-        
+
     allowed and check_fn have a similar relationship, although you can
     use both of these if you want.  allowed compares the proposed
     value against a list determined at 'coding time' and check_fn
     allows more flexible comparisons to take place at run time.
-    
+
     Set require_save to True if you want to save the default/generated
     value for a property, to protect against future changes.  E.g., we
     currently expect all comments to be 'text/plain' but in the future
     we may want to default to 'text/html'.  If we don't want the old
     comments to be interpreted as 'text/html', we would require that
     the content type be saved.
-    
+
     change_hook, primer, settings_properties, and
     required_saved_properties are only options to get their defaults
     into our local scope.  Don't mess with them.
+
+    Set mutable=True if:
+      * default is a mutable
+      * your generator function may return mutables
+      * you set change_hook and might have mutable property values
+    See the docstrings in libbe.properties for details on how each of
+    these cases are handled.
     """
     settings_properties.append(name)
     if require_save == True:
@@ -128,7 +135,7 @@ def versioned_property(name, doc,
         fulldoc = doc
         if default != None or generator == None:
             defaulting  = defaulting_property(default=default, null=EMPTY,
-                                              default_mutable=mutable)
+                                              mutable_default=mutable)
             fulldoc += "\n\nThis property defaults to %s." % default
         if generator != None:
             cached = cached_property(generator=generator, initVal=EMPTY,
@@ -180,7 +187,7 @@ class SavedSettingsObject(object):
         # Override.  Must call ._setup_saved_settings() after loading.
         self.settings = {}
         self._setup_saved_settings()
-        
+
     def _setup_saved_settings(self, flag_as_loaded=True):
         """
         To be run after setting self.settings up from disk.  Marks all
@@ -208,7 +215,7 @@ class SavedSettingsObject(object):
         for k in self.required_saved_properties:
             settings[k] = getattr(self, self._setting_name_to_attr_name(k))
         return settings
-    
+
     def clear_cached_setting(self, setting=None):
         "If setting=None, clear *all* cached settings"
         if setting != None:
@@ -392,18 +399,16 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(SAVES == [
                 "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'" # <- TODO.  Where did this come from?
                 ], SAVES)
         self.failUnless(t.settings["List-type"] == [5],t.settings["List-type"])
         self.failUnless(SAVES == [ # the append(5) has not yet been saved
                 "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
                 ], SAVES)
         self.failUnless(t.list_type == [5], t.list_type) # <-get triggers saved
+
         self.failUnless(SAVES == [ # now the append(5) has been saved.
                 "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
                 "'[]' -> '[5]'"
                 ], SAVES)

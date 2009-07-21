@@ -1,0 +1,58 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> Currently setup.py sets the version number for BE to 0.0.193 and the
+> url to http://panoramicfeedback.com/opensource/. These are both a bit
+> outdated ;).
+
+Right, that should change.
+
+> I've switched my branch over to the current url, and moved to
+> last-commit-timestamp version numbers.
+
+Please, no. Timestamps aren't version strings, that's conflating two
+pieces of information with very different meanings. Correlating the two
+is the job of a changelog.
+
+> This removes the "prefered branch" issues with the old scheme, and
+> version numbers should increase monotonically
+
+The English word “should” is ambiguous in this context. Are you saying
+this is desirable, or are you predicting that it will likely be the
+case?
+
+I don't see how it's either, so am doubly confused :-)
+
+> but it looses any stability information suggested by the preceding
+> 0.0.
+
+The convention for three-part version strings is often:
+
+  * Major release number (big changes in how the program works,
+    increasing monotonically per major release, with “0”indicating no
+    major release yet)
+
+  * Minor release number (smaller impact on how the program works,
+    increasing monotonically per minor release, with “0” indicating no
+    minor release yet since the previous major)
+
+  * Patch release number (bug-fix and other changes that don't affect
+    the documented interface, increasing monotonically per patch
+    release, with “0” indicating no patch release since the previous
+    major or minor)
+
+Obviously there's no standard or enforcement for this, but that's the
+interpretation I usually give to dotted version strings in the absence
+of more formal declaration specific to the project.
+
+> We can add those back in if people want. Does the first 0 mean
+> "interfaces in flux" and the second 0 mean "lots of bugs"? If so, I
+> think we're up to 0.1, since the major features are pretty calm.
+
+I disagree with your interpretation and prefer mine, above; on that
+basis, I agree that we're at least up to version 0.1 by now :-)
+
+-- 
+ \         “A lot of water has been passed under the bridge since this |
+  `\                    variation has been played.” chess book, Russia |
+_o__)                                                                  |
+Ben Finney

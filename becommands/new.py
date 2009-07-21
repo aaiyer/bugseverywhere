@@ -59,7 +59,6 @@ def execute(args, manipulate_encodings=True):
         bug.assigned = options.assigned
     elif bd.default_assignee != None:
         bug.assigned = bd.default_assignee
-    bd.save()
     print "Created bug with ID %s" % bd.bug_shortname(bug)
 
 def get_parser():

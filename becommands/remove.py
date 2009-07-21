@@ -44,7 +44,6 @@ def execute(args, manipulate_encodings=True):
                        manipulate_encodings=manipulate_encodings)
     bug = bd.bug_from_shortname(args[0])
     bd.remove_bug(bug)
-    bd.save()
     print "Removed bug %s" % bug.uuid
 
 def get_parser():

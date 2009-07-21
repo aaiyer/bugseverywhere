@@ -339,11 +339,15 @@ class RCS(object):
                 self.add(path)
             else:
                 self.update(path)
-    def mkdir(self, path, allow_no_rcs=False):
+    def mkdir(self, path, allow_no_rcs=False, check_parents=True):
         """
         Create (if neccessary) a directory at path under version
         control.
         """
+        if check_parents == True:
+            parent = os.path.dirname(path)
+            if not os.path.exists(parent): # recurse through parents
+                self.mkdir(parent, allow_no_rcs, check_parents)
         if not os.path.exists(path):
             os.mkdir(path)
             if self._use_rcs(path, allow_no_rcs):
@@ -351,7 +355,9 @@ class RCS(object):
         else:
             assert os.path.isdir(path)
             if self._use_rcs(path, allow_no_rcs):
-                self.update(path)
+                #self.update(path)# Don't update directories.  Changing files
+                pass              # underneath them should be sufficient.
+                
     def duplicate_repo(self, revision=None):
         """
         Get the repository as it was in a given revision.

@@ -177,7 +177,7 @@ class Bug(settings_object.SavedSettingsObject):
     def time_string(): return {}
 
     def _get_time(self):
-        if self.time_string in [None, settings_object.EMPTY]:
+        if self.time_string == None:
             return None
         return utility.str_to_time(self.time_string)
     def _set_time(self, value):
@@ -187,15 +187,8 @@ class Bug(settings_object.SavedSettingsObject):
                     doc="An integer version of .time_string")
 
     def _extra_strings_check_fn(value):
-        "Require an iterable full of strings"
-        if value == settings_object.EMPTY:
-            return True
-        elif not hasattr(value, "__iter__"):
-            return False
-        for x in value:
-            if type(x) not in types.StringTypes:
-                return False
-        return True
+        return utility.iterable_full_of_strings(value, \
+                         alternative=settings_object.EMPTY)
     def _extra_strings_change_hook(self, old, new):
         self.extra_strings.sort() # to make merging easier
         self._prop_save_settings(old, new)
@@ -252,12 +245,16 @@ class Bug(settings_object.SavedSettingsObject):
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
 
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = value
+        for comment in self.comments():
+            comment.set_sync_with_disk(value)
+
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value in [None, settings_object.EMPTY]:
+        if value == None:
             return ""
-        else:
-            return str(value)
+        return str(value)
 
     def xml(self, show_comments=False):
         if self.bugdir == None:
@@ -372,10 +369,17 @@ class Bug(settings_object.SavedSettingsObject):
         mapfile.map_save(self.rcs, path, self._get_saved_settings())
         
     def save(self):
+        """
+        Save any loaded contents to disk.  Because of lazy loading of
+        comments, this is actually not too inefficient.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
         self.save_settings()
-
         if len(self.comment_root) > 0:
-            self.rcs.mkdir(self.get_path("comments"))
             comment.saveComments(self)
 
     def remove(self):

@@ -1,0 +1,37 @@
+On Sat, Jul 18, 2009 at 06:00:46PM -0400, Chris Ball wrote:
+>    > For example, let's assume we have target a, b, c There is a way
+>    > to know that "a" is a past target, "b" is the current target and
+>    > "c" is a future target ?
+> 
+> We could add a "date due" field for each target.
+
+Another option would be a "blocked by" field, since you might miss
+deadlines, or have parallel targeted branches.  Or just pick target
+names following some scheme so the alphanumeric-sort is also a
+dependency-order sort ;).
+
+>    > More: there is a way to know if a target is closed or open ?
+
+There's also
+  $ be list --target 0.1
+If there are active bugs, the target is open.  Otherwise, you must have
+made it ;).
+
+> We could add a "target close" operation that moves all open bugs
+> assigned to one target to the next date-due target.
+
+for bug in `be list --target 0.1 --uuids`; do
+  be target $bug $NEXT_TARGET
+done
+
+To avoid the loop, we could change status, severity, target, etc from
+  be COMMAND BUG ARG
+to
+  be COMMAND ARG BUG [MORE BUGS ...]
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

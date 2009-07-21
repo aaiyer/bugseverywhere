@@ -1,0 +1,22 @@
+Ronny Pfannschmidt <Ronny.Pfannschmidt@gmx.de> writes:
+
+> i want to see the combination of the bug data of all branches
+
+What is your definition of “all branches”? When I'm working with
+distributed VCS, I create branches wherever I feel like, and the VCS
+tool doesn't have some central registry of branches to keep up to date.
+
+How is a tool to determine the set of “all branches”? The distributed
+VCS model means that set is indeterminate.
+
+-- 
+ \         “Pinky, are you pondering what I'm pondering?” “I think so, |
+  `\    Brain, but I find scratching just makes it worse.” —_Pinky and |
+_o__)                                                       The Brain_ |
+Ben Finney
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

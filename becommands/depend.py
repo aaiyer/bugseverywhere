@@ -59,7 +59,6 @@ def execute(args, manipulate_encodings=True):
         else: # add the dependency
             estrs.append(depend_string)
         bugA.extra_strings = estrs # reassign to notice change
-        bugA.save()
 
     depends = []
     for estr in bugA.extra_strings:

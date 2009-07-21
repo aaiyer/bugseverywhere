@@ -66,7 +66,6 @@ def execute(args, manipulate_encodings=True):
             bug.target = None
         else:
             bug.target = args[1]
-        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be target BUG-ID [TARGET]\nor:    be target --list")

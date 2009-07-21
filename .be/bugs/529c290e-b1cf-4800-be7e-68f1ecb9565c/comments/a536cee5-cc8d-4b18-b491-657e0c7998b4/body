@@ -1,0 +1,14 @@
+Hi,
+
+   > Which we don't bother keeping (also NEWS), since "bzr log" works
+   > so nicely.  If you really want an standard changelog, see
+   > http://mail.gnome.org/archives/desktop-devel-list/2007-September/msg00186.html
+
+Actually, there's a `bzr log --gnu-changelog` now, and `bzr help
+log-formats` offers some more styles.  (None of them seem to match
+my preferred style for release announcements exactly, which would
+be `git shortlog`-style.)
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>

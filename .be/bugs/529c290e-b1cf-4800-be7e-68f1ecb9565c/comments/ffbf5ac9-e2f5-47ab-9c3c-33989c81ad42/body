@@ -1,0 +1,44 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> On Tue, Jul 14, 2009 at 10:36:26PM +1000, Ben Finney wrote:
+> > Please, no. Timestamps aren't version strings, that's conflating two
+> > pieces of information with very different meanings. Correlating the
+> > two is the job of a changelog.
+> 
+> Which we don't bother keeping (also NEWS), since "bzr log" works so
+> nicely.
+
+That's not a changelog, that's a commit log of every source-level commit
+made. Far too much detail for a changelog of *user-visible* changes
+associated with a release.
+
+> The timestamp should at least replace the patch release number, which
+> you agree is-desirable-to increase motonically ;).
+
+I still disagree that a timestamp is the right thing to use there. If
+you want a monotonically-increasing indicator of which revision we're up
+to, that's immediately available with the revision number from VCS on
+the main branch. That also has the advantage of producing consecutive
+numbers for each revision, by definition.
+
+> One problem is that we don't actually have "releases". People just
+> clone a branch, install, and go.
+
+I agree that's a problem. I think the solution is to start making
+releases, with specific version strings, as source tarballs.
+
+James Rowe <jnrowe@gmail.com> writes:
+
+>   Isn't there a bzr web interface that at least supports creating
+> tarballs/zips?
+
+Even better: ‘bzr export /tmp/foo.tar.gz’ will create a source tarball
+of all the files in the branch's VCS inventory. All we need to do is
+start the practice of tagging a release in the VCS, and export the
+tarball at that time.
+
+-- 
+ \       “Pinky, are you pondering what I'm pondering?” “Well, I think |
+  `\   so (hiccup), but Kevin Costner with an English accent?” —_Pinky |
+_o__)                                                   and The Brain_ |
+Ben Finney

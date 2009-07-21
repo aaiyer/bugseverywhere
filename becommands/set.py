@@ -62,7 +62,7 @@ def execute(args, manipulate_encodings=True):
         print _value_string(bd, args[0])
     else:
         if args[1] == "none":
-            del bd.settings[args[0]]
+            setattr(bd, args[0], settings_object.EMPTY)
         else:
             if args[0] not in bd.settings_properties:
                 msg = "Invalid setting %s\n" % args[0]
@@ -71,7 +71,6 @@ def execute(args, manipulate_encodings=True):
                 raise cmdutil.UserError(msg)
             old_setting = bd.settings.get(args[0])
             setattr(bd, args[0], args[1])
-        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be set [NAME] [VALUE]")

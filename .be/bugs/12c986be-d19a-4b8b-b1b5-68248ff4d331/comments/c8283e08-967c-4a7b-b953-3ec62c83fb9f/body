@@ -1,0 +1,37 @@
+On Sun, Jul 12, 2009 at 12:57:35AM +1000, Ben Finney wrote:
+> Ronny Pfannschmidt <Ronny.Pfannschmidt@gmx.de> writes:
+> 
+> > i want to see the combination of the bug data of all branches
+> 
+> What is your definition of ???all branches???? When I'm working with
+> distributed VCS, I create branches wherever I feel like, and the VCS
+> tool doesn't have some central registry of branches to keep up to date.
+> 
+> How is a tool to determine the set of ???all branches???? The distributed
+> VCS model means that set is indeterminate.
+
+In the first main Ronny spoke about "public" branches. To me it means that
+if a branch is public, he should like to have a status of that branch.
+
+We all agree (probably ;-) ) that tha main branch is the "right" branch, but
+as I see it, Ronny's question has some logic.
+I'd like to know that a certain bug is fixed in a certain branch, also if it
+is still not merged in the main branch, for various reason (ie I am interested
+in the solution since the bug stop my work) 
+
+Imagine it like a rss feed aggregator: in one place there are all the bugs of
+all the branches that the developers make avaible to the public with 
+a repository. This can make easier the life to who want to try a something
+since he know what branch he must check out, instead of checking all the 
+branch he can find to test if he get what is looking for.
+
+Unluckyly I have no idea how to solve it. :-(
+
+bye
+Gianluca
+ 
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

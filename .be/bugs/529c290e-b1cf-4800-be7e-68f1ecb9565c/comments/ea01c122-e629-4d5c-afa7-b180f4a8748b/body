@@ -1,0 +1,72 @@
+On Tue, Jul 14, 2009 at 10:36:26PM +1000, Ben Finney wrote:
+> "W. Trevor King" <wking@drexel.edu> writes:
+> > I've switched my branch over to the current url, and moved to
+> > last-commit-timestamp version numbers.
+> 
+> Please, no. Timestamps aren't version strings, that's conflating two
+> pieces of information with very different meanings. Correlating the two
+> is the job of a changelog.
+
+Which we don't bother keeping (also NEWS), since "bzr log" works so nicely.
+If you really want an standard changelog, see
+  http://mail.gnome.org/archives/desktop-devel-list/2007-September/msg00186.html
+
+> > This removes the "prefered branch" issues with the old scheme, and
+> > version numbers should increase monotonically
+> 
+> The English word “should” is ambiguous in this context. Are you saying
+> this is desirable, or are you predicting that it will likely be the
+> case?
+
+Both.
+
+> I don't see how it's either, so am doubly confused :-)
+
+The timestamp should at least replace the patch release number, which
+you agree is-desirable-to increase motonically ;).  I also predict
+that it will increase monotonically for any given branch, since the
+branch HEAD will have both the most recent commit and the highest
+version number.  The only problem I can think of is having your clock
+_way_ off, and that is unlikely enough to ignore.  If you hop between
+branches, the timestamp is much more likely to increase going to the
+more modern branch than the bzr revision number, which desynchronize
+between branches fairly quickly.
+
+> The convention for three-part version strings is often:
+> 
+>   * Major release number (big changes in how the program works,
+>     increasing monotonically per major release, with “0”indicating no
+>     major release yet)
+> 
+>   * Minor release number (smaller impact on how the program works,
+>     increasing monotonically per minor release, with “0” indicating no
+>     minor release yet since the previous major)
+> 
+>   * Patch release number (bug-fix and other changes that don't affect
+>     the documented interface, increasing monotonically per patch
+>     release, with “0” indicating no patch release since the previous
+>     major or minor)
+
+One problem is that we don't actually have "releases".  People just
+clone a branch, install, and go.  If you're worried about stability,
+just clone from a more stable branch (i.e., Chris' trunk).  I think
+this is good for distributed development, but maybe makes it hard to
+package into a conventional release-based system.  With the bzr patch
+number in setup.py as the patch release number, I would be releasing
+my 0.1.363 while Chris releases his 0.1.314, even though they're at
+about the same point.  I would rather be releasing my
+  0.1.20090714121347
+while Chris releases his
+  0.1.20090713154540
+Since then the similarity is clearer.
+
+At any rate, I think the two approaches are close enough that an
+auto-updating timestamp beats a manually bumped patch number, since
+no-one ever actually bumps the patch number ;).
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt
