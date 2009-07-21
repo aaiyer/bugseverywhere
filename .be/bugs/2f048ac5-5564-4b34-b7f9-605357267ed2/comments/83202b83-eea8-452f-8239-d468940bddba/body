@@ -1,0 +1,123 @@
+On Fri, Jul 03, 2009 at 10:50:17PM +0200, Gianluca Montecchi wrote:
+> 
+> Hello to everyone
+> 
+> As i said in a previous mail, I am working on a "html" command for be. 
+> The goal is to be able to do something like "be html /web/page" to have in the 
+> /web/page directory some static html pages that basically are the dump of the 
+> be repository, much like ditz have
+> This will enable a simple and fast publish of the bus list and details on the 
+> web, at least in read only mode.
+> 
+> So I'd like to ask some question:
+> 1) is it ok to develop this command ? I know that this is not a fully featured 
+> web interface, but I am sure that it can be usefull.
+> 
+> I am open to suggestion about it of course.
+> 
+> 2) I see that every command is implemented with a python file in the becommand 
+> dir. For a better code, I'd like to split the command implementation into two 
+> files: a file that contain the actual code and a second  file that have the html 
+> related part, any problem with this ? I don't like to have the html part and 
+> the code part in one big and unreadable file.
+> 
+> I'd like to hear other opinion about this.
+> 
+> Thanks for now
+> bye
+> Gianluca
+> 
+> 
+> _______________________________________________
+> Be-devel mailing list
+> Be-devel@bugseverywhere.org
+> http://void.printf.net/cgi-bin/mailman/listinfo/be-devel
+
+On Mon, Jul 06, 2009 at 10:18:33PM +0200, Gianluca Montecchi wrote:
+> This sound like an interesting idea, but what i'd like to do is not, strictly 
+> speaking, a report. It is a full tree of html pages that are browseable, both 
+> on line and offline
+
+I'm not sure what distinction you're making about "report".  You're
+just producing a static snapshot of the current database status,
+right?  The number of pages and completeness of coverage are nice, but
+it's still a static entity generated from a particular snapshot, which
+is what I mean by "report" ;).
+
+> > > 2) I see that every command is implemented with a python file in the
+> > > becommand dir. For a better code, I'd like to split the command
+> > > implementation into two files: a file that contain the actual code and
+> > > a second file that have the html related part, any problem with this ?
+> >
+> > This sounds quite sensible to me. The existence of a command implies a
+> > module of the same name in ‘becommand’, but there's no necessary
+> > implication that that module can't import modules from elsewhere to do
+> > its work.
+> 
+> The "elsewhere"  for now is the same directory, just another module
+> 
+
+On Mon, Jul 06, 2009 at 10:38:56PM +0200, Gianluca Montecchi wrote:
+> > On Fri, Jul 03, 2009 at 10:50:17PM +0200, Gianluca Montecchi wrote:
+> > > The goal is to be able to do something like "be html /web/page" to have
+> > > in the /web/page directory some static html pages that basically are the
+> > > dump of the be repository, much like ditz have
+> >
+> > I think truly interactive frontends like Steve's working on need to be
+> > build on top of libbe directly, since they'll need to make lots of
+> > small changes to the database, and it's to slow to be reloading the
+> > database for every change.  Static dumps like my mbox or Gianluca's
+> > html could just parse the xml output of `be list' and other be
+> > commands.
+> 
+> Ok, but if I want to have an html dump that is browseable, I need to parse the 
+> xml. Am I correct ? 
+> If yes, should not be easiear to use directly the libbe ?
+
+Using libbe directly is easier, but also more tightly tied to the be
+internals which could weigh down future refactoring.  Partly I'm
+afraid of our 2.5 different html-output mechanisms.  Either their
+should be a single Right Way that tries to satisfy everyone, or a
+smorgasbord of loosely coupled translators, so it's not so painful to
+kill them if/when they go out of style :p.
+
+On Mon, Jul 06, 2009 at 10:46:54PM +0200, Gianluca Montecchi wrote:
+> On Saturday 04 July 2009 02:31:26 Chris Ball wrote:
+> > It might be a good idea for "be html" to use the CherryPy web interface
+> > that Steve is working on.  The command could start up the CherryPy app
+> > and scrape all of the available pages to get a stand-alone dump; this
+> > would avoid having to keep two (okay, more than two at this point)
+> > separate sets of HTML templates in the source tree.  What do you think?
+> 
+> It can be do, but this implies that CherryPy must be installed and configured, 
+> a thing that I don't want to impose. My idea is to offer a simpler way to have 
+> some html pages, where you just need to have BE installed.
+
+I agree that not needing CherryPy for a static html dump is good.
+Also, read-only templates will look different from the CherryPy
+interactive templates.  +1 for another quasi-redundant template set
+;).
+
+> >    > 2) I see that every command is implemented with a python file in
+> >    > the becommand dir. For a better code, I'd like to split the
+> >    > command implementation into two files: a file that contain the
+> >    > actual code and a second file that have the html related part,
+> >    > any problem with this ? I don't like to have the html part and
+> >    > the code part in one big and unreadable file.
+> >
+> > I agree that becommands/*.py commands should not contain any HTML
+> > layout code.  Putting it somewhere else instead sounds fine.
+> 
+> I am in doubt with the "somewhere else", since for now I put the html template 
+> into a separate file in the same directory. Suggestion ?
+
+I think that only code intended only for command line use only should
+go into becommands, but really, just dump it anywhere and we can shift
+it around later :p.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

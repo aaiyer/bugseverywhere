@@ -1,0 +1,115 @@
+On Tue, Jul 14, 2009 at 03:29:42PM +0100, James Rowe wrote:
+> * W. Trevor King (wking@drexel.edu) wrote:
+> > One problem is that we don't actually have "releases".  People just
+> > clone a branch, install, and go.
+> 
+>   This is actually the main reason I've manually mirrored the tree in
+> the past, so that users of our projects can get BE.  If tarballs were
+> available I probably wouldn't even bother, but bzr really isn't a nice
+> dependency for just submitting/commenting on bugs.
+
+Fair enough.  It will be good when we get a commit-able web interface
+and/or email interface going.
+
+>   Isn't there a bzr web interface that at least supports creating
+> tarballs/zips?  It is pretty standard functionality for most other VCS'
+> web interfaces so I'm guessing there must be, but loggerhead seems not
+> to support it.
+
+Unfortunately, people would still need bzr to install the versioned source:
+
+  libbe/_version.py:
+          bzr version-info --format python > $@
+
+So you'll need a "release" target in the makefile to build a bzr-less
+install.  While you're at it, you should probably compile the manpage
+too to remove the docbook-to-man dependency.
+
+Do people want a HEAD tarball too?  There must be a bzr equivalent of
+  .git/hooks/post-update
+but I don't know what it is.
+
+> > If you're worried about stability, just clone from a more stable branch
+> > (i.e., Chris' trunk).  I think > this is good for distributed development,
+> > but maybe makes it hard to package into a conventional release-based system.
+> > With the bzr patch number in setup.py as the patch release number, I would be
+> > releasing my 0.1.363 while Chris releases his 0.1.314, even though they're at
+> > about the same point.  I would rather be releasing my
+> >   0.1.20090714121347
+> > while Chris releases his
+> >   0.1.20090713154540
+> > Since then the similarity is clearer.
+> 
+>   Both approaches seem pretty odd to me, as a user you would have no
+> idea if 0.1.200910302359 has the fixes you required in a release you
+> were using that was numbered 0.1.200907141554.  Surely you'd at least be
+> {pre,suf}fixing a branch name to the version.
+
+"be --version" currently gives you the revision id:
+  wking@drexel.edu-20090714121347-c6rloikst1t3m5yl
+which tells you exactly which commit your installed version is based on.
+If we want stick with revision numbers, how about:
+  major.minor.revno-branch_nick
+But then we'd have to pick "unique" branch nicknames...
+
+I'd sliced out the timestamp portion of the revision id so that the
+"patch-number" would be an integer and the branch name wasn't
+references, so that "upgrading" from one branch to another could be
+transparent to the users (who just see an increading timestamp), but
+still available to the developers (who know when commits were made to
+the branches they track, and the likelyhood of to-the-second commit
+collisions in official packages is small).
+
+On Wed, Jul 15, 2009 at 12:54:05AM +1000, Ben Finney wrote:
+> "W. Trevor King" <wking@drexel.edu> writes:
+> 
+> > On Tue, Jul 14, 2009 at 10:36:26PM +1000, Ben Finney wrote:
+> > > Please, no. Timestamps aren't version strings, that's conflating two
+> > > pieces of information with very different meanings. Correlating the
+> > > two is the job of a changelog.
+> > 
+> > Which we don't bother keeping (also NEWS), since "bzr log" works so
+> > nicely.
+> 
+> That's not a changelog, that's a commit log of every source-level commit
+> made. Far too much detail for a changelog of *user-visible* changes
+> associated with a release.
+
+I need a user around to help me determine "user-visable" changes ;).
+My labmates loose interest after be init/new/comment :p.  None of
+which has ever changed, other than set-root -> init ;).
+
+> > The timestamp should at least replace the patch release number, which
+> > you agree is-desirable-to increase motonically ;).
+> 
+> I still disagree that a timestamp is the right thing to use there. If
+> you want a monotonically-increasing indicator of which revision we're up
+> to, that's immediately available with the revision number from VCS on
+> the main branch. That also has the advantage of producing consecutive
+> numbers for each revision, by definition.
+
+But not during branch-switches, while my method skips large regions,
+but probably increases during any reasonable branch-switch.  For
+example, when I upgraded to rich root to pull Ben's patch, I'm not
+sure if Chris upgraded the trunk and merged my branch, or just ditched
+the trunk and cloned my branch.  Using actual bzr revision numbers
+would make switching branches that either wrong (in the case of
+rev-id decreases) or confusing (in the case of a single
+non-consecutive increase).
+
+On Tue, Jul 14, 2009 at 11:11:31AM -0400, Chris Ball wrote:
+>    > I agree that's a problem. I think the solution is to start making
+>    > releases, with specific version strings, as source tarballs.
+> 
+> I'm happy to do this if people think it would be useful, and I don't
+> yet have a strong opinion on whether the releases should come with
+> version numbers or timestamps.
+
+I imagine the news from 2006 to now will be somewhat abridged ;).
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

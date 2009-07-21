@@ -1,0 +1,15 @@
+Hi,
+
+1. is there any way to aggregate over multiple public branches in order
+to get the complete bug state
+
+2. is there any model for storing bigger files at a central place (for
+some of my bugs i have multi-megabyte tarballs attached)
+
+Regards Ronny
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

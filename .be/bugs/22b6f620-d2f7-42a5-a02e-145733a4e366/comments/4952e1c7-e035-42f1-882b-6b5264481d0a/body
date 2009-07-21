@@ -1,0 +1,47 @@
+On Sunday 19 July 2009 00:00:46 Chris Ball wrote:
+> Hi,
+>
+>    > For example, let's assume we have target a, b, c There is a way
+>    > to know that "a" is a past target, "b" is the current target and
+>    > "c" is a future target ?
+>
+> We could add a "date due" field for each target.
+
+Good idea
+
+>    > More: there is a way to know if a target is closed or open ?
+>
+> We could add a "target close" operation that moves all open bugs
+> assigned to one target to the next date-due target.
+
+Nice. But instead of moving all bugs to the next date-due target, I'd prefer 
+to leave the choice to the user
+
+
+> I see problems with these ideas in general, because we're assuming
+> agreement by all parties/branches on when a target's date due is.
+> Maybe it's okay to demand that social conventions be used to handle
+> such a disagreement, or maybe not.
+
+I don't see these as problems per se. We can have two cases:
+
+1) a personal branch (like my html output or Trevor's email interface). In 
+this case there is not any problem to decide the due date
+
+2) a branch with a group of delopers (let it be the canonical branch o an 
+experimental branch): in this case I suppose that working together means to be 
+able to agree on some things
+
+In any case, having the possibility to set a due date does not means that it 
+is obligatory to do it and should be a good idea to offer as many possibilities 
+as we can to the users of BE
+
+bye
+Gianluca
+
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

@@ -1,0 +1,26 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> The interface is basically "place your be command in the subject line"
+
+I would far prefer an interface of “place as many BE commands as you
+like at the top of the message body, ending with an optional terminator
+command, and they will each be executed in turn”.
+
+This would allow a single message to perform a batch of BE commands that
+are related, instead of requiring to send each command in a separate
+message.
+
+It would also leave the subject field free for something more
+descriptive. The subject field could also be used as the summary field
+of newly-created bug reports. With a terminator command, this would
+allow the message to be sent both to BE and to some other recipient
+(e.g. a mailing list) explaining the change.
+
+Have a look at the email interface of the Debian BTS for an example
+<URL:http://www.debian.org/Bugs/server-request>.
+
+-- 
+ \        “Pinky, are you pondering what I'm pondering?” “Wuh, I think |
+  `\    so, Brain, but will they let the Cranberry Duchess stay in the |
+_o__)                         Lincoln Bedroom?” —_Pinky and The Brain_ |
+Ben Finney

@@ -1,0 +1,33 @@
+On Sat, 2009-07-11 at 23:34 +1000, Ben Finney wrote:
+> Ronny Pfannschmidt <Ronny.Pfannschmidt@gmx.de> writes:
+> 
+> > the basic idea is to take a look at all public branches (for exaple
+> > all on lp/bitbucket/github) in order to tell the user of a
+> > webinterface that bug foo is fixed in branch xyz, and if its merged to
+> > the main branch
+> 
+> I don't understand. The state of the bug in the main branch is right
+> there in the main branch; if it's not fixed there, it's not fixed there.
+> If it's merged in from a different branch, the bug state follows all the
+> other changes when they come in.
+> 
+> Can you give an example of what would be done differently?
+> 
+i want to see the combination of the bug data of all branches
+
+for example
+
+i got bug
+its fixed in the branch "something"
+its not fixed/merged to "main"
+
+now something like a website should tell me, this bug has been fixed in
+branch xyz and the fix is not yet merged into main
+
+
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

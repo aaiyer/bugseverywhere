@@ -1,0 +1,25 @@
+Ronny Pfannschmidt <Ronny.Pfannschmidt@gmx.de> writes:
+
+> 1. is there any way to aggregate over multiple public branches in
+> order to get the complete bug state
+
+The bug state is as complete as the source code state. It's exactly as
+aggregated as the rest of the source code; the “complete bug state”
+would be the integration branch where you merge all the feature branches
+and bug-fix branches together.
+
+If instead you want bugs to *not* be tightly linked with the rest of the
+source code state, it seems you don't want a distributed bug tracker
+like Bugs Everywhere.
+
+-- 
+ \     “I cannot conceive that anybody will require multiplications at |
+  `\   the rate of 40,000 or even 4,000 per hour …” —F. H. Wales, 1936 |
+_o__)                                                                  |
+Ben Finney
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

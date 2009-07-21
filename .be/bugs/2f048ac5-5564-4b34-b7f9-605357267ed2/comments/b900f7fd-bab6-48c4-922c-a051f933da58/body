@@ -1,0 +1,35 @@
+Hi Gianluca,
+
+   > As i said in a previous mail, I am working on a "html" command
+   > for be.  The goal is to be able to do something like "be html
+   > /web/page" to have in the /web/page directory some static html
+   > pages that basically are the dump of the be repository, much like
+   > ditz have. This will enable a simple and fast publish of the bus
+   > list and details on the web, at least in read only mode.
+
+It might be a good idea for "be html" to use the CherryPy web interface
+that Steve is working on.  The command could start up the CherryPy app
+and scrape all of the available pages to get a stand-alone dump; this
+would avoid having to keep two (okay, more than two at this point)
+separate sets of HTML templates in the source tree.  What do you think?
+
+   > 2) I see that every command is implemented with a python file in
+   > the becommand dir. For a better code, I'd like to split the
+   > command implementation into two files: a file that contain the
+   > actual code and a second file that have the html related part,
+   > any problem with this ? I don't like to have the html part and
+   > the code part in one big and unreadable file.
+
+I agree that becommands/*.py commands should not contain any HTML
+layout code.  Putting it somewhere else instead sounds fine.
+
+Thanks!
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

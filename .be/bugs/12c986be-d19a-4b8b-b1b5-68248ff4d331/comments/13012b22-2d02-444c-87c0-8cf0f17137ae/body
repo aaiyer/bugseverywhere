@@ -1,0 +1,28 @@
+On Sat, Jul 11, 2009 at 01:54:54PM +0200, Ronny Pfannschmidt wrote:
+> 1. is there any way to aggregate over multiple public branches in order
+> to get the complete bug state
+
+Keeping the bug data with the source helps synchronize bug state and
+source code.  Bug state in branch A may not apply to branch B.  Some
+people like to weaken this source-bug linkage by keeping their bugs in
+a branch all by themselves (ditz [http://ditz.rubyforge.org/]
+currently supports this workflow).  It sounds like you want to move
+from "bugs with code" to "bugs and code in separate branches".  We
+don't have an easy way to do that in BE at the moment, since
+version-control systems like Git have a single working branch at a
+time (I think :p).  What VCS are you using as a backend?
+
+> 2. is there any model for storing bigger files at a central place (for
+> some of my bugs i have multi-megabyte tarballs attached)
+
+  be comment ID "See the tarball at http://yourpage/something.tar.gz"
+Then to grab the tarball, you'd use:
+  wget `be show COMMENT-ID | sed -n 's/ *See the tarball at //p'`
+to grab it.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

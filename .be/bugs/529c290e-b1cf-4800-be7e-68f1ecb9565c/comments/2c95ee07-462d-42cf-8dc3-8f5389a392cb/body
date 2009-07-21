@@ -1,0 +1,96 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+W. Trevor King wrote:
+> Thinking about this some more, I think that the role of the
+> main-branch is to officially sanction the current state of the code as
+> "released".  If a series of commits will leave a branch in a
+> known-unusable form, they should be carried out in some appropriately
+> named development branch.  Then the log of commits to the main branch
+> ("bzr log -n 1" for bzr > ) should produce a fairly respectable
+> changelog.
+
+This is how we develop bzr itself.  The mainline is controlled by PQM,
+which is a tool that merges feature branches, runs the tests, and
+commits only if the tests pass.
+
+$ bzr log --short --limit 10
+ 4534 Canonical.com Patch Queue Manager	2009-07-14 [merge]
+      (abentley) Implement merge --interactive
+
+ 4533 Canonical.com Patch Queue Manager	2009-07-14 [merge]
+      (jml) Merge in changes from 1.17 branch.
+
+ 4532 Canonical.com Patch Queue Manager	2009-07-14 [merge]
+      (igc) zc.buildout Windows build support (Sidnei da Silva)
+
+ 4531 Canonical.com Patch Queue Manager	2009-07-13 [merge]
+      (vila) Delete forgotten debug print
+
+ 4530 Canonical.com Patch Queue Manager	2009-07-13 [merge]
+      (vila) Isolate some tests from TZ
+
+ 4529 Canonical.com Patch Queue Manager	2009-07-13 [merge]
+      (igc) Bazaar 2.0 Upgrade Guide
+
+ 4528 Canonical.com Patch Queue Manager	2009-07-13 [merge]
+      (mbp) correction to news
+
+ 4527 Canonical.com Patch Queue Manager	2009-07-13 [merge]
+      (jml) Merge in 1.17 branch, updating version numbers and NEWS file.
+
+ 4526 Canonical.com Patch Queue Manager	2009-07-10 [merge]
+      (mbp, vila) Finish the *_implementation to per_* test renaming
+
+ 4525 Canonical.com Patch Queue Manager	2009-07-10 [merge]
+      (vila) Quicker check for changes in mutable trees
+
+You can also see all the merges as they come into the mainline:
+
+$ bzr log --short --limit 10 --include-merges
+ 4534 Canonical.com Patch Queue Manager	2009-07-14 [merge]
+      (abentley) Implement merge --interactive
+
+      4526.6.15 Aaron Bentley	2009-07-14
+                Update command help
+
+      4526.6.14 Aaron Bentley	2009-07-14
+                Use default DiffWriter.
+
+      4526.6.13 Aaron Bentley	2009-07-14
+                Add docstring to do_interactive.
+
+      4526.6.12 Aaron Bentley	2009-07-14
+                Updates from review.
+
+      4526.6.11 Aaron Bentley	2009-07-13
+                Update NEWS.
+
+      4526.6.10 Aaron Bentley	2009-07-13 [merge]
+                Merged apply-vocab into merge-interactive.
+
+           4526.7.4 Aaron Bentley	2009-07-13 [merge]
+                    Merged bzr.dev into apply-vocab.
+
+       4526.6.9 Aaron Bentley	2009-07-13 [merge]
+                Merged apply-vocab into merge-interactive.
+
+           4526.7.3 Aaron Bentley	2009-07-13
+                    Test shelve_change.
+
+> This also means that _every_commit_ to a main branch would
+> be an official release.
+
+We don't do that.  We have official releases every 4 weeks, but we do
+believe that running bzr.dev is pretty safe, because it's always tested
+and our test suite is quite thorough.
+
+Aaron
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org
+
+iEYEARECAAYFAkpcznIACgkQ0F+nu1YWqI0yhACePTFUUp6u+Dw+8IRwWOWBQRtb
+TgsAniJq4lqnDfjNACMr7IEt7xYJhx7m
+=BbGG
+-----END PGP SIGNATURE-----

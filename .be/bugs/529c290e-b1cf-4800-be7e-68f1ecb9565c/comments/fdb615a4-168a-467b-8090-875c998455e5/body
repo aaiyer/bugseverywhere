@@ -1,0 +1,55 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> On Wed, Jul 15, 2009 at 12:54:05AM +1000, Ben Finney wrote:
+> > "W. Trevor King" <wking@drexel.edu> writes:
+> > 
+> > > On Tue, Jul 14, 2009 at 10:36:26PM +1000, Ben Finney wrote:
+> > > > Please, no. Timestamps aren't version strings, that's conflating
+> > > > two pieces of information with very different meanings.
+> > > > Correlating the two is the job of a [NEWS file].
+>
+> > If you want a monotonically-increasing indicator of which revision
+> > we're up to, that's immediately available with the revision number
+> > from VCS on the main branch. That also has the advantage of
+> > producing consecutive numbers for each revision, by definition.
+> 
+> But not during branch-switches, while my method skips large regions,
+> but probably increases during any reasonable branch-switch.
+
+I've read this several times now, and I don't see what it's saying.
+
+The assumption I'm making is that there is a single canonical “main
+branch”, from which releases will be made. The version number set in
+that branch is the one which determines the version of Bugs Everywhere
+as a whole.
+
+The revision number is only useful in the context of the branch, so it
+only matters when comparing versions within a branch. When you switch
+between branches, if you're interested in the revision number you'll
+still need to know which branch you're talking about.
+
+Switching between branches doesn't change the canonical version string.
+
+> For example, when I upgraded to rich root to pull Ben's patch, I'm not
+> sure if Chris upgraded the trunk and merged my branch, or just ditched
+> the trunk and cloned my branch. Using actual bzr revision numbers
+> would make switching branches that either wrong (in the case of rev-id
+> decreases) or confusing (in the case of a single non-consecutive
+> increase).
+
+This, then, is an argument for not having the revision number in the
+version string at all. The version then becomes a more traditional
+“major.minor.patch” tuple, and is only ever updated when some release
+manager of the canonical branch decides it's correct to do so.
+
+If we use the ‘bzr version-info --format=python > foo_version.py’
+command in some build routine, the branch's revision number will be
+available directly within Python by importing that module. That would
+allow it to be output in some UI, if that's what you're interested in
+seeing.
+
+-- 
+ \     “Never do anything against conscience even if the state demands |
+  `\                                             it.” —Albert Einstein |
+_o__)                                                                  |
+Ben Finney

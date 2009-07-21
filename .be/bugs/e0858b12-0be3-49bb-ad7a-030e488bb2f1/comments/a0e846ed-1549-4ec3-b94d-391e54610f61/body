@@ -1,0 +1,58 @@
+On Sun, Jul 19, 2009 at 09:09:05AM +1000, Ben Finney wrote:
+> > The interface is basically "place your be command in the subject line"
+> 
+> I would far prefer an interface of “place as many BE commands as you
+> like at the top of the message body, ending with an optional terminator
+> command, and they will each be executed in turn”.
+> ...
+
+I think the idea behind my first approach was "you guys have
+experience with the command line BE interface, so it will be easier to
+test if you don't have to learn the DBT interface."  The Debian people
+have been doing this for a while though, so I imagine their email
+interface is pretty good ;).
+
+Here's a short primer on my take on the DBT interface.
+
+The DBT has three main email addresses, each with it's own parsing style.
+  1) creating bugs (submit@bugs.debian.org)
+  2) commenting on bugs (<bug-number>@bugs.debian.org)
+  3) controlling/managing bugs (control@bugs.debian.org)
+I'm trying to squeeze these down into a single email address to avoid
+having to tinker with the mail delivery system, so I've got everything
+at (wking at tremily dot us) with subject tags:
+  1) creating bugs
+     Subject: [be-bug:submit] new bug summary ...
+  2) commenting on bugs
+     Subject: [be-bug:<bug-number>] human-specific subject
+  3) control
+     Subject: [be-bug] human-specific subject
+
+The parsing styles each follow their DBT counterparts, but currently
+have a much restricted breadth.
+
+The control-style consists of a list of allowed be commands, with one
+command per line.  Blank lines and lines beginning with '#' are
+ignored, as well anything following a line starting with '--'.  All the
+listed commands are executed in order and their output returned.
+
+The comment-style interface appends a comment to the bug specified in
+the subject tag.  The the first non-multipart body is attached with
+the appropriate content-type.  In the case of "text/plain" contents,
+anything following a line starting with '--' is stripped.
+
+The create-style interface creates a bug whose summary is given by the
+email's post-tag subject.  The body of the email must begin with a
+psuedo-header containing at least the "Version" field.  Anything after
+the pseudo-header and before a line starting with '--' is, if present,
+attached as the bugs first comment.
+
+Take a look at my interfaces/email/interactive/examples for some
+examples.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

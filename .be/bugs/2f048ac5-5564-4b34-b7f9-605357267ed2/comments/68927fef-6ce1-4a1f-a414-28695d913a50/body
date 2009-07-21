@@ -1,0 +1,23 @@
+On Sat, Jul 04, 2009 at 10:19:35AM +1000, Ben Finney wrote:
+> Instead of a separate command for each output format, could we have a
+> single "produce a static report of the bug database" command, and
+> specify output format as an option?
+> 
+> How about:
+> 
+>     be report
+>     be report --format ascii
+>     be report --format rst
+>     be report --format html
+
+Do people like this architecture better than my be-xml-to-mbox
+approach?  I think the tradeoff is easy output format implementation
+vs cluttered core codebase.  Should we use both, depending on how
+useful people think the output format will be?
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

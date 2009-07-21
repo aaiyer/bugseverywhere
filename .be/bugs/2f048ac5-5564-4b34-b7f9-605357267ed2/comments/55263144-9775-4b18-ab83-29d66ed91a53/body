@@ -1,0 +1,50 @@
+On Mon, Jul 06, 2009 at 08:26:24AM +1000, Ben Finney wrote:
+> "W. Trevor King" <wking@drexel.edu> writes:
+> 
+> > On Sat, Jul 04, 2009 at 10:19:35AM +1000, Ben Finney wrote:
+> > > Instead of a separate command for each output format, could we have
+> > > a single "produce a static report of the bug database" command, and
+> > > specify output format as an option?
+> > 
+> > Do people like this architecture better than my be-xml-to-mbox
+> > approach?
+> 
+> I think this question is illuminated by the related question: Is mbox
+> output a static report, or another read-write data store?
+
+Gianluca is clearly thinking about a static report:
+
+On Fri, Jul 03, 2009 at 10:50:17PM +0200, Gianluca Montecchi wrote:
+> The goal is to be able to do something like "be html /web/page" to have in the
+> /web/page directory some static html pages that basically are the dump of the
+> be repository, much like ditz have
+
+I think truly interactive frontends like Steve's working on need to be
+build on top of libbe directly, since they'll need to make lots of
+small changes to the database, and it's to slow to be reloading the
+database for every change.  Static dumps like my mbox or Gianluca's
+html could just parse the xml output of `be list' and other be
+commands.
+
+There should also be an xml import for `be new' and `be comment' so
+you could import new bugs/comments from whatever format after writing
+a whatever->xml converter.  This would allow you to email new bugs and
+comments to the database (e.g. via some procmail-spawned
+be-parse-email script) which would give you some level of
+interactivity, but you'd have to regenerate your mbox to see your new
+comments in your mail reader.
+
+I think interactive use that gives you live-updates in your mail
+reader isn't worth the trouble, since you'd need to teach BE imap or
+smtp+mbox-locking.  Hmm, maybe it smtp+mbox-locking wouldn't be so bad,
+but that would be a distinct frontend project like Steve's, not part
+of the becommands.
+
+Trevor
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

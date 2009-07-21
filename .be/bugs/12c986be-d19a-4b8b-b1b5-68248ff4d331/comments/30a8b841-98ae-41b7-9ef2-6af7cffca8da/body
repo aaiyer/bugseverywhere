@@ -1,0 +1,93 @@
+On Mon, Jul 13, 2009 at 09:05:34AM +0200, Ronny Pfannschmidt wrote:
+> On Sun, 2009-07-12 at 19:55 -0400, W. Trevor King wrote:
+> > On Sun, Jul 12, 2009 at 11:20:10PM +0200, Ronny Pfannschmidt wrote:
+> > > On Sat, 2009-07-11 at 11:25 -0400, W. Trevor King wrote:
+> > > > On Sat, Jul 11, 2009 at 03:13:05PM +0200, Ronny Pfannschmidt wrote:
+> > > > > On Sat, 2009-07-11 at 08:50 -0400, W. Trevor King wrote:
+> > > > > > On Sat, Jul 11, 2009 at 01:54:54PM +0200, Ronny Pfannschmidt wrote:
+> > > > > > > 2. is there any model for storing bigger files at a central place (for
+> > > > > > > some of my bugs i have multi-megabyte tarballs attached)
+> > > > > > 
+> > > > > >   be comment ID "See the tarball at http://yourpage/something.tar.gz"
+> > > > > > Then to grab the tarball, you'd use:
+> > > > > >   wget `be show COMMENT-ID | sed -n 's/ *See the tarball at //p'`
+> > > > > > to grab it.
+> > > > >
+> > > > > so the basic idea is to do it completely self-managed
+> > > > > and have have heterogenous sources of extended data?
+> > > > 
+> > > > I assume "extended data" here refers to your tarballs.  What sort of
+> > > > homogenous source did you have in mind?  The comment body is currently
+> > > > just a binary blob for non-text/* types, otherwise it's text in
+> > > > whatever encoding you've configured.
+> > >
+> > > some kind of common upload target for a single project in order to have
+> > > more reliable sources of stuff thats related to bugs but doesnt fit into
+> > > the normal repository
+> > 
+> > Sorry, I'm still having trouble with "doesn't fit into the normal
+> > repository".  It's going to be large wherever you keep it.  You
+> > worried about multiple branches all having these big tarballs in them
+> > and want a "lightweight" checkout without all the big
+> > tarballs/whatever?  I still think having some sort of "resources"
+> > directory on an http server somewhere that you link to from comments
+> > is the best plan.  If you use the
+> >   be show --xml ID | be-xml-to-mbox | catmutt
+> > approach, you can even write your comments in text/html and get
+> > clickable links ;).  A "push big file to remote and commit comment
+> > linking to it" script would be pretty simple and keep everything
+> > consistent.
+>
+> thats probably what i want to do
+
+#!/bin/bash
+REMOTE_DIR="you@webhost:./public_html/bigfiles"
+REMOTE_LINK="http://www.webhost.com/bigfiles"
+if [ $# -ne 2 ]; then
+   echo "usage: $0 ID BIGFILE"
+   exit 1
+fi
+ID="$1"
+BIGFILE="$2"
+be comment "$ID" "Large file stored at ${REMOTE_LINK}/${BIGFILE}" && scp "$BIGFILE" "${REMOTE_DIR}"
+
+> > > > On Sun, Jul 12, 2009 at 12:57:35AM +1000, Ben Finney wrote:
+> > > > > Ronny Pfannschmidt <Ronny.Pfannschmidt@gmx.de> writes:
+> > > > > 
+> > > > > > i want to see the combination of the bug data of all branches
+> > > > > 
+> > > > > How is a tool to determine the set of “all branches”? The distributed
+> > > > > VCS model means that set is indeterminate.
+> > > > 
+> > > > He could just make a list of branches he likes.
+> > > > 
+> > > > Ronny, are you looking to check bug status across several repos on the
+> > > > fly, or periodically run something (with cron, etc.) to update a
+> > > > static multi-repo summary?
+> > >
+> > > on the fly access
+> > 
+> > Then listing bugs in a remote repo will either involve httping tons of
+> > tiny values files for each bug (slow?) or running some hypothetical
+> > BE-server locally for each repo speaking some BE-specific protocol
+> > (complicated?).  And how would you handle e.g. headless git repos,
+> > where nothing's even checked out?
+> > 
+> > You could always run the cron job every 15 minutes, and rely on
+> > whatever VCS you're using having some intelligent protocol/procedure
+> > to keep bandwidth down ;).  If you need faster / more-efficient
+> > updates, you'll probably need to throw out polling altogether and
+> > setup all involved repos with a "push to central-repo on commit" hook
+> > or some such.
+>
+> its intended to run on the place where i publish the repositories anyway
+
+Oh, you mean all the repos you want to cover are all _already_ on the
+same host?
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt
