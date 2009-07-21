@@ -594,14 +594,17 @@ class DecoratorTests(unittest.TestCase):
         t.x = []
         self.failUnless(t.old == None, t.old)
         self.failUnless(t.new == [], t.new)
+        self.failUnless(t.hook_calls == 1, t.hook_calls)
         a = t.x
         a.append(5)
         t.x = a
         self.failUnless(t.old == [], t.old)
         self.failUnless(t.new == [5], t.new)
+        self.failUnless(t.hook_calls == 2, t.hook_calls)
         t.x = []
         self.failUnless(t.old == [5], t.old)
         self.failUnless(t.new == [], t.new)
+        self.failUnless(t.hook_calls == 3, t.hook_calls)
         # now append without reassigning.  this doesn't trigger the
         # change, since we don't ever set t.x, only get it and mess
         # with it.  It does, however, update our t.new, since t.new =
@@ -609,25 +612,26 @@ class DecoratorTests(unittest.TestCase):
         t.x.append(5)
         self.failUnless(t.old == [5], t.old)
         self.failUnless(t.new == [5], t.new)
+        self.failUnless(t.hook_calls == 3, t.hook_calls)
         # however, the next t.x get _will_ notice the change...
         a = t.x
         self.failUnless(t.old == [], t.old)
         self.failUnless(t.new == [5], t.new)
-        self.failUnless(t.hook_calls == 6, t.hook_calls)
+        self.failUnless(t.hook_calls == 4, t.hook_calls)
         t.x.append(6) # this append(6) is not noticed yet
         self.failUnless(t.old == [], t.old)
         self.failUnless(t.new == [5,6], t.new)
-        self.failUnless(t.hook_calls == 6, t.hook_calls)
+        self.failUnless(t.hook_calls == 4, t.hook_calls)
         # this append(7) is not noticed, but the t.x get causes the
         # append(6) to be noticed
         t.x.append(7)
         self.failUnless(t.old == [5], t.old)
         self.failUnless(t.new == [5,6,7], t.new)
-        self.failUnless(t.hook_calls == 7, t.hook_calls)
+        self.failUnless(t.hook_calls == 5, t.hook_calls)
         a = t.x # now the append(7) is noticed
         self.failUnless(t.old == [5,6], t.old)
         self.failUnless(t.new == [5,6,7], t.new)
-        self.failUnless(t.hook_calls == 8, t.hook_calls)
+        self.failUnless(t.hook_calls == 6, t.hook_calls)
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(DecoratorTests)
