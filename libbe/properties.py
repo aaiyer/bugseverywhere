@@ -52,7 +52,7 @@ def Property(funcs):
     args["fset"] = funcs.get("fset", None)
     args["fdel"] = funcs.get("fdel", None)
     args["doc"] = funcs.get("doc", None)
-    
+
     #print "Creating a property with"
     #for key, val in args.items(): print key, value
     return property(**args)
@@ -77,6 +77,9 @@ def local_property(name, null=None, mutable_null=False):
     Define get/set access to per-parent-instance local storage.  Uses
     ._<name>_value to store the value for a particular owner instance.
     If the ._<name>_value attribute does not exist, returns null.
+
+    If mutable_null == True, we only release deepcopies of the null to
+    the outside world.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -166,11 +169,16 @@ def _cmp_cached_mutable_property(self, cacher_name, property_name, value):
 
 
 def defaulting_property(default=None, null=None,
-                        default_mutable=False,
-                        null_mutable=False):
+                        mutable_default=False):
     """
     Define a default value for get access to a property.
     If the stored value is null, then default is returned.
+
+    If mutable_default == True, we only release deepcopies of the
+    default to the outside world.
+
+    null should never escape to the outside world, so don't worry
+    about it being a mutable.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -181,17 +189,14 @@ def defaulting_property(default=None, null=None,
         def _fget(self):
             value = fget(self)
             if value == null:
-                if default_mutable == True:
+                if mutable_default == True:
                     return copy.deepcopy(default)
                 else:
                     return default
             return value
         def _fset(self, value):
             if value == default:
-                if null_mutable == True:
-                    value = copy.deepcopy(null)
-                else:
-                    value = null
+                value = null
             fset(self, value)
         funcs["fget"] = _fget
         funcs["fset"] = _fset
@@ -261,7 +266,7 @@ def cached_property(generator, initVal=None, mutable=False):
     If the input value is no longer initVal (e.g. a value has been
     loaded from disk or set with fset), that value overrides any
     cached value, and this property has no effect.
-    
+
     When the cache flag is False and the stored value is initVal, the
     generator is not cached, but is called on every fget.
 
@@ -270,7 +275,7 @@ def cached_property(generator, initVal=None, mutable=False):
 
     In the case that mutable == True, all caching is disabled and the
     generator is called whenever the cached value would otherwise be
-    used.  This avoids uncertainties in the value of stored mutables.
+    used.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -331,6 +336,17 @@ def change_hook_property(hook, mutable=False):
     called _after_ the new value has been stored, allowing you to
     change the stored value if you want.
 
+    In the case of mutables, things are slightly trickier.  Because
+    the property-owning class has no way of knowing when the value
+    changes.  We work around this by caching a private deepcopy of the
+    mutable value, and checking for changes whenever the property is
+    set (obviously) or retrieved (to check for external changes).  So
+    long as you're conscientious about accessing the property after
+    making external modifications, mutability woln't be a problem.
+      t.x.append(5) # external modification
+      t.x           # dummy access notices change and triggers hook
+    See testChangeHookMutableProperty for an example of the expected
+    behavior.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -339,7 +355,10 @@ def change_hook_property(hook, mutable=False):
         fset = funcs.get("fset")
         name = funcs.get("name", "<unknown>")
         def _fget(self, new_value=None, from_fset=False): # only used if mutable == True
-            value = fget(self)
+            if from_fset == True:
+                value = new_value # compare new value with cached
+            else:
+                value = fget(self) # compare current value with cached
             if _cmp_cached_mutable_property(self, "change hook property", name, value) != 0:
                 # there has been a change, cache new value
                 old_value = _get_cached_mutable_property(self, "change hook property", name)
@@ -362,7 +381,7 @@ def change_hook_property(hook, mutable=False):
         funcs["fset"] = _fset
         return funcs
     return decorator
-        
+
 
 class DecoratorTests(unittest.TestCase):
     def testLocalDoc(self):
@@ -406,7 +425,7 @@ class DecoratorTests(unittest.TestCase):
             @local_property(name="DEFAULT", null=5)
             def x(): return {}
         t = Test()
-        self.failUnless(t.x == 5, str(t.x)) 
+        self.failUnless(t.x == 5, str(t.x))
         t.x = 'x'
         self.failUnless(t.x == 'y', str(t.x))
         t.x = 'y'
