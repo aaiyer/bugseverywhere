@@ -74,7 +74,10 @@ def comment_message_to_xml(message, fields=None):
     #assert charset == DEFAULT_ENCODING.lower(), \
     #    u"Unknown charset: %s" % charset
 
-    encoding = message[u'content-transfer-encoding'].lower()
+    if message[u'content-transfer-encoding'] == None:
+        encoding = DEFAULT_ENCODING
+    else:
+        encoding = message[u'content-transfer-encoding'].lower()
     body = message.get_payload(decode=True) # attempt to decode
     assert body != None, "Unable to decode?"
     if fields[u'content-type'].startswith(u"text/"):
