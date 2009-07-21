@@ -88,9 +88,10 @@ def get_parser():
     return parser
 
 longhelp="""
-Uses the RCS to compare the current tree with a previous tree, and prints
-a pretty report.  If specifier is given, it is a specifier for the particular
-previous tree to use.  Specifiers are specific to their RCS.  
+Uses the RCS to compare the current tree with a previous tree, and
+prints a pretty report.  If REVISION is given, it is a specifier for
+the particular previous tree to use.  Specifiers are specific to their
+RCS.
 
 For Arch your specifier must be a fully-qualified revision name.
 
