@@ -35,6 +35,8 @@ from xml.sax.saxutils import escape
 DEFAULT_ENCODING = get_encoding()
 set_IO_stream_encodings(DEFAULT_ENCODING)
 
+KNOWN_IDS = []
+
 def comment_message_to_xml(message, fields=None):
     if fields == None:
         fields = {}
@@ -54,6 +56,27 @@ def comment_message_to_xml(message, fields=None):
             new_fields.k = fields[k]
     fields = new_fields
 
+    if fields[u'in-reply-to'] == None:
+        if message[u'references'] != None:
+            refs = message[u'references'].split()
+            for ref in refs: # search for a known reference id.
+                if ref in KNOWN_IDS:
+                    fields[u'in-reply-to'] = ref
+                    break
+            if fields[u'in-reply-to'] == None and len(refs) > 0:
+                fields[u'in-reply-to'] = refs[0] # default to the first
+    else: # check for mutliple in-reply-to references.
+        refs = fields[u'in-reply-to'].split()
+        for ref in refs: # search for a known reference id.
+            if ref in KNOWN_IDS:
+                fields[u'in-reply-to'] = ref
+                break
+        if fields[u'in-reply-to'] == None and len(refs) > 0:
+            fields[u'in-reply-to'] = refs[0] # default to the first
+
+    if fields['alt-id'] != None:
+        KNOWN_IDS.append(fields['alt-id'])
+
     if message.is_multipart():
         ret = []
         alt_id = fields[u'alt-id']
@@ -64,9 +87,9 @@ def comment_message_to_xml(message, fields=None):
                 continue
             fields[u'from'] = from_str
             fields[u'date'] = date
-            if len(ret) >= 0:
-                fields.pop(u'alt-id')
-                fields[u'in-reply-to'] = alt_id
+            if len(ret) > 0: # we've added one part already
+                fields.pop(u'alt-id') # don't pass alt-id to other parts
+                fields[u'in-reply-to'] = alt_id # others respond to first
             ret.append(comment_message_to_xml(m, fields))
             return u'\n'.join(ret)
 
