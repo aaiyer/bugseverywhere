@@ -50,7 +50,6 @@ def execute(args, test=False):
             if e.name != "severity":
                 raise e
             raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
-        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be severity BUG-ID [SEVERITY]")

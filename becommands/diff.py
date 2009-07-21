@@ -24,10 +24,10 @@ def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> original = bd.rcs.commit("Original status")
     >>> bug = bd.bug_from_uuid("a")
     >>> bug.status = "closed"
-    >>> bd.save()
     >>> changed = bd.rcs.commit("Closed bug a")
     >>> os.chdir(bd.root)
     >>> if bd.rcs.versioned == True:

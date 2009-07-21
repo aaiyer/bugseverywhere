@@ -153,7 +153,6 @@ def execute(args, test=False):
         kids = [c.uuid for c in parent.traverse()]
         for nc in new_comments:
             assert nc.uuid in kids, "%s wasn't added to %s" % (nc.uuid, parent.uuid)
-    bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")

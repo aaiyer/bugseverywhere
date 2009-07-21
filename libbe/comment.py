@@ -123,6 +123,7 @@ def loadComments(bug, load_full=False):
         if uuid.startswith('.'):
             continue
         comm = Comment(bug, uuid, from_disk=True)
+        comm.set_sync_with_disk(bug.sync_with_disk)
         if load_full == True:
             comm.load_settings()
             dummy = comm.body # force the body to load
@@ -130,8 +131,6 @@ def loadComments(bug, load_full=False):
     return list_to_root(comments, bug)
 
 def saveComments(bug):
-    path = bug.get_path("comments")
-    bug.rcs.mkdir(path)
     for comment in bug.comment_root.traverse():
         comment.save()
 
@@ -248,6 +247,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 self.From = self.rcs.get_user_id()
             self.in_reply_to = in_reply_to
             self.body = body
+
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = True
 
     def traverse(self, *args, **kwargs):
         """Avoid working with the possible dummy root comment"""
@@ -429,13 +431,19 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         self._setup_saved_settings()
 
     def save_settings(self):
-        parent_dir = os.path.dirname(self.get_path())
-        self.rcs.mkdir(parent_dir)
         self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, self._get_saved_settings())
 
     def save(self):
+        """
+        Save any loaded contents to disk.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
         assert self.body != None, "Can't save blank comment"
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
@@ -460,6 +468,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         True
         """
         reply = Comment(self.bug, body=body)
+        if self.bug != None:
+            reply.set_sync_with_disk(self.bug.sync_with_disk)
+        if reply.sync_with_disk == True:
+            reply.save()
         self.add_reply(reply)
         return reply
 

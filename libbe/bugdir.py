@@ -51,7 +51,7 @@ class NoRootEntry(Exception):
 class AlreadyInitialized(Exception):
     def __init__(self, path):
         self.path = path
-        Exception.__init__(self, 
+        Exception.__init__(self,
                            "Specified root is already initialized: %s" % path)
 
 class MultipleBugMatches(ValueError):
@@ -70,7 +70,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
     """
     Sink to existing root
     ======================
-    
+
     Consider the following usage case:
     You have a bug directory rooted in
       /path/to/source
@@ -85,23 +85,35 @@ class BugDir (list, settings_object.SavedSettingsObject):
       /path/to/source/GUI/.be             miss
       /path/to/source/.be                 hit!
     So it still roots itself appropriately without much work for you.
-        
+
     File-system access
     ==================
-    
-    When rooted in non-bugdir directory, BugDirs live completely in
-    memory until the first call to .save().  This creates a '.be'
-    sub-directory containing configurations options, bugs, comments,
-    etc.  Once this sub-directory has been created (possibly by
-    another BugDir instance) any changes to the BugDir in memory will
-    be flushed to the file system automatically.  However, the BugDir
-    will only load information from the file system when it loads new
-    bugs/comments that it doesn't already have in memory, or when it
-    explicitly asked to do so (e.g. .load() or __init__(from_disk=True)).
-    
+
+    BugDirs live completely in memory when .sync_with_disk is False.
+    This is the default configuration setup by BugDir(from_disk=False).
+    If .sync_with_disk == True (e.g. BugDir(from_disk=True)), then
+    any changes to the BugDir will be immediately written to disk.
+
+    If you want to change .sync_with_disk, we suggest you use
+    .set_sync_with_disk(), which propogates the new setting through to
+    all bugs/comments/etc. that have been loaded into memory.  If
+    you've been living in memory and want to move to
+    .sync_with_disk==True, but you're not sure if anything has been
+    changed in memoryy, a call to save() is a safe move.
+
+    Regardless of .sync_with_disk, a call to .save() will write out
+    all the contents that the BugDir instance has loaded into memory.
+    If sync_with_disk has been True over the course of all interesting
+    changes, this .save() call will be a waste of time.
+
+    The BugDir will only load information from the file system when it
+    loads new bugs/comments that it doesn't already have in memory, or
+    when it explicitly asked to do so (e.g. .load() or
+    __init__(from_disk=True)).
+
     Allow RCS initialization
     ========================
-    
+
     This one is for testing purposes.  Setting it to True allows the
     BugDir to search for an installed RCS backend and initialize it in
     the root directory.  This is a convenience option for supporting
@@ -109,7 +121,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     Disable encoding manipulation
     =============================
-    
+
     This one is for testing purposed.  You might have non-ASCII
     Unicode in your bugs, comments, files, etc.  BugDir instances try
     and support your preferred encoding scheme (e.g. "utf-8") when
@@ -160,7 +172,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def encoding(): return {}
 
     def _setup_user_id(self, user_id):
-        self.rcs.user_id = user_id        
+        self.rcs.user_id = user_id
     def _guess_user_id(self):
         return self.rcs.get_user_id()
     def _set_user_id(self, old_user_id, new_user_id):
@@ -215,7 +227,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if uuid not in map:
                 map[uuid] = None
         self._bug_map_value = map # ._bug_map_value used by @local_property
-    
+
     @Property
     @primed_property(primer=_bug_map_gen)
     @local_property("bug_map")
@@ -270,7 +282,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         # get a temporary rcs until we've loaded settings
         self.sync_with_disk = False
         self.rcs = self._guess_rcs()
-        
+
         if from_disk == True:
             self.sync_with_disk = True
             self.load()
@@ -283,6 +295,11 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
                 rcs = self._guess_rcs(allow_rcs_init)
             self.rcs = rcs
             self._setup_user_id(self.user_id)
+
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = value
+        for bug in self:
+            bug.set_sync_with_disk(value)
 
     def _find_root(self, path):
         """
@@ -302,7 +319,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if beroot == None:
                 raise NoBugDir(path)
             return beroot
-        
+
     def get_version(self, path=None, use_none_rcs=False):
         if use_none_rcs == True:
             RCS = rcs.rcs_by_name("None")
@@ -317,6 +334,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return tree_version
 
     def set_version(self):
+        self.rcs.mkdir(self.get_path())
         self.rcs.set_file_contents(self.get_path("version"),
                                    TREE_VERSION_STRING)
 
@@ -348,7 +366,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if not os.path.exists(self.get_path()):
                 raise NoBugDir(self.get_path())
             self.load_settings()
-            
+
             self.rcs = rcs.rcs_by_name(self.rcs_name)
             self._setup_user_id(self.user_id)
 
@@ -359,10 +377,17 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             self._load_bug(uuid)
 
     def save(self):
-        self.rcs.mkdir(self.get_path())
+        """
+        Save any loaded contents to disk.  Because of lazy loading of
+        bugs and comments, this is actually not too inefficient.
+
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
         self.set_version()
         self.save_settings()
-        self.rcs.mkdir(self.get_path("bugs"))
         for bug in self:
             bug.save()
 
@@ -378,7 +403,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
         # allow_no_rcs=True should only be for the special case of
         # configuring duplicate bugdir settings
-        
+
         try:
             settings = mapfile.map_load(self.rcs, settings_path, allow_no_rcs)
         except rcs.NoSuchFile:
@@ -393,6 +418,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
         # allow_no_rcs=True should only be for the special case of
         # configuring duplicate bugdir settings
+        self.rcs.mkdir(self.get_path(), allow_no_rcs)
         mapfile.map_save(self.rcs, settings_path, settings, allow_no_rcs)
 
     def duplicate_bugdir(self, revision):
@@ -443,6 +469,9 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def new_bug(self, uuid=None, summary=None):
         bg = bug.Bug(bugdir=self, uuid=uuid, summary=summary)
+        bg.set_sync_with_disk(self.sync_with_disk)
+        if bg.sync_with_disk == True:
+            bg.save()
         self.append(bg)
         self._bug_map_gen()
         return bg
@@ -456,7 +485,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         Generate short names from uuids.  Picks the minimum number of
         characters (>=3) from the beginning of the uuid such that the
         short names are unique.
-        
+
         Obviously, as the number of bugs in the database grows, these
         short names will cease to be unique.  The complete uuid should be
         used for long term reference.
@@ -503,7 +532,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if bug_uuid not in self._bug_map:
                 return False
         return True
-        
+
 
 def simple_bug_dir():
     """
@@ -592,14 +621,17 @@ class BugDirTestCase(unittest.TestCase):
         self.failUnless(bugA == bugAprime, "%s != %s" % (bugA, bugAprime))
         self.bugdir.save()
         self.versionTest()
-    def testComments(self):
+    def testComments(self, sync_with_disk=False):
+        if sync_with_disk == True:
+            self.bugdir.set_sync_with_disk(True)
         self.bugdir.new_bug(uuid="a", summary="Ant")
         bug = self.bugdir.bug_from_uuid("a")
         comm = bug.comment_root
         rep = comm.new_reply("Ants are small.")
         rep.new_reply("And they have six legs.")
-        self.bugdir.save()
-        self.bugdir._clear_bugs()        
+        if sync_with_disk == False:
+            self.bugdir.save()
+        self.bugdir._clear_bugs()
         bug = self.bugdir.bug_from_uuid("a")
         bug.load_comments()
         self.failUnless(len(bug.comment_root)==1, len(bug.comment_root))
@@ -623,6 +655,8 @@ class BugDirTestCase(unittest.TestCase):
                                 comment.body)
             else:
                 self.failIf(True, "Invalid comment: %d\n%s" % (index, comment))
+    def testSyncedComments(self):
+        self.testComments(sync_with_disk=True)
 
 unitsuite = unittest.TestLoader().loadTestsFromTestCase(BugDirTestCase)
 suite = unittest.TestSuite([unitsuite])#, doctest.DocTestSuite()])

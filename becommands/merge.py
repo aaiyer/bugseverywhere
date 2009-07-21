@@ -22,6 +22,7 @@ def execute(args, test=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> a = bd.bug_from_shortname("a")
     >>> a.comment_root.time = 0
     >>> dummy = a.new_comment("Testing")
@@ -35,7 +36,6 @@ def execute(args, test=False):
     >>> dummy.time = 1
     >>> dummy = dummy.new_reply("1 2 3 4")
     >>> dummy.time = 2
-    >>> bd.save()
     >>> os.chdir(bd.root)
     >>> execute(["a", "b"], test=True)
     Merging bugs a and b
@@ -140,13 +140,13 @@ def execute(args, test=False):
     bugB.load_comments()
     mergeA = bugA.new_comment("Merged from bug %s" % bugB.uuid)
     newCommTree = copy.deepcopy(bugB.comment_root)
-    for comment in newCommTree.traverse():
+    for comment in newCommTree.traverse(): # all descendant comments
         comment.bug = bugA
-    for comment in newCommTree:
+        comment.save() # force onto disk under bugA
+    for comment in newCommTree: # just the child comments
         mergeA.add_reply(comment, allow_time_inversion=True)
     bugB.new_comment("Merged into bug %s" % bugA.uuid)
     bugB.status = "closed"
-    bd.save()
     print "Merging bugs %s and %s" % (bugA.uuid, bugB.uuid)
 
 def get_parser():

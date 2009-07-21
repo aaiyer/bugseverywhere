@@ -43,7 +43,6 @@ def execute(args, test=False):
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
     bug = bd.bug_from_shortname(args[0])
     bd.remove_bug(bug)
-    bd.save()
     print "Removed bug %s" % bug.uuid
 
 def get_parser():

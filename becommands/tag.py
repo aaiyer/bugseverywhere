@@ -22,6 +22,7 @@ def execute(args, test=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> os.chdir(bd.root)
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
@@ -56,7 +57,6 @@ def execute(args, test=False):
     >>> a.extra_strings = []
     >>> print a.extra_strings
     []
-    >>> a.save()
     >>> execute(["a"], test=True)
     >>> bd._clear_bugs() # resync our copy of bug
     >>> a = bd.bug_from_shortname("a")
@@ -102,7 +102,6 @@ def execute(args, test=False):
         else: # add the tag
             estrs.append(tag_string)
         bug.extra_strings = estrs # reassign to notice change
-        bd.save()
 
     tags = []
     for estr in bug.extra_strings:
