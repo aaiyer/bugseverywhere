@@ -80,7 +80,8 @@ def execute(args, test=False):
         bugname = shortname
         is_reply = False
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=not Test)
     bug = bd.bug_from_shortname(bugname)
     bug.load_comments(load_full=False)
     if is_reply:
@@ -91,7 +92,13 @@ def execute(args, test=False):
     
     if len(args) == 1: # try to launch an editor for comment-body entry
         try:
-            body = editor.editor_string("Please enter your comment above")
+            if parent == bug.comment_root:
+                parent_body = bug.summary+"\n"
+            else:
+                parent_body = parent.body
+            estr = "Please enter your comment above\n\n> %s\n" \
+                % ("\n> ".join(parent_body.splitlines()))
+            body = editor.editor_string(estr)
         except editor.CantFindEditor, e:
             raise cmdutil.UserError, "No comment supplied, and EDITOR not specified."
         if body is None:
@@ -113,6 +120,10 @@ def execute(args, test=False):
     
     if options.XML == False:
         new = parent.new_reply(body=body)
+        if options.author != None:
+            new.From = options.author
+        if options.alt_id != None:
+            new.alt_id = options.alt_id
         if options.content_type != None:
             new.content_type = options.content_type
     else: # import XML comment [list]
@@ -157,6 +168,10 @@ def execute(args, test=False):
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
+    parser.add_option("-a", "--author", metavar="AUTHOR", dest="author",
+                      help="Set the comment author", default=None)
+    parser.add_option("--alt-id", metavar="ID", dest="alt_id",
+                      help="Set an alternate comment ID", default=None)
     parser.add_option("-c", "--content-type", metavar="MIME", dest="content_type",
                       help="Set comment content-type (e.g. text/plain)", default=None)
     parser.add_option("-x", "--xml", action="store_true", default=False,
