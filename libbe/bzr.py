@@ -93,6 +93,14 @@ class Bzr(RCS):
         assert len(match.groups()) == 1
         revision = match.groups()[0]
         return revision
+    def _rcs_revision_id(self, index):
+        status,output,error = self._u_invoke_client("revno")
+        current_revision = int(output)
+        if index >= current_revision or index < -current_revision:
+            return None
+        if index >= 0:
+            return str(index+1) # bzr commit 0 is the empty tree.
+        return str(current_revision+index+1)
     def postcommit(self):
         try:
             self._u_invoke_client('merge')

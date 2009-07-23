@@ -80,14 +80,14 @@ class Hg(RCS):
             strings = ["nothing changed"]
             if self._u_any_in_string(strings, output) == True:
                 raise rcs.EmptyCommit()
-        status,output,error = self._u_invoke_client('identify')
-        revision = None
-        revline = re.compile("(.*) tip")
-        match = revline.search(output)
-        assert match != None, output+error
-        assert len(match.groups()) == 1
-        revision = match.groups()[0]
-        return revision
+        return self._rcs_revision_id(-1)
+    def _rcs_revision_id(self, index, style="id"):
+        args = ["identify", "--rev", str(int(index)), "--%s" % style]
+        kwargs = {"expect": (0,255)}
+        status,output,error = self._u_invoke_client(*args, **kwargs)
+        if status == 0:
+            return output.strip()
+        return None
 
     
 rcs.make_rcs_testcase_subclasses(Hg, sys.modules[__name__])

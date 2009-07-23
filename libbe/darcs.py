@@ -18,8 +18,13 @@ import codecs
 import os
 import re
 import sys
-import unittest
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
+from xml.sax.saxutils import unescape
 import doctest
+import unittest
 
 import rcs
 from rcs import RCS
@@ -138,24 +143,36 @@ class Darcs(RCS):
         args = ['record', '--all', '--author', id, '--logfile', commitfile]
         status,output,error = self._u_invoke_client(*args)
         empty_strings = ["No changes!"]
-        revision = None
         if self._u_any_in_string(empty_strings, output) == True:
             if allow_empty == False:
                 raise rcs.EmptyCommit()
-            else: # we need a extra call to get the current revision
-                args = ["changes", "--last=1", "--xml"]
-                status,output,error = self._u_invoke_client(*args)
-                revline = re.compile("[ \t]*<name>(.*)</name>")
-                # note that darcs does _not_ make an empty revision.
-                # this returns the last non-empty revision id...
+            # note that darcs does _not_ make an empty revision.
+            # this returns the last non-empty revision id...
+            revision = self._rcs_revision_id(-1)
         else:
             revline = re.compile("Finished recording patch '(.*)'")
-        match = revline.search(output)
-        assert match != None, output+error
-        assert len(match.groups()) == 1
-        revision = match.groups()[0]
+            match = revline.search(output)
+            assert match != None, output+error
+            assert len(match.groups()) == 1
+            revision = match.groups()[0]
         return revision
-
+    def _rcs_revision_id(self, index):
+        status,output,error = self._u_invoke_client("changes", "--xml")
+        revisions = []
+        xml_str = output.encode("unicode_escape").replace(r"\n", "\n")
+        element = ElementTree.XML(xml_str)
+        assert element.tag == "changelog", element.tag
+        for patch in element.getchildren():
+            assert patch.tag == "patch", patch.tag
+            for child in patch.getchildren():
+                if child.tag == "name":
+                    text = unescape(unicode(child.text).decode("unicode_escape").strip())
+                    revisions.append(text)
+        revisions.reverse()
+        try:
+            return revisions[index]
+        except IndexError:
+            return None
     
 rcs.make_rcs_testcase_subclasses(Darcs, sys.modules[__name__])
 
