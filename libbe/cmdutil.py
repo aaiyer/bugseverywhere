@@ -2,19 +2,19 @@
 #                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 import glob
 import optparse
 import os
@@ -73,8 +73,10 @@ def get_command(command_name):
 def execute(cmd, args):
     enc = encoding.get_encoding()
     cmd = get_command(cmd)
-    cmd.execute([a.decode(enc) for a in args])
-    return 0
+    ret = cmd.execute([a.decode(enc) for a in args])
+    if ret == None:
+        ret = 0
+    return ret
 
 def help(cmd=None, parser=None):
     if cmd != None:
@@ -163,7 +165,7 @@ def default_complete(options, args, parser, bugid_args={}):
     """
     for option,value in option_value_pairs(options, parser):
         if value == "--complete":
-            raise cmdutil.GetCompletions()
+            raise GetCompletions()
     if len(bugid_args.keys()) > 0:
         max_pos_arg = max(bugid_args.keys())
     else:

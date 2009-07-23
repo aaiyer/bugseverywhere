@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+from libbe import _version
+
+rev_id = _version.version_info["revision_id"]
+rev_date = rev_id.split("-")[1]
 
 setup(
     name='Bugs Everywhere',
-    version='0.0.193',
+    version=rev_date,
     description='Bugtracker built on distributed revision control',
-    url='http://panoramicfeedback.com/opensource/',
+    url='http://bugseverywhere.org/',
     packages=['becommands', 'libbe'],
     scripts=['be'],
     data_files=[

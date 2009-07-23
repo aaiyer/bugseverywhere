@@ -1,18 +1,18 @@
 # Copyright (C) 2008-2009 W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Merge duplicate bugs"""
 from libbe import cmdutil, bugdir
 import os, copy
@@ -22,6 +22,7 @@ def execute(args, test=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> a = bd.bug_from_shortname("a")
     >>> a.comment_root.time = 0
     >>> dummy = a.new_comment("Testing")
@@ -35,7 +36,6 @@ def execute(args, test=False):
     >>> dummy.time = 1
     >>> dummy = dummy.new_reply("1 2 3 4")
     >>> dummy.time = 2
-    >>> bd.save()
     >>> os.chdir(bd.root)
     >>> execute(["a", "b"], test=True)
     Merging bugs a and b
@@ -140,13 +140,13 @@ def execute(args, test=False):
     bugB.load_comments()
     mergeA = bugA.new_comment("Merged from bug %s" % bugB.uuid)
     newCommTree = copy.deepcopy(bugB.comment_root)
-    for comment in newCommTree.traverse():
+    for comment in newCommTree.traverse(): # all descendant comments
         comment.bug = bugA
-    for comment in newCommTree:
+        comment.save() # force onto disk under bugA
+    for comment in newCommTree: # just the child comments
         mergeA.add_reply(comment, allow_time_inversion=True)
     bugB.new_comment("Merged into bug %s" % bugA.uuid)
     bugB.status = "closed"
-    bd.save()
     print "Merging bugs %s and %s" % (bugA.uuid, bugB.uuid)
 
 def get_parser():

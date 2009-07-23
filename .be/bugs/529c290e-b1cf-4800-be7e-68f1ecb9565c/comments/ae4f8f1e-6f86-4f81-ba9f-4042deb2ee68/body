@@ -1,0 +1,37 @@
+On Tue, Jul 14, 2009 at 01:17:25PM -0400, W. Trevor King wrote:
+> On Wed, Jul 15, 2009 at 12:54:05AM +1000, Ben Finney wrote:
+> > "W. Trevor King" <wking@drexel.edu> writes:
+> > 
+> > > On Tue, Jul 14, 2009 at 10:36:26PM +1000, Ben Finney wrote:
+> > > > Please, no. Timestamps aren't version strings, that's conflating two
+> > > > pieces of information with very different meanings. Correlating the
+> > > > two is the job of a changelog.
+> > > 
+> > > Which we don't bother keeping (also NEWS), since "bzr log" works so
+> > > nicely.
+> > 
+> > That's not a changelog, that's a commit log of every source-level commit
+> > made. Far too much detail for a changelog of *user-visible* changes
+> > associated with a release.
+> 
+> I need a user around to help me determine "user-visable" changes ;).
+> My labmates loose interest after be init/new/comment :p.  None of
+> which has ever changed, other than set-root -> init ;).
+
+Thinking about this some more, I think that the role of the
+main-branch is to officially sanction the current state of the code as
+"released".  If a series of commits will leave a branch in a
+known-unusable form, they should be carried out in some appropriately
+named development branch.  Then the log of commits to the main branch
+("bzr log -n 1" for bzr > ) should produce a fairly respectable
+changelog.  Obviously we are all quite guilty of doing most of our
+development in single branches, but it may be a useful model going
+forward.  This also means that _every_commit_ to a main branch would
+be an official release.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

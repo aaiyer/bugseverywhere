@@ -1,0 +1,23 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> On Sat, Jul 04, 2009 at 10:19:35AM +1000, Ben Finney wrote:
+> > Instead of a separate command for each output format, could we have
+> > a single "produce a static report of the bug database" command, and
+> > specify output format as an option?
+> > […]
+> 
+> Do people like this architecture better than my be-xml-to-mbox
+> approach?
+
+I think this question is illuminated by the related question: Is mbox
+output a static report, or another read-write data store?
+
+It can technically be both, of course, which is why the question may be
+helpful: it may help show what is the *conceptual* purpose of the mbox
+output format for Bugs Everywhere.
+
+-- 
+ \         “Time is the great legalizer, even in the field of morals.” |
+  `\                                                 —Henry L. Mencken |
+_o__)                                                                  |
+Ben Finney

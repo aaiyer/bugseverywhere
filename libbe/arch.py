@@ -3,19 +3,19 @@
 #                         James Rowe <jnrowe@ukfsn.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import codecs
 import os
@@ -260,16 +260,17 @@ class Arch(RCS):
         else:
             status,output,error = \
                 self._u_invoke_client("get", revision,directory)
-    def _rcs_commit(self, commitfile):
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        if allow_empty == False:
+            # arch applies empty commits without complaining, so check first
+            status,output,error = self._u_invoke_client("changes",expect=(0,1))
+            if status == 0:
+                raise rcs.EmptyCommit()
         summary,body = self._u_parse_commitfile(commitfile)
-        #status,output,error = self._invoke_client("make-log")
-        if body == None:
-            status,output,error \
-                = self._u_invoke_client("commit","--summary",summary)
-        else:
-            status,output,error \
-                = self._u_invoke_client("commit","--summary",summary,
-                                        "--log-message",body)
+        args = ["commit", "--summary", summary]
+        if body != None:
+            args.extend(["--log-message",body])
+        status,output,error = self._u_invoke_client(*args)
         revision = None
         revline = re.compile("[*] committed (.*)")
         match = revline.search(output)

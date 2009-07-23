@@ -1,19 +1,19 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 import calendar
 import codecs
 import os
@@ -22,7 +22,6 @@ import tempfile
 import time
 import types
 import doctest
-
 
 def search_parent_directories(path, filename):
     """
@@ -106,5 +105,25 @@ def time_to_gmtime(str_time):
     time_val = str_to_time(str_time)
     return time_to_str(time_val)
 
+def iterable_full_of_strings(value, alternative=None):
+    """
+    Require an iterable full of strings.
+    >>> iterable_full_of_strings([])
+    True
+    >>> iterable_full_of_strings(["abc", "def", u"hij"])
+    True
+    >>> iterable_full_of_strings(["abc", None, u"hij"])
+    False
+    >>> iterable_full_of_strings(None, alternative=None)
+    True
+    """
+    if value == alternative:
+        return True
+    elif not hasattr(value, "__iter__"):
+        return False
+    for x in value:
+        if type(x) not in types.StringTypes:
+            return False
+    return True
 
 suite = doctest.DocTestSuite()

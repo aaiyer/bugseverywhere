@@ -2,19 +2,19 @@
 #                         Ben Finney <ben+python@benfinney.id.au>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
 import re
@@ -58,7 +58,7 @@ class Hg(RCS):
     def _rcs_add(self, path):
         self._u_invoke_client("add", path)
     def _rcs_remove(self, path):
-        self._u_invoke_client("rm", path)
+        self._u_invoke_client("rm", "--force", path)
     def _rcs_update(self, path):
         pass
     def _rcs_get_file_contents(self, path, revision=None, binary=False):
@@ -73,8 +73,13 @@ class Hg(RCS):
             return RCS._rcs_duplicate_repo(self, directory, revision)
         else:
             self._u_invoke_client("archive", "--rev", revision, directory)
-    def _rcs_commit(self, commitfile):
-        self._u_invoke_client('commit', '--logfile', commitfile)
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        args = ['commit', '--logfile', commitfile]
+        status,output,error = self._u_invoke_client(*args)
+        if allow_empty == False:
+            strings = ["nothing changed"]
+            if self._u_any_in_string(strings, output) == True:
+                raise rcs.EmptyCommit()
         status,output,error = self._u_invoke_client('identify')
         revision = None
         revline = re.compile("(.*) tip")

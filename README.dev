@@ -31,6 +31,7 @@ consistent interface
 
 Again, you can just browse around in becommands to get a feel for things.
 
+
 Testing
 -------
 
@@ -67,3 +68,12 @@ later.  In recognition of this, cmdutil provides the default_complete
 function which ensures that if '--complete' is any one of the
 arguments, options, or option-arguments, GetCompletions will be raised
 with and empty list.
+
+Profiling
+=========
+
+Find out which 20 calls take the most cumulative time (time of
+execution + childrens' times).
+
+  $ python -m cProfile -o profile be [command] [args]
+  $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_stats(20)"

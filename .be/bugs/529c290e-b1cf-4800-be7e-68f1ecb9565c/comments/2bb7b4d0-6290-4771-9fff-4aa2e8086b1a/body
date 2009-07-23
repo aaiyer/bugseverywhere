@@ -1,0 +1,58 @@
+Chris Ball <cjb@laptop.org> writes:
+
+> Hi,
+> 
+>    > That's not a changelog, that's a commit log of every source-level
+>    > commit made. Far too much detail for a changelog of
+>    > *user-visible* changes associated with a release.
+> 
+> I think I agree with both of you. :) It seems like it's both true that
+> there's no point in keeping a GNU-style ChangeLog these days
+
+I think I have a better understanding of why this apparent disagreement
+occurred, and it was due to my sloppy use of terms.
+
+Looking into it further, it seems there is a certain expectation (set,
+in part, by the long-standing GNU coding conventions) that a “GNU-style
+ChangeLog” contains not only a particular *format*, but information at
+a particular level of *detail*.
+
+That is, a GNU ChangeLog is intended for the style of work where one
+logs all the changes made to every file in the tree each working day,
+and then makes a new day's entry above that, and so on. This is, of
+course, entirely redundant with a VCS revision history, which makes all
+the commit messages available on request.
+
+So to disambiguate, that's not what I meant. I'm more familiar with a
+less-frequently-updated and less-fine-detail change log; perhaps more
+akin to the GNU-style “NEWS” file.
+
+> and that if we make a release we should write an announce mail that
+> directly mentions new user-visible changes as well as attaching the
+> commit log. That smaller list of highly user-visible changes could
+> live in NEWS, or in the announce mail, or both.
+
+Yes, that's mostly what I meant.
+
+I actually don't think the commit log needs to be part of the release at
+all. It's of interest only to those who want fine-level detail about
+changes to every file, and for that purpose I think read access to the
+VCS is much better. Packaging a static copy of the commit log as plain
+text seems pointless.
+
+Rather, we should treat a user-changes level “NEWS” file (or whatever
+name we choose for it) as part of the documentation, and set the
+expectation among the team that it will be updated for each user-visible
+change being worked on, like any other documentation.
+
+-- 
+ \            “… Nature … is seen to do all things Herself and through |
+  `\         herself of own accord, rid of all gods.” —Titus Lucretius |
+_o__)                                                 Carus, c. 40 BCE |
+Ben Finney
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

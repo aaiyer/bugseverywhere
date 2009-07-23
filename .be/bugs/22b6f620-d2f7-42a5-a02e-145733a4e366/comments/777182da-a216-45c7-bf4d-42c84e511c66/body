@@ -1,0 +1,19 @@
+Hi Gianluca,
+
+   > In any case, having the possibility to set a due date does not
+   > means that it is obligatory to do it and should be a good idea to
+   > offer as many possibilities as we can to the users of BE
+
+Okay, sounds reasonable.  Would you like to write a patch for
+associating due dates and open/closed with a target?
+
+Thanks,
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

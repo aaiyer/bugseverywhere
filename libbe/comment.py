@@ -3,20 +3,19 @@
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#    MA 02110-1301, USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 import base64
 import os
 import os.path
@@ -124,6 +123,7 @@ def loadComments(bug, load_full=False):
         if uuid.startswith('.'):
             continue
         comm = Comment(bug, uuid, from_disk=True)
+        comm.set_sync_with_disk(bug.sync_with_disk)
         if load_full == True:
             comm.load_settings()
             dummy = comm.body # force the body to load
@@ -131,8 +131,6 @@ def loadComments(bug, load_full=False):
     return list_to_root(comments, bug)
 
 def saveComments(bug):
-    path = bug.get_path("comments")
-    bug.rcs.mkdir(path)
     for comment in bug.comment_root.traverse():
         comment.save()
 
@@ -220,6 +218,20 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     @doc_property(doc="A revision control system instance.")
     def rcs(): return {}
 
+    def _extra_strings_check_fn(value):
+        return utility.iterable_full_of_strings(value, \
+                         alternative=settings_object.EMPTY)
+    def _extra_strings_change_hook(self, old, new):
+        self.extra_strings.sort() # to make merging easier
+        self._prop_save_settings(old, new)
+    @_versioned_property(name="extra_strings",
+                         doc="Space for an array of extra strings.  Useful for storing state for functionality implemented purely in becommands/<some_function>.py.",
+                         default=[],
+                         check_fn=_extra_strings_check_fn,
+                         change_hook=_extra_strings_change_hook,
+                         mutable=True)
+    def extra_strings(): return {}
+
     def __init__(self, bug=None, uuid=None, from_disk=False,
                  in_reply_to=None, body=None):
         """
@@ -250,6 +262,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             self.in_reply_to = in_reply_to
             self.body = body
 
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = True
+
     def traverse(self, *args, **kwargs):
         """Avoid working with the possible dummy root comment"""
         for comment in Tree.traverse(self, *args, **kwargs):
@@ -259,10 +274,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value in [None, settings_object.EMPTY]:
+        if value == None:
             return ""
-        else:
-            return str(value)
+        return str(value)
 
     def xml(self, indent=0, shortname=None):
         """
@@ -431,13 +445,19 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         self._setup_saved_settings()
 
     def save_settings(self):
-        parent_dir = os.path.dirname(self.get_path())
-        self.rcs.mkdir(parent_dir)
         self.rcs.mkdir(self.get_path())
         path = self.get_path("values")
         mapfile.map_save(self.rcs, path, self._get_saved_settings())
 
     def save(self):
+        """
+        Save any loaded contents to disk.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
         assert self.body != None, "Can't save blank comment"
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
@@ -462,6 +482,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         True
         """
         reply = Comment(self.bug, body=body)
+        if self.bug != None:
+            reply.set_sync_with_disk(self.bug.sync_with_disk)
+        if reply.sync_with_disk == True:
+            reply.save()
         self.add_reply(reply)
         return reply
 

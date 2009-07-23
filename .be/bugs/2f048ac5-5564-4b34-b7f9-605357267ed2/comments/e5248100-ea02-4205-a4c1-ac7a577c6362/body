@@ -1,0 +1,43 @@
+On Thursday 25 June 2009 16:23:04 Steve Losh wrote:
+> On Jun 25, 2009, at 10:02 AM, Chris Ball <cjb@laptop.org> wrote:
+> >> Oh, and obviously there must still be bugs in BE.  Please submit
+> >> more ;).
+> >
+> > Perhaps it's a good time to merge Steve Losh's CherryPy web interface?
+> >
+> > http://void.printf.net/pipermail/be-devel/2009-February/000095.html
+> > http://bitbucket.org/sjl/cherryflavoredbugseverywhere/
+>
+> Hey, I haven't touched the web interface in a while, but I should have
+> some time to fix some stuff up tonight and tomorrow. Hold off on
+> merging it in until then.
+>
+> I'm still curious as to what people think the role of a web interface
+> like this should be. When I wrote it I meant it as a single-user
+> interface like the command line one. It could definitely work as a
+> public, read-only interface too.
+
+I'd really like to have some sort of web interface for  BE, also in read-only 
+mode.
+
+I am thinking to write (actually I wrote some test code) a tool to parse a BE 
+repository to output a set of static html pages to put online, like the "ditz 
+html" command, but this was before I start to play with BE sourcecode, so now 
+I ma thinking to implement it as a BE command.
+
+> If the goal is to allow more than one person to add issues, how should
+> commits go? One commit per change? Commit every X minutes if necessary?
+
+I think that a simple web interface should be read-only. 
+
+Eventually, to allow to add issues also from the web interface, it should be 
+done to a specific branch, one commit per change.  
+
+just my 2 cents...
+bye
+Gianluca
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

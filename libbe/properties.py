@@ -1,18 +1,19 @@
 # Bugs Everywhere - a distributed bugtracker
 # Copyright (C) 2008-2009 W. Trevor King <wking@drexel.edu>
 #
-#   This program is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation, either version 3 of the License, or
-#   (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#   You should have received a copy of the GNU General Public License
-#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
 This module provides a series of useful decorators for defining
@@ -51,7 +52,7 @@ def Property(funcs):
     args["fset"] = funcs.get("fset", None)
     args["fdel"] = funcs.get("fdel", None)
     args["doc"] = funcs.get("doc", None)
-    
+
     #print "Creating a property with"
     #for key, val in args.items(): print key, value
     return property(**args)
@@ -76,6 +77,9 @@ def local_property(name, null=None, mutable_null=False):
     Define get/set access to per-parent-instance local storage.  Uses
     ._<name>_value to store the value for a particular owner instance.
     If the ._<name>_value attribute does not exist, returns null.
+
+    If mutable_null == True, we only release deepcopies of the null to
+    the outside world.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -165,11 +169,16 @@ def _cmp_cached_mutable_property(self, cacher_name, property_name, value):
 
 
 def defaulting_property(default=None, null=None,
-                        default_mutable=False,
-                        null_mutable=False):
+                        mutable_default=False):
     """
     Define a default value for get access to a property.
     If the stored value is null, then default is returned.
+
+    If mutable_default == True, we only release deepcopies of the
+    default to the outside world.
+
+    null should never escape to the outside world, so don't worry
+    about it being a mutable.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -180,17 +189,14 @@ def defaulting_property(default=None, null=None,
         def _fget(self):
             value = fget(self)
             if value == null:
-                if default_mutable == True:
+                if mutable_default == True:
                     return copy.deepcopy(default)
                 else:
                     return default
             return value
         def _fset(self, value):
             if value == default:
-                if null_mutable == True:
-                    value = copy.deepcopy(null)
-                else:
-                    value = null
+                value = null
             fset(self, value)
         funcs["fget"] = _fget
         funcs["fset"] = _fset
@@ -260,7 +266,7 @@ def cached_property(generator, initVal=None, mutable=False):
     If the input value is no longer initVal (e.g. a value has been
     loaded from disk or set with fset), that value overrides any
     cached value, and this property has no effect.
-    
+
     When the cache flag is False and the stored value is initVal, the
     generator is not cached, but is called on every fget.
 
@@ -269,7 +275,7 @@ def cached_property(generator, initVal=None, mutable=False):
 
     In the case that mutable == True, all caching is disabled and the
     generator is called whenever the cached value would otherwise be
-    used.  This avoids uncertainties in the value of stored mutables.
+    used.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -295,7 +301,7 @@ def cached_property(generator, initVal=None, mutable=False):
 
 def primed_property(primer, initVal=None):
     """
-    Just like a generator_property, except that instead of returning a
+    Just like a cached_property, except that instead of returning a
     new value and running fset to cache it, the primer performs some
     background manipulation (e.g. loads data into instance.settings)
     such that a _second_ pass through fget succeeds.
@@ -330,6 +336,17 @@ def change_hook_property(hook, mutable=False):
     called _after_ the new value has been stored, allowing you to
     change the stored value if you want.
 
+    In the case of mutables, things are slightly trickier.  Because
+    the property-owning class has no way of knowing when the value
+    changes.  We work around this by caching a private deepcopy of the
+    mutable value, and checking for changes whenever the property is
+    set (obviously) or retrieved (to check for external changes).  So
+    long as you're conscientious about accessing the property after
+    making external modifications, mutability woln't be a problem.
+      t.x.append(5) # external modification
+      t.x           # dummy access notices change and triggers hook
+    See testChangeHookMutableProperty for an example of the expected
+    behavior.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):
@@ -338,7 +355,10 @@ def change_hook_property(hook, mutable=False):
         fset = funcs.get("fset")
         name = funcs.get("name", "<unknown>")
         def _fget(self, new_value=None, from_fset=False): # only used if mutable == True
-            value = fget(self)
+            if from_fset == True:
+                value = new_value # compare new value with cached
+            else:
+                value = fget(self) # compare current value with cached
             if _cmp_cached_mutable_property(self, "change hook property", name, value) != 0:
                 # there has been a change, cache new value
                 old_value = _get_cached_mutable_property(self, "change hook property", name)
@@ -361,7 +381,7 @@ def change_hook_property(hook, mutable=False):
         funcs["fset"] = _fset
         return funcs
     return decorator
-        
+
 
 class DecoratorTests(unittest.TestCase):
     def testLocalDoc(self):
@@ -405,7 +425,7 @@ class DecoratorTests(unittest.TestCase):
             @local_property(name="DEFAULT", null=5)
             def x(): return {}
         t = Test()
-        self.failUnless(t.x == 5, str(t.x)) 
+        self.failUnless(t.x == 5, str(t.x))
         t.x = 'x'
         self.failUnless(t.x == 'y', str(t.x))
         t.x = 'y'
@@ -574,14 +594,17 @@ class DecoratorTests(unittest.TestCase):
         t.x = []
         self.failUnless(t.old == None, t.old)
         self.failUnless(t.new == [], t.new)
+        self.failUnless(t.hook_calls == 1, t.hook_calls)
         a = t.x
         a.append(5)
         t.x = a
         self.failUnless(t.old == [], t.old)
         self.failUnless(t.new == [5], t.new)
+        self.failUnless(t.hook_calls == 2, t.hook_calls)
         t.x = []
         self.failUnless(t.old == [5], t.old)
         self.failUnless(t.new == [], t.new)
+        self.failUnless(t.hook_calls == 3, t.hook_calls)
         # now append without reassigning.  this doesn't trigger the
         # change, since we don't ever set t.x, only get it and mess
         # with it.  It does, however, update our t.new, since t.new =
@@ -589,25 +612,26 @@ class DecoratorTests(unittest.TestCase):
         t.x.append(5)
         self.failUnless(t.old == [5], t.old)
         self.failUnless(t.new == [5], t.new)
+        self.failUnless(t.hook_calls == 3, t.hook_calls)
         # however, the next t.x get _will_ notice the change...
         a = t.x
         self.failUnless(t.old == [], t.old)
         self.failUnless(t.new == [5], t.new)
-        self.failUnless(t.hook_calls == 6, t.hook_calls)
+        self.failUnless(t.hook_calls == 4, t.hook_calls)
         t.x.append(6) # this append(6) is not noticed yet
         self.failUnless(t.old == [], t.old)
         self.failUnless(t.new == [5,6], t.new)
-        self.failUnless(t.hook_calls == 6, t.hook_calls)
+        self.failUnless(t.hook_calls == 4, t.hook_calls)
         # this append(7) is not noticed, but the t.x get causes the
         # append(6) to be noticed
         t.x.append(7)
         self.failUnless(t.old == [5], t.old)
         self.failUnless(t.new == [5,6,7], t.new)
-        self.failUnless(t.hook_calls == 7, t.hook_calls)
+        self.failUnless(t.hook_calls == 5, t.hook_calls)
         a = t.x # now the append(7) is noticed
         self.failUnless(t.old == [5,6], t.old)
         self.failUnless(t.new == [5,6,7], t.new)
-        self.failUnless(t.hook_calls == 8, t.hook_calls)
+        self.failUnless(t.hook_calls == 6, t.hook_calls)
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(DecoratorTests)

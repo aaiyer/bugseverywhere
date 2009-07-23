@@ -4,19 +4,19 @@
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Show a particular bug"""
 import sys
 from libbe import cmdutil, bugdir
@@ -58,6 +58,8 @@ def execute(args, test=False):
     if len(args) == 0:
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    if options.XML:
+        print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
     for shortname in args:
         if shortname.count(':') > 1:
             raise cmdutil.UserError("Invalid id '%s'." % shortname)        
@@ -68,32 +70,37 @@ def execute(args, test=False):
         else:
             bugname = shortname
             is_comment = False
+        if is_comment == True and options.comments == False:
+            continue
         bug = bd.bug_from_shortname(bugname)
         if is_comment == False:
-            if options.dumpXML:
-                print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
-                print bug.xml(show_comments=True)
+            if options.XML:
+                print bug.xml(show_comments=options.comments)
             else:
-                print bug.string(show_comments=True)
+                print bug.string(show_comments=options.comments)
         else:
             comment = bug.comment_root.comment_from_shortname(
                 shortname, bug_shortname=bugname)
-            if options.dumpXML:
+            if options.XML:
                 print comment.xml(shortname=shortname)
             else:
                 if len(args) == 1 and options.only_raw_body == True:
                     sys.__stdout__.write(comment.body)
                 else:
                     print comment.string(shortname=shortname)
-        if shortname != args[-1] and options.dumpXML == False:
+        if shortname != args[-1] and options.XML == False:
             print "" # add a blank line between bugs/comments
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show [options] ID [ID ...]")
-    parser.add_option("-x", "--xml", action="store_true",
-                      dest='dumpXML', help="Dump as XML")
+    parser.add_option("-x", "--xml", action="store_true", default=False,
+                      dest='XML', help="Dump as XML")
     parser.add_option("--only-raw-body", action="store_true",
-                      dest='only_raw_body', help="When printing only a single comment, just print it's body.  This allows extraction of non-text content types.")
+                      dest='only_raw_body',
+                      help="When printing only a single comment, just print it's body.  This allows extraction of non-text content types.")
+    parser.add_option("-c", "--no-comments", dest="comments",
+                      action="store_false", default=True,
+                      help="Disable comment output.  This is useful if you just want more details on a bug's current status.")
     return parser
 
 longhelp="""

@@ -2,19 +2,19 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
 import re
@@ -93,9 +93,18 @@ class Git(RCS):
             #self._u_invoke_client("archive", revision, directory) # makes tarball
             self._u_invoke_client("clone", "--no-checkout",".",directory)
             self._u_invoke_client("checkout", revision, directory=directory)
-    def _rcs_commit(self, commitfile):
-        status,output,error = self._u_invoke_client('commit', '-a',
-                                                    '-F', commitfile)
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        args = ['commit', '--all', '--file', commitfile]
+        if allow_empty == True:
+            args.append("--allow-empty")
+            status,output,error = self._u_invoke_client(*args)
+        else:
+            kwargs = {"expect":(0,1)}
+            status,output,error = self._u_invoke_client(*args, **kwargs)
+            strings = ["nothing to commit",
+                       "nothing added to commit"]
+            if self._u_any_in_string(strings, output) == True:
+                raise rcs.EmptyCommit()
         revision = None
         revline = re.compile("(.*) (.*)[:\]] (.*)")
         match = revline.search(output)

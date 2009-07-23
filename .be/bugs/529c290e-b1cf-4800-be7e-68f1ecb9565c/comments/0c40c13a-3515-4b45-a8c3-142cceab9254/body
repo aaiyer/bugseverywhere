@@ -1,0 +1,36 @@
+* W. Trevor King (wking@drexel.edu) wrote:
+> One problem is that we don't actually have "releases".  People just
+> clone a branch, install, and go.
+
+  This is actually the main reason I've manually mirrored the tree in
+the past, so that users of our projects can get BE.  If tarballs were
+available I probably wouldn't even bother, but bzr really isn't a nice
+dependency for just submitting/commenting on bugs.
+
+  Isn't there a bzr web interface that at least supports creating
+tarballs/zips?  It is pretty standard functionality for most other VCS'
+web interfaces so I'm guessing there must be, but loggerhead seems not
+to support it.
+
+  If it is a case of not having the hardware to host a more featureful
+web UI I may be able to offer some assistance.
+
+> If you're worried about stability, just clone from a more stable branch
+> (i.e., Chris' trunk).  I think > this is good for distributed development,
+> but maybe makes it hard to package into a conventional release-based system.
+> With the bzr patch number in setup.py as the patch release number, I would be
+> releasing my 0.1.363 while Chris releases his 0.1.314, even though they're at
+> about the same point.  I would rather be releasing my
+>   0.1.20090714121347
+> while Chris releases his
+>   0.1.20090713154540
+> Since then the similarity is clearer.
+
+  Both approaches seem pretty odd to me, as a user you would have no
+idea if 0.1.200910302359 has the fixes you required in a release you
+were using that was numbered 0.1.200907141554.  Surely you'd at least be
+{pre,suf}fixing a branch name to the version.
+
+Thanks,
+
+James

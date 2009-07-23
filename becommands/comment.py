@@ -2,19 +2,19 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Add a comment to a bug"""
 from libbe import cmdutil, bugdir, comment, editor
 import os
@@ -80,7 +80,8 @@ def execute(args, test=False):
         bugname = shortname
         is_reply = False
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=not test)
     bug = bd.bug_from_shortname(bugname)
     bug.load_comments(load_full=False)
     if is_reply:
@@ -91,7 +92,13 @@ def execute(args, test=False):
     
     if len(args) == 1: # try to launch an editor for comment-body entry
         try:
-            body = editor.editor_string("Please enter your comment above")
+            if parent == bug.comment_root:
+                parent_body = bug.summary+"\n"
+            else:
+                parent_body = parent.body
+            estr = "Please enter your comment above\n\n> %s\n" \
+                % ("\n> ".join(parent_body.splitlines()))
+            body = editor.editor_string(estr)
         except editor.CantFindEditor, e:
             raise cmdutil.UserError, "No comment supplied, and EDITOR not specified."
         if body is None:
@@ -113,6 +120,10 @@ def execute(args, test=False):
     
     if options.XML == False:
         new = parent.new_reply(body=body)
+        if options.author != None:
+            new.From = options.author
+        if options.alt_id != None:
+            new.alt_id = options.alt_id
         if options.content_type != None:
             new.content_type = options.content_type
     else: # import XML comment [list]
@@ -153,10 +164,14 @@ def execute(args, test=False):
         kids = [c.uuid for c in parent.traverse()]
         for nc in new_comments:
             assert nc.uuid in kids, "%s wasn't added to %s" % (nc.uuid, parent.uuid)
-    bd.save()
+            nc.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
+    parser.add_option("-a", "--author", metavar="AUTHOR", dest="author",
+                      help="Set the comment author", default=None)
+    parser.add_option("--alt-id", metavar="ID", dest="alt_id",
+                      help="Set an alternate comment ID", default=None)
     parser.add_option("-c", "--content-type", metavar="MIME", dest="content_type",
                       help="Set comment content-type (e.g. text/plain)", default=None)
     parser.add_option("-x", "--xml", action="store_true", default=False,

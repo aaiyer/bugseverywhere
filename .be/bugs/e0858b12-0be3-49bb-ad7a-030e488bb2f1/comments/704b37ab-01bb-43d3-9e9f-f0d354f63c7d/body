@@ -1,0 +1,27 @@
+On Sat, Jul 18, 2009 at 06:05:51PM -0400, W. Trevor King wrote:
+> My email interface now supports bug creation/comments that look
+> like:
+> 
+>     $ cat | mail -s "[be-bug] new" "whatever-dev@fancyprojects.com"
+>     The demuxulizer is broken
+>     
+>     <describe bug>
+>     ^D
+
+The move towards the DBT interface means this example should now look
+like
+
+  $ cat | mail -s "[be-bug:submit] The demuxulizer is broken" whatever-dev@fancyprojects.com
+  Version: XYZ
+
+  <describe bug>
+  --
+  Ignored text
+  ^D
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

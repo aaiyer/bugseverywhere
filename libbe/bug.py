@@ -2,19 +2,19 @@
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 import os
 import os.path
 import errno
@@ -177,7 +177,7 @@ class Bug(settings_object.SavedSettingsObject):
     def time_string(): return {}
 
     def _get_time(self):
-        if self.time_string in [None, settings_object.EMPTY]:
+        if self.time_string == None:
             return None
         return utility.str_to_time(self.time_string)
     def _set_time(self, value):
@@ -187,15 +187,8 @@ class Bug(settings_object.SavedSettingsObject):
                     doc="An integer version of .time_string")
 
     def _extra_strings_check_fn(value):
-        "Require an iterable full of strings"
-        if value == settings_object.EMPTY:
-            return True
-        elif not hasattr(value, "__iter__"):
-            return False
-        for x in value:
-            if type(x) not in types.StringTypes:
-                return False
-        return True
+        return utility.iterable_full_of_strings(value, \
+                         alternative=settings_object.EMPTY)
     def _extra_strings_change_hook(self, old, new):
         self.extra_strings.sort() # to make merging easier
         self._prop_save_settings(old, new)
@@ -252,12 +245,16 @@ class Bug(settings_object.SavedSettingsObject):
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
 
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = value
+        for comment in self.comments():
+            comment.set_sync_with_disk(value)
+
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
-        if value in [None, settings_object.EMPTY]:
+        if value == None:
             return ""
-        else:
-            return str(value)
+        return str(value)
 
     def xml(self, show_comments=False):
         if self.bugdir == None:
@@ -372,10 +369,17 @@ class Bug(settings_object.SavedSettingsObject):
         mapfile.map_save(self.rcs, path, self._get_saved_settings())
         
     def save(self):
+        """
+        Save any loaded contents to disk.  Because of lazy loading of
+        comments, this is actually not too inefficient.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
         self.save_settings()
-
         if len(self.comment_root) > 0:
-            self.rcs.mkdir(self.get_path("comments"))
             comment.saveComments(self)
 
     def remove(self):
@@ -490,8 +494,25 @@ cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
+def cmp_comments(bug_1, bug_2):
+    """
+    Compare two bugs' comments lists.  Doesn't load any new comments,
+    so you should call each bug's .load_comments() first if you want a
+    full comparison.
+    """
+    comms_1 = sorted(bug_1.comments(), key = lambda comm : comm.uuid)
+    comms_2 = sorted(bug_2.comments(), key = lambda comm : comm.uuid)
+    result = cmp(len(comms_1), len(comms_2))
+    if result != 0:
+        return result
+    for c_1,c_2 in zip(comms_1, comms_2):
+        result = cmp(c_1, c_2)
+        if result != 0:
+            return result
+    return 0
+
 DEFAULT_CMP_FULL_CMP_LIST = \
-    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator)
+    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator,cmp_comments)
 
 class BugCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):

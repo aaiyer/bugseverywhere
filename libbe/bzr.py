@@ -3,19 +3,19 @@
 #                         Marien Zwart <marienz@gentoo.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
 import re
@@ -71,9 +71,21 @@ class Bzr(RCS):
         else:
             self._u_invoke_client("branch", "--revision", revision,
                                   ".", directory)
-    def _rcs_commit(self, commitfile):
-        status,output,error = self._u_invoke_client("commit", "--unchanged",
-                                                    "--file", commitfile)
+    def _rcs_commit(self, commitfile, allow_empty=False):
+        args = ["commit", "--file", commitfile]
+        if allow_empty == True:
+            args.append("--unchanged")
+            status,output,error = self._u_invoke_client(*args)
+        else:
+            kwargs = {"expect":(0,3)}
+            status,output,error = self._u_invoke_client(*args, **kwargs)
+            if status != 0:
+                strings = ["ERROR: no changes to commit.", # bzr 1.3.1
+                           "ERROR: No changes to commit."] # bzr 1.15.1
+                if self._u_any_in_string(strings, error) == True:
+                    raise rcs.EmptyCommit()
+                else:
+                    raise rcs.CommandError(args, status, error)
         revision = None
         revline = re.compile("Committed revision (.*)[.]")
         match = revline.search(error)
@@ -81,20 +93,6 @@ class Bzr(RCS):
         assert len(match.groups()) == 1
         revision = match.groups()[0]
         return revision
-    def postcommit(self):
-        try:
-            self._u_invoke_client('merge')
-        except rcs.CommandError, e:
-            if ('No merge branch known or specified' in e.err_str or
-                'No merge location known or specified' in e.err_str):
-                pass
-            else:
-                self._u_invoke_client('revert',  '--no-backup', 
-                                   directory=directory)
-                self._u_invoke_client('resolve', '--all', directory=directory)
-                raise
-        if len(self._u_invoke_client('status', directory=directory)[1]) > 0:
-            self.commit('Merge from upstream')
 
     
 rcs.make_rcs_testcase_subclasses(Bzr, sys.modules[__name__])

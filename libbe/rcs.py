@@ -4,19 +4,19 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from subprocess import Popen, PIPE
 import codecs
@@ -61,10 +61,13 @@ def installed_rcs():
 
 
 class CommandError(Exception):
-    def __init__(self, err_str, status):
-        Exception.__init__(self, "Command failed (%d): %s" % (status, err_str))
-        self.err_str = err_str
+    def __init__(self, command, status, err_str):
+        strerror = ["Command failed (%d):\n  %s\n" % (status, err_str),
+                    "while executing\n  %s" % command]
+        Exception.__init__(self, "\n".join(strerror))
+        self.command = command
         self.status = status
+        self.err_str = err_str
 
 class SettingIDnotSupported(NotImplementedError):
     pass
@@ -85,6 +88,10 @@ class NoSuchFile(Exception):
     def __init__(self, pathname, root="."):
         path = os.path.abspath(os.path.join(root, pathname))
         Exception.__init__(self, "No such file: %s" % path)
+
+class EmptyCommit(Exception):
+    def __init__(self):
+        Exception.__init__(self, "No changes to commit")
 
 
 def new():
@@ -186,7 +193,7 @@ class RCS(object):
         if binary == False:
             f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
         else:
-            f = open(path, "rb")
+            f = open(os.path.join(self.rootdir, path), "rb")
         contents = f.read()
         f.close()
         return contents
@@ -197,11 +204,14 @@ class RCS(object):
         dir specifies a directory to create the duplicate in.
         """
         shutil.copytree(self.rootdir, directory, True)
-    def _rcs_commit(self, commitfile):
+    def _rcs_commit(self, commitfile, allow_empty=False):
         """
         Commit the current working directory, using the contents of
         commitfile as the comment.  Return the name of the old
-        revision.
+        revision (or None if commits are not supported).
+        
+        If allow_empty == False, raise EmptyCommit if there are no
+        changes to commit.
         """
         return None
     def installed(self):
@@ -329,11 +339,15 @@ class RCS(object):
                 self.add(path)
             else:
                 self.update(path)
-    def mkdir(self, path, allow_no_rcs=False):
+    def mkdir(self, path, allow_no_rcs=False, check_parents=True):
         """
         Create (if neccessary) a directory at path under version
         control.
         """
+        if check_parents == True:
+            parent = os.path.dirname(path)
+            if not os.path.exists(parent): # recurse through parents
+                self.mkdir(parent, allow_no_rcs, check_parents)
         if not os.path.exists(path):
             os.mkdir(path)
             if self._use_rcs(path, allow_no_rcs):
@@ -341,7 +355,9 @@ class RCS(object):
         else:
             assert os.path.isdir(path)
             if self._use_rcs(path, allow_no_rcs):
-                self.update(path)
+                #self.update(path)# Don't update directories.  Changing files
+                pass              # underneath them should be sufficient.
+                
     def duplicate_repo(self, revision=None):
         """
         Get the repository as it was in a given revision.
@@ -364,30 +380,55 @@ class RCS(object):
             shutil.rmtree(self._duplicateBasedir)
             self._duplicateBasedir = None
             self._duplicateDirname = None
-    def commit(self, summary, body=None):
+    def commit(self, summary, body=None, allow_empty=False):
         """
         Commit the current working directory, with a commit message
         string summary and body.  Return the name of the old revision
         (or None if versioning is not supported).
+        
+        If allow_empty == False (the default), raise EmptyCommit if
+        there are no changes to commit.
         """
+        summary = summary.strip()+'\n'
         if body is not None:
-            summary += '\n' + body
+            summary += '\n' + body.strip() + '\n'
         descriptor, filename = tempfile.mkstemp()
         revision = None
         try:
             temp_file = os.fdopen(descriptor, 'wb')
             temp_file.write(summary)
             temp_file.flush()
-            revision = self._rcs_commit(filename)
+            self.precommit()
+            revision = self._rcs_commit(filename, allow_empty=allow_empty)
             temp_file.close()
+            self.postcommit()
         finally:
             os.remove(filename)
         return revision
-    def precommit(self, directory):
+    def precommit(self):
+        """
+        Executed before all attempted commits.
+        """
         pass
-    def postcommit(self, directory):
+    def postcommit(self):
+        """
+        Only executed after successful commits.
+        """
         pass
+    def _u_any_in_string(self, list, string):
+        """
+        Return True if any of the strings in list are in string.
+        Otherwise return False.
+        """
+        for list_string in list:
+            if list_string in string:
+                return True
+        return False
     def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None):
+        """
+        expect should be a tuple of allowed exit codes.  cwd should be
+        the directory from which the command will be executed.
+        """
         if cwd == None:
             cwd = self.rootdir
         if self.verboseInvoke == True:
@@ -400,15 +441,13 @@ class RCS(object):
                 q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, 
                           shell=True, cwd=cwd)
         except OSError, e :
-            strerror = "%s\nwhile executing %s" % (e.args[1], args)
-            raise CommandError(strerror, e.args[0])
+            raise CommandError(args, e.args[0], e)
         output, error = q.communicate(input=stdin)
         status = q.wait()
         if self.verboseInvoke == True:
             print >> sys.stderr, "%d\n%s%s" % (status, output, error)
         if status not in expect:
-            strerror = "%s\nwhile executing %s\n%s" % (args[1], args, error)
-            raise CommandError(strerror, status)
+            raise CommandError(args, status, error)
         return status, output, error
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)
