@@ -52,6 +52,8 @@ def execute(args, manipulate_encodings=True):
     if bd.rcs.versioned == False:
         print "This directory is not revision-controlled."
     else:
+        if revision == None: # get the most recent revision
+            revision = bd.rcs.revision_id(-1)
         old_bd = bd.duplicate_bugdir(revision)
         r,m,a = diff.bug_diffs(old_bd, bd)
         
