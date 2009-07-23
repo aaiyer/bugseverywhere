@@ -37,7 +37,6 @@ def execute(args, manipulate_encodings=True):
     Modified bug reports:
     a:cm: Bug A
       status: open -> closed
-    <BLANKLINE>
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -54,7 +53,7 @@ def execute(args, manipulate_encodings=True):
         print "This directory is not revision-controlled."
     else:
         old_bd = bd.duplicate_bugdir(revision)
-        r,m,a = diff.diff(old_bd, bd)
+        r,m,a = diff.bug_diffs(old_bd, bd)
         
         optbugs = []
         if options.all == True:
@@ -69,7 +68,9 @@ def execute(args, manipulate_encodings=True):
             for bug in optbugs:
                 print bug.uuid
         else :
-            print diff.diff_report((r,m,a), bd).encode(bd.encoding)
+            rep = diff.diff_report((r,m,a), old_bd, bd).encode(bd.encoding)
+            if len(rep) > 0:
+                print rep
         bd.remove_duplicate_bugdir()
 
 def get_parser():

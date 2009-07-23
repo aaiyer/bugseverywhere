@@ -19,7 +19,7 @@ from libbe import cmdutil, bugdir, bug
 from libbe.utility import time_to_str
 import doctest
 
-def diff(old_bugdir, new_bugdir):
+def bug_diffs(old_bugdir, new_bugdir):
     added = []
     removed = []
     modified = []
@@ -27,6 +27,8 @@ def diff(old_bugdir, new_bugdir):
         old_bug = old_bugdir.bug_from_uuid(uuid)
         try:
             new_bug = new_bugdir.bug_from_uuid(uuid)
+            old_bug.load_comments()
+            new_bug.load_comments()
             if old_bug != new_bug:
                 modified.append((old_bug, new_bug))
         except KeyError:
@@ -37,26 +39,34 @@ def diff(old_bugdir, new_bugdir):
             added.append(new_bug)
     return (removed, modified, added)
 
-def diff_report(diff_data, bug_dir):
-    (removed, modified, added) = diff_data
+def diff_report(bug_diffs_data, old_bugdir, new_bugdir):
+    bugs_removed,bugs_modified,bugs_added = bug_diffs_data
     def modified_cmp(left, right):
         return bug.cmp_severity(left[1], right[1])
 
-    added.sort(bug.cmp_severity)
-    removed.sort(bug.cmp_severity)
-    modified.sort(modified_cmp)
+    bugs_added.sort(bug.cmp_severity)
+    bugs_removed.sort(bug.cmp_severity)
+    bugs_modified.sort(modified_cmp)
     lines = []
     
-    if len(added) > 0:
+    if old_bugdir.settings != new_bugdir.settings:
+        bugdir_settings = sorted(new_bugdir.settings_properties)
+        bugdir_settings.remove("rcs_name") # tweaked by bugdir.duplicate_bugdir
+        change_list = change_lines(old_bugdir, new_bugdir, bugdir_settings)
+        if len(change_list) >  0:
+            lines.append("Modified bug directory:")
+            change_strings = ["%s: %s -> %s" % f for f in change_list]
+            lines.extend(change_strings)
+            lines.append("")
+    if len(bugs_added) > 0:
         lines.append("New bug reports:")
-        for bg in added:
+        for bg in bugs_added:
             lines.extend(bg.string(shortlist=True).splitlines())
         lines.append("")
-
-    if len(modified) > 0:
+    if len(bugs_modified) > 0:
         printed = False
-        for old_bug, new_bug in modified:
-            change_str = bug_changes(old_bug, new_bug, bug_dir)
+        for old_bug, new_bug in bugs_modified:
+            change_str = bug_changes(old_bug, new_bug)
             if change_str is None:
                 continue
             if not printed:
@@ -65,14 +75,13 @@ def diff_report(diff_data, bug_dir):
             lines.extend(change_str.splitlines())
         if printed == True:
             lines.append("")
-
-    if len(removed) > 0:
+    if len(bugs_removed) > 0:
         lines.append("Removed bug reports:")
-        for bg in removed:
+        for bg in bugs_removed:
             lines.extend(bg.string(shortlist=True).splitlines())
         lines.append("")
     
-    return '\n'.join(lines)
+    return "\n".join(lines).rstrip("\n")
 
 def change_lines(old, new, attributes):
     change_list = []    
@@ -86,13 +95,13 @@ def change_lines(old, new, attributes):
     else:
         return None
 
-def bug_changes(old, new, bugs):
-    change_list = change_lines(old, new, ("time", "creator", "severity",
-    "target", "summary", "status", "assigned"))
+def bug_changes(old, new):
+    bug_settings = sorted(new.settings_properties)
+    change_list = change_lines(old, new, bug_settings)
+    change_strings = ["%s: %s -> %s" % f for f in change_list]
 
     old_comment_ids = [c.uuid for c in old.comments()]
     new_comment_ids = [c.uuid for c in new.comments()]
-    change_strings = ["%s: %s -> %s" % f for f in change_list]
     for comment_id in new_comment_ids:
         if comment_id not in old_comment_ids:
             summary = comment_summary(new.comment_from_uuid(comment_id), "new")

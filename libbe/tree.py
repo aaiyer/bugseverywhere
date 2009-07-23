@@ -35,7 +35,7 @@ class Tree(list):
     >>> a = Tree();       a.n = "a"
     >>> a.append(c)
     >>> a.append(b)
-    
+
     >>> a.branch_len()
     5
     >>> a.sort(key=lambda node : -node.branch_len())
@@ -44,7 +44,7 @@ class Tree(list):
     >>> a.sort(key=lambda node : node.branch_len())
     >>> "".join([node.n for node in a.traverse()])
     'abdgcefhi'
-    >>> "".join([node.n for node in a.traverse(depthFirst=False)])
+    >>> "".join([node.n for node in a.traverse(depth_first=False)])
     'abcdefghi'
     >>> for depth,node in a.thread():
     ...     print "%*s" % (2*depth+1, node.n)
@@ -68,7 +68,18 @@ class Tree(list):
     f
     h
     i
+    >>> a.has_descendant(g)
+    True
+    >>> c.has_descendant(g)
+    False
+    >>> a.has_descendant(a)
+    False
+    >>> a.has_descendant(a, match_self=True)
+    True
     """
+    def __eq__(self, other):
+        return id(self) == id(other)
+
     def branch_len(self):
         """
         Exhaustive search every time == SLOW.
@@ -97,11 +108,11 @@ class Tree(list):
         for child in self:
             child.sort(*args, **kwargs)
 
-    def traverse(self, depthFirst=True):
+    def traverse(self, depth_first=True):
         """
         Note: you might want to sort() your tree first.
         """
-        if depthFirst == True:
+        if depth_first == True:
             yield self
             for child in self:
                 for descendant in child.traverse():
@@ -119,7 +130,7 @@ class Tree(list):
         When flatten==False, the depth of any node is one greater than
         the depth of its parent.  That way the inheritance is
         explicit, but you can end up with highly indented threads.
-        
+
         When flatten==True, the depth of any node is only greater than
         the depth of its parent when there is a branch, and the node
         is not the last child.  This can lead to ancestry ambiguity,
@@ -138,8 +149,8 @@ class Tree(list):
         stack = [] # ancestry of the current node
         if flatten == True:
             depthDict = {}
-        
-        for node in self.traverse(depthFirst=True):
+
+        for node in self.traverse(depth_first=True):
             while len(stack) > 0 \
                     and id(node) not in [id(c) for c in stack[-1]]:
                 stack.pop(-1)
@@ -156,5 +167,13 @@ class Tree(list):
                 depthDict[id(node)] = depth
             yield (depth,node)
             stack.append(node)
+
+    def has_descendant(self, descendant, depth_first=True, match_self=False):
+        if descendant == self:
+            return match_self
+        for d in self.traverse(depth_first):
+            if descendant == d:
+                return True
+        return False
 
 suite = doctest.DocTestSuite()
