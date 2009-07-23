@@ -398,14 +398,22 @@ class RCS(object):
             temp_file = os.fdopen(descriptor, 'wb')
             temp_file.write(summary)
             temp_file.flush()
+            self.precommit()
             revision = self._rcs_commit(filename, allow_empty=allow_empty)
             temp_file.close()
+            self.postcommit()
         finally:
             os.remove(filename)
         return revision
-    def precommit(self, directory):
+    def precommit(self):
+        """
+        Executed before all attempted commits.
+        """
         pass
-    def postcommit(self, directory):
+    def postcommit(self):
+        """
+        Only executed after successful commits.
+        """
         pass
     def _u_any_in_string(self, list, string):
         """
