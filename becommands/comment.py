@@ -81,7 +81,7 @@ def execute(args, test=False):
         is_reply = False
     
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=not Test)
+                       manipulate_encodings=not test)
     bug = bd.bug_from_shortname(bugname)
     bug.load_comments(load_full=False)
     if is_reply:
