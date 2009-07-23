@@ -494,8 +494,25 @@ cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
+def cmp_comments(bug_1, bug_2):
+    """
+    Compare two bugs' comments lists.  Doesn't load any new comments,
+    so you should call each bug's .load_comments() first if you want a
+    full comparison.
+    """
+    comms_1 = sorted(bug_1.comments(), key = lambda comm : comm.uuid)
+    comms_2 = sorted(bug_2.comments(), key = lambda comm : comm.uuid)
+    result = cmp(len(comms_1), len(comms_2))
+    if result != 0:
+        return result
+    for c_1,c_2 in zip(comms_1, comms_2):
+        result = cmp(c_1, c_2)
+        if result != 0:
+            return result
+    return 0
+
 DEFAULT_CMP_FULL_CMP_LIST = \
-    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator)
+    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator,cmp_comments)
 
 class BugCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):
