@@ -548,7 +548,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return True
 
 
-def simple_bug_dir():
+def simple_bug_dir(on_disk=True):
     """
     For testing
     >>> bugdir = simple_bug_dir()
@@ -557,11 +557,18 @@ def simple_bug_dir():
     >>> print ls
     ['a', 'b']
     """
-    dir = utility.Dir()
-    assert os.path.exists(dir.path)
-    bugdir = BugDir(dir.path, sink_to_existing_root=False, allow_rcs_init=True,
+    if on_disk == True:
+        dir = utility.Dir()
+        assert os.path.exists(dir.path)
+        root = dir.path
+        rcs_init = True
+    else:
+        root = None
+        rcs_init = False
+    bugdir = BugDir(root, sink_to_existing_root=False, allow_rcs_init=rcs_init,
                     manipulate_encodings=False)
-    bugdir._dir_ref = dir # postpone cleanup since dir.__del__() removes dir.
+    if on_disk == True: # postpone cleanup since dir.__del__() removes dir.
+        bugdir._dir_ref = dir
     bug_a = bugdir.new_bug("a", summary="Bug A")
     bug_a.creator = "John Doe <jdoe@example.com>"
     bug_a.time = 0
@@ -569,7 +576,8 @@ def simple_bug_dir():
     bug_b.creator = "Jane Doe <jdoe@example.com>"
     bug_b.time = 0
     bug_b.status = "closed"
-    bugdir.save()
+    if on_disk == True:
+        bugdir.save()
     return bugdir
 
 
