@@ -38,7 +38,7 @@ def execute(args, manipulate_encodings=True):
     >>> print comment.body
     This is a comment about a
     <BLANKLINE>
-    >>> comment.From == bd.user_id
+    >>> comment.author == bd.user_id
     True
     >>> comment.time <= int(time.time())
     True
@@ -121,7 +121,7 @@ def execute(args, manipulate_encodings=True):
     if options.XML == False:
         new = parent.new_reply(body=body)
         if options.author != None:
-            new.From = options.author
+            new.author = options.author
         if options.alt_id != None:
             new.alt_id = options.alt_id
         if options.content_type != None:

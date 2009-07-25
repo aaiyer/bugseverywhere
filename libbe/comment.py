@@ -162,9 +162,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                          doc="Alternate ID for linking imported comments.  Internally comments are linked (via In-reply-to) to the parent's UUID.  However, these UUIDs are generated internally, so Alt-id is provided as a user-controlled linking target.")
     def alt_id(): return {}
 
-    @_versioned_property(name="From",
+    @_versioned_property(name="Author",
                          doc="The author of the comment")
-    def From(): return {}
+    def author(): return {}
 
     @_versioned_property(name="In-reply-to",
                          doc="UUID for parent comment or bug")
@@ -178,17 +178,17 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     @_versioned_property(name="Date",
                          doc="An RFC 2822 timestamp for comment creation")
-    def time_string(): return {}
+    def date(): return {}
 
     def _get_time(self):
-        if self.time_string == None:
+        if self.date == None:
             return None
-        return utility.str_to_time(self.time_string)
+        return utility.str_to_time(self.date)
     def _set_time(self, value):
-        self.time_string = utility.time_to_str(value)
+        self.date = utility.time_to_str(value)
     time = property(fget=_get_time,
                     fset=_set_time,
-                    doc="An integer version of .time_string")
+                    doc="An integer version of .date")
 
     def _get_comment_body(self):
         if self.rcs != None and self.sync_with_disk == True:
@@ -258,7 +258,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 self.uuid = uuid_gen()
             self.time = int(time.time()) # only save to second precision
             if self.rcs != None:
-                self.From = self.rcs.get_user_id()
+                self.author = self.rcs.get_user_id()
             self.in_reply_to = in_reply_to
             self.body = body
 
@@ -282,12 +282,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
         >>> comm.uuid = "0123"
-        >>> comm.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> comm.date = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> print comm.xml(indent=2, shortname="com-1")
           <comment>
             <uuid>0123</uuid>
             <short-name>com-1</short-name>
-            <from></from>
+            <author></author>
             <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
             <content-type>text/plain</content-type>
             <body>Some
@@ -309,8 +309,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 ("alt-id", self.alt_id),
                 ("short-name", shortname),
                 ("in-reply-to", self.in_reply_to),
-                ("from", self._setting_attr_string("From")),
-                ("date", self.time_string),
+                ("author", self._setting_attr_string("author")),
+                ("date", self.date),
                 ("content-type", self.content_type),
                 ("body", body)]
         lines = ["<comment>"]
@@ -328,11 +328,11 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         <alt-id> fields.
         >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
         >>> commA.uuid = "0123"
-        >>> commA.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> commA.date = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> xml = commA.xml(shortname="com-1")
         >>> commB = Comment()
         >>> commB.from_xml(xml)
-        >>> attrs=['uuid','alt_id','in_reply_to','From','time_string','content_type','body']
+        >>> attrs=['uuid','alt_id','in_reply_to','author','date','content_type','body']
         >>> for attr in attrs: # doctest: +ELLIPSIS
         ...     if getattr(commB, attr) != getattr(commA, attr):
         ...         estr = "Mismatch on %s: '%s' should be '%s'"
@@ -342,15 +342,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         Mismatch on alt_id: '0123' should be 'None'
         >>> print commB.alt_id
         0123
-        >>> commA.From
-        >>> commB.From
+        >>> commA.author
+        >>> commB.author
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode("unicode_escape")
         comment = ElementTree.XML(xml_string)
         if comment.tag != "comment":
             raise InvalidXML(comment, "root element must be <comment>")
-        tags=['uuid','alt-id','in-reply-to','from','date','content-type','body']
+        tags=['uuid','alt-id','in-reply-to','author','date','content-type','body']
         uuid = None
         body = None
         for child in comment.getchildren():
@@ -368,10 +368,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 if child.tag == "body":
                     body = text
                     continue # don't set the bug's body yet.
-                elif child.tag == 'from':
-                    attr_name = "From"
-                elif child.tag == 'date':
-                    attr_name = 'time_string'
                 else:
                     attr_name = child.tag.replace('-','_')
                 setattr(self, attr_name, text)
@@ -389,7 +385,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     def string(self, indent=0, shortname=None):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
-        >>> comm.time_string = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> comm.date = "Thu, 01 Jan 1970 00:00:00 +0000"
         >>> print comm.string(indent=2, shortname="com-1")
           --------- Comment ---------
           Name: com-1
@@ -405,8 +401,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         lines = []
         lines.append("--------- Comment ---------")
         lines.append("Name: %s" % shortname)
-        lines.append("From: %s" % (self._setting_attr_string("From")))
-        lines.append("Date: %s" % self.time_string)
+        lines.append("From: %s" % (self._setting_attr_string("author")))
+        lines.append("Date: %s" % self.date)
         lines.append("")
         if self.content_type.startswith("text/"):
             lines.extend((self.body or "").splitlines())
@@ -421,8 +417,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
         >>> comm.uuid = "com-1"
-        >>> comm.time_string = "Thu, 20 Nov 2008 15:55:11 +0000"
-        >>> comm.From = "Jane Doe <jdoe@example.com>"
+        >>> comm.date = "Thu, 20 Nov 2008 15:55:11 +0000"
+        >>> comm.author = "Jane Doe <jdoe@example.com>"
         >>> print comm
         --------- Comment ---------
         Name: com-1
@@ -506,7 +502,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
           name_map = {}
           for shortname,comment in comm.comment_shortnames(bug_shortname):
               name_map[comment.uuid] = shortname
-          comm.sort(key=lambda c : c.From) # your sort
+          comm.sort(key=lambda c : c.author) # your sort
           comm.string_thread(name_map=name_map)
 
         >>> a = Comment(bug=None, uuid="a", body="Insightful remarks")
