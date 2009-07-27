@@ -557,6 +557,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if self.sync_with_disk == False:
             raise DiskAccessRequired("load settings")
         self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        # hack to deal with old BE comments:
+        if "From" in self.settings:
+            self.settings["Author"] = self.settings.pop("From")
         self._setup_saved_settings()
 
     def save_settings(self):
