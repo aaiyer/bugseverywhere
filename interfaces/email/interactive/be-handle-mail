@@ -296,8 +296,18 @@ class DiffTree (libbe.diff.DiffTree):
       bugdir/bugs/mod/a/comments/rem
       bugdir/bugs/mod/a/comments/mod
     """
+    def report_or_none(self):
+        report = self.report()
+        payload = report.get_payload()
+        if payload == None or len(payload) == 0:
+            return None
+        return report
     def report_string(self):
-        return send_pgp_mime.flatten(self.report(), to_unicode=True)
+        report = self.report_or_none()
+        if report == None:
+            return "No changes"
+        else:
+            return send_pgp_mime.flatten(self.report(), to_unicode=True)
     def make_root(self):
         return MIMEMultipart()
     def join(self, root, parent, data_part):
@@ -612,15 +622,16 @@ class Message (object):
             for id,types in subscriptions.items():
                 if id == "DIR":
                     if subscribe.BUGDIR_TYPE_ALL in types:
-                        parts.append(diff_tree.report())
+                        parts.append(diff_tree.report_or_none())
                         break
                     if subscribe.BUGDIR_TYPE_NEW in types:
                         new = diff_tree.child_by_path("/bugs/new")
-                        parts.append(new.report())
+                        parts.append(new.report_or_none())
                     continue # move on to next id
                 assert types == [subscribe.BUG_TYPE_ALL], types
                 type,bug_root = bug_index[id]
-                parts.append(bug_root.report())
+                parts.append(bug_root.report_or_none())
+            parts = [p for p in parts if p != None]
             if len(parts) == 0:
                 continue # no email to this subscriber
             elif len(parts) == 1:
