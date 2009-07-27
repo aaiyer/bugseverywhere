@@ -352,6 +352,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
                 new_rcs.init(self.root)
         return new_rcs
 
+    # methods for saving/loading/accessing settings and properties.
+
     def get_path(self, *args):
         """
         Return a path relative to .root.
@@ -361,8 +363,6 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             return my_dir
         assert args[0] in ["version", "settings", "bugs"], str(args)
         return os.path.join(my_dir, *args)
-
-    # methods for saving/loading/accessing settings and properties.
 
     def _get_settings(self, settings_path, for_duplicate_bugdir=False):
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
@@ -556,7 +556,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def remove_bug(self, bug):
         self.remove(bug)
-        bug.remove()
+        if bug.sync_with_disk == True:
+            bug.remove()
 
     def bug_shortname(self, bug):
         """
@@ -763,6 +764,7 @@ class SimpleBugDirTestCase (unittest.TestCase):
     def testOnDiskCleanLoad(self):
         """simple_bug_dir(sync_with_disk==True) should not import preexisting bugs."""
         bugdir = simple_bug_dir(sync_with_disk=True)
+        self.failUnless(bugdir.sync_with_disk==True, bugdir.sync_with_disk)
         uuids = sorted([bug.uuid for bug in bugdir])
         self.failUnless(uuids == ['a', 'b'], uuids)
         bugdir._clear_bugs()
@@ -774,6 +776,7 @@ class SimpleBugDirTestCase (unittest.TestCase):
     def testInMemoryCleanLoad(self):
         """simple_bug_dir(sync_with_disk==False) should not import preexisting bugs."""
         bugdir = simple_bug_dir(sync_with_disk=False)
+        self.failUnless(bugdir.sync_with_disk==False, bugdir.sync_with_disk)
         uuids = sorted([bug.uuid for bug in bugdir])
         self.failUnless(uuids == ['a', 'b'], uuids)
         self.failUnlessRaises(DiskAccessRequired, bugdir.load_all_bugs)

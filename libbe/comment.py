@@ -551,7 +551,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         return os.path.join(my_dir, name)
 
     def set_sync_with_disk(self, value):
-        self.sync_with_disk = True
+        self.sync_with_disk = value
 
     def load_settings(self):
         if self.sync_with_disk == False:
@@ -608,6 +608,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if self.bug != None:
             reply.set_sync_with_disk(self.bug.sync_with_disk)
         if reply.sync_with_disk == True:
+            raise Exception, self.bug.sync_with_disk
             reply.save()
         self.add_reply(reply)
         return reply
