@@ -153,24 +153,34 @@ def header_from_text(text, encoding="us-ascii"):
     p = Parser()
     return p.parsestr(text, headersonly=True)
 
+def guess_encoding(text):
+    if type(text) == types.StringType:
+        encoding = "us-ascii"
+    elif type(text) == types.UnicodeType:
+        for encoding in ["us-ascii", "iso-8859-1", "utf-8"]:
+            try:
+                text.encode(encoding)
+            except UnicodeError:
+                pass
+            else:
+                break
+        assert encoding != None
+    return encoding
+
 def encodedMIMEText(body, encoding=None):
     if encoding == None:
-        if type(body) == types.StringType:
-            encoding = "us-ascii"
-        elif type(body) == types.UnicodeType:
-            for encoding in ["us-ascii", "iso-8859-1", "utf-8"]:
-                try:
-                    body.encode(encoding)
-                except UnicodeError:
-                    pass
-                else:
-                    break
-            assert encoding != None
-    # Create the message ('plain' stands for Content-Type: text/plain)
+        encoding = guess_encoding(body)
     if encoding == "us-ascii":
         return MIMEText(body)
     else:
+        # Create the message ('plain' stands for Content-Type: text/plain)
         return MIMEText(body.encode(encoding), 'plain', encoding)
+
+def append_text(text_part, new_text):
+    original_payload = text_part.get_payload(decode=True)
+    new_payload = u"%s%s" % (original_payload, new_text)
+    new_encoding = guess_encoding(new_payload)
+    text_part.set_payload(new_payload.encode(new_encoding), new_encoding)
 
 def attach_root(header, root_part):
     """

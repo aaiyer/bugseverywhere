@@ -59,12 +59,12 @@ class DiffTree (tree.Tree):
     >>> print all.report_string()
     target: None -> 1.0
     """
-    def __init__(self, name, data=None, data_string_fn=str,
+    def __init__(self, name, data=None, data_part_fn=str,
                  requires_children=False, masked=False):
         tree.Tree.__init__(self)
         self.name = name
         self.data = data
-        self.data_string_fn = data_string_fn
+        self.data_part_fn = data_part_fn
         self.requires_children = requires_children
         self.masked = masked
     def paths(self, parent_path=None):
@@ -98,38 +98,38 @@ class DiffTree (tree.Tree):
         raise KeyError, "%s points to child not in %s" % (names, [c.name for c in self])
     def report_string(self):
         return "\n".join(self.report())
-    def report(self, root=None, depth=0):
+    def report(self, root=None, parent=None, depth=0):
         if root == None:
             root = self.make_root()
         if self.masked == True:
             return None
-        data_string = self.data_string(depth)
-        if self.data == None:
-            pass
-        elif self.requires_children == True and len(self) == 0:
+        data_part = self.data_part(depth)
+        if self.requires_children == True and len(self) == 0:
             pass
         else:
-            self.join(root, data_string)
+            self.join(root, parent, data_part)
             depth += 1
         for child in self:
-            child.report(root, depth)
+            child.report(root, self, depth)
         return root
     def make_root(self):
         return []
-    def join(self, root, part):
-        if part != None:
-            root.append(part)
-    def data_string(self, depth, indent=True):
-        if hasattr(self, "_cached_data_string"):
-            return self._cached_data_string
-        data_string = self.data_string_fn(self.data)
+    def join(self, root, parent, data_part):
+        if data_part != None:
+            root.append(data_part)
+    def data_part(self, depth, indent=True):
+        if self.data == None:
+            return None
+        if hasattr(self, "_cached_data_part"):
+            return self._cached_data_part
+        data_part = self.data_part_fn(self.data)
         if indent == True:
-            data_string_lines = data_string.splitlines()
+            data_part_lines = data_part.splitlines()
             indent = "  "*(depth)
             line_sep = "\n"+indent
-            data_string = indent+line_sep.join(data_string_lines)
-        self._cached_data_string = data_string
-        return data_string
+            data_part = indent+line_sep.join(data_part_lines)
+        self._cached_data_part = data_part
+        return data_part
 
 class Diff (object):
     """

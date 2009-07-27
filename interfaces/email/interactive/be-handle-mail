@@ -53,8 +53,8 @@ import doctest
 import unittest
 
 from becommands import subscribe
-import libbe.cmdutil, libbe.encoding, libbe.utility, libbe.bugdir
-import libbe.diff
+import libbe.cmdutil, libbe.encoding, libbe.utility, libbe.diff, \
+    libbe.bugdir, libbe.bug, libbe.comment
 import send_pgp_mime
 
 THIS_SERVER = u"thor.physics.drexel.edu"
@@ -272,15 +272,53 @@ class Command (object):
         return response_generator.plain()
 
 class DiffTree (libbe.diff.DiffTree):
+    """
+    In order to avoid tons of tiny MIMEText attachments, bug-level
+    nodes set .add_child_text=True (in .join()), which is propogated
+    on to their descendents.  Instead of creating their own
+    attachement, each of these descendents appends his data_part to
+    the end of the bug-level MIMEText attachment.
+
+    For the example tree in the libbe.diff.Diff unittests:
+      bugdir
+      bugdir/settings
+      bugdir/bugs
+      bugdir/bugs/new
+      bugdir/bugs/new/c          <- sets .add_child_text
+      bugdir/bugs/rem
+      bugdir/bugs/rem/b          <- sets .add_child_text
+      bugdir/bugs/mod
+      bugdir/bugs/mod/a          <- sets .add_child_text
+      bugdir/bugs/mod/a/settings
+      bugdir/bugs/mod/a/comments
+      bugdir/bugs/mod/a/comments/new
+      bugdir/bugs/mod/a/comments/new/acom
+      bugdir/bugs/mod/a/comments/rem
+      bugdir/bugs/mod/a/comments/mod
+    """
     def report_string(self):
         return send_pgp_mime.flatten(self.report(), to_unicode=True)
     def make_root(self):
         return MIMEMultipart()
-    def join(self, root, part):
-        if part != None:
-            root.attach(send_pgp_mime.encodedMIMEText(part))
-    def data_string(self, depth, indent=False):
-        return libbe.diff.DiffTree.data_string(self, depth, indent=indent)
+    def join(self, root, parent, data_part):
+        if hasattr(parent, "attach_child_text"):
+            self.attach_child_text = True
+            if data_part != None:
+                send_pgp_mime.append_text(parent.data_mime_part, u"\n\n%s" % (data_part))
+            self.data_mime_part = parent.data_mime_part
+        else:
+            self.data_mime_part = None
+            if data_part != None:
+                self.data_mime_part = send_pgp_mime.encodedMIMEText(data_part)
+            if parent != None and parent.name in ["new", "rem", "mod"]:
+                self.attach_child_text = True
+                if data_part == None: # make blank data_mime_part for children's appends
+                    self.data_mime_part = send_pgp_mime.encodedMIMEText("")
+            if self.data_mime_part != None:
+                self.data_mime_part["Content-Description"] = self.name
+                root.attach(self.data_mime_part)
+    def data_part(self, depth, indent=False):
+        return libbe.diff.DiffTree.data_part(self, depth, indent=indent)
 
 class Diff (libbe.diff.Diff):
     def bug_add_string(self, bug):
@@ -717,7 +755,7 @@ def main():
 
     if options.notify_since != None:
         if options.subscribers == True:
-            libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
+            libbe.encoding.set_IO_stream_encodings(ENCODING)
             open_logfile(options.logfile)
             if LOGFILE != None:
                 LOGFILE.write(u"Checking for subscribers to notify since revision %s\n"
