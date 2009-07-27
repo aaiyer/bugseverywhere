@@ -61,6 +61,11 @@ class MissingReference(ValueError):
         self.reference = comment.in_reply_to
         self.comment = comment
 
+class DiskAccessRequired (Exception):
+    def __init__(self, goal):
+        msg = "Cannot %s without accessing the disk" % goal
+        Exception.__init__(self, msg)
+
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
 def list_to_root(comments, bug, root=None,
@@ -115,6 +120,8 @@ def loadComments(bug, load_full=False):
     Set load_full=True when you want to load the comment completely
     from disk *now*, rather than waiting and lazy loading as required.
     """
+    if bug.sync_with_disk == False:
+        raise DiskAccessRequired("load comments")
     path = bug.get_path("comments")
     if not os.path.isdir(path):
         return Comment(bug, uuid=INVALID_UUID)
@@ -131,6 +138,8 @@ def loadComments(bug, load_full=False):
     return list_to_root(comments, bug)
 
 def saveComments(bug):
+    if bug.sync_with_disk == False:
+        raise DiskAccessRequired("save comments")
     for comment in bug.comment_root.traverse():
         comment.save()
 
@@ -262,8 +271,21 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             self.in_reply_to = in_reply_to
             self.body = body
 
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = True
+    def __str__(self):
+        """
+        >>> comm = Comment(bug=None, body="Some insightful remarks")
+        >>> comm.uuid = "com-1"
+        >>> comm.date = "Thu, 20 Nov 2008 15:55:11 +0000"
+        >>> comm.author = "Jane Doe <jdoe@example.com>"
+        >>> print comm
+        --------- Comment ---------
+        Name: com-1
+        From: Jane Doe <jdoe@example.com>
+        Date: Thu, 20 Nov 2008 15:55:11 +0000
+        <BLANKLINE>
+        Some insightful remarks
+        """
+        return self.string()
 
     def traverse(self, *args, **kwargs):
         """Avoid working with the possible dummy root comment"""
@@ -271,6 +293,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             if comment.uuid == INVALID_UUID:
                 continue
             yield comment
+
+    # serializing methods
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
@@ -413,78 +437,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def __str__(self):
-        """
-        >>> comm = Comment(bug=None, body="Some insightful remarks")
-        >>> comm.uuid = "com-1"
-        >>> comm.date = "Thu, 20 Nov 2008 15:55:11 +0000"
-        >>> comm.author = "Jane Doe <jdoe@example.com>"
-        >>> print comm
-        --------- Comment ---------
-        Name: com-1
-        From: Jane Doe <jdoe@example.com>
-        Date: Thu, 20 Nov 2008 15:55:11 +0000
-        <BLANKLINE>
-        Some insightful remarks
-        """
-        return self.string()
-
-    def get_path(self, name=None):
-        my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
-        if name is None:
-            return my_dir
-        assert name in ["values", "body"]
-        return os.path.join(my_dir, name)
-
-    def load_settings(self):
-        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
-        self._setup_saved_settings()
-
-    def save_settings(self):
-        self.rcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, self._get_saved_settings())
-
-    def save(self):
-        """
-        Save any loaded contents to disk.
-        
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
-        """
-        assert self.body != None, "Can't save blank comment"
-        self.save_settings()
-        self._set_comment_body(new=self.body, force=True)
-
-    def remove(self):
-        for comment in self.traverse():
-            path = comment.get_path()
-            self.rcs.recursive_remove(path)
-
-    def add_reply(self, reply, allow_time_inversion=False):
-        if self.uuid != INVALID_UUID:
-            reply.in_reply_to = self.uuid
-        self.append(reply)
-        #raise Exception, "adding reply \n%s\n%s" % (self, reply)
-
-    def new_reply(self, body=None):
-        """
-        >>> comm = Comment(bug=None, body="Some insightful remarks")
-        >>> repA = comm.new_reply("Critique original comment")
-        >>> repB = repA.new_reply("Begin flamewar :p")
-        >>> repB.in_reply_to == repA.uuid
-        True
-        """
-        reply = Comment(self.bug, body=body)
-        if self.bug != None:
-            reply.set_sync_with_disk(self.bug.sync_with_disk)
-        if reply.sync_with_disk == True:
-            reply.save()
-        self.add_reply(reply)
-        return reply
-
     def string_thread(self, string_method_name="string", name_map={},
                       indent=0, flatten=True,
                       auto_name_map=False, bug_shortname=None):
@@ -588,6 +540,77 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         return self.string_thread(string_method_name="xml", name_map=name_map,
                                   indent=indent, auto_name_map=auto_name_map,
                                   bug_shortname=bug_shortname)
+
+    # methods for saving/loading/acessing settings and properties.
+
+    def get_path(self, name=None):
+        my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
+        if name is None:
+            return my_dir
+        assert name in ["values", "body"]
+        return os.path.join(my_dir, name)
+
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = True
+
+    def load_settings(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("load settings")
+        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        self._setup_saved_settings()
+
+    def save_settings(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("save settings")
+        self.rcs.mkdir(self.get_path())
+        path = self.get_path("values")
+        mapfile.map_save(self.rcs, path, self._get_saved_settings())
+
+    def save(self):
+        """
+        Save any loaded contents to disk.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
+        sync_with_disk = self.sync_with_disk
+        if sync_with_disk == False:
+            self.set_sync_with_disk(True)
+        assert self.body != None, "Can't save blank comment"
+        self.save_settings()
+        self._set_comment_body(new=self.body, force=True)
+        if sync_with_disk == False:
+            self.set_sync_with_disk(False)
+
+    def remove(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("remove")
+        for comment in self.traverse():
+            path = comment.get_path()
+            self.rcs.recursive_remove(path)
+
+    def add_reply(self, reply, allow_time_inversion=False):
+        if self.uuid != INVALID_UUID:
+            reply.in_reply_to = self.uuid
+        self.append(reply)
+
+    def new_reply(self, body=None):
+        """
+        >>> comm = Comment(bug=None, body="Some insightful remarks")
+        >>> repA = comm.new_reply("Critique original comment")
+        >>> repB = repA.new_reply("Begin flamewar :p")
+        >>> repB.in_reply_to == repA.uuid
+        True
+        """
+        reply = Comment(self.bug, body=body)
+        if self.bug != None:
+            reply.set_sync_with_disk(self.bug.sync_with_disk)
+        if reply.sync_with_disk == True:
+            reply.save()
+        self.add_reply(reply)
+        return reply
 
     def comment_shortnames(self, bug_shortname=None):
         """

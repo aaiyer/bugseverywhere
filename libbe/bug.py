@@ -33,6 +33,11 @@ import comment
 import utility
 
 
+class DiskAccessRequired (Exception):
+    def __init__(self, goal):
+        msg = "Cannot %s without accessing the disk" % goal
+        Exception.__init__(self, msg)
+
 ### Define and describe valid bug categories
 # Use a tuple of (category, description) tuples since we don't have
 # ordered dicts in Python yet http://www.python.org/dev/peps/pep-0372/
@@ -245,10 +250,13 @@ class Bug(settings_object.SavedSettingsObject):
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
 
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
-        for comment in self.comments():
-            comment.set_sync_with_disk(value)
+    def __str__(self):
+        return self.string(shortlist=True)
+
+    def __cmp__(self, other):
+        return cmp_full(self, other)
+
+    # serializing methods
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
@@ -331,11 +339,7 @@ class Bug(settings_object.SavedSettingsObject):
             output = bugout
         return output
 
-    def __str__(self):
-        return self.string(shortlist=True)
-
-    def __cmp__(self, other):
-        return cmp_full(self, other)
+    # methods for saving/loading/acessing settings and properties.
 
     def get_path(self, name=None):
         my_dir = os.path.join(self.bugdir.get_path("bugs"), self.uuid)
@@ -344,11 +348,47 @@ class Bug(settings_object.SavedSettingsObject):
         assert name in ["values", "comments"]
         return os.path.join(my_dir, name)
 
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = value
+        for comment in self.comments():
+            comment.set_sync_with_disk(value)
+
     def load_settings(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("load settings")
         self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
         self._setup_saved_settings()
 
+    def save_settings(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("save settings")
+        assert self.summary != None, "Can't save blank bug"
+        self.rcs.mkdir(self.get_path())
+        path = self.get_path("values")
+        mapfile.map_save(self.rcs, path, self._get_saved_settings())
+
+    def save(self):
+        """
+        Save any loaded contents to disk.  Because of lazy loading of
+        comments, this is actually not too inefficient.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
+        sync_with_disk = self.sync_with_disk
+        if sync_with_disk == False:
+            self.set_sync_with_disk(True)
+        self.save_settings()
+        if len(self.comment_root) > 0:
+            comment.saveComments(self)
+        if sync_with_disk == False:
+            self.set_sync_with_disk(False)
+
     def load_comments(self, load_full=True):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("load comments")
         if load_full == True:
             # Force a complete load of the whole comment tree
             self.comment_root = self._get_comment_root(load_full=True)
@@ -361,32 +401,15 @@ class Bug(settings_object.SavedSettingsObject):
             self.comment_root = None
             self.sync_with_disk = True
 
-    def save_settings(self):
-        assert self.summary != None, "Can't save blank bug"
-        
-        self.rcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, self._get_saved_settings())
-        
-    def save(self):
-        """
-        Save any loaded contents to disk.  Because of lazy loading of
-        comments, this is actually not too inefficient.
-        
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
-        """
-        self.save_settings()
-        if len(self.comment_root) > 0:
-            comment.saveComments(self)
-
     def remove(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("remove")
         self.comment_root.remove()
         path = self.get_path()
         self.rcs.recursive_remove(path)
     
+    # methods for managing comments
+
     def comments(self):
         for comment in self.comment_root.traverse():
             yield comment
