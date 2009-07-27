@@ -591,7 +591,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             self.set_sync_with_disk(False)
 
     def remove(self):
-        if self.sync_with_disk == False:
+        if self.sync_with_disk == False and self.uuid != INVALID_UUID:
             raise DiskAccessRequired("remove")
         for comment in self.traverse():
             path = comment.get_path()
