@@ -10,7 +10,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: 'subscribe/unsubscribe (bug #..., "new bugs", "all", etc.)'

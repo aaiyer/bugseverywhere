@@ -397,6 +397,8 @@ class Message (object):
             line = line.strip()
             if len(line) == 0:
                 break
+            if ":" not in line:
+                raise InvalidPseudoheader(self, line)
             key,value = line.split(":", 1)
             value = value.strip()
             if key not in all:
