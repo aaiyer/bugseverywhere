@@ -614,7 +614,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if self.bug != None:
             reply.set_sync_with_disk(self.bug.sync_with_disk)
         if reply.sync_with_disk == True:
-            raise Exception, self.bug.sync_with_disk
             reply.save()
         self.add_reply(reply)
         return reply
