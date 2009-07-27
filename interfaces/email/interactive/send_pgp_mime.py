@@ -153,6 +153,25 @@ def header_from_text(text, encoding="us-ascii"):
     p = Parser()
     return p.parsestr(text, headersonly=True)
 
+def encodedMIMEText(body, encoding=None):
+    if encoding == None:
+        if type(body) == types.StringType:
+            encoding = "us-ascii"
+        elif type(body) == types.UnicodeType:
+            for encoding in ["us-ascii", "iso-8859-1", "utf-8"]:
+                try:
+                    body.encode(encoding)
+                except UnicodeError:
+                    pass
+                else:
+                    break
+            assert encoding != None
+    # Create the message ('plain' stands for Content-Type: text/plain)
+    if encoding == "us-ascii":
+        return MIMEText(body)
+    else:
+        return MIMEText(body.encode(encoding), 'plain', encoding)
+
 def attach_root(header, root_part):
     """
     Attach the email.Message root_part to the email.Message header
@@ -355,26 +374,8 @@ class PGPMimeMessageFactory (object):
     """
     def __init__(self, body):
         self.body = body
-    def encodedMIMEText(self, body, encoding=None):
-        if encoding == None:
-            if type(body) == types.StringType:
-                encoding = "us-ascii"
-            elif type(body) == types.UnicodeType:
-                for encoding in ["us-ascii", "iso-8859-1", "utf-8"]:
-                    try:
-                        body.encode(encoding)
-                    except UnicodeError:
-                        pass
-                    else:
-                        break
-                assert encoding != None
-        # Create the message ('plain' stands for Content-Type: text/plain)
-        if encoding == "us-ascii":
-            return MIMEText(body)
-        else:
-            return MIMEText(body.encode(encoding), 'plain', encoding)
     def clearBodyPart(self):
-        body = self.encodedMIMEText(self.body)
+        body = encodedMIMEText(self.body)
         body.add_header('Content-Disposition', 'inline')
         return body
     def passphrase_arg(self, passphrase=None):
@@ -387,7 +388,7 @@ class PGPMimeMessageFactory (object):
         """
         text/plain
         """
-        return self.encodedMIMEText(self.body)
+        return encodedMIMEText(self.body)
     def sign(self, header, passphrase=None):
         """
         multipart/signed

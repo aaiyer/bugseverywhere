@@ -1,0 +1,10 @@
+Hmm, perhaps my thinking has been too revision-centric.  I'm not
+really sure what other level of granularity is appropriate though.
+Both notifications and commits should be generated on a "per-session"
+level, so maybe I'll just ignore Arch and Mercurial (for whom revising
+history is difficult, so per-session commits can be more work) for the
+time being ;).
+
+In that case, _every_ commit will be a
+  notify-since <revision-id>
+sort of change, so I'll just use libbe.diff :).

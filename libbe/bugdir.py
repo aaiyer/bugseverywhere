@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+import copy
+import errno
 import os
 import os.path
-import errno
+import sys
 import time
-import copy
 import unittest
 import doctest
 
@@ -62,6 +63,11 @@ class MultipleBugMatches(ValueError):
         self.shortname = shortname
         self.matches = matches
 
+class DiskAccessRequired (Exception):
+    def __init__(self, goal):
+        msg = "Cannot %s without accessing the disk" % goal
+        Exception.__init__(self, msg)
+
 
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
@@ -99,7 +105,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
     all bugs/comments/etc. that have been loaded into memory.  If
     you've been living in memory and want to move to
     .sync_with_disk==True, but you're not sure if anything has been
-    changed in memoryy, a call to save() is a safe move.
+    changed in memory, a call to save() immediately before the
+    .set_sync_with_disk(True) call is a safe move.
 
     Regardless of .sync_with_disk, a call to .save() will write out
     all the contents that the BugDir instance has loaded into memory.
@@ -107,9 +114,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
     changes, this .save() call will be a waste of time.
 
     The BugDir will only load information from the file system when it
-    loads new bugs/comments that it doesn't already have in memory, or
-    when it explicitly asked to do so (e.g. .load() or
-    __init__(from_disk=True)).
+    loads new settings/bugs/comments that it doesn't already have in
+    memory and .sync_with_disk == True.
 
     Allow RCS initialization
     ========================
@@ -280,8 +286,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def __init__(self, root=None, sink_to_existing_root=True,
                  assert_new_BugDir=False, allow_rcs_init=False,
-                 manipulate_encodings=True,
-                 from_disk=False, rcs=None):
+                 manipulate_encodings=True, from_disk=False, rcs=None):
         list.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)
         self._manipulate_encodings = manipulate_encodings
@@ -310,15 +315,13 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             self.rcs = rcs
             self._setup_user_id(self.user_id)
 
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
-        for bug in self:
-            bug.set_sync_with_disk(value)
+    # methods for getting the BugDir situated in the filesystem
 
     def _find_root(self, path):
         """
         Search for an existing bug database dir and it's ancestors and
-        return a BugDir rooted there.
+        return a BugDir rooted there.  Only called by __init__, and
+        then only if sink_to_existing_root == True.
         """
         if not os.path.exists(path):
             raise NoRootEntry(path)
@@ -334,7 +337,77 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
                 raise NoBugDir(path)
             return beroot
 
+    def _guess_rcs(self, allow_rcs_init=False):
+        """
+        Only called by __init__.
+        """
+        deepdir = self.get_path()
+        if not os.path.exists(deepdir):
+            deepdir = os.path.dirname(deepdir)
+        new_rcs = rcs.detect_rcs(deepdir)
+        install = False
+        if new_rcs.name == "None":
+            if allow_rcs_init == True:
+                new_rcs = rcs.installed_rcs()
+                new_rcs.init(self.root)
+        return new_rcs
+
+    # methods for saving/loading/accessing settings and properties.
+
+    def get_path(self, *args):
+        """
+        Return a path relative to .root.
+        """
+        my_dir = os.path.join(self.root, ".be")
+        if len(args) == 0:
+            return my_dir
+        assert args[0] in ["version", "settings", "bugs"], str(args)
+        return os.path.join(my_dir, *args)
+
+    def _get_settings(self, settings_path, for_duplicate_bugdir=False):
+        allow_no_rcs = not self.rcs.path_in_root(settings_path)
+        if allow_no_rcs == True:
+            assert for_duplicate_bugdir == True
+        if self.sync_with_disk == False and for_duplicate_bugdir == False:
+            # duplicates can ignore this bugdir's .sync_with_disk status
+            raise DiskAccessRequired("_get settings")
+        try:
+            settings = mapfile.map_load(self.rcs, settings_path, allow_no_rcs)
+        except rcs.NoSuchFile:
+            settings = {"rcs_name": "None"}
+        return settings
+
+    def _save_settings(self, settings_path, settings,
+                       for_duplicate_bugdir=False):
+        allow_no_rcs = not self.rcs.path_in_root(settings_path)
+        if allow_no_rcs == True:
+            assert for_duplicate_bugdir == True
+        if self.sync_with_disk == False and for_duplicate_bugdir == False:
+            # duplicates can ignore this bugdir's .sync_with_disk status
+            raise DiskAccessRequired("_save settings")
+        self.rcs.mkdir(self.get_path(), allow_no_rcs)
+        mapfile.map_save(self.rcs, settings_path, settings, allow_no_rcs)
+
+    def load_settings(self):
+        self.settings = self._get_settings(self.get_path("settings"))
+        self._setup_saved_settings()
+        self._setup_user_id(self.user_id)
+        self._setup_encoding(self.encoding)
+        self._setup_severities(self.severities)
+        self._setup_status(self.active_status, self.inactive_status)
+        self.rcs = rcs.rcs_by_name(self.rcs_name)
+        self._setup_user_id(self.user_id)
+
+    def save_settings(self):
+        settings = self._get_saved_settings()
+        self._save_settings(self.get_path("settings"), settings)
+
     def get_version(self, path=None, use_none_rcs=False):
+        """
+        Requires disk access.
+        """
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("get version")
         if use_none_rcs == True:
             RCS = rcs.rcs_by_name("None")
             RCS.root(self.root)
@@ -348,30 +421,31 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return tree_version
 
     def set_version(self):
+        """
+        Requires disk access.
+        """
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("set version")
         self.rcs.mkdir(self.get_path())
         self.rcs.set_file_contents(self.get_path("version"),
                                    TREE_VERSION_STRING)
 
-    def get_path(self, *args):
-        my_dir = os.path.join(self.root, ".be")
-        if len(args) == 0:
-            return my_dir
-        assert args[0] in ["version", "settings", "bugs"], str(args)
-        return os.path.join(my_dir, *args)
+    # methods controlling disk access
 
-    def _guess_rcs(self, allow_rcs_init=False):
-        deepdir = self.get_path()
-        if not os.path.exists(deepdir):
-            deepdir = os.path.dirname(deepdir)
-        new_rcs = rcs.detect_rcs(deepdir)
-        install = False
-        if new_rcs.name == "None":
-            if allow_rcs_init == True:
-                new_rcs = rcs.installed_rcs()
-                new_rcs.init(self.root)
-        return new_rcs
+    def set_sync_with_disk(self, value):
+        """
+        Adjust .sync_with_disk for the BugDir and all it's children.
+        See the BugDir docstring for a description of the role of
+        .sync_with_disk.
+        """
+        self.sync_with_disk = value
+        for bug in self:
+            bug.set_sync_with_disk(value)
 
     def load(self):
+        """
+        Reqires disk access
+        """
         version = self.get_version(use_none_rcs=True)
         if version != TREE_VERSION_STRING:
             raise NotImplementedError, \
@@ -381,59 +455,43 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
                 raise NoBugDir(self.get_path())
             self.load_settings()
 
-            self.rcs = rcs.rcs_by_name(self.rcs_name)
-            self._setup_user_id(self.user_id)
-
     def load_all_bugs(self):
-        "Warning: this could take a while."
+        """
+        Requires disk access.
+        Warning: this could take a while.
+        """
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("load all bugs")
         self._clear_bugs()
         for uuid in self.list_uuids():
             self._load_bug(uuid)
 
     def save(self):
         """
+        Note that this command writes to disk _regardless_ of the
+        status of .sync_with_disk.
+
         Save any loaded contents to disk.  Because of lazy loading of
         bugs and comments, this is actually not too inefficient.
 
-        However, if self.sync_with_disk = True, then any changes are
+        However, if .sync_with_disk = True, then any changes are
         automatically written to disk as soon as they happen, so
         calling this method will just waste time (unless something
         else has been messing with your on-disk files).
+
+        Requires disk access.
         """
+        sync_with_disk = self.sync_with_disk
+        if sync_with_disk == False:
+            self.set_sync_with_disk(True)
         self.set_version()
         self.save_settings()
         for bug in self:
             bug.save()
+        if sync_with_disk == False:
+            self.set_sync_with_disk(sync_with_disk)
 
-    def load_settings(self):
-        self.settings = self._get_settings(self.get_path("settings"))
-        self._setup_saved_settings()
-        self._setup_user_id(self.user_id)
-        self._setup_encoding(self.encoding)
-        self._setup_severities(self.severities)
-        self._setup_status(self.active_status, self.inactive_status)
-
-    def _get_settings(self, settings_path):
-        allow_no_rcs = not self.rcs.path_in_root(settings_path)
-        # allow_no_rcs=True should only be for the special case of
-        # configuring duplicate bugdir settings
-
-        try:
-            settings = mapfile.map_load(self.rcs, settings_path, allow_no_rcs)
-        except rcs.NoSuchFile:
-            settings = {"rcs_name": "None"}
-        return settings
-
-    def save_settings(self):
-        settings = self._get_saved_settings()
-        self._save_settings(self.get_path("settings"), settings)
-
-    def _save_settings(self, settings_path, settings):
-        allow_no_rcs = not self.rcs.path_in_root(settings_path)
-        # allow_no_rcs=True should only be for the special case of
-        # configuring duplicate bugdir settings
-        self.rcs.mkdir(self.get_path(), allow_no_rcs)
-        mapfile.map_save(self.rcs, settings_path, settings, allow_no_rcs)
+    # methods for managing duplicate BugDirs
 
     def duplicate_bugdir(self, revision):
         duplicate_path = self.rcs.duplicate_repo(revision)
@@ -442,23 +500,27 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         # initialized for versioning
         duplicate_settings_path = os.path.join(duplicate_path,
                                                ".be", "settings")
-        duplicate_settings = self._get_settings(duplicate_settings_path)
+        duplicate_settings = self._get_settings(duplicate_settings_path,
+                                                for_duplicate_bugdir=True)
         if "rcs_name" in duplicate_settings:
             duplicate_settings["rcs_name"] = "None"
             duplicate_settings["user_id"] = self.user_id
         if "disabled" in bug.status_values:
             # Hack to support old versions of BE bugs
             duplicate_settings["inactive_status"] = self.inactive_status
-        self._save_settings(duplicate_settings_path, duplicate_settings)
+        self._save_settings(duplicate_settings_path, duplicate_settings,
+                            for_duplicate_bugdir=True)
 
         return BugDir(duplicate_path, from_disk=True, manipulate_encodings=self._manipulate_encodings)
 
     def remove_duplicate_bugdir(self):
         self.rcs.remove_duplicate_repo()
 
+    # methods for managing bugs
+
     def list_uuids(self):
         uuids = []
-        if os.path.exists(self.get_path()):
+        if self.sync_with_disk == True and os.path.exists(self.get_path()):
             # list the uuids on disk
             for uuid in os.listdir(self.get_path("bugs")):
                 if not (uuid.startswith('.')):
@@ -476,6 +538,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         self._bug_map_gen()
 
     def _load_bug(self, uuid):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("_load bug")
         bg = bug.Bug(bugdir=self, uuid=uuid, from_disk=True)
         self.append(bg)
         self._bug_map_gen()
@@ -492,7 +556,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def remove_bug(self, bug):
         self.remove(bug)
-        bug.remove()
+        if bug.sync_with_disk == True:
+            bug.remove()
 
     def bug_shortname(self, bug):
         """
@@ -514,7 +579,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def bug_from_shortname(self, shortname):
         """
-        >>> bd = simple_bug_dir()
+        >>> bd = simple_bug_dir(sync_with_disk=False)
         >>> bug_a = bd.bug_from_shortname('a')
         >>> print type(bug_a)
         <class 'libbe.bug.Bug'>
@@ -548,20 +613,31 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return True
 
 
-def simple_bug_dir():
+def simple_bug_dir(sync_with_disk=True):
     """
-    For testing
+    For testing.  Set sync_with_disk==False for a memory-only bugdir.
     >>> bugdir = simple_bug_dir()
-    >>> ls = list(bugdir.list_uuids())
-    >>> ls.sort()
-    >>> print ls
+    >>> uuids = list(bugdir.list_uuids())
+    >>> uuids.sort()
+    >>> print uuids
     ['a', 'b']
     """
-    dir = utility.Dir()
-    assert os.path.exists(dir.path)
-    bugdir = BugDir(dir.path, sink_to_existing_root=False, allow_rcs_init=True,
+    if sync_with_disk == True:
+        dir = utility.Dir()
+        assert os.path.exists(dir.path)
+        root = dir.path
+        assert_new_BugDir = True
+        rcs_init = True
+    else:
+        root = "/"
+        assert_new_BugDir = False
+        rcs_init = False
+    bugdir = BugDir(root, sink_to_existing_root=False,
+                    assert_new_BugDir=assert_new_BugDir,
+                    allow_rcs_init=rcs_init,
                     manipulate_encodings=False)
-    bugdir._dir_ref = dir # postpone cleanup since dir.__del__() removes dir.
+    if sync_with_disk == True: # postpone cleanup since dir.__del__() removes dir.
+        bugdir._dir_ref = dir
     bug_a = bugdir.new_bug("a", summary="Bug A")
     bug_a.creator = "John Doe <jdoe@example.com>"
     bug_a.time = 0
@@ -569,13 +645,13 @@ def simple_bug_dir():
     bug_b.creator = "Jane Doe <jdoe@example.com>"
     bug_b.time = 0
     bug_b.status = "closed"
-    bugdir.save()
+    if sync_with_disk == True:
+        bugdir.save()
+        bugdir.set_sync_with_disk(True)
     return bugdir
 
 
 class BugDirTestCase(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
     def setUp(self):
         self.dir = utility.Dir()
         self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
@@ -645,9 +721,12 @@ class BugDirTestCase(unittest.TestCase):
         rep.new_reply("And they have six legs.")
         if sync_with_disk == False:
             self.bugdir.save()
+            self.bugdir.set_sync_with_disk(True)
         self.bugdir._clear_bugs()
         bug = self.bugdir.bug_from_uuid("a")
         bug.load_comments()
+        if sync_with_disk == False:
+            self.bugdir.set_sync_with_disk(False)
         self.failUnless(len(bug.comment_root)==1, len(bug.comment_root))
         for index,comment in enumerate(bug.comments()):
             if index == 0:
@@ -655,7 +734,6 @@ class BugDirTestCase(unittest.TestCase):
                 self.failUnless(repLoaded.uuid == rep.uuid, repLoaded.uuid)
                 self.failUnless(comment.sync_with_disk == True,
                                 comment.sync_with_disk)
-                #load_settings()
                 self.failUnless(comment.content_type == "text/plain",
                                 comment.content_type)
                 self.failUnless(repLoaded.settings["Content-type"]=="text/plain",
@@ -672,5 +750,42 @@ class BugDirTestCase(unittest.TestCase):
     def testSyncedComments(self):
         self.testComments(sync_with_disk=True)
 
-unitsuite = unittest.TestLoader().loadTestsFromTestCase(BugDirTestCase)
-suite = unittest.TestSuite([unitsuite])#, doctest.DocTestSuite()])
+class SimpleBugDirTestCase (unittest.TestCase):
+    def setUp(self):
+        # create a pre-existing bugdir in a temporary directory
+        self.dir = utility.Dir()
+        os.chdir(self.dir.path)
+        self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
+                             allow_rcs_init=True)
+        self.bugdir.new_bug("preexisting", summary="Hopefully not imported")
+        self.bugdir.save()
+    def tearDown(self):
+        self.dir.cleanup()
+    def testOnDiskCleanLoad(self):
+        """simple_bug_dir(sync_with_disk==True) should not import preexisting bugs."""
+        bugdir = simple_bug_dir(sync_with_disk=True)
+        self.failUnless(bugdir.sync_with_disk==True, bugdir.sync_with_disk)
+        uuids = sorted([bug.uuid for bug in bugdir])
+        self.failUnless(uuids == ['a', 'b'], uuids)
+        bugdir._clear_bugs()
+        uuids = sorted([bug.uuid for bug in bugdir])
+        self.failUnless(uuids == [], uuids)
+        bugdir.load_all_bugs()
+        uuids = sorted([bug.uuid for bug in bugdir])
+        self.failUnless(uuids == ['a', 'b'], uuids)
+    def testInMemoryCleanLoad(self):
+        """simple_bug_dir(sync_with_disk==False) should not import preexisting bugs."""
+        bugdir = simple_bug_dir(sync_with_disk=False)
+        self.failUnless(bugdir.sync_with_disk==False, bugdir.sync_with_disk)
+        uuids = sorted([bug.uuid for bug in bugdir])
+        self.failUnless(uuids == ['a', 'b'], uuids)
+        self.failUnlessRaises(DiskAccessRequired, bugdir.load_all_bugs)
+        uuids = sorted([bug.uuid for bug in bugdir])
+        self.failUnless(uuids == ['a', 'b'], uuids)
+        bugdir._clear_bugs()
+        uuids = sorted([bug.uuid for bug in bugdir])
+        self.failUnless(uuids == [], uuids)
+
+
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

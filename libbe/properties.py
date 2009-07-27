@@ -160,10 +160,10 @@ def _get_cached_mutable_property(self, cacher_name, property_name, default=None)
     if (cacher_name, property_name) not in self._mutable_property_cache_copy:
         return default
     return self._mutable_property_cache_copy[(cacher_name, property_name)]
-def _cmp_cached_mutable_property(self, cacher_name, property_name, value):
+def _cmp_cached_mutable_property(self, cacher_name, property_name, value, default=None):
     _init_mutable_property_cache(self)
     if (cacher_name, property_name) not in self._mutable_property_cache_hash:
-        return 1 # any value > non-existant old hash
+        _set_cached_mutable_property(self, cacher_name, property_name, default)
     old_hash = self._mutable_property_cache_hash[(cacher_name, property_name)]
     return cmp(_hash_mutable_value(value), old_hash)
 
@@ -327,7 +327,7 @@ def primed_property(primer, initVal=None):
         return funcs
     return decorator
 
-def change_hook_property(hook, mutable=False):
+def change_hook_property(hook, mutable=False, default=None):
     """
     Call the function hook(instance, old_value, new_value) whenever a
     value different from the current value is set (instance is a a
@@ -359,9 +359,9 @@ def change_hook_property(hook, mutable=False):
                 value = new_value # compare new value with cached
             else:
                 value = fget(self) # compare current value with cached
-            if _cmp_cached_mutable_property(self, "change hook property", name, value) != 0:
+            if _cmp_cached_mutable_property(self, "change hook property", name, value, default) != 0:
                 # there has been a change, cache new value
-                old_value = _get_cached_mutable_property(self, "change hook property", name)
+                old_value = _get_cached_mutable_property(self, "change hook property", name, default)
                 _set_cached_mutable_property(self, "change hook property", name, value)
                 if from_fset == True: # return previously cached value
                     value = old_value

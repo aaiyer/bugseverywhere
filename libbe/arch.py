@@ -176,7 +176,6 @@ class Arch(RCS):
         self._get_archive_project_name(root)
 
         return root
-
     def _get_archive_name(self, root):
         status,output,error = self._u_invoke_client("archives")
         lines = output.split('\n')
@@ -188,7 +187,6 @@ class Arch(RCS):
             if os.path.realpath(location) == os.path.realpath(root):
                 self._archive_name = archive
         assert self._archive_name != None
-
     def _get_archive_project_name(self, root):
         # get project names
         status,output,error = self._u_invoke_client("tree-version", directory=root)
@@ -281,6 +279,16 @@ class Arch(RCS):
         assert revpath.startswith(self._archive_project_name()+'--')
         revision = revpath[len(self._archive_project_name()+'--'):]
         return revpath
+    def _rcs_revision_id(self, index):
+        status,output,error = self._u_invoke_client("logs")
+        logs = output.splitlines()
+        first_log = logs.pop(0)
+        assert first_log == "base-0", first_log
+        try:
+            log = logs[index]
+        except IndexError:
+            return None
+        return "%s--%s" % (self._archive_project_name(), log)
 
 class CantAddFile(Exception):
     def __init__(self, file):

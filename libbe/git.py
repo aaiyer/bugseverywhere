@@ -111,7 +111,18 @@ class Git(RCS):
         assert match != None, output+error
         assert len(match.groups()) == 3
         revision = match.groups()[1]
-        return revision
+        full_revision = self._rcs_revision_id(-1)
+        assert full_revision.startswith(revision), \
+            "Mismatched revisions:\n%s\n%s" % (revision, full_revision)
+        return full_revision
+    def _rcs_revision_id(self, index):
+        args = ["rev-list", "--first-parent", "--reverse", "HEAD"]
+        status,output,error = self._u_invoke_client(*args)
+        commits = output.splitlines()
+        try:
+            return commits[index]
+        except IndexError:
+            return None
 
     
 rcs.make_rcs_testcase_subclasses(Git, sys.modules[__name__])
