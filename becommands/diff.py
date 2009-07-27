@@ -65,12 +65,6 @@ def execute(args, manipulate_encodings=True):
     else:
         if revision == None: # get the most recent revision
             revision = bd.rcs.revision_id(-1)
-        # move bd into memory-only mode to avoid altering disk version.
-        bd.load_all_bugs()
-        for bug in bd:
-            bug.load_settings()
-            bug.load_comments()
-        bd.set_sync_with_disk(False)
         old_bd = bd.duplicate_bugdir(revision)
         d = diff.Diff(old_bd, bd)
         tree = d.report_tree()
