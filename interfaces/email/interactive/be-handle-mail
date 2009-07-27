@@ -285,8 +285,12 @@ class DiffTree (libbe.diff.DiffTree):
 class Diff (libbe.diff.Diff):
     def bug_add_string(self, bug):
         return bug.string(show_comments=True)
-    def comment_summary_string(self, comment):
+    def _comment_summary_string(self, comment):
         return comment.string()
+    def comment_add_string(self, comment):
+        return self._comment_summary_string(comment)
+    def comment_rem_string(self, comment):
+        return self._comment_summary_string(comment)
 
 class Message (object):
     def __init__(self, email_text=None, disable_parsing=False):

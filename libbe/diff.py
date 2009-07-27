@@ -398,7 +398,9 @@ class Diff (object):
         first_line = comment.body.splitlines()[0]
         return "%s\n  %s..." % (summary, first_line)
     def comment_rem_string(self, comment):
-        return self._comment_summary_string(comment)
+        summary = self._comment_summary_string(comment)
+        first_line = comment.body.splitlines()[0]
+        return "%s\n  %s..." % (summary, first_line)
     def comment_mod_string(self, comments):
         old_comment,new_comment = comments
         return self._comment_summary_string(new_comment)
