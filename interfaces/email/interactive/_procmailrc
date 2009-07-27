@@ -13,8 +13,8 @@ LOGFILE=$MAILDIR/procmail.log
 # Grab all incoming bug emails (but not replies).  This rule eats
 # matching emails (i.e. no further procmail processing).
 :0
-* ^Subject: [be-bug
-* !^Subject:.*[be-bug].*Re:
+* ^Subject: \[be-bug
+* !^Subject:.*\[be-bug].*Re:
 | be-handle-mail
 
 # Drop everything else

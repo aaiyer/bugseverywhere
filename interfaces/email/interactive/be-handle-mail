@@ -310,12 +310,12 @@ class DiffTree (libbe.diff.DiffTree):
             self.data_mime_part = None
             if data_part != None:
                 self.data_mime_part = send_pgp_mime.encodedMIMEText(data_part)
-            if parent != None and parent.name in ["new", "rem", "mod"]:
+            if parent != None and parent.name in [u"new", u"rem", u"mod"]:
                 self.attach_child_text = True
                 if data_part == None: # make blank data_mime_part for children's appends
-                    self.data_mime_part = send_pgp_mime.encodedMIMEText("")
+                    self.data_mime_part = send_pgp_mime.encodedMIMEText(u"")
             if self.data_mime_part != None:
-                self.data_mime_part["Content-Description"] = self.name
+                self.data_mime_part[u"Content-Description"] = self.name
                 root.attach(self.data_mime_part)
     def data_part(self, depth, indent=False):
         return libbe.diff.DiffTree.data_part(self, depth, indent=indent)
@@ -547,7 +547,7 @@ class Message (object):
                 self.commit_command = Command(self, "commit", [subject])
                 self.commit_command.run()
                 if LOGFILE != None:
-                    LOGFILE.write("Autocommit:\n%s\n\n" %
+                    LOGFILE.write(u"Autocommit:\n%s\n\n" %
                       send_pgp_mime.flatten(self.commit_command.response_msg(),
                                             to_unicode=True))
     def _begin_response(self):
@@ -577,7 +577,8 @@ class Message (object):
         if previous_revision == None:
             if AUTOCOMMIT != True: # no way to tell what's changed
                 raise NotificationFailed("Autocommit dissabled")
-            assert len(self._response_messages) > 0
+            if len(self._response_messages) == 0:
+                raise NotificationFailed("Initial email failed.")
             if self.commit_command.ret != 0:
                 # commit failed.  Error already logged.
                 raise NotificationFailed("Commit failed")
@@ -626,11 +627,12 @@ class Message (object):
                 root = parts[0]
             else: # join subscription parts into a single body
                 root = MIMEMultipart()
+                root[u"Content-Description"] = u"Multiple subscription trees."
                 for part in parts:
                     root.attach(part)
             emails.append(send_pgp_mime.attach_root(header, root))
             if LOGFILE != None:
-                LOGFILE.write("Preparing to notify %s of changes\n" % subscriber)
+                LOGFILE.write(u"Preparing to notify %s of changes\n" % subscriber)
         return emails
     def _get_before_and_after_bugdirs(self, bd, previous_revision=None):
         if previous_revision == None:
@@ -714,7 +716,7 @@ def test():
     num_bad = num_errors + num_failures
     return num_bad
 
-def main():
+def main(args):
     from optparse import OptionParser
     global AUTOCOMMIT, BE_DIR
 
@@ -741,7 +743,8 @@ def main():
     parser.add_option('--test', dest='test', action='store_true',
                       help='Run internal unit-tests and exit.')
 
-    options,args = parser.parse_args()
+    pargs = args
+    options,args = parser.parse_args(args[1:])
 
     if options.test == True:
         num_bad = test()
@@ -751,12 +754,16 @@ def main():
     
     BE_DIR = options.be_dir
     AUTOCOMMIT = options.autocommit
+
+    if options.notify_since == None:
+        msg_text = sys.stdin.read()
+
+    libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
+    open_logfile(options.logfile)
     generate_global_tags(options.tag_base)
 
     if options.notify_since != None:
         if options.subscribers == True:
-            libbe.encoding.set_IO_stream_encodings(ENCODING)
-            open_logfile(options.logfile)
             if LOGFILE != None:
                 LOGFILE.write(u"Checking for subscribers to notify since revision %s\n"
                               % options.notify_since)
@@ -775,9 +782,6 @@ def main():
             close_logfile()
         sys.exit(0)
 
-    msg_text = sys.stdin.read()
-    libbe.encoding.set_IO_stream_encodings(ENCODING) # _after_ reading message
-    open_logfile(options.logfile)
     if len(msg_text.strip()) == 0: # blank email!?
         if LOGFILE != None:
             LOGFILE.write(u"Blank email!\n")
@@ -875,4 +879,4 @@ class GenerateGlobalTagsTestCase (unittest.TestCase):
         self.failUnlessEqual(m.group(1), u"xyz-123")
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
