@@ -271,6 +271,23 @@ class Command (object):
             send_pgp_mime.PGPMimeMessageFactory(u"\n".join(response_body))
         return response_generator.plain()
 
+class DiffTree (libbe.diff.DiffTree):
+    def report_string(self):
+        return send_pgp_mime.flatten(self.report(), to_unicode=True)
+    def make_root(self):
+        return MIMEMultipart()
+    def join(self, root, part):
+        if part != None:
+            root.attach(send_pgp_mime.encodedMIMEText(part))
+    def data_string(self, depth, indent=False):
+        return libbe.diff.DiffTree.data_string(self, depth, indent=indent)
+
+class Diff (libbe.diff.Diff):
+    def bug_add_string(self, bug):
+        return bug.string(show_comments=True)
+    def comment_summary_string(self, comment):
+        return comment.string()
+
 class Message (object):
     def __init__(self, email_text):
         self.text = email_text
@@ -530,49 +547,44 @@ class Message (object):
             return [] 
 
         before_bd, after_bd = self._get_before_and_after_bugdirs(bd)
-        rem,mod,add = libbe.diff.bug_diffs(before_bd, after_bd)
-        bug_index = self._subscriber_bug_change_index(rem,mod,add)
+        diff = Diff(before_bd, after_bd)
+        diff_tree = diff.report_tree(diff_tree=DiffTree)
+        bug_index = {}
+        for child in diff_tree.child_by_path("/bugs/new"):
+            bug_index[child.name] = ("added", child)
+        for child in diff_tree.child_by_path("/bugs/mod"):
+            bug_index[child.name] = ("modified", child)
+        for child in diff_tree.child_by_path("/bugs/rem"):
+            bug_index[child.name] = ("removed", child)
         header = self._subscriber_header(bd)
 
-        parts = {}
         emails = []
         for subscriber,subscriptions in subscribers.items():
-            header["to"] = subscriber
-            root = MIMEMultipart()
+            header.replace_header("to", subscriber)
+            parts = []
             for id,types in subscriptions.items():
                 if id == "DIR":
-                    if subscribe.BUGDIR_TYPE_ALL in subscriptions["DIR"]:
-                        if ("DIR", "all") not in parts:
-                            parts[("DIR", "all")] = \
-                                self._subscriber_bugdir_all_part( \
-                                rem,mod,add,before_bd,after_bd)
-                        root.attach(parts[("DIR", "all")])
-                    if subscribe.BUGDIR_TYPE_NEW in subscriptions["DIR"]:
-                        if ("DIR", "new") not in parts:
-                            parts[("DIR", "new")] = \
-                                self._subscriber_bugdir_new_part(add)
-                        root.attach(parts[("DIR", "new")])
-                    continue
-                assert subscriptions[id] == [subscribe.BUG_TYPE_ALL], \
-                    subscriptions[id]
-                type,bug = bug_index[id]
-                if type == "added":
-                    pass # no-one other than self.author should be subscribed.
-                elif type == "modified":
-                    old,new = bug
-                    if (new.uuid, "mod") not in parts:
-                        parts[(new.uuid, "mod")] = \
-                            self._subscriber_bug_mod_part(old, new)
-                    root.attach(parts[(new.uuid, "mod")])
-                elif type == "removed":
-                    if (bug.uuid, "rem") not in parts:
-                        parts[(bug.uuid, "rem")] = \
-                            self._subscriber_bug_rem_part(old, bug)
-                    root.attach(parts[(bug.uuid, "rem")])
-            if len(root.get_payload()) > 0:
-                emails.append(send_pgp_mime.attach_root(header, root))
-                if LOGFILE != None:
-                    LOGFILE.write("Notfying %s of changes\n" % subscriber)
+                    if subscribe.BUGDIR_TYPE_ALL in types:
+                        parts.append(diff_tree.report())
+                        break
+                    if subscribe.BUGDIR_TYPE_NEW in types:
+                        new = diff_tree.child_by_path("/bugs/new")
+                        parts.append(new.report())
+                    continue # move on to next id
+                assert types == [subscribe.BUG_TYPE_ALL], types
+                type,bug_root = bug_index[id]
+                parts.append(bug_root.report())
+            if len(parts) == 0:
+                continue # no email to this subscriber
+            elif len(parts) == 1:
+                root = parts[0]
+            else: # join subscription parts into a single body
+                root = MIMEMultipart()
+                for part in parts:
+                    root.attach(part)
+            emails.append(send_pgp_mime.attach_root(header, root))
+            if LOGFILE != None:
+                LOGFILE.write("Notfying %s of changes\n" % subscriber)
         return emails
     def _get_before_and_after_bugdirs(self, bd):
         commit_msg = self.commit_command.stdout
@@ -598,65 +610,6 @@ class Message (object):
                   u"Subject: %s Re: %s" % (SUBJECT_TAG_RESPONSE, subject)
                   ]
         return send_pgp_mime.header_from_text(text=u"\n".join(header))
-    def _subscriber_bug_change_index(self, removed, modified, added):
-        bug_index = {}
-        for bug in removed:
-            bug_index[bug.uuid] = ("removed", bug)
-        for bug in modified:
-            old,new = bug
-            bug_index[new.uuid] = ("modified", bug)
-        for bug in added:
-            bug_index[bug.uuid] = ("added", bug)
-        return bug_index
-    def _subscriber_bugdir_all_part(self, rem,mod,add,before_bd,after_bd):
-        root = MIMEMultipart()
-        self._att(root,self._subscriber_bugdir_bugdir_part(before_bd,after_bd))
-        self._att(root, self._subscriber_bugdir_mod_part(mod))
-        self._att(root, self._subscriber_bugdir_rem_part(rem))
-        self._att(root, self._subscriber_bugdir_new_part(add))
-        if len(root.get_payload()) == 0:
-            return None
-        return root
-    def _subscriber_bugdir_bugdir_part(self, before_bd, after_bd):
-        if before_bd.settings != after_bd.settings:
-            return send_pgp_mime.encodedMIMEText(u"BD changed!")
-        return None
-    def _subscriber_bugdir_rem_part(self, rem):
-        lines = [u"The following bugs were removed by %s." % self.author_addr(), u""]
-        for bug in rem:
-            bug_text = bug.string(show_comments=False)
-            lines.extend(bug_text.splitlines())
-        return send_pgp_mime.encodedMIMEText(u"\n".join(lines)+u"\n")
-    def _subscriber_bugdir_new_part(self, add):
-        lines = [u"The following bugs were added by %s." % self.author_addr(), u""]
-        for bug in add:
-            bug_text = bug.string(show_comments=True)
-            lines.extend(bug_text.splitlines())
-        return send_pgp_mime.encodedMIMEText(u"\n".join(lines)+u"\n")
-    def _subscriber_bugdir_mod_part(self, mod):
-        lines = [u"The following bugs were modified by %s." \
-                     % self.author_addr(), u""]
-        for old,new in mod:
-            change_text = libbe.diff.bug_changes(old, new)
-            if change_text == None:
-                return None
-            lines.extend(change_text.splitlines())
-        return send_pgp_mime.encodedMIMEText(u"\n".join(lines)+u"\n")
-    def _subscriber_bug_rem_part(self, bug):
-        lines = [u"The following bug was removed by %s"%self.author_addr(),u""]
-        bug_text = bug.string(show_comments=False)
-        lines.extend(bug_text.splitlines())
-        return send_pgp_mime.encodedMIMEText(u"\n".join(lines)+u"\n")
-    def _subscriber_bug_mod_part(self, old, new):
-        lines = [u"Bug %s was modified by %s" % \
-                     (new.uuid, self.author_addr()), u""]
-        change_text = libbe.diff.bug_changes(old, new)
-        lines.extend(change_text.splitlines())
-        return send_pgp_mime.encodedMIMEText(u"\n".join(lines)+u"\n")
-    def _att(self, root, attachment):
-        if attachment != None:
-            root.attach(attachment)
-        return root
 
 def generate_global_tags(tag_base=u"be-bug"):
     """
