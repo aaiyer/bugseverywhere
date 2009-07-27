@@ -80,7 +80,7 @@ NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter", u"Assign", u"Depend", u"Severity",
 CONTROL_COMMENT = u"#"
 ALLOWED_COMMANDS = [u"assign", u"comment", u"commit", u"depend", u"help",
                     u"list", u"merge", u"new", u"open", u"severity", u"show",
-                    u"status", u"tag", u"target"]
+                    u"status", u"subscribe", u"tag", u"target"]
 
 AUTOCOMMIT = True
 
