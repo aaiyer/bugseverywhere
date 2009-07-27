@@ -512,8 +512,12 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
         return cmp(val_1, val_2)
 
 # alphabetical rankings (a < z)
+cmp_uuid = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "uuid")
 cmp_creator = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "creator")
 cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
+cmp_target = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "target")
+cmp_reporter = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "reporter")
+cmp_summary = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "summary")
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
@@ -535,7 +539,8 @@ def cmp_comments(bug_1, bug_2):
     return 0
 
 DEFAULT_CMP_FULL_CMP_LIST = \
-    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator,cmp_comments)
+    (cmp_status, cmp_severity, cmp_assigned, cmp_time, cmp_creator,
+     cmp_reporter, cmp_target, cmp_comments, cmp_summary, cmp_uuid)
 
 class BugCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):

@@ -216,13 +216,13 @@ class Diff (object):
             if not self.new_bugdir.has_bug(uuid):
                 old_bug = self.old_bugdir.bug_from_uuid(uuid)
                 removed.append(old_bug)
-        added.sort(bug.cmp_severity)
-        removed.sort(bug.cmp_severity)
+        added.sort()
+        removed.sort()
         modified.sort(self._bug_modified_cmp)
         self.__changed_bugs = (added, modified, removed)
         return self.__changed_bugs
     def _bug_modified_cmp(self, left, right):
-        return bug.cmp_severity(left[1], right[1])
+        return cmp(left[1], right[1])
     def _changed_comments(self, old, new):
         """
         Search for differences in all loaded comments between the bugs
@@ -348,9 +348,12 @@ class Diff (object):
                 crem.append(c)
             cmod = diff_tree("mod","Modified comments:",requires_children=True)
             for o,n in m:
-                c = diff_tree(n.uuid, self._comment_attribute_changes(o, n),
-                             self.comment_attribute_change_string)
+                c = diff_tree(n.uuid, (o,n), self.comment_mod_string)
                 cmod.append(c)
+                comm_attribute_changes = self._comment_attribute_changes(o, n)
+                if len(comm_attribute_changes) > 0:
+                    cset = diff_tree("settings", comm_attribute_changes,
+                                     self.comment_attribute_change_string)
                 if o.body != n.body:
                     data = (o.body, n.body)
                     cbody = diff_tree("cbody", data,
@@ -391,9 +394,14 @@ class Diff (object):
     def _comment_summary_string(self, comment):
         return "from %s on %s" % (comment.author, time_to_str(comment.time))
     def comment_add_string(self, comment):
-        return self._comment_summary_string(comment)
+        summary = self._comment_summary_string(comment)
+        first_line = comment.body.splitlines()[0]
+        return "%s\n  %s..." % (summary, first_line)
     def comment_rem_string(self, comment):
         return self._comment_summary_string(comment)
+    def comment_mod_string(self, comments):
+        old_comment,new_comment = comments
+        return self._comment_summary_string(new_comment)
     def comment_body_change_string(self, bodies):
         old_body,new_body = bodies
         return difflib.unified_diff(old_body, new_body)

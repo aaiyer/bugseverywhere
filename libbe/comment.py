@@ -271,6 +271,9 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             self.in_reply_to = in_reply_to
             self.body = body
 
+    def __cmp__(self, other):
+        return cmp_full(self, other)
+
     def __str__(self):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
@@ -681,5 +684,60 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             if comment.uuid == uuid:
                 return comment
         raise KeyError(uuid)
+
+def cmp_attr(comment_1, comment_2, attr, invert=False):
+    """
+    Compare a general attribute between two comments using the conventional
+    comparison rule for that attribute type.  If invert == True, sort
+    *against* that convention.
+    >>> attr="author"
+    >>> commentA = Comment()
+    >>> commentB = Comment()
+    >>> commentA.author = "John Doe"
+    >>> commentB.author = "Jane Doe"
+    >>> cmp_attr(commentA, commentB, attr) < 0
+    True
+    >>> cmp_attr(commentA, commentB, attr, invert=True) > 0
+    True
+    >>> commentB.author = "John Doe"
+    >>> cmp_attr(commentA, commentB, attr) == 0
+    True
+    """
+    if not hasattr(comment_2, attr) :
+        return 1
+    val_1 = getattr(comment_1, attr)
+    val_2 = getattr(comment_2, attr)
+    if val_1 == None: val_1 = None
+    if val_2 == None: val_2 = None
+    
+    if invert == True :
+        return -cmp(val_1, val_2)
+    else :
+        return cmp(val_1, val_2)
+
+# alphabetical rankings (a < z)
+cmp_uuid = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "uuid")
+cmp_author = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "author")
+cmp_in_reply_to = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "in_reply_to")
+cmp_content_type = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "content_type")
+cmp_body = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "body")
+# chronological rankings (newer < older)
+cmp_time = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "time", invert=True)
+
+DEFAULT_CMP_FULL_CMP_LIST = \
+    (cmp_time, cmp_author, cmp_content_type, cmp_body, cmp_in_reply_to,
+     cmp_uuid)
+
+class CommentCompoundComparator (object):
+    def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):
+        self.cmp_list = cmp_list
+    def __call__(self, comment_1, comment_2):
+        for comparison in self.cmp_list :
+            val = comparison(comment_1, comment_2)
+            if val != 0 :
+                return val
+        return 0
+        
+cmp_full = CommentCompoundComparator()
 
 suite = doctest.DocTestSuite()
