@@ -120,12 +120,15 @@ class DiffTree (tree.Tree):
         if part != None:
             root.append(part)
     def data_string(self, depth, indent=True):
+        if hasattr(self, "_cached_data_string"):
+            return self._cached_data_string
         data_string = self.data_string_fn(self.data)
         if indent == True:
             data_string_lines = data_string.splitlines()
             indent = "  "*(depth)
             line_sep = "\n"+indent
             data_string = indent+line_sep.join(data_string_lines)
+        self._cached_data_string = data_string
         return data_string
 
 class Diff (object):
