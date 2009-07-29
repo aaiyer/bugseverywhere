@@ -10,7 +10,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: wishlist
 
 
-status: assigned
+status: fixed
 
 
 summary: Interactive email interface

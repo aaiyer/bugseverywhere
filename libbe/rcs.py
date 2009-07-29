@@ -214,6 +214,16 @@ class RCS(object):
         changes to commit.
         """
         return None
+    def _rcs_revision_id(self, index):
+        """
+        Return the name of the <index>th revision.  Index will be an
+        integer (possibly <= 0).  The choice of which branch to follow
+        when crossing branches/merges is not defined.
+
+        Return None if revision IDs are not supported, or if the
+        specified revision does not exist.
+        """
+        return None
     def installed(self):
         try:
             self._rcs_help()
@@ -415,6 +425,18 @@ class RCS(object):
         Only executed after successful commits.
         """
         pass
+    def revision_id(self, index=None):
+        """
+        Return the name of the <index>th revision.  The choice of
+        which branch to follow when crossing branches/merges is not
+        defined.
+
+        Return None if index==None, revision IDs are not supported, or
+        if the specified revision does not exist.
+        """
+        if index == None:
+            return None
+        return self._rcs_revision_id(index)
     def _u_any_in_string(self, list, string):
         """
         Return True if any of the strings in list are in string.
@@ -821,6 +843,39 @@ class RCS_commit_TestCase(RCSTestCase):
                 full_path, revision)
             self.failUnlessEqual(
                 self.test_contents['rev_1'], committed_contents)
+
+    def test_revision_id_as_committed(self):
+        """Check for compatibility between .commit() and .revision_id()"""
+        if not self.rcs.versioned:
+            self.failUnlessEqual(self.rcs.revision_id(5), None)
+            return
+        committed_revisions = []
+        for path in self.test_files:
+            full_path = self.full_path(path)
+            self.rcs.set_file_contents(
+                full_path, self.test_contents['rev_1'])
+            revision = self.rcs.commit("Initial %s contents." % path)
+            committed_revisions.append(revision)
+            self.rcs.set_file_contents(
+                full_path, self.test_contents['uncommitted'])
+            revision = self.rcs.commit("Altered %s contents." % path)
+            committed_revisions.append(revision)
+        for i,revision in enumerate(committed_revisions):
+            self.failUnlessEqual(self.rcs.revision_id(i), revision)
+            i += -len(committed_revisions) # check negative indices
+            self.failUnlessEqual(self.rcs.revision_id(i), revision)
+        i = len(committed_revisions)
+        self.failUnlessEqual(self.rcs.revision_id(i), None)
+        self.failUnlessEqual(self.rcs.revision_id(-i-1), None)
+
+    def test_revision_id_as_committed(self):
+        """Check revision id before first commit"""
+        if not self.rcs.versioned:
+            self.failUnlessEqual(self.rcs.revision_id(5), None)
+            return
+        committed_revisions = []
+        for path in self.test_files:
+            self.failUnlessEqual(self.rcs.revision_id(0), None)
 
 
 class RCS_duplicate_repo_TestCase(RCSTestCase):

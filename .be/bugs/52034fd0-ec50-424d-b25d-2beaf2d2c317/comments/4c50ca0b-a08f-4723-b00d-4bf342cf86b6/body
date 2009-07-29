@@ -1,0 +1,20 @@
+I'm all for flexibility, so long as it doesn't require too much
+hackery to implement it.  You'll have two problems:
+
+  * Determining what to commit.
+
+    You'd have to have RCS keep a log of all versioned files it
+    touched, and extend .commit() to accept the keyword list "files"
+    and commit only those files.  This is doable, but maybe not worth
+    the trouble.
+
+  * Generating meaningful commit messages.
+
+    You'd have to add this functionality to each command (and future
+    commands).
+
+This would probably not be a good idea for the Arch and Mercurial
+backends, since they have a limited ability to rewrite history when
+you screw up your commit message (as far as I can tell).  Mercurial
+does have "hg rollback", but it only works once, and lots of
+typo-correction commits would just make the logs awkward.

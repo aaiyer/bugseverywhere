@@ -19,14 +19,14 @@ from libbe import cmdutil, bugdir
 import sys
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os, time
     >>> from libbe import bug
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
     >>> bug.uuid_gen = lambda: "X"
-    >>> execute (["this is a test",], test=True)
+    >>> execute (["this is a test",], manipulate_encodings=False)
     Created bug with ID X
     >>> bd.load()
     >>> bug = bd.bug_from_uuid("X")
@@ -44,7 +44,8 @@ def execute(args, test=False):
     cmdutil.default_complete(options, args, parser)
     if len(args) != 1:
         raise cmdutil.UsageError("Please supply a summary message")
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     if args[0] == '-': # read summary from stdin
         summary = sys.stdin.readline()
     else:

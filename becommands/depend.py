@@ -18,22 +18,22 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
     >>> bd.save()
     >>> os.chdir(bd.root)
-    >>> execute(["a", "b"], test=True)
+    >>> execute(["a", "b"], manipulate_encodings=False)
     Blocks on a:
     b
-    >>> execute(["a"], test=True)
+    >>> execute(["a"], manipulate_encodings=False)
     Blocks on a:
     b
-    >>> execute(["--show-status", "a"], test=True) # doctest: +NORMALIZE_WHITESPACE
+    >>> execute(["--show-status", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
     Blocks on a:
     b closed
-    >>> execute(["-r", "a", "b"], test=True)
+    >>> execute(["-r", "a", "b"], manipulate_encodings=False)
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -47,7 +47,8 @@ def execute(args, test=False):
         help()
         raise cmdutil.UsageError("Too many arguments.")
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     bugA = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 2:
         bugB = cmdutil.bug_from_shortname(bd, args[1])

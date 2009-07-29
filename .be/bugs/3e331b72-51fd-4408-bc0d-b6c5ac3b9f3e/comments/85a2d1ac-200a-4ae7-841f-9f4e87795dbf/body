@@ -1,0 +1,8 @@
+Obviously via the control interface:
+  subscribe #BUG-ID
+  subscribe new
+  subscribe all
+  unsubscribe #BUG-ID
+  ...
+Implemented via .extra_strings, although we'll need
+BugDir.extra_strings for the repo-wide new/all.

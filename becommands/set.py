@@ -32,18 +32,18 @@ def _value_string(bd, setting):
             val = None
     return str(val)
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
     >>> os.chdir(bd.root)
-    >>> execute(["target"], test=True)
+    >>> execute(["target"], manipulate_encodings=False)
     None
-    >>> execute(["target", "tomorrow"], test=True)
-    >>> execute(["target"], test=True)
+    >>> execute(["target", "tomorrow"], manipulate_encodings=False)
+    >>> execute(["target"], manipulate_encodings=False)
     tomorrow
-    >>> execute(["target", "none"], test=True)
-    >>> execute(["target"], test=True)
+    >>> execute(["target", "none"], manipulate_encodings=False)
+    >>> execute(["target"], manipulate_encodings=False)
     None
     """
     parser = get_parser()
@@ -51,7 +51,8 @@ def execute(args, test=False):
     complete(options, args, parser)
     if len(args) > 2:
         raise cmdutil.UsageError, "Too many arguments"
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     if len(args) == 0:
         keys = bd.settings_properties
         keys.sort()
