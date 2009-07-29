@@ -54,7 +54,7 @@ def execute(args, test=False):
         help()
         raise cmdutil.UsageError("Too many arguments.")
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 1:
         bug.assigned = bd.user_id
     elif len(args) == 2:

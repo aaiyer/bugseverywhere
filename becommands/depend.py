@@ -48,9 +48,9 @@ def execute(args, test=False):
         raise cmdutil.UsageError("Too many arguments.")
     
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bugA = bd.bug_from_shortname(args[0])
+    bugA = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 2:
-        bugB = bd.bug_from_shortname(args[1])
+        bugB = cmdutil.bug_from_shortname(bd, args[1])
         estrs = bugA.extra_strings
         depend_string = "BLOCKED-BY:%s" % bugB.uuid
         if options.remove == True:

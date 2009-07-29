@@ -37,7 +37,7 @@ def execute(args, test=False):
     if len(args) not in (1,2):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 1:
         print bug.status
     else:

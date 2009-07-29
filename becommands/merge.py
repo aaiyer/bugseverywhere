@@ -134,9 +134,9 @@ def execute(args, test=False):
         raise cmdutil.UsageError("Too many arguments.")
     
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bugA = bd.bug_from_shortname(args[0])
+    bugA = cmdutil.bug_from_shortname(bd, args[0])
     bugA.load_comments()
-    bugB = bd.bug_from_shortname(args[1])
+    bugB = cmdutil.bug_from_shortname(bd, args[1])
     bugB.load_comments()
     mergeA = bugA.new_comment("Merged from bug %s" % bugB.uuid)
     newCommTree = copy.deepcopy(bugB.comment_root)

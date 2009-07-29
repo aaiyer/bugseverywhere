@@ -32,7 +32,7 @@ def execute(args, test=False):
     >>> os.chdir(bd.root)
     >>> execute(["a", "This is a comment about a"], test=True)
     >>> bd._clear_bugs()
-    >>> bug = bd.bug_from_shortname("a")
+    >>> bug = cmdutil.bug_from_shortname(bd, "a")
     >>> bug.load_comments(load_full=False)
     >>> comment = bug.comment_root[0]
     >>> print comment.body
@@ -54,7 +54,7 @@ def execute(args, test=False):
     >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
     >>> execute(["b"], test=True)
     >>> bd._clear_bugs()
-    >>> bug = bd.bug_from_shortname("b")
+    >>> bug = cmdutil.bug_from_shortname(bd, "b")
     >>> bug.load_comments(load_full=False)
     >>> comment = bug.comment_root[0]
     >>> print comment.body
@@ -82,7 +82,7 @@ def execute(args, test=False):
     
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(bugname)
+    bug = cmdutil.bug_from_shortname(bd, bugname)
     bug.load_comments(load_full=False)
     if is_reply:
         parent = bug.comment_root.comment_from_shortname(shortname,

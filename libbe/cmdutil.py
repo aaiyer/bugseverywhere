@@ -206,6 +206,15 @@ def underlined(instring):
     
     return "%s\n%s" % (instring, "="*len(instring))
 
+def bug_from_shortname(bugdir, shortname):
+    """
+    Exception translation for the command-line interface.
+    """
+    try:
+        bug = bugdir.bug_from_shortname(shortname)
+    except (bugdir.MultipleBugMatches, bugdir.NoBugMatches), e:
+        raise UserError(e.message)
+    return bug
 
 def _test():
     import doctest

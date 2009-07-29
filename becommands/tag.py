@@ -92,7 +92,7 @@ def execute(args, test=False):
         if len(tags) > 0:
             print '\n'.join(tags)
         return
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 2:
         given_tag = args[1]
         estrs = bug.extra_strings

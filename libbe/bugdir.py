@@ -62,6 +62,12 @@ class MultipleBugMatches(ValueError):
         self.shortname = shortname
         self.matches = matches
 
+class NoBugMatches(KeyError):
+    def __init__(self, shortname):
+        msg = "No bug matches %s" % shortname
+        KeyError.__init__(self, msg)
+        self.shortname = shortname
+
 
 TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
@@ -530,7 +536,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             raise MultipleBugMatches(shortname, matches)
         if len(matches) == 1:
             return self.bug_from_uuid(matches[0])
-        raise KeyError("No bug matches %s" % shortname)
+        raise NoBugMatches(shortname)
 
     def bug_from_uuid(self, uuid):
         if not self.has_bug(uuid):

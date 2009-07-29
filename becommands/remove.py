@@ -30,7 +30,7 @@ def execute(args, test=False):
     >>> bd._clear_bugs()
     >>> try:
     ...     bd.bug_from_shortname("b")
-    ... except KeyError:
+    ... except bugdir.NoBugMatches:
     ...     print "Bug not found"
     Bug not found
     """
@@ -41,7 +41,7 @@ def execute(args, test=False):
     if len(args) != 1:
         raise cmdutil.UsageError, "Please specify a bug id."
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     bd.remove_bug(bug)
     print "Removed bug %s" % bug.uuid
 

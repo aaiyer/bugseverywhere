@@ -72,7 +72,7 @@ def execute(args, test=False):
             is_comment = False
         if is_comment == True and options.comments == False:
             continue
-        bug = bd.bug_from_shortname(bugname)
+        bug = cmdutil.bug_from_shortname(bd, bugname)
         if is_comment == False:
             if options.XML:
                 print bug.xml(show_comments=options.comments)

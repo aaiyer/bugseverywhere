@@ -41,7 +41,7 @@ def execute(args, test=False):
     if len(args) > 1:
         raise cmdutil.UsageError, "Too many arguments."
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     bug.status = "open"
 
 def get_parser():

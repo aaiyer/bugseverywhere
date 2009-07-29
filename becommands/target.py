@@ -53,7 +53,7 @@ def execute(args, test=False):
             if target and isinstance(target,str):
                 print target
         return
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 1:
         if bug.target is None:
             print "No target assigned."
