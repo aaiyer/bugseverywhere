@@ -860,6 +860,15 @@ class RCS_commit_TestCase(RCSTestCase):
         self.failUnlessEqual(self.rcs.revision_id(i), None)
         self.failUnlessEqual(self.rcs.revision_id(-i-1), None)
 
+    def test_revision_id_as_committed(self):
+        """Check revision id before first commit"""
+        if not self.rcs.versioned:
+            self.failUnlessEqual(self.rcs.revision_id(5), None)
+            return
+        committed_revisions = []
+        for path in self.test_files:
+            self.failUnlessEqual(self.rcs.revision_id(0), None)
+
 
 class RCS_duplicate_repo_TestCase(RCSTestCase):
     """Test cases for RCS.duplicate_repo method."""

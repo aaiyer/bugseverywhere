@@ -86,7 +86,10 @@ class Hg(RCS):
         kwargs = {"expect": (0,255)}
         status,output,error = self._u_invoke_client(*args, **kwargs)
         if status == 0:
-            return output.strip()
+            id = output.strip()
+            if id == '000000000000':
+                return None # before initial commit.
+            return id
         return None
 
     

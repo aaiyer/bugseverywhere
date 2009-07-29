@@ -117,7 +117,12 @@ class Git(RCS):
         return full_revision
     def _rcs_revision_id(self, index):
         args = ["rev-list", "--first-parent", "--reverse", "HEAD"]
-        status,output,error = self._u_invoke_client(*args)
+        kwargs = {"expect":(0,128)}
+        status,output,error = self._u_invoke_client(*args, **kwargs)
+        if status == 128:
+            if error.startswith("fatal: ambiguous argument 'HEAD': unknown "):
+                return None
+            raise rcs.CommandError(args, status, error)
         commits = output.splitlines()
         try:
             return commits[index]
