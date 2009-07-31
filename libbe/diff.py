@@ -23,40 +23,40 @@ import doctest
 class DiffTree (tree.Tree):
     """
     A tree holding difference data for easy report generation.
-    >>> all = DiffTree("all")
-    >>> bugdir = DiffTree("bugdir", data="target: None -> 1.0")
-    >>> all.append(bugdir)
+    >>> bugdir = DiffTree("bugdir")
+    >>> bdsettings = DiffTree("settings", data="target: None -> 1.0")
+    >>> bugdir.append(bdsettings)
     >>> bugs = DiffTree("bugs", "bug-count: 5 -> 6")
-    >>> all.append(bugs)
+    >>> bugdir.append(bugs)
     >>> new = DiffTree("new", "new bugs: ABC, DEF")
     >>> bugs.append(new)
     >>> rem = DiffTree("rem", "removed bugs: RST, UVW")
     >>> bugs.append(rem)
-    >>> print all.report_string()
+    >>> print bugdir.report_string()
     target: None -> 1.0
     bug-count: 5 -> 6
       new bugs: ABC, DEF
       removed bugs: RST, UVW
-    >>> print "\\n".join(all.paths())
-    all
-    all/bugdir
-    all/bugs
-    all/bugs/new
-    all/bugs/rem
-    >>> all.child_by_path("/") == all
+    >>> print "\\n".join(bugdir.paths())
+    bugdir
+    bugdir/settings
+    bugdir/bugs
+    bugdir/bugs/new
+    bugdir/bugs/rem
+    >>> bugdir.child_by_path("/") == bugdir
     True
-    >>> all.child_by_path("/bugs") == bugs
+    >>> bugdir.child_by_path("/bugs") == bugs
     True
-    >>> all.child_by_path("/bugs/rem") == rem
+    >>> bugdir.child_by_path("/bugs/rem") == rem
     True
-    >>> all.child_by_path("all") == all
+    >>> bugdir.child_by_path("bugdir") == bugdir
     True
-    >>> all.child_by_path("all/") == all
+    >>> bugdir.child_by_path("bugdir/") == bugdir
     True
-    >>> all.child_by_path("all/bugs") == bugs
+    >>> bugdir.child_by_path("bugdir/bugs") == bugs
     True
-    >>> all.child_by_path("/bugs").masked = True
-    >>> print all.report_string()
+    >>> bugdir.child_by_path("/bugs").masked = True
+    >>> print bugdir.report_string()
     target: None -> 1.0
     """
     def __init__(self, name, data=None, data_part_fn=str,
@@ -108,7 +108,8 @@ class DiffTree (tree.Tree):
             pass
         else:
             self.join(root, parent, data_part)
-            depth += 1
+            if data_part != None:
+                depth += 1
         for child in self:
             child.report(root, self, depth)
         return root
@@ -178,6 +179,7 @@ class Diff (object):
           status: open -> closed
         New comments:
           from John Doe <j@doe.com> on Thu, 01 Jan 1970 00:00:00 +0000
+            I'm closing this bug...
     """
     def __init__(self, old_bugdir, new_bugdir):
         self.old_bugdir = old_bugdir
