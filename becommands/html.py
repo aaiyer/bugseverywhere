@@ -118,8 +118,8 @@ class BEHTMLGen():
         .commentF {
         padding: 0px;
         margin: auto;
-        padding-top: 20px;
-        paddin-bottom: 40px;
+        padding-top: 0px;
+        paddin-bottom: 20px;
         margin-top: 0;
         }
         
@@ -502,9 +502,7 @@ class BEHTMLGen():
 
         detail_first_ = re.sub('_bug_id_', bug.uuid[0:3], self.detail_first)
         FD.write(detail_first_)
-        
-        
-        
+         
         bug_ = self.bd.bug_from_shortname(bug.uuid)
         bug_.load_comments(load_full=True)
         
@@ -553,8 +551,8 @@ class BEHTMLGen():
                             FD.write("<div class='commentF'>")
                         level = len(la)
                         x += 5
+                        FD.write("--------- Comment ---------<p />")
                         FD.write(com)
-                        FD.write("<hr />")
                 FD.write("</div>")
         FD.write(self.end_comment_section)
         if fileid == "active":

@@ -7,7 +7,7 @@ reporter: Gianluca Montecchi <gian@grys.it>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Comment should be threaded in the html output
