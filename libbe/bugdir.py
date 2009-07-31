@@ -760,12 +760,14 @@ class SimpleBugDirTestCase (unittest.TestCase):
     def setUp(self):
         # create a pre-existing bugdir in a temporary directory
         self.dir = utility.Dir()
+        self.original_working_dir = os.getcwd()
         os.chdir(self.dir.path)
         self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
                              allow_rcs_init=True)
         self.bugdir.new_bug("preexisting", summary="Hopefully not imported")
         self.bugdir.save()
     def tearDown(self):
+        os.chdir(self.original_working_dir)
         self.dir.cleanup()
     def testOnDiskCleanLoad(self):
         """simple_bug_dir(sync_with_disk==True) should not import preexisting bugs."""
