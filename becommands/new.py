@@ -28,7 +28,7 @@ def execute(args, manipulate_encodings=True):
     >>> bug.uuid_gen = lambda: "X"
     >>> execute (["this is a test",], manipulate_encodings=False)
     Created bug with ID X
-    >>> bd.load() # breaks simple bug dir rcs for cleanup!
+    >>> bd._clear_bugs()
     >>> bug = bd.bug_from_uuid("X")
     >>> print bug.summary
     this is a test
