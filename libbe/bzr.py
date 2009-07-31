@@ -101,20 +101,6 @@ class Bzr(RCS):
         if index >= 0:
             return str(index+1) # bzr commit 0 is the empty tree.
         return str(current_revision+index+1)
-    def postcommit(self):
-        try:
-            self._u_invoke_client('merge')
-        except rcs.CommandError, e:
-            if ('No merge branch known or specified' in e.err_str or
-                'No merge location known or specified' in e.err_str):
-                pass
-            else:
-                self._u_invoke_client('revert',  '--no-backup', 
-                                   directory=directory)
-                self._u_invoke_client('resolve', '--all', directory=directory)
-                raise
-        if len(self._u_invoke_client('status', directory=directory)[1]) > 0:
-            self.commit('Merge from upstream')
 
     
 rcs.make_rcs_testcase_subclasses(Bzr, sys.modules[__name__])
