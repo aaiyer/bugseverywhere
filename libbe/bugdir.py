@@ -321,6 +321,12 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             self.rcs = rcs
             self._setup_user_id(self.user_id)
 
+    def __del__(self):
+        self.cleanup()
+
+    def cleanup(self):
+        self.rcs.cleanup()
+
     # methods for getting the BugDir situated in the filesystem
 
     def _find_root(self, path):
@@ -585,12 +591,13 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def bug_from_shortname(self, shortname):
         """
-        >>> bd = simple_bug_dir(sync_with_disk=False)
+        >>> bd = SimpleBugDir(sync_with_disk=False)
         >>> bug_a = bd.bug_from_shortname('a')
         >>> print type(bug_a)
         <class 'libbe.bug.Bug'>
         >>> print bug_a
         a:om: Bug A
+        >>> bd.cleanup()
         """
         matches = []
         self._bug_map_gen()
@@ -619,43 +626,47 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return True
 
 
-def simple_bug_dir(sync_with_disk=True):
+class SimpleBugDir (BugDir):
     """
     For testing.  Set sync_with_disk==False for a memory-only bugdir.
-    >>> bugdir = simple_bug_dir()
+    >>> bugdir = SimpleBugDir()
     >>> uuids = list(bugdir.list_uuids())
     >>> uuids.sort()
     >>> print uuids
     ['a', 'b']
+    >>> bugdir.cleanup()
     """
-    if sync_with_disk == True:
-        dir = utility.Dir()
-        assert os.path.exists(dir.path)
-        root = dir.path
-        assert_new_BugDir = True
-        rcs_init = True
-    else:
-        root = "/"
-        assert_new_BugDir = False
-        rcs_init = False
-    bugdir = BugDir(root, sink_to_existing_root=False,
+    def __init__(self, sync_with_disk=True):
+        if sync_with_disk == True:
+            dir = utility.Dir()
+            assert os.path.exists(dir.path)
+            root = dir.path
+            assert_new_BugDir = True
+            rcs_init = True
+        else:
+            root = "/"
+            assert_new_BugDir = False
+            rcs_init = False
+        BugDir.__init__(self, root, sink_to_existing_root=False,
                     assert_new_BugDir=assert_new_BugDir,
                     allow_rcs_init=rcs_init,
                     manipulate_encodings=False)
-    if sync_with_disk == True: # postpone cleanup since dir.__del__() removes dir.
-        bugdir._dir_ref = dir
-    bug_a = bugdir.new_bug("a", summary="Bug A")
-    bug_a.creator = "John Doe <jdoe@example.com>"
-    bug_a.time = 0
-    bug_b = bugdir.new_bug("b", summary="Bug B")
-    bug_b.creator = "Jane Doe <jdoe@example.com>"
-    bug_b.time = 0
-    bug_b.status = "closed"
-    if sync_with_disk == True:
-        bugdir.save()
-        bugdir.set_sync_with_disk(True)
-    return bugdir
-
+        if sync_with_disk == True: # postpone cleanup since dir.__del__() removes dir.
+            self._dir_ref = dir
+        bug_a = self.new_bug("a", summary="Bug A")
+        bug_a.creator = "John Doe <jdoe@example.com>"
+        bug_a.time = 0
+        bug_b = self.new_bug("b", summary="Bug B")
+        bug_b.creator = "Jane Doe <jdoe@example.com>"
+        bug_b.time = 0
+        bug_b.status = "closed"
+        if sync_with_disk == True:
+            self.save()
+            self.set_sync_with_disk(True)
+    def cleanup(self):
+        if hasattr(self, "_dir_ref"):
+            self._dir_ref.cleanup()
+        BugDir.cleanup(self)
 
 class BugDirTestCase(unittest.TestCase):
     def setUp(self):
@@ -664,7 +675,7 @@ class BugDirTestCase(unittest.TestCase):
                              allow_rcs_init=True)
         self.rcs = self.bugdir.rcs
     def tearDown(self):
-        self.rcs.cleanup()
+        self.bugdir.cleanup()
         self.dir.cleanup()
     def fullPath(self, path):
         return os.path.join(self.dir.path, path)
@@ -768,10 +779,11 @@ class SimpleBugDirTestCase (unittest.TestCase):
         self.bugdir.save()
     def tearDown(self):
         os.chdir(self.original_working_dir)
+        self.bugdir.cleanup()
         self.dir.cleanup()
     def testOnDiskCleanLoad(self):
-        """simple_bug_dir(sync_with_disk==True) should not import preexisting bugs."""
-        bugdir = simple_bug_dir(sync_with_disk=True)
+        """SimpleBugDir(sync_with_disk==True) should not import preexisting bugs."""
+        bugdir = SimpleBugDir(sync_with_disk=True)
         self.failUnless(bugdir.sync_with_disk==True, bugdir.sync_with_disk)
         uuids = sorted([bug.uuid for bug in bugdir])
         self.failUnless(uuids == ['a', 'b'], uuids)
@@ -781,9 +793,10 @@ class SimpleBugDirTestCase (unittest.TestCase):
         bugdir.load_all_bugs()
         uuids = sorted([bug.uuid for bug in bugdir])
         self.failUnless(uuids == ['a', 'b'], uuids)
+        bugdir.cleanup()
     def testInMemoryCleanLoad(self):
-        """simple_bug_dir(sync_with_disk==False) should not import preexisting bugs."""
-        bugdir = simple_bug_dir(sync_with_disk=False)
+        """SimpleBugDir(sync_with_disk==False) should not import preexisting bugs."""
+        bugdir = SimpleBugDir(sync_with_disk=False)
         self.failUnless(bugdir.sync_with_disk==False, bugdir.sync_with_disk)
         uuids = sorted([bug.uuid for bug in bugdir])
         self.failUnless(uuids == ['a', 'b'], uuids)
@@ -793,7 +806,7 @@ class SimpleBugDirTestCase (unittest.TestCase):
         bugdir._clear_bugs()
         uuids = sorted([bug.uuid for bug in bugdir])
         self.failUnless(uuids == [], uuids)
-
+        bugdir.cleanup()
 
 unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

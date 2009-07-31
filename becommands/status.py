@@ -20,7 +20,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> execute(["a"], manipulate_encodings=False)
     open
@@ -30,6 +30,7 @@ def execute(args, manipulate_encodings=True):
     >>> execute(["a", "none"], manipulate_encodings=False)
     Traceback (most recent call last):
     UserError: Invalid status: none
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

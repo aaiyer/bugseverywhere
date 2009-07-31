@@ -136,7 +136,7 @@ class Diff (object):
     """
     Difference tree generator for BugDirs.
     >>> import copy
-    >>> bd = bugdir.simple_bug_dir(sync_with_disk=False)
+    >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
     >>> bd.user_id = "John Doe <j@doe.com>"
     >>> bd_new = copy.deepcopy(bd)
     >>> bd_new.target = "1.0"
@@ -180,6 +180,7 @@ class Diff (object):
         New comments:
           from John Doe <j@doe.com> on Thu, 01 Jan 1970 00:00:00 +0000
             I'm closing this bug...
+    >>> bd.cleanup()
     """
     def __init__(self, old_bugdir, new_bugdir):
         self.old_bugdir = old_bugdir

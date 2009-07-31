@@ -21,7 +21,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import utility
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
     >>> a = bd.bug_from_shortname("a")
     >>> a.comment_root.time = 0
@@ -120,6 +120,7 @@ def execute(args, manipulate_encodings=True):
     Merged into bug a
     >>> print b.status
     closed
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

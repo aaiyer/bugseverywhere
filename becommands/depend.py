@@ -21,7 +21,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import utility
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.save()
     >>> os.chdir(bd.root)
     >>> execute(["a", "b"], manipulate_encodings=False)
@@ -34,6 +34,7 @@ def execute(args, manipulate_encodings=True):
     Blocks on a:
     b closed
     >>> execute(["-r", "a", "b"], manipulate_encodings=False)
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

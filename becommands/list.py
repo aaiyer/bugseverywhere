@@ -29,13 +29,14 @@ AVAILABLE_CMPS.remove("attr") # a cmp_* template.
 def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> execute([], manipulate_encodings=False)
     a:om: Bug A
     >>> execute(["--status", "all"], manipulate_encodings=False)
     a:om: Bug A
     b:cm: Bug B
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

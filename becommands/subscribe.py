@@ -57,7 +57,7 @@ class InvalidType (ValueError):
 
 def execute(args, manipulate_encodings=True):
     """
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
     >>> os.chdir(bd.root)
     >>> a = bd.bug_from_shortname("a")
@@ -96,6 +96,7 @@ def execute(args, manipulate_encodings=True):
     >>> execute(["-s","Jane Doe <J@doe.com>", "DIR"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for bug directory:
     Jane Doe <J@doe.com>    all    *
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -337,7 +338,7 @@ def get_bugdir_subscribers(bugdir, server):
     where id is either a bug.uuid (in the case of a bug subscription)
     or "DIR" (in the case of a bugdir subscription).
 
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
     >>> a = bd.bug_from_shortname("a")
     >>> bd.extra_strings = subscribe(bd.extra_strings, "John Doe <j@doe.com>", [BUGDIR_TYPE_ALL], ["a.com"], BUGDIR_TYPE_ALL)
     >>> bd.extra_strings = subscribe(bd.extra_strings, "Jane Doe <J@doe.com>", [BUGDIR_TYPE_NEW], ["*"], BUGDIR_TYPE_ALL)
@@ -351,6 +352,7 @@ def get_bugdir_subscribers(bugdir, server):
     [<SubscriptionType: all>]
     >>> get_bugdir_subscribers(bd, "b.net")
     {'Jane Doe <J@doe.com>': {'DIR': [<SubscriptionType: new>]}}
+    >>> bd.cleanup()
     """
     subscribers = {}
     for sub in get_subscribers(bugdir.extra_strings, BUGDIR_TYPE_ALL, server,

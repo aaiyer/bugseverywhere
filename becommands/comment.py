@@ -28,7 +28,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> import time
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> execute(["a", "This is a comment about a"], manipulate_encodings=False)
     >>> bd._clear_bugs()
@@ -60,6 +60,7 @@ def execute(args, manipulate_encodings=True):
     >>> print comment.body
     I like cheese
     <BLANKLINE>
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

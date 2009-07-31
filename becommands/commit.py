@@ -22,13 +22,14 @@ def execute(args, manipulate_encodings=True):
     """
     >>> import os, time
     >>> from libbe import bug
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> full_path = "testfile"
     >>> test_contents = "A test file"
     >>> bd.rcs.set_file_contents(full_path, test_contents)
     >>> execute(["Added %s." % (full_path)], manipulate_encodings=False) # doctest: +ELLIPSIS
     Committed ...
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

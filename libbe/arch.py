@@ -62,7 +62,11 @@ class Arch(RCS):
         self._create_project(path)
         self._add_project_code(path)
     def _create_archive(self, path):
-        # Create a new archive
+        """
+        Create a temporary Arch archive in the directory PATH.  This
+        archive will be removed by
+          __del__->cleanup->_rcs_cleanup->_remove_archive
+        """
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
         id = self.get_user_id()

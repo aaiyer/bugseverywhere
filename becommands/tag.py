@@ -21,7 +21,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import utility
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
     >>> os.chdir(bd.root)
     >>> a = bd.bug_from_shortname("a")
@@ -66,6 +66,7 @@ def execute(args, manipulate_encodings=True):
     Tags for a:
     Alphabetically first
     >>> execute(["--remove", "a", "Alphabetically first"], manipulate_encodings=False)
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

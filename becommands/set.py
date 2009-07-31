@@ -35,7 +35,7 @@ def _value_string(bd, setting):
 def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> execute(["target"], manipulate_encodings=False)
     None
@@ -45,6 +45,7 @@ def execute(args, manipulate_encodings=True):
     >>> execute(["target", "none"], manipulate_encodings=False)
     >>> execute(["target"], manipulate_encodings=False)
     None
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

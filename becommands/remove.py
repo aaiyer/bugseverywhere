@@ -21,7 +21,7 @@ def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import mapfile
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> print bd.bug_from_shortname("b").status
     closed
@@ -33,6 +33,7 @@ def execute(args, manipulate_encodings=True):
     ... except bugdir.NoBugMatches:
     ...     print "Bug not found"
     Bug not found
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

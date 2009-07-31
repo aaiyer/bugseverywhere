@@ -24,7 +24,7 @@ def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import bugdir
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> print bd.bug_from_shortname("a").status
     open
@@ -32,6 +32,7 @@ def execute(args, manipulate_encodings=True):
     >>> bd._clear_bugs()
     >>> print bd.bug_from_shortname("a").status
     closed
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

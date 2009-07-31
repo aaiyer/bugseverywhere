@@ -23,7 +23,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
     >>> original = bd.rcs.commit("Original status")
     >>> bug = bd.bug_from_uuid("a")
@@ -48,6 +48,7 @@ def execute(args, manipulate_encodings=True):
     ... else:
     ...     print "This directory is not revision-controlled."
     This directory is not revision-controlled.
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

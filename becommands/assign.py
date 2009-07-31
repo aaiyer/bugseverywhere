@@ -23,7 +23,7 @@ __desc__ = __doc__
 def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> bd.bug_from_shortname("a").assigned is None
     True
@@ -42,6 +42,7 @@ def execute(args, manipulate_encodings=True):
     >>> bd._clear_bugs()
     >>> bd.bug_from_shortname("a").assigned is None
     True
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)

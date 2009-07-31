@@ -23,12 +23,12 @@ def execute(args, manipulate_encodings=True):
     """
     >>> import os, time
     >>> from libbe import bug
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> bug.uuid_gen = lambda: "X"
     >>> execute (["this is a test",], manipulate_encodings=False)
     Created bug with ID X
-    >>> bd.load()
+    >>> bd.load() # breaks simple bug dir rcs for cleanup!
     >>> bug = bd.bug_from_uuid("X")
     >>> print bug.summary
     this is a test
@@ -38,6 +38,7 @@ def execute(args, manipulate_encodings=True):
     minor
     >>> bug.target == None
     True
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
