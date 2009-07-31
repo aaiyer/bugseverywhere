@@ -738,7 +738,7 @@ class BugDirTestCase(unittest.TestCase):
             if index == 0:
                 repLoaded = comment
                 self.failUnless(repLoaded.uuid == rep.uuid, repLoaded.uuid)
-                self.failUnless(comment.sync_with_disk == True,
+                self.failUnless(comment.sync_with_disk == sync_with_disk,
                                 comment.sync_with_disk)
                 self.failUnless(comment.content_type == "text/plain",
                                 comment.content_type)
