@@ -694,9 +694,9 @@ def cmp_attr(comment_1, comment_2, attr, invert=False):
     >>> commentB = Comment()
     >>> commentA.author = "John Doe"
     >>> commentB.author = "Jane Doe"
-    >>> cmp_attr(commentA, commentB, attr) < 0
+    >>> cmp_attr(commentA, commentB, attr) > 0
     True
-    >>> cmp_attr(commentA, commentB, attr, invert=True) > 0
+    >>> cmp_attr(commentA, commentB, attr, invert=True) < 0
     True
     >>> commentB.author = "John Doe"
     >>> cmp_attr(commentA, commentB, attr) == 0
