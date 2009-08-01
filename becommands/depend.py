@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Add/remove bug dependencies"""
-from libbe import cmdutil, bugdir
+from libbe import cmdutil, bugdir, tree
 import os, copy
 __desc__ = __doc__
 
@@ -79,7 +79,10 @@ def execute(args, manipulate_encodings=True):
     elif len(args) > 2:
         help()
         raise cmdutil.UsageError("Too many arguments.")
-    
+    elif len(args) == 2 and options.tree_depth != None:
+        raise cmdutil.UsageError("Only one bug id used in tree mode.")
+        
+
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     if options.repair == True:
@@ -92,6 +95,21 @@ def execute(args, manipulate_encodings=True):
         return 0
 
     bugA = cmdutil.bug_from_shortname(bd, args[0])
+
+    if options.tree_depth != None:
+        dtree = DependencyTree(bd, bugA, options.tree_depth)
+        if len(dtree.blocked_by_tree()) > 0:
+            print "%s blocked by:" % bugA.uuid
+            for depth,node in dtree.blocked_by_tree().thread():
+                if depth == 0: continue
+                print "%s%s" % (" "*(depth), node.bug.string(shortlist=True))
+        if len(dtree.blocks_tree()) > 0:
+            print "%s blocks:" % bugA.uuid
+            for depth,node in dtree.blocks_tree().thread():
+                if depth == 0: continue
+                print "%s%s" % (" "*(depth), node.bug.string(shortlist=True))
+        return 0
+
     if len(args) == 2:
         bugB = cmdutil.bug_from_shortname(bd, args[1])
         if options.remove == True:
@@ -124,6 +142,9 @@ def get_parser():
     parser.add_option("-s", "--show-status", action="store_true",
                       dest="show_status", default=False,
                       help="Show status of blocking bugs")
+    parser.add_option("-t", "--tree-depth", metavar="DEPTH", default=None,
+                      type="int", dest="tree_depth",
+                      help="Print dependency tree rooted at BUG-ID with DEPTH levels of both blockers and blockees.  Set DEPTH <= 0 to disable the depth limit.")
     parser.add_option("--repair", action="store_true",
                       dest="repair", default=False,
                       help="Check for and repair one-way links")
@@ -283,3 +304,36 @@ def check_dependencies(bugdir, repair_broken_links=False):
             else:
                 good_links.append((blockee, bug))
     return (good_links, fixed_links, broken_links)
+
+class DependencyTree (object):
+    """
+    Note: should probably be DependencyDiGraph.
+    """
+    def __init__(self, bugdir, root_bug, depth_limit=0):
+        self.bugdir = bugdir
+        self.root_bug = root_bug
+        self.depth_limit = depth_limit
+    def _build_tree(self, child_fn):
+        root = tree.Tree()
+        root.bug = self.root_bug
+        root.depth = 0
+        stack = [root]
+        while len(stack) > 0:
+            node = stack.pop()
+            if self.depth_limit > 0 and node.depth == self.depth_limit:
+                continue
+            for bug in child_fn(self.bugdir, node.bug):
+                child = tree.Tree()
+                child.bug = bug
+                child.depth = node.depth+1
+                node.append(child)
+                stack.append(child)
+        return root
+    def blocks_tree(self):
+        if not hasattr(self, "_blocks_tree"):
+            self._blocks_tree = self._build_tree(get_blocks)
+        return self._blocks_tree
+    def blocked_by_tree(self):
+        if not hasattr(self, "_blocked_by_tree"):
+            self._blocked_by_tree = self._build_tree(get_blocked_by)
+        return self._blocked_by_tree
