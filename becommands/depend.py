@@ -71,14 +71,26 @@ def execute(args, manipulate_encodings=True):
                              bugid_args={0: lambda bug : bug.active==True,
                                          1: lambda bug : bug.active==True})
 
-    if len(args) < 1:
+    if options.repair == True:
+        if len(args) > 0:
+            raise cmdutil.UsageError("No arguments with --repair calls.")
+    elif len(args) < 1:
         raise cmdutil.UsageError("Please a bug id.")
-    if len(args) > 2:
+    elif len(args) > 2:
         help()
         raise cmdutil.UsageError("Too many arguments.")
     
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
+    if options.repair == True:
+        good,fixed,broken = check_dependencies(bd, repair_broken_links=True)
+        assert len(broken) == 0, broken
+        if len(fixed) > 0:
+            print "Fixed the following links:"
+            print "\n".join(["%s |-- %s" % (blockee.uuid, blocker.uuid)
+                             for blockee,blocker in fixed])
+        return 0
+
     bugA = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 2:
         bugB = cmdutil.bug_from_shortname(bd, args[1])
@@ -105,12 +117,16 @@ def execute(args, manipulate_encodings=True):
             print '\n'.join([bug.uuid for bug in blocks])
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be depend BUG-ID [BUG-ID]")
-    parser.add_option("-r", "--remove", action="store_true", dest="remove",
+    parser = cmdutil.CmdOptionParser("be depend BUG-ID [BUG-ID]\nor:    be depend --repair")
+    parser.add_option("-r", "--remove", action="store_true",
+                      dest="remove", default=False,
                       help="Remove dependency (instead of adding it)")
     parser.add_option("-s", "--show-status", action="store_true",
-                      dest="show_status",
+                      dest="show_status", default=False,
                       help="Show status of blocking bugs")
+    parser.add_option("--repair", action="store_true",
+                      dest="repair", default=False,
+                      help="Check for and repair one-way links")
     return parser
 
 longhelp="""
@@ -119,6 +135,12 @@ If bug B is not specified, just print a list of bugs blocking (A).
 
 To search for bugs blocked by a particular bug, try
   $ be list --extra-strings BLOCKED-BY:<your-bug-uuid>
+
+In repair mode, add the missing direction to any one-way links.
+
+The "|--" symbol in the repair-mode output is inspired by the
+"negative feedback" arrow common in biochemistry.  See, for example
+  http://www.nature.com/nature/journal/v456/n7223/images/nature07513-f5.0.jpg
 """
 
 def help():
@@ -163,7 +185,12 @@ def _get_blocked_by(bug):
     return uuids
 
 def _repair_one_way_link(blocked_bug, blocking_bug, blocks=None):
-    pass
+    if blocks == True: # add blocks link
+        blocks_string = _generate_blocks_string(blocked_bug)
+        _add_remove_extra_string(blocking_bug, blocks_string, add=True)
+    else: # add blocked by link
+        blocked_by_string = _generate_blocked_by_string(blocking_bug)
+        _add_remove_extra_string(blocked_bug, blocked_by_string, add=True)
 
 # functions exposed to other modules
 
@@ -200,8 +227,33 @@ def get_blocked_by(bugdir, bug):
 def check_dependencies(bugdir, repair_broken_links=False):
     """
     Check that links are bi-directional for all bugs in bugdir.
+
+    >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
+    >>> a = bd.bug_from_uuid("a")
+    >>> b = bd.bug_from_uuid("b")
+    >>> blocked_by_string = _generate_blocked_by_string(b)
+    >>> _add_remove_extra_string(a, blocked_by_string, add=True)
+    >>> good,repaired,broken = check_dependencies(bd, repair_broken_links=False)
+    >>> good
+    []
+    >>> repaired
+    []
+    >>> broken
+    [(Bug(uuid='a'), Bug(uuid='b'))]
+    >>> _get_blocks(b)
+    []
+    >>> good,repaired,broken = check_dependencies(bd, repair_broken_links=True)
+    >>> _get_blocks(b)
+    ['a']
+    >>> good
+    []
+    >>> repaired
+    [(Bug(uuid='a'), Bug(uuid='b'))]
+    >>> broken
+    []
     """
-    bugdir.load_all_bugs()
+    if bugdir.sync_with_disk == True:
+        bugdir.load_all_bugs()
     good_links = []
     fixed_links = []
     broken_links = []
