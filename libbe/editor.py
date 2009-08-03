@@ -62,7 +62,8 @@ def editor_string(comment=None, encoding=None):
     fhandle, fname = tempfile.mkstemp()
     try:
         if comment is not None:
-            os.write(fhandle, '\n'+comment_string(comment))
+            cstring = u'\n'+comment_string(comment)
+            os.write(fhandle, cstring.encode(encoding))
         os.close(fhandle)
         oldmtime = os.path.getmtime(fname)
         os.system("%s %s" % (editor, fname))

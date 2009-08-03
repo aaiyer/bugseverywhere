@@ -104,7 +104,6 @@ def execute(args, manipulate_encodings=True):
             raise cmdutil.UserError, "No comment supplied, and EDITOR not specified."
         if body is None:
             raise cmdutil.UserError("No comment entered.")
-        body = body.decode('utf-8')
     elif args[1] == '-': # read body from stdin
         binary = not (options.content_type == None
                       or options.content_type.startswith("text/"))
