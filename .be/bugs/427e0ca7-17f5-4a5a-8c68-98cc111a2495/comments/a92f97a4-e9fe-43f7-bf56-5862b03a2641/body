@@ -1,0 +1,33 @@
+Howdy all,
+
+Currently, the code and interface of Bugs Everywhere speaks loosely
+about the term “RCS”. Sometimes it means “revision control system”
+referring in general to these types of system, and sometimes it talks
+about GNU RCS, a specific system.
+
+I propose that “Version Control System” (“VCS”) has emerged as a
+consensus term to refer to such systems in general, with no specific
+reference to any particular system.
+
+So I'd like to modify the Bugs Everywhere code to disambiguate: the term
+“VCS” will be used consistently to refer to version control systems in
+general, and “RCS” will only ever refer to GNU RCS.
+
+This will change some interface (e.g. the ‘rcs_name’ configuration
+setting, and some of the methods on objects), but making this change
+while Bugs Everywhere is small will be much less painful than making it
+later.
+
+Any objections? Any alternative suggestions?
+
+-- 
+ \       “I watched the Indy 500, and I was thinking that if they left |
+  `\         earlier they wouldn't have to go so fast.” —Steven Wright |
+_o__)                                                                  |
+Ben Finney
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel
