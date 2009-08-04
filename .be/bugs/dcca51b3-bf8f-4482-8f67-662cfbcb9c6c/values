@@ -7,7 +7,7 @@ reporter: Gianluca Montecchi <gian@grys.it>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: BE should not crash if user.email  and user.name are not defined

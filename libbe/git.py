@@ -53,10 +53,18 @@ class Git(RCS):
     def _rcs_init(self, path):
         self._u_invoke_client("init", directory=path)
     def _rcs_get_user_id(self):
-        status,output,error = self._u_invoke_client("config", "user.name")
-        name = output.rstrip('\n')
-        status,output,error = self._u_invoke_client("config", "user.email")
-        email = output.rstrip('\n')
+        status,output,error = \
+            self._u_invoke_client("config", "user.name", expect=(0,1))
+        if status == 0:
+            name = output.rstrip('\n')
+        else:
+            name = ""
+        status,output,error = \
+            self._u_invoke_client("config", "user.email", expect=(0,1))
+        if status == 0:
+            email = output.rstrip('\n')
+        else:
+            email = ""
         if name != "" or email != "": # got something!
             # guess missing info, if necessary
             if name == "":
