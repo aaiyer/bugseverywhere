@@ -1,0 +1,43 @@
+BE should not crash when be list|show is used on a git repository that
+have not the config variables user.name and user.email defined in the
+.git/config file.
+
+To view the bug, in my opinion shold not be mandatory to have these two options
+defined
+
+
+Traceroute:
+
+galactica:~/Devel/dumb> be show 996
+Traceback (most recent call last):
+  File "/usr/bin/be", line 62, in <module>
+    sys.exit(cmdutil.execute(args[0], args[1:]))
+  File "/usr/lib/python2.5/site-packages/libbe/cmdutil.py", line 76, in execute
+    ret = cmd.execute([a.decode(enc) for a in args])
+  File "/usr/lib/python2.5/site-packages/becommands/show.py", line 60, in execute
+    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+  File "/usr/lib/python2.5/site-packages/libbe/bugdir.py", line 302, in __init__
+    self.load()
+  File "/usr/lib/python2.5/site-packages/libbe/bugdir.py", line 382, in load
+    self.load_settings()
+  File "/usr/lib/python2.5/site-packages/libbe/bugdir.py", line 411, in load_settings
+    self._setup_user_id(self.user_id)
+  File "/usr/lib/python2.5/site-packages/libbe/properties.py", line 293, in _fget
+    value = generator(self)
+  File "/usr/lib/python2.5/site-packages/libbe/bugdir.py", line 177, in _guess_user_id
+    return self.rcs.get_user_id()
+  File "/usr/lib/python2.5/site-packages/libbe/rcs.py", line 258, in get_user_id
+    id = self._rcs_get_user_id()
+  File "/usr/lib/python2.5/site-packages/libbe/git.py", line 56, in _rcs_get_user_id
+    status,output,error = self._u_invoke_client("config", "user.name")
+  File "/usr/lib/python2.5/site-packages/libbe/rcs.py", line 458, in _u_invoke_client
+    return self._u_invoke(cl_args, stdin=stdin,expect=expect,cwd=directory)
+  File "/usr/lib/python2.5/site-packages/libbe/rcs.py", line 450, in _u_invoke
+    raise CommandError(args, status, error)
+libbe.rcs.CommandError: Command failed (1):
+
+
+while executing
+  ['git', 'config', 'user.name']
+galactica:~/Devel/dumb>
+
