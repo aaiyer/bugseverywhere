@@ -7,7 +7,7 @@ reporter: gianluca <gian@galactica>
 severity: minor
 
 
-status: open
+status: closed
 
 
 summary: Use the get_parser

@@ -38,14 +38,16 @@ def execute(args, test=False):
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
+    complete(options, args, parser)
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==False})
+    
     if len(args) == 0:
-        out_dir = './html_export'
-        print "Creating the html output in ./html_export"
+        out_dir = options.outdir
+        print "Creating the html output in %s"%out_dir
     else:
         out_dir = args[0]
-    if len(args) > 1:
+    if len(args) > 0:
         raise cmdutil.UsageError, "Too many arguments."
     
     bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
@@ -76,6 +78,8 @@ def execute(args, test=False):
     
 def get_parser():
     parser = cmdutil.CmdOptionParser("be open OUTPUT_DIR")
+    parser.add_option("-o", "--output", metavar="export_dir", dest="outdir",
+        help="Set the output path, default is ./html_export", default="html_export")    
     return parser
 
 longhelp="""
@@ -84,7 +88,12 @@ Generate a set of html pages.
 
 def help():
     return get_parser().help_str() + longhelp
-    
+
+def complete(options, args, parser):
+    for option, value in cmdutil.option_value_pairs(options, parser):
+        if "--complete" in args:
+            raise cmdutil.GetCompletions() # no positional arguments for list
+        
     
 class BEHTMLGen():
     def __init__(self, bd):
@@ -127,43 +136,32 @@ class BEHTMLGen():
         border = 1;
         }
         
-        .open-row {
-        background-color: #e9e9e2;
-        width: 5%;
+        .wishlist-row {
+        background-color: #B4FF9B;
+        width: auto;
         }
         
-        .assigned-row {
-        background-color: #f9f9f9;
-        width: 5%;
-        }
-        
-        
-        .test-row {
-        background-color: #f9f9f9;
-        width: 5%;
-        }
-        
-        .unconfirmed-row {
-        background-color: #f9f9f9;
-        width: 5%;
-        }
-        
-        .fixed-row {
-        background-color: #f9f9f9;
-        width: 5%;
-        }
-        
-        .closed-row {
-        background-color: #f9f9f9;
-        width: 5%;
-        }
-        
-        .wontfix-row {
-        background-color: #f9f9f9;
-        width: 5%;
+        .minor-row {
+        background-color: #FCFF98;
+        width: auto;
         }
         
         
+        .serious-row {
+        background-color: #FFB648;
+        width: auto;
+        }
+        
+        .critical-row {
+        background-color: #FF752A;
+        width: auto;
+        }
+        
+        .fatal-row {
+        background-color: #FF3300;
+        width: auto;
+        }
+                
         .person {
         font-family: courier;
         }
@@ -187,7 +185,7 @@ class BEHTMLGen():
         }
         
         p {
-        width: 40em;
+        width: auto;
         }
         
         .inline-status-image {
@@ -200,23 +198,40 @@ class BEHTMLGen():
         }
         
         table {
-        border-style: none;
+        border-style: 10px solid #313131;
         border-spacing: 0;
+        width: auto;
         }
         
         table.log {
         }
-        
         
         td {
         border-width: 0;
         border-style: none;
         padding-right: 0.5em;
         padding-left: 0.5em;
+        width: auto;
+        }
+        
+        .td_sel {
+        background-color: #afafaf;
+        border: 1px solid #afafaf;
+        font-weight:bold;
+        padding-right: 1em;
+        padding-left: 1em;
+        
+        }
+        
+        .td_nsel {
+        border: 0px;
+        padding-right: 1em;
+        padding-left: 1em;
         }
         
         tr {
         vertical-align: top;
+        width: auto;
         }
         
         h1 {
@@ -239,8 +254,6 @@ class BEHTMLGen():
         padding: 5px;
         color: #305275;
         }
-        
-        
         
         .attrname {
         text-align: right;
@@ -308,13 +321,6 @@ class BEHTMLGen():
         background-color: #f9f9f9;
         }
         
-        .backptr {
-        font-size: smaller;
-        width: 100%;
-        text-align: left;
-        padding-bottom: 1em;
-        margin-top: 0;
-        }
         
         .logcomment {
         padding-left: 4em;
@@ -325,19 +331,12 @@ class BEHTMLGen():
         font-family: courier;
         }
         
-        .description {
-        background: #f2f2f2;
-        padding-left: 1em;
-        padding-right: 1em;
-        padding-top: 0.5em;
-        padding-bottom: 0.5em;
+        .table_bug {
+        background-color: #afafaf;
+        border: 2px solid #afafaf;
         }
         
         .message {
-        }
-        
-        .littledate {
-        font-size: smaller;
         }
         
         .progress-meter-done {
@@ -350,6 +349,7 @@ class BEHTMLGen():
         
         .progress-meter {
         }
+        
         """
         
         self.index_first = """
@@ -364,12 +364,16 @@ class BEHTMLGen():
         
         <div class="main">
         <h1>BugsEverywhere Bug List</h1>
-        <table><tr>
-        <td><a href="index.html"><h2>Active Bugs</h2></a></td>
-        <td><a href="index_inactive.html"><h2>Inactive Bugs</h2></a></td>
+        <p></p>
+        <table>
+        
+        <tr>
+        <td class=%s><a href="index.html">Active Bugs</a></td>
+        <td class=%s><a href="index_inactive.html">Inactive Bugs</a></td>
         </tr>
+        
         </table>
-        <table width=100%>
+        <table class=table_bug>
         <tbody>
         """    
         
@@ -471,16 +475,17 @@ class BEHTMLGen():
         try:
             if fileid == "active":
                 FO = open(out_dir_path+"/index.html", "w")
+                FO.write(self.index_first%('td_sel','td_nsel'))
             if fileid == "inactive":
                 FO = open(out_dir_path+"/index_inactive.html", "w")
+                FO.write(self.index_first%('td_nsel','td_sel'))
         except:
             raise  cmdutil.UsageError, "Cannot create the index.html file."
         
-        FO.write(self.index_first)
         c = 0
         t = len(bugs) - 1
         for l in range(t,  -1,  -1):
-            line = self.bug_line%(bugs[l].status,
+            line = self.bug_line%(bugs[l].severity,
             bugs[l].uuid, bugs[l].uuid[0:3],
             bugs[l].uuid,  bugs[l].status,
             bugs[l].uuid,  bugs[l].severity,
@@ -489,12 +494,12 @@ class BEHTMLGen():
             )
             FO.write(line)
             c += 1
-            self.CreateDetailFile(bugs[l], out_dir_path, fileid)
+            self.create_detail_file(bugs[l], out_dir_path, fileid)
         when = time.ctime()
         FO.write(self.index_last%when)
 
 
-    def CreateDetailFile(self, bug, out_dir_path, fileid):
+    def create_detail_file(self, bug, out_dir_path, fileid):
         f = "%s.html"%bug.uuid
         p = out_dir_path+"/bugs/"+f
         try:
