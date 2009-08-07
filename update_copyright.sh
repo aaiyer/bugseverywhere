@@ -59,7 +59,7 @@ ESCAPED_TEXT=`echo "$COPYRIGHT_TEXT" | awk '{printf("%s\\\\n", $0)}' | sed "$SED
 
 # adjust the AUTHORS file
 AUTHORS=`bzr log | grep '^ *committer\|^ *author' | cut -d: -f2 | sed 's/ <.*//;s/^ *//' | sort | uniq`
-AUTHORS=`echo "$AUTHORS" | grep -v 'j\^\|wking\|John Doe'` # remove non-names
+AUTHORS=`echo "$AUTHORS" | grep -v 'j\^\|wking\|John Doe\|gianluca'` # remove non-names
 echo "Bugs Everywhere was written by:" > AUTHORS
 echo "$AUTHORS" >> AUTHORS
 
@@ -99,6 +99,12 @@ do
     # Tweak the author list to make up for problems in the bzr
     # history, change of email address, etc.
     
+    # Consolidate Chris Ball
+    GREP_OUT=`echo "$AUTHORS" | grep 'Chris Ball <cjb@laptop.org>'`
+    if [ -n "$GREP_OUT" ]; then
+	AUTHORS=`echo "$AUTHORS" | grep -v '^Chris Ball <cjb@thunk.printf.net>$'`
+    fi
+
     # Consolidate Aaron Bentley
     AUTHORS=`echo "$AUTHORS" | sed 's/<abentley@panoramicfeedback.com>/and Panometrics, Inc./'`
     GREP_OUT=`echo "$AUTHORS" | grep 'Aaron Bentley and Panometrics, Inc.'`
@@ -113,14 +119,11 @@ do
 	AUTHORS=`echo "$AUTHORS" | grep -v '^Ben Finney <benf@cybersource.com.au>$'`
     fi
 
-    # Consolidate Chris Ball
-    GREP_OUT=`echo "$AUTHORS" | grep 'Chris Ball <cjb@laptop.org>'`
-    if [ -n "$GREP_OUT" ]; then
-	AUTHORS=`echo "$AUTHORS" | grep -v '^Chris Ball <cjb@thunk.printf.net>$'`
-    fi
-
     # Consolidate Trevor King
     AUTHORS=`echo "$AUTHORS" | grep -v "wking <wking@mjolnir>"`
+
+    # Consolidate Gianluca Montecchi
+    AUTHORS=`echo "$AUTHORS" | grep -v "gianluca"`
 
     # Sort again...
     AUTHORS=`echo "$AUTHORS" | sort | uniq`
