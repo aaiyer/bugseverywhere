@@ -62,7 +62,7 @@ def execute(args, test=False):
     bugs_inactive = []
     for s in status_list:
         st[s] = 0
-    for b in bd:
+    for b in sorted(bd, reverse=True):
         stime[b.uuid]  = b.time
         if b.status in ["open", "test", "unconfirmed", "assigned"]:
             bugs_active.append(b)
