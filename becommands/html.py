@@ -20,7 +20,7 @@
 """Generate a static HTML dump of the current repository status"""
 from libbe import cmdutil, bugdir, bug
 #from html_data import *
-import os,  re,  time, string
+import codecs, os, re, string, time
 
 __desc__ = __doc__
 
@@ -73,8 +73,8 @@ def execute(args, test=False):
     #open_bug_list = sorted([(value,key) for (key,value) in bugs.items()])
     
     html_gen = BEHTMLGen(bd)
-    html_gen.create_index_file(out_dir,  st, bugs_active, ordered_bug_list, "active")
-    html_gen.create_index_file(out_dir,  st, bugs_inactive, ordered_bug_list, "inactive")
+    html_gen.create_index_file(out_dir,  st, bugs_active, ordered_bug_list, "active", bd.encoding)
+    html_gen.create_index_file(out_dir,  st, bugs_inactive, ordered_bug_list, "inactive", bd.encoding)
     
 def get_parser():
     parser = cmdutil.CmdOptionParser("be open OUTPUT_DIR")
@@ -453,7 +453,7 @@ class BEHTMLGen():
         """   
         
         
-    def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug, fileid):
+    def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug, fileid, encoding):
         try:
             os.stat(out_dir_path)
         except:
@@ -462,7 +462,7 @@ class BEHTMLGen():
             except:
                 raise  cmdutil.UsageError, "Cannot create output directory."
         try:
-            FO = open(out_dir_path+"/style.css", "w")
+            FO = codecs.open(out_dir_path+"/style.css", "w", encoding)
             FO.write(self.css_file)
             FO.close()
         except:
@@ -475,10 +475,10 @@ class BEHTMLGen():
         
         try:
             if fileid == "active":
-                FO = open(out_dir_path+"/index.html", "w")
+                FO = codecs.open(out_dir_path+"/index.html", "w", encoding)
                 FO.write(self.index_first%('td_sel','td_nsel'))
             if fileid == "inactive":
-                FO = open(out_dir_path+"/index_inactive.html", "w")
+                FO = codecs.open(out_dir_path+"/index_inactive.html", "w", encoding)
                 FO.write(self.index_first%('td_nsel','td_sel'))
         except:
             raise  cmdutil.UsageError, "Cannot create the index.html file."
@@ -495,16 +495,16 @@ class BEHTMLGen():
             )
             FO.write(line)
             c += 1
-            self.create_detail_file(bugs[l], out_dir_path, fileid)
+            self.create_detail_file(bugs[l], out_dir_path, fileid, encoding)
         when = time.ctime()
         FO.write(self.index_last%when)
 
 
-    def create_detail_file(self, bug, out_dir_path, fileid):
+    def create_detail_file(self, bug, out_dir_path, fileid, encoding):
         f = "%s.html"%bug.uuid
         p = out_dir_path+"/bugs/"+f
         try:
-            FD = open(p, "w")
+            FD = codecs.open(p, "w", encoding)
         except:
             raise  cmdutil.UsageError, "Cannot create the detail html file."
 
@@ -534,39 +534,27 @@ class BEHTMLGen():
         tr = []
         b = ''
         level = 0
-        for i in bug_.comments():
-            if not isinstance(i.in_reply_to,str):
-                first = True
-                a = i.string_thread(flatten=False)
-                d = re.split('\n',a)
-                for x in range(0,len(d)):
-                    hr = ""
-                    if re.match(" *--------- Comment ---------",d[x]):
-                        com = """
-                        %s<br>
-                        %s<br>
-                        %s<br>
-                        %s<br>
-                        %s<br>
-                        """%(d[x+1],d[x+2],d[x+3],d[x+4],d[x+5])
-                        l = re.sub("--------- Comment ---------", "", d[x])
-                        ll = l.split("  ")
-                        la = l
-                        ba = ""
-                        if len(la) > level:
-                            FD.write("<div class='comment'>")
-                        if len(la) < level:
-                            FD.write("</div>")
-                        if len(la) == 0:
-                            if not first :
-                                FD.write("</div>")
-                                first = False
-                            FD.write("<div class='commentF'>")
-                        level = len(la)
-                        x += 5
-                        FD.write("--------- Comment ---------<p />")
-                        FD.write(com)
-                FD.write("</div>")
+        stack = []
+        for depth,comment in bug_.comment_root.thread(flatten=False):
+            while len(stack) > depth:
+                stack.pop(-1)      # pop non-parents off the stack
+                FD.write("</div>") # close non-parent <div class='comment...
+            assert len(stack) == depth
+            stack.append(comment)
+            lines = ["--------- Comment ---------",
+                     "Name: %s" % comment.uuid,
+                     "From: %s" % comment.From,
+                     "Date: %s" % comment.time_string,
+                     ""]
+            lines.extend(comment.body.splitlines())
+            if depth == 0:
+                FD.write("<div class='commentF'>")
+            else:
+                FD.write("<div class='comment'>")
+            FD.write("<br>\n".join(lines)+"<br>\n")
+        while len(stack) > 0:
+            stack.pop(-1)
+            FD.write("</div>") # close every remaining <div class='comment...
         FD.write(self.end_comment_section)
         if fileid == "active":
             FD.write(self.detail_last%"../index.html")
