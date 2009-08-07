@@ -17,7 +17,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-"""Re-open a bug"""
+"""Generate a static HTML dump of the current repository status"""
 from libbe import cmdutil, bugdir, bug
 #from html_data import *
 import os,  re,  time, string
@@ -83,7 +83,8 @@ def get_parser():
     return parser
 
 longhelp="""
-Generate a set of html pages.
+Generate a set of html pages representing the current state of the bug
+directory.
 """
 
 def help():
