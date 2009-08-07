@@ -359,7 +359,7 @@ class BEHTMLGen():
         <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
         <head>
         <title>BugsEverywhere Issue Tracker</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=%s" />
         <link rel="stylesheet" href="style.css" type="text/css" />
         </head>
         <body>
@@ -371,14 +371,14 @@ class BEHTMLGen():
         <table>
         
         <tr>
-        <td class=%s><a href="index.html">Active Bugs</a></td>
-        <td class=%s><a href="index_inactive.html">Inactive Bugs</a></td>
+        <td class=%%s><a href="index.html">Active Bugs</a></td>
+        <td class=%%s><a href="index_inactive.html">Inactive Bugs</a></td>
         </tr>
         
         </table>
         <table class=table_bug>
         <tbody>
-        """    
+        """ % self.bd.encoding
         
         self.bug_line ="""
         <tr class=%s-row cellspacing=1>
@@ -394,7 +394,7 @@ class BEHTMLGen():
         <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
         <head>
         <title>BugsEverywhere Issue Tracker</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=%s" />
         <link rel="stylesheet" href="../style.css" type="text/css" />
         </head>
         <body>
@@ -402,11 +402,11 @@ class BEHTMLGen():
         
         <div class="main">
         <h1>BugsEverywhere Bug List</h1>
-        <h5><a href="%s">Back to Index</a></h5>
+        <h5><a href="%%s">Back to Index</a></h5>
         <h2>Bug: _bug_id_</h2>
         <table >
         <tbody>
-        """   
+        """ % self.bd.encoding
         
         
         
