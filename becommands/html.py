@@ -21,6 +21,7 @@
 from libbe import cmdutil, bugdir, bug, settings_object
 #from html_data import *
 import codecs, os, re, string, time
+import xml.sax.saxutils, htmlentitydefs
 
 __desc__ = __doc__
 
@@ -95,7 +96,18 @@ def complete(options, args, parser):
         if "--complete" in args:
             raise cmdutil.GetCompletions() # no positional arguments for list
         
-    
+
+def escape(string):
+    if string == settings_object.EMPTY:
+        return ""
+    chars = []
+    for char in xml.sax.saxutils.escape(string):
+        codepoint = ord(char)
+        if codepoint in htmlentitydefs.codepoint2name:
+            char = "&%s;" % htmlentitydefs.codepoint2name[codepoint]
+        chars.append(char)
+    return "".join(chars)
+
 class BEHTMLGen():
     def __init__(self, bd):
         self.index_value = ""    
@@ -435,7 +447,7 @@ class BEHTMLGen():
         
         self.begin_comment_section ="""
         <tr>
-        <td align=right>Comments:
+        <td align="right">Comments:
         </td>
         <td>
         """
@@ -490,13 +502,13 @@ class BEHTMLGen():
         c = 0
         t = len(bugs) - 1
         for l in range(t,  -1,  -1):
-            line = self.bug_line%(bugs[l].severity,
-            bugs[l].uuid, bugs[l].uuid[0:3],
-            bugs[l].uuid,  bugs[l].status,
-            bugs[l].uuid,  bugs[l].severity,
-            bugs[l].uuid,  bugs[l].summary,
-            bugs[l].uuid,  bugs[l].time_string
-            )
+            line = self.bug_line%(escape(bugs[l].severity),
+                                  escape(bugs[l].uuid), escape(bugs[l].uuid[0:3]),
+                                  escape(bugs[l].uuid), escape(bugs[l].status),
+                                  escape(bugs[l].uuid), escape(bugs[l].severity),
+                                  escape(bugs[l].uuid), escape(bugs[l].summary),
+                                  escape(bugs[l].uuid), escape(bugs[l].time_string)
+                                  )
             FO.write(line)
             c += 1
             self.create_detail_file(bugs[l], out_dir_path, fileid, encoding)
@@ -523,20 +535,16 @@ class BEHTMLGen():
         bug_ = self.bd.bug_from_shortname(bug.uuid)
         bug_.load_comments(load_full=True)
         
-        def empty_protected_string(value):
-            if value == settings_object.EMPTY:
-                return ""
-            return value
         FD.write(self.detail_line%("ID : ", bug.uuid))
-        FD.write(self.detail_line%("Short name : ", bug.uuid[0:3]))
-        FD.write(self.detail_line%("Severity : ", empty_protected_string(bug.severity)))
-        FD.write(self.detail_line%("Status : ", empty_protected_string(bug.status)))
-        FD.write(self.detail_line%("Assigned : ", empty_protected_string(bug.assigned)))
-        FD.write(self.detail_line%("Target : ", empty_protected_string(bug.target)))
-        FD.write(self.detail_line%("Reporter : ", empty_protected_string(bug.reporter)))
-        FD.write(self.detail_line%("Creator : ", empty_protected_string(bug.creator)))
-        FD.write(self.detail_line%("Created : ", empty_protected_string(bug.time_string)))
-        FD.write(self.detail_line%("Summary : ", bug.summary))
+        FD.write(self.detail_line%("Short name : ", escape(bug.uuid[0:3])))
+        FD.write(self.detail_line%("Severity : ", escape(bug.severity)))
+        FD.write(self.detail_line%("Status : ", escape(bug.status)))
+        FD.write(self.detail_line%("Assigned : ", escape(bug.assigned)))
+        FD.write(self.detail_line%("Target : ", escape(bug.target)))
+        FD.write(self.detail_line%("Reporter : ", escape(bug.reporter)))
+        FD.write(self.detail_line%("Creator : ", escape(bug.creator)))
+        FD.write(self.detail_line%("Created : ", escape(bug.time_string)))
+        FD.write(self.detail_line%("Summary : ", escape(bug.summary)))
         FD.write("<tr><td colspan=\"2\"><hr /></td></tr>")
         FD.write(self.begin_comment_section)
         tr = []
@@ -551,10 +559,10 @@ class BEHTMLGen():
             stack.append(comment)
             lines = ["--------- Comment ---------",
                      "Name: %s" % comment.uuid,
-                     "From: %s" % comment.From,
-                     "Date: %s" % comment.time_string,
+                     "From: %s" % escape(comment.From),
+                     "Date: %s" % escape(comment.time_string),
                      ""]
-            lines.extend(comment.body.splitlines())
+            lines.extend(escape(comment.body).splitlines())
             if depth == 0:
                 FD.write("<div class='commentF'>")
             else:
