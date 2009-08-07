@@ -383,17 +383,17 @@ class BEHTMLGen():
         <table>
         
         <tr>
-        <td class=%%s><a href="index.html">Active Bugs</a></td>
-        <td class=%%s><a href="index_inactive.html">Inactive Bugs</a></td>
+        <td class="%%s"><a href="index.html">Active Bugs</a></td>
+        <td class="%%s"><a href="index_inactive.html">Inactive Bugs</a></td>
         </tr>
         
         </table>
-        <table class=table_bug>
+        <table class="table_bug">
         <tbody>
         """ % self.bd.encoding
         
         self.bug_line ="""
-        <tr class=%s-row cellspacing=1>
+        <tr class="%s-row">
         <td ><a href="bugs/%s.html">%s</a></td>
         <td ><a href="bugs/%s.html">%s</a></td>
         <td><a href="bugs/%s.html">%s</a></td>
@@ -554,7 +554,7 @@ class BEHTMLGen():
         for depth,comment in bug_.comment_root.thread(flatten=False):
             while len(stack) > depth:
                 stack.pop(-1)      # pop non-parents off the stack
-                FD.write("</div>\n") # close non-parent <div class='comment...
+                FD.write("</div>\n") # close non-parent <div class="comment...
             assert len(stack) == depth
             stack.append(comment)
             lines = ["--------- Comment ---------",
@@ -564,13 +564,13 @@ class BEHTMLGen():
                      ""]
             lines.extend(escape(comment.body).splitlines())
             if depth == 0:
-                FD.write("<div class='commentF'>")
+                FD.write('<div class="commentF">')
             else:
-                FD.write("<div class='comment'>")
+                FD.write('<div class="comment">')
             FD.write("<br />\n".join(lines)+"<br />\n")
         while len(stack) > 0:
             stack.pop(-1)
-            FD.write("</div>\n") # close every remaining <div class='comment...
+            FD.write("</div>\n") # close every remaining <div class="comment...
         FD.write(self.end_comment_section)
         if fileid == "active":
             FD.write(self.detail_last%"../index.html")
