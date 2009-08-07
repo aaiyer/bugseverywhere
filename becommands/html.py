@@ -537,7 +537,7 @@ class BEHTMLGen():
         FD.write(self.detail_line%("Creator : ", empty_protected_string(bug.creator)))
         FD.write(self.detail_line%("Created : ", empty_protected_string(bug.time_string)))
         FD.write(self.detail_line%("Summary : ", bug.summary))
-        FD.write("<tr><td colspan=2><hr></td></tr>")
+        FD.write("<tr><td colspan=\"2\"><hr></td></tr>")
         FD.write(self.begin_comment_section)
         tr = []
         b = ''
