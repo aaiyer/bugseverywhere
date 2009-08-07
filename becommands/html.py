@@ -354,6 +354,8 @@ class BEHTMLGen():
         """
         
         self.index_first = """
+        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
         <head>
         <title>BugsEverywhere Issue Tracker</title>
@@ -538,7 +540,7 @@ class BEHTMLGen():
         for depth,comment in bug_.comment_root.thread(flatten=False):
             while len(stack) > depth:
                 stack.pop(-1)      # pop non-parents off the stack
-                FD.write("</div>") # close non-parent <div class='comment...
+                FD.write("</div>\n") # close non-parent <div class='comment...
             assert len(stack) == depth
             stack.append(comment)
             lines = ["--------- Comment ---------",
@@ -554,7 +556,7 @@ class BEHTMLGen():
             FD.write("<br>\n".join(lines)+"<br>\n")
         while len(stack) > 0:
             stack.pop(-1)
-            FD.write("</div>") # close every remaining <div class='comment...
+            FD.write("</div>\n") # close every remaining <div class='comment...
         FD.write(self.end_comment_section)
         if fileid == "active":
             FD.write(self.detail_last%"../index.html")
