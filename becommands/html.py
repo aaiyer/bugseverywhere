@@ -18,7 +18,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Generate a static HTML dump of the current repository status"""
-from libbe import cmdutil, bugdir, bug
+from libbe import cmdutil, bugdir, bug, settings_object
 #from html_data import *
 import codecs, os, re, string, time
 
@@ -523,15 +523,19 @@ class BEHTMLGen():
         bug_ = self.bd.bug_from_shortname(bug.uuid)
         bug_.load_comments(load_full=True)
         
+        def empty_protected_string(value):
+            if value == settings_object.EMPTY:
+                return ""
+            return value
         FD.write(self.detail_line%("ID : ", bug.uuid))
         FD.write(self.detail_line%("Short name : ", bug.uuid[0:3]))
-        FD.write(self.detail_line%("Severity : ", bug.severity))
-        FD.write(self.detail_line%("Status : ", bug.status))
-        FD.write(self.detail_line%("Assigned : ", bug.assigned))
-        FD.write(self.detail_line%("Target : ", bug.target))
-        FD.write(self.detail_line%("Reporter : ", bug.reporter))
-        FD.write(self.detail_line%("Creator : ", bug.creator))
-        FD.write(self.detail_line%("Created : ", bug.time_string))
+        FD.write(self.detail_line%("Severity : ", empty_protected_string(bug.severity)))
+        FD.write(self.detail_line%("Status : ", empty_protected_string(bug.status)))
+        FD.write(self.detail_line%("Assigned : ", empty_protected_string(bug.assigned)))
+        FD.write(self.detail_line%("Target : ", empty_protected_string(bug.target)))
+        FD.write(self.detail_line%("Reporter : ", empty_protected_string(bug.reporter)))
+        FD.write(self.detail_line%("Creator : ", empty_protected_string(bug.creator)))
+        FD.write(self.detail_line%("Created : ", empty_protected_string(bug.time_string)))
         FD.write(self.detail_line%("Summary : ", bug.summary))
         FD.write("<tr><td colspan=2><hr></td></tr>")
         FD.write(self.begin_comment_section)
