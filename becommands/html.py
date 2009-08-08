@@ -566,8 +566,8 @@ class BEHTMLGen():
             stack.append(comment)
             lines = ["--------- Comment ---------",
                      "Name: %s" % comment.uuid,
-                     "From: %s" % escape(comment.From),
-                     "Date: %s" % escape(comment.time_string),
+                     "From: %s" % escape(comment.author),
+                     "Date: %s" % escape(comment.date),
                      ""]
             lines.extend(escape(comment.body).splitlines())
             if depth == 0:
