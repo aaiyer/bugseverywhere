@@ -534,10 +534,11 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         uuids = []
         if self.sync_with_disk == True and os.path.exists(self.get_path()):
             # list the uuids on disk
-            for uuid in os.listdir(self.get_path("bugs")):
-                if not (uuid.startswith('.')):
-                    uuids.append(uuid)
-                    yield uuid
+            if os.path.exists(self.get_path("bugs")):
+                for uuid in os.listdir(self.get_path("bugs")):
+                    if not (uuid.startswith('.')):
+                        uuids.append(uuid)
+                        yield uuid
         # and the ones that are still just in memory
         for bug in self:
             if bug.uuid not in uuids:
