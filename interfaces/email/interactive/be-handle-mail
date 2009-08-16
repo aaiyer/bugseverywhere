@@ -29,9 +29,18 @@ email body is parsed for a pseudo-header.  Any text after the
 psuedo-header but before a possible line starting with BREAK is added
 as the initial bug comment.
 
-Comment emails...
+Comment emails add comments to a bug.  The first non-multipart portion
+of the email is used as the comment body.  If that portion has a
+"text/plain" type, any text after and including a possible line
+starting with BREAK is stripped to avoid lots of taglines cluttering
+up the repository.
 
-Control emails...
+Control emails preform any allowed BE commands.  The first
+non-multipart portion of the email is used as the comment body.  If
+that portion has a "text/plain" type, any text after and including a
+possible line starting with BREAK is stripped.  Each pre-BREAK line of
+the portion should be a valid BE command, with the initial "be"
+omitted, e.g. "be status XYZ fixed" --> "status XYZ fixed".
 
 Any changes made to the repository are commited after the email is
 executed, with the email's post-tag subject as the commit message.
@@ -484,65 +493,74 @@ class Message (object):
         """
         self.validate_subject()
         tag_type,value = self._subject_tag_type()
-        commands = []
         if tag_type == u"new":
-            command = u"new"
-            tag,subject = self._split_subject()
-            summary = subject
-            options = {u"Reporter": self.author_addr()}
-            body,mime_type = list(self._get_bodies_and_mime_types())[0]
-            comment_body,options = \
-                self._parse_body_pseudoheaders(body,
-                                               NEW_REQUIRED_PSEUDOHEADERS,
-                                               NEW_OPTIONAL_PSEUDOHEADERS,
-                                               options)
-            args = [u"--reporter", options[u"Reporter"]]
-            args.append(summary)
-            commands.append(Command(self, command, args))
-            comment_body = self._strip_footer(comment_body)
-            id = ID(commands[0])
-            if len(comment_body) > 0:
-                command = u"comment"
-                comment = u"Version: %s\n\n"%options[u"Version"] + comment_body
-                args = [u"--author", self.author_addr(),
-                        u"--alt-id", self.message_id(),
-                        u"--content-type", mime_type]
-                args.append(id)
-                args.append(u"-")
-                commands.append(Command(self, u"comment", args, stdin=comment))
-            for key,value in options.items():
-                if key in [u"Version", u"Reporter"]:
-                    continue # we've already handled this option
-                command = key.lower()
-                args = [id, value]
-                commands.append(Command(self, command, args))
+            commands = self.parse_new()
         elif tag_type == u"comment":
-            command = u"comment"
-            bug_id = value
-            author = self.author_addr()
-            alt_id = self.message_id()
-            body,mime_type = list(self._get_bodies_and_mime_types())[0]
-            if mime_type == "text/plain":
-                body = self._strip_footer(body)
-            content_type = mime_type
-            args = [u"--author", author, u"--alt-id", alt_id,
-                    u"--content-type", content_type, bug_id, u"-"]
-            commands.append(Command(self, command, args, stdin=body))
+            commands = self.parse_comment()
         elif tag_type == u"control":
-            body,mime_type = list(self._get_bodies_and_mime_types())[0]
-            for line in body.splitlines():
-                line = line.strip()
-                if line.startswith(CONTROL_COMMENT) or len(line) == 0:
-                    continue
-                if line.startswith(BREAK):
-                    break
-                fields = shlex.split(line)
-                command,args = (fields[0], fields[1:])
-                commands.append(Command(self, command, args))
-            if len(commands) == 0:
-                raise InvalidEmail(self, u"No commands in control email.")
+            commands = self.parse_control()
         else:
             raise Exception, u"Unrecognized tag type '%s'" % tag_type
+        return commands
+    def parse_new(self):
+        command = u"new"
+        tag,subject = self._split_subject()
+        summary = subject
+        options = {u"Reporter": self.author_addr()}
+        body,mime_type = list(self._get_bodies_and_mime_types())[0]
+        comment_body,options = \
+            self._parse_body_pseudoheaders(body,
+                                           NEW_REQUIRED_PSEUDOHEADERS,
+                                           NEW_OPTIONAL_PSEUDOHEADERS,
+                                           options)
+        args = [u"--reporter", options[u"Reporter"]]
+        args.append(summary)
+        commands = [Command(self, command, args))]
+        comment_body = self._strip_footer(comment_body)
+        id = ID(commands[0])
+        if len(comment_body) > 0:
+            command = u"comment"
+            comment = u"Version: %s\n\n"%options[u"Version"] + comment_body
+            args = [u"--author", self.author_addr(),
+                    u"--alt-id", self.message_id(),
+                    u"--content-type", mime_type]
+            args.append(id)
+            args.append(u"-")
+            commands.append(Command(self, u"comment", args, stdin=comment))
+        for key,value in options.items():
+            if key in [u"Version", u"Reporter"]:
+                continue # we've already handled these options
+            command = key.lower()
+            args = [id, value]
+            commands.append(Command(self, command, args))
+        return commands
+    def parse_comment(self):
+        command = u"comment"
+        bug_id = value
+        author = self.author_addr()
+        alt_id = self.message_id()
+        body,mime_type = list(self._get_bodies_and_mime_types())[0]
+        if mime_type == "text/plain":
+            body = self._strip_footer(body)
+        content_type = mime_type
+        args = [u"--author", author, u"--alt-id", alt_id,
+                u"--content-type", content_type, bug_id, u"-"]
+        commands = [Command(self, command, args, stdin=body)]
+        return commands
+    def parse_control(self):
+        body,mime_type = list(self._get_bodies_and_mime_types())[0]
+        commands = []
+        for line in body.splitlines():
+            line = line.strip()
+            if line.startswith(CONTROL_COMMENT) or len(line) == 0:
+                continue
+            if line.startswith(BREAK):
+                break
+            fields = shlex.split(line)
+            command,args = (fields[0], fields[1:])
+            commands.append(Command(self, command, args))
+        if len(commands) == 0:
+            raise InvalidEmail(self, u"No commands in control email.")
         return commands
     def run(self):
         self._begin_response()
