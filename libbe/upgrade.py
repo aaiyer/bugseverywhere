@@ -28,7 +28,7 @@ import rcs
 
 # a list of all past versions
 BUGDIR_DISK_VERSIONS = ["Bugs Everywhere Tree 1 0",
-                        "Bugs Everywhere Directory v2"]
+                        "Bugs Everywhere Directory v1.1"]
 
 # the current version
 BUGDIR_DISK_VERSION = BUGDIR_DISK_VERSIONS[-1]
