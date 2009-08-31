@@ -95,24 +95,6 @@ def parse(contents):
     >>> dict["e"]
     'f'
     """
-    old_format = False
-    for line in contents.splitlines():
-        if len(line.split("=")) == 2:
-            old_format = True
-            break
-    if old_format: # translate to YAML.  Hack to deal with old BE bugs.
-        newlines = []
-        for line in contents.splitlines():
-            line = line.rstrip('\n')
-            if len(line) == 0:
-                continue
-            fields = line.split("=")
-            if len(fields) == 2:
-                key,value = fields
-                newlines.append('%s: "%s"' % (key, value.replace('"','\\"')))
-            else:
-                newlines.append(line)
-        contents = '\n'.join(newlines)
     return yaml.load(contents) or {}
 
 def map_save(rcs, path, map, allow_no_rcs=False):

@@ -1,0 +1,30 @@
+Added libbe/upgrade.py to handle upgrading on-disk bugdirs.
+
+When upgrade.BUGDIR_DISK_VERSION changes, a series of Updater
+classes handle the upgrade.  For example, if 
+  BUGDIR_DISK_VERSIONS = ["v1", "v2", "v3"]
+and the on-disk version is "v1", you should have defined classes
+  class Upgrade_1_to_2 (Upgrader):
+      initial_version = "v1"
+      final_version = "v2"
+      def _upgrade():
+          ....
+  class Upgrade_2_to_3 (Upgrader):
+      initial_version = "v2"
+      final_version = "v3"
+      def _upgrade():
+          ....
+and added them to upgraders:
+  upgraders = [Upgrade_1_to_2, Upgrade_2_to_3]
+If the on-disk version is v2, then only Upgrade_2_to_3.upgrade() is
+run.  If the on-disk version is v1, then Upgrade_1_to_2.upgrade() is
+run, followed by Upgrade_2_to_3.upgrade().
+
+You can optionally define shortcut upgrades (e.g. Upgrade_1_to_3) for
+efficiency or to avoid data loss.
+
+This upgrade occurs during BugDir.load(), which is called by
+BugDir.__init__(from_disk=True), before any processing of the on-disk
+data except for the access of .be/version to determine if an upgrade
+was necessary.
+

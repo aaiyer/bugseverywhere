@@ -26,17 +26,17 @@ import time
 import unittest
 import doctest
 
+import bug
+import encoding
 from properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, fn_checked_property, \
     cached_property, primed_property, change_hook_property, \
     settings_property
-import settings_object
 import mapfile
-import bug
 import rcs
-import encoding
+import settings_object
+import upgrade
 import utility
-
 
 class NoBugDir(Exception):
     def __init__(self, path):
@@ -73,9 +73,6 @@ class DiskAccessRequired (Exception):
     def __init__(self, goal):
         msg = "Cannot %s without accessing the disk" % goal
         Exception.__init__(self, msg)
-
-
-TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
 
 class BugDir (list, settings_object.SavedSettingsObject):
@@ -370,11 +367,11 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         """
         Return a path relative to .root.
         """
-        my_dir = os.path.join(self.root, ".be")
+        dir = os.path.join(self.root, ".be")
         if len(args) == 0:
-            return my_dir
+            return dir
         assert args[0] in ["version", "settings", "bugs"], str(args)
-        return os.path.join(my_dir, *args)
+        return os.path.join(dir, *args)
 
     def _get_settings(self, settings_path, for_duplicate_bugdir=False):
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
@@ -414,7 +411,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         settings = self._get_saved_settings()
         self._save_settings(self.get_path("settings"), settings)
 
-    def get_version(self, path=None, use_none_rcs=False):
+    def get_version(self, path=None, use_none_rcs=False,
+                    for_duplicate_bugdir=False):
         """
         Requires disk access.
         """
@@ -429,8 +427,12 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
         if path == None:
             path = self.get_path("version")
-        tree_version = RCS.get_file_contents(path)
-        return tree_version
+        allow_no_rcs = not RCS.path_in_root(path)
+        if allow_no_rcs == True:
+            assert for_duplicate_bugdir == True
+        version = RCS.get_file_contents(
+            path, allow_no_rcs=allow_no_rcs).rstrip("\n")
+        return version
 
     def set_version(self):
         """
@@ -440,7 +442,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             raise DiskAccessRequired("set version")
         self.rcs.mkdir(self.get_path())
         self.rcs.set_file_contents(self.get_path("version"),
-                                   TREE_VERSION_STRING)
+                                   upgrade.BUGDIR_DISK_VERSION+"\n")
 
     # methods controlling disk access
 
@@ -459,9 +461,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         Reqires disk access
         """
         version = self.get_version(use_none_rcs=True)
-        if version != TREE_VERSION_STRING:
-            raise NotImplementedError, \
-                "BugDir cannot handle version '%s' yet." % version
+        if version != upgrade.BUGDIR_DISK_VERSION:
+            upgrade.upgrade(self.root, version)
         else:
             if not os.path.exists(self.get_path()):
                 raise NoBugDir(self.get_path())
@@ -507,6 +508,12 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def duplicate_bugdir(self, revision):
         duplicate_path = self.rcs.duplicate_repo(revision)
+
+        duplicate_version_path = os.path.join(duplicate_path, ".be", "version")
+        version = self.get_version(duplicate_version_path,
+                                   for_duplicate_bugdir=True)
+        if version != upgrade.BUGDIR_DISK_VERSION:
+            upgrade.upgrade(duplicate_path, version)
 
         # setup revision RCS as None, since the duplicate may not be
         # initialized for versioning
