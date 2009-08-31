@@ -546,12 +546,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     # methods for saving/loading/acessing settings and properties.
 
-    def get_path(self, name=None):
-        my_dir = os.path.join(self.bug.get_path("comments"), self.uuid)
-        if name is None:
-            return my_dir
-        assert name in ["values", "body"]
-        return os.path.join(my_dir, name)
+    def get_path(self, *args):
+        dir = os.path.join(self.bug.get_path("comments"), self.uuid)
+        if len(args) == 0:
+            return dir
+        assert args[0] in ["values", "body"], str(args)
+        return os.path.join(dir, *args)
 
     def set_sync_with_disk(self, value):
         self.sync_with_disk = value

@@ -370,11 +370,11 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         """
         Return a path relative to .root.
         """
-        my_dir = os.path.join(self.root, ".be")
+        dir = os.path.join(self.root, ".be")
         if len(args) == 0:
-            return my_dir
+            return dir
         assert args[0] in ["version", "settings", "bugs"], str(args)
-        return os.path.join(my_dir, *args)
+        return os.path.join(dir, *args)
 
     def _get_settings(self, settings_path, for_duplicate_bugdir=False):
         allow_no_rcs = not self.rcs.path_in_root(settings_path)
