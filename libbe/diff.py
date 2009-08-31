@@ -287,7 +287,7 @@ class Diff (object):
     def _bugdir_attribute_changes(self):
         return self._settings_properties_attribute_changes( \
             self.old_bugdir, self.new_bugdir,
-            ["rcs_name"]) # tweaked by bugdir.duplicate_bugdir
+            ["vcs_name"]) # tweaked by bugdir.duplicate_bugdir
     def _bug_attribute_changes(self, old, new):
         return self._settings_properties_attribute_changes(old, new)
     def _comment_attribute_changes(self, old, new):
@@ -304,7 +304,7 @@ class Diff (object):
         if hasattr(self, "__report_tree"):
             return self.__report_tree
         bugdir_settings = sorted(self.new_bugdir.settings_properties)
-        bugdir_settings.remove("rcs_name") # tweaked by bugdir.duplicate_bugdir
+        bugdir_settings.remove("vcs_name") # tweaked by bugdir.duplicate_bugdir
         root = diff_tree("bugdir")
         bugdir_attribute_changes = self._bugdir_attribute_changes()
         if len(bugdir_attribute_changes) > 0:

@@ -25,12 +25,12 @@ def execute(args, manipulate_encodings=True):
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
-    >>> original = bd.rcs.commit("Original status")
+    >>> original = bd.vcs.commit("Original status")
     >>> bug = bd.bug_from_uuid("a")
     >>> bug.status = "closed"
-    >>> changed = bd.rcs.commit("Closed bug a")
+    >>> changed = bd.vcs.commit("Closed bug a")
     >>> os.chdir(bd.root)
-    >>> if bd.rcs.versioned == True:
+    >>> if bd.vcs.versioned == True:
     ...     execute([original], manipulate_encodings=False)
     ... else:
     ...     print "Modified bugs:\\n  a:cm: Bug A\\n    Changed bug settings:\\n      status: open -> closed"
@@ -38,12 +38,12 @@ def execute(args, manipulate_encodings=True):
       a:cm: Bug A
         Changed bug settings:
           status: open -> closed
-    >>> if bd.rcs.versioned == True:
+    >>> if bd.vcs.versioned == True:
     ...     execute(["--modified", original], manipulate_encodings=False)
     ... else:
     ...     print "a"
     a
-    >>> if bd.rcs.versioned == False:
+    >>> if bd.vcs.versioned == False:
     ...     execute([original], manipulate_encodings=False)
     ... else:
     ...     print "This directory is not revision-controlled."
@@ -61,11 +61,11 @@ def execute(args, manipulate_encodings=True):
         raise cmdutil.UsageError("Too many arguments.")
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    if bd.rcs.versioned == False:
+    if bd.vcs.versioned == False:
         print "This directory is not revision-controlled."
     else:
         if revision == None: # get the most recent revision
-            revision = bd.rcs.revision_id(-1)
+            revision = bd.vcs.revision_id(-1)
         old_bd = bd.duplicate_bugdir(revision)
         d = diff.Diff(old_bd, bd)
         tree = d.report_tree()
@@ -104,10 +104,10 @@ def get_parser():
     return parser
 
 longhelp="""
-Uses the RCS to compare the current tree with a previous tree, and
+Uses the VCS to compare the current tree with a previous tree, and
 prints a pretty report.  If REVISION is given, it is a specifier for
 the particular previous tree to use.  Specifiers are specific to their
-RCS.
+VCS.
 
 For Arch your specifier must be a fully-qualified revision name.
 

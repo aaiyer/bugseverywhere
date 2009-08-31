@@ -24,11 +24,12 @@ import doctest
 
 import encoding
 import mapfile
-import rcs
+import vcs
 
 # a list of all past versions
 BUGDIR_DISK_VERSIONS = ["Bugs Everywhere Tree 1 0",
-                        "Bugs Everywhere Directory v1.1"]
+                        "Bugs Everywhere Directory v1.1",
+                        "Bugs Everywhere Directory v1.2"]
 
 # the current version
 BUGDIR_DISK_VERSION = BUGDIR_DISK_VERSIONS[-1]
@@ -39,11 +40,11 @@ class Upgrader (object):
     final_version = None
     def __init__(self, root):
         self.root = root
-        # use the "None" RCS to ensure proper encoding/decoding and
+        # use the "None" VCS to ensure proper encoding/decoding and
         # simplify path construction.
-        self.rcs = rcs.rcs_by_name("None")
-        self.rcs.root(self.root)
-        self.rcs.encoding = encoding.get_encoding()
+        self.vcs = vcs.vcs_by_name("None")
+        self.vcs.root(self.root)
+        self.vcs.encoding = encoding.get_encoding()
 
     def get_path(self, *args):
         """
@@ -57,12 +58,12 @@ class Upgrader (object):
 
     def check_initial_version(self):
         path = self.get_path("version")
-        version = self.rcs.get_file_contents(path).rstrip("\n")
+        version = self.vcs.get_file_contents(path).rstrip("\n")
         assert version == self.initial_version, version
 
     def set_version(self):
         path = self.get_path("version")
-        self.rcs.set_file_contents(path, self.final_version+"\n")
+        self.vcs.set_file_contents(path, self.final_version+"\n")
 
     def upgrade(self):
         print >> sys.stderr, "upgrading bugdir from '%s' to '%s'" \
@@ -75,11 +76,11 @@ class Upgrader (object):
         raise NotImplementedError
 
 
-class Upgrade_1_0_to_2 (Upgrader):
+class Upgrade_1_0_to_1_1 (Upgrader):
     initial_version = "Bugs Everywhere Tree 1 0"
-    final_version = "Bugs Everywhere Directory v2"
+    final_version = "Bugs Everywhere Directory v1.1"
     def _upgrade_mapfile(self, path):
-        contents = self.rcs.get_file_contents(path)
+        contents = self.vcs.get_file_contents(path)
         old_format = False
         for line in contents.splitlines():
             if len(line.split("=")) == 2:
@@ -101,7 +102,7 @@ class Upgrade_1_0_to_2 (Upgrader):
             contents = '\n'.join(newlines)
             # load the YAML and save
             map = mapfile.parse(contents)
-            mapfile.map_save(self.rcs, path, map)
+            mapfile.map_save(self.vcs, path, map)
 
     def _upgrade(self):
         """
@@ -120,13 +121,28 @@ class Upgrade_1_0_to_2 (Upgrader):
                 path_list = c_path + [comment_uuid, "values"]
                 path = self.get_path(*path_list)
                 self._upgrade_mapfile(path)
-                settings = mapfile.map_load(self.rcs, path)
+                settings = mapfile.map_load(self.vcs, path)
                 if "From" in settings:
                     settings["Author"] = settings.pop("From")
-                    mapfile.map_save(self.rcs, path, settings)
+                    mapfile.map_save(self.vcs, path, settings)
 
 
-upgraders = [Upgrade_1_0_to_2]
+class Upgrade_1_1_to_1_2 (Upgrader):
+    initial_version = "Bugs Everywhere Directory v1.1"
+    final_version = "Bugs Everywhere Directory v1.2"
+    def _upgrade(self):
+        """
+        BugDir settings field "rcs_name" -> "vcs_name".
+        """
+        path = self.get_path("settings")
+        settings = mapfile.map_load(self.vcs, path)
+        if "rcs_name" in settings:
+            settings["vcs_name"] = settings.pop("rcs_name")
+            mapfile.map_save(self.vcs, path, settings)
+
+
+upgraders = [Upgrade_1_0_to_1_1,
+             Upgrade_1_1_to_1_2]
 upgrade_classes = {}
 for upgrader in upgraders:
     upgrade_classes[(upgrader.initial_version,upgrader.final_version)]=upgrader

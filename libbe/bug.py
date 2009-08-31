@@ -221,15 +221,15 @@ class Bug(settings_object.SavedSettingsObject):
     @doc_property(doc="The trunk of the comment tree")
     def comment_root(): return {}
 
-    def _get_rcs(self):
-        if hasattr(self.bugdir, "rcs"):
-            return self.bugdir.rcs
+    def _get_vcs(self):
+        if hasattr(self.bugdir, "vcs"):
+            return self.bugdir.vcs
 
     @Property
-    @cached_property(generator=_get_rcs)
-    @local_property("rcs")
+    @cached_property(generator=_get_vcs)
+    @local_property("vcs")
     @doc_property(doc="A revision control system instance.")
-    def rcs(): return {}
+    def vcs(): return {}
 
     def __init__(self, bugdir=None, uuid=None, from_disk=False,
                  load_comments=False, summary=None):
@@ -243,8 +243,8 @@ class Bug(settings_object.SavedSettingsObject):
             if uuid == None:
                 self.uuid = uuid_gen()
             self.time = int(time.time()) # only save to second precision
-            if self.rcs != None:
-                self.creator = self.rcs.get_user_id()
+            if self.vcs != None:
+                self.creator = self.vcs.get_user_id()
             self.summary = summary
 
     def __repr__(self):
@@ -356,16 +356,16 @@ class Bug(settings_object.SavedSettingsObject):
     def load_settings(self):
         if self.sync_with_disk == False:
             raise DiskAccessRequired("load settings")
-        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
         self._setup_saved_settings()
 
     def save_settings(self):
         if self.sync_with_disk == False:
             raise DiskAccessRequired("save settings")
         assert self.summary != None, "Can't save blank bug"
-        self.rcs.mkdir(self.get_path())
+        self.vcs.mkdir(self.get_path())
         path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, self._get_saved_settings())
+        mapfile.map_save(self.vcs, path, self._get_saved_settings())
 
     def save(self):
         """
@@ -406,7 +406,7 @@ class Bug(settings_object.SavedSettingsObject):
             raise DiskAccessRequired("remove")
         self.comment_root.remove()
         path = self.get_path()
-        self.rcs.recursive_remove(path)
+        self.vcs.recursive_remove(path)
     
     # methods for managing comments
 

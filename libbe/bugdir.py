@@ -33,7 +33,7 @@ from properties import Property, doc_property, local_property, \
     cached_property, primed_property, change_hook_property, \
     settings_property
 import mapfile
-import rcs
+import vcs
 import settings_object
 import upgrade
 import utility
@@ -120,11 +120,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
     loads new settings/bugs/comments that it doesn't already have in
     memory and .sync_with_disk == True.
 
-    Allow RCS initialization
+    Allow VCS initialization
     ========================
 
     This one is for testing purposes.  Setting it to True allows the
-    BugDir to search for an installed RCS backend and initialize it in
+    BugDir to search for an installed VCS backend and initialize it in
     the root directory.  This is a convenience option for supporting
     tests of versioning functionality (e.g. .duplicate_bugdir).
 
@@ -181,9 +181,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def encoding(): return {}
 
     def _setup_user_id(self, user_id):
-        self.rcs.user_id = user_id
+        self.vcs.user_id = user_id
     def _guess_user_id(self):
-        return self.rcs.get_user_id()
+        return self.vcs.get_user_id()
     def _set_user_id(self, old_user_id, new_user_id):
         self._setup_user_id(new_user_id)
         self._prop_save_settings(old_user_id, new_user_id)
@@ -191,7 +191,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
     @_versioned_property(name="user_id",
                          doc=
 """The user's prefered name, e.g. 'John Doe <jdoe@example.com>'.  Note
-that the Arch RCS backend *enforces* ids with this format.""",
+that the Arch VCS backend *enforces* ids with this format.""",
                          change_hook=_set_user_id,
                          generator=_guess_user_id)
     def user_id(): return {}
@@ -201,32 +201,32 @@ that the Arch RCS backend *enforces* ids with this format.""",
 """The default assignee for new bugs e.g. 'John Doe <jdoe@example.com>'.""")
     def default_assignee(): return {}
 
-    @_versioned_property(name="rcs_name",
-                         doc="""The name of the current RCS.  Kept seperate to make saving/loading
-settings easy.  Don't set this attribute.  Set .rcs instead, and
-.rcs_name will be automatically adjusted.""",
+    @_versioned_property(name="vcs_name",
+                         doc="""The name of the current VCS.  Kept seperate to make saving/loading
+settings easy.  Don't set this attribute.  Set .vcs instead, and
+.vcs_name will be automatically adjusted.""",
                          default="None",
                          allowed=["None", "Arch", "bzr", "darcs", "git", "hg"])
-    def rcs_name(): return {}
+    def vcs_name(): return {}
 
-    def _get_rcs(self, rcs_name=None):
+    def _get_vcs(self, vcs_name=None):
         """Get and root a new revision control system"""
-        if rcs_name == None:
-            rcs_name = self.rcs_name
-        new_rcs = rcs.rcs_by_name(rcs_name)
-        self._change_rcs(None, new_rcs)
-        return new_rcs
-    def _change_rcs(self, old_rcs, new_rcs):
-        new_rcs.encoding = self.encoding
-        new_rcs.root(self.root)
-        self.rcs_name = new_rcs.name
+        if vcs_name == None:
+            vcs_name = self.vcs_name
+        new_vcs = vcs.vcs_by_name(vcs_name)
+        self._change_vcs(None, new_vcs)
+        return new_vcs
+    def _change_vcs(self, old_vcs, new_vcs):
+        new_vcs.encoding = self.encoding
+        new_vcs.root(self.root)
+        self.vcs_name = new_vcs.name
 
     @Property
-    @change_hook_property(hook=_change_rcs)
-    @cached_property(generator=_get_rcs)
-    @local_property("rcs")
+    @change_hook_property(hook=_change_vcs)
+    @cached_property(generator=_get_vcs)
+    @local_property("vcs")
     @doc_property(doc="A revision control system instance.")
-    def rcs(): return {}
+    def vcs(): return {}
 
     def _bug_map_gen(self):
         map = {}
@@ -288,8 +288,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
 
     def __init__(self, root=None, sink_to_existing_root=True,
-                 assert_new_BugDir=False, allow_rcs_init=False,
-                 manipulate_encodings=True, from_disk=False, rcs=None):
+                 assert_new_BugDir=False, allow_vcs_init=False,
+                 manipulate_encodings=True, from_disk=False, vcs=None):
         list.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)
         self._manipulate_encodings = manipulate_encodings
@@ -301,9 +301,9 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if not os.path.exists(root):
                 raise NoRootEntry(root)
             self.root = root
-        # get a temporary rcs until we've loaded settings
+        # get a temporary vcs until we've loaded settings
         self.sync_with_disk = False
-        self.rcs = self._guess_rcs()
+        self.vcs = self._guess_vcs()
 
         if from_disk == True:
             self.sync_with_disk = True
@@ -313,16 +313,16 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             if assert_new_BugDir == True:
                 if os.path.exists(self.get_path()):
                     raise AlreadyInitialized, self.get_path()
-            if rcs == None:
-                rcs = self._guess_rcs(allow_rcs_init)
-            self.rcs = rcs
+            if vcs == None:
+                vcs = self._guess_vcs(allow_vcs_init)
+            self.vcs = vcs
             self._setup_user_id(self.user_id)
 
     def __del__(self):
         self.cleanup()
 
     def cleanup(self):
-        self.rcs.cleanup()
+        self.vcs.cleanup()
 
     # methods for getting the BugDir situated in the filesystem
 
@@ -346,20 +346,20 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
                 raise NoBugDir(path)
             return beroot
 
-    def _guess_rcs(self, allow_rcs_init=False):
+    def _guess_vcs(self, allow_vcs_init=False):
         """
         Only called by __init__.
         """
         deepdir = self.get_path()
         if not os.path.exists(deepdir):
             deepdir = os.path.dirname(deepdir)
-        new_rcs = rcs.detect_rcs(deepdir)
+        new_vcs = vcs.detect_vcs(deepdir)
         install = False
-        if new_rcs.name == "None":
-            if allow_rcs_init == True:
-                new_rcs = rcs.installed_rcs()
-                new_rcs.init(self.root)
-        return new_rcs
+        if new_vcs.name == "None":
+            if allow_vcs_init == True:
+                new_vcs = vcs.installed_vcs()
+                new_vcs.init(self.root)
+        return new_vcs
 
     # methods for saving/loading/accessing settings and properties.
 
@@ -374,28 +374,28 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return os.path.join(dir, *args)
 
     def _get_settings(self, settings_path, for_duplicate_bugdir=False):
-        allow_no_rcs = not self.rcs.path_in_root(settings_path)
-        if allow_no_rcs == True:
+        allow_no_vcs = not self.vcs.path_in_root(settings_path)
+        if allow_no_vcs == True:
             assert for_duplicate_bugdir == True
         if self.sync_with_disk == False and for_duplicate_bugdir == False:
             # duplicates can ignore this bugdir's .sync_with_disk status
             raise DiskAccessRequired("_get settings")
         try:
-            settings = mapfile.map_load(self.rcs, settings_path, allow_no_rcs)
-        except rcs.NoSuchFile:
-            settings = {"rcs_name": "None"}
+            settings = mapfile.map_load(self.vcs, settings_path, allow_no_vcs)
+        except vcs.NoSuchFile:
+            settings = {"vcs_name": "None"}
         return settings
 
     def _save_settings(self, settings_path, settings,
                        for_duplicate_bugdir=False):
-        allow_no_rcs = not self.rcs.path_in_root(settings_path)
-        if allow_no_rcs == True:
+        allow_no_vcs = not self.vcs.path_in_root(settings_path)
+        if allow_no_vcs == True:
             assert for_duplicate_bugdir == True
         if self.sync_with_disk == False and for_duplicate_bugdir == False:
             # duplicates can ignore this bugdir's .sync_with_disk status
             raise DiskAccessRequired("_save settings")
-        self.rcs.mkdir(self.get_path(), allow_no_rcs)
-        mapfile.map_save(self.rcs, settings_path, settings, allow_no_rcs)
+        self.vcs.mkdir(self.get_path(), allow_no_vcs)
+        mapfile.map_save(self.vcs, settings_path, settings, allow_no_vcs)
 
     def load_settings(self):
         self.settings = self._get_settings(self.get_path("settings"))
@@ -404,34 +404,34 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         self._setup_encoding(self.encoding)
         self._setup_severities(self.severities)
         self._setup_status(self.active_status, self.inactive_status)
-        self.rcs = rcs.rcs_by_name(self.rcs_name)
+        self.vcs = vcs.vcs_by_name(self.vcs_name)
         self._setup_user_id(self.user_id)
 
     def save_settings(self):
         settings = self._get_saved_settings()
         self._save_settings(self.get_path("settings"), settings)
 
-    def get_version(self, path=None, use_none_rcs=False,
+    def get_version(self, path=None, use_none_vcs=False,
                     for_duplicate_bugdir=False):
         """
         Requires disk access.
         """
         if self.sync_with_disk == False:
             raise DiskAccessRequired("get version")
-        if use_none_rcs == True:
-            RCS = rcs.rcs_by_name("None")
-            RCS.root(self.root)
-            RCS.encoding = encoding.get_encoding()
+        if use_none_vcs == True:
+            VCS = vcs.vcs_by_name("None")
+            VCS.root(self.root)
+            VCS.encoding = encoding.get_encoding()
         else:
-            RCS = self.rcs
+            VCS = self.vcs
 
         if path == None:
             path = self.get_path("version")
-        allow_no_rcs = not RCS.path_in_root(path)
-        if allow_no_rcs == True:
+        allow_no_vcs = not VCS.path_in_root(path)
+        if allow_no_vcs == True:
             assert for_duplicate_bugdir == True
-        version = RCS.get_file_contents(
-            path, allow_no_rcs=allow_no_rcs).rstrip("\n")
+        version = VCS.get_file_contents(
+            path, allow_no_vcs=allow_no_vcs).rstrip("\n")
         return version
 
     def set_version(self):
@@ -440,8 +440,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         """
         if self.sync_with_disk == False:
             raise DiskAccessRequired("set version")
-        self.rcs.mkdir(self.get_path())
-        self.rcs.set_file_contents(self.get_path("version"),
+        self.vcs.mkdir(self.get_path())
+        self.vcs.set_file_contents(self.get_path("version"),
                                    upgrade.BUGDIR_DISK_VERSION+"\n")
 
     # methods controlling disk access
@@ -460,7 +460,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         """
         Reqires disk access
         """
-        version = self.get_version(use_none_rcs=True)
+        version = self.get_version(use_none_vcs=True)
         if version != upgrade.BUGDIR_DISK_VERSION:
             upgrade.upgrade(self.root, version)
         else:
@@ -507,7 +507,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
     # methods for managing duplicate BugDirs
 
     def duplicate_bugdir(self, revision):
-        duplicate_path = self.rcs.duplicate_repo(revision)
+        duplicate_path = self.vcs.duplicate_repo(revision)
 
         duplicate_version_path = os.path.join(duplicate_path, ".be", "version")
         version = self.get_version(duplicate_version_path,
@@ -515,14 +515,14 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         if version != upgrade.BUGDIR_DISK_VERSION:
             upgrade.upgrade(duplicate_path, version)
 
-        # setup revision RCS as None, since the duplicate may not be
+        # setup revision VCS as None, since the duplicate may not be
         # initialized for versioning
         duplicate_settings_path = os.path.join(duplicate_path,
                                                ".be", "settings")
         duplicate_settings = self._get_settings(duplicate_settings_path,
                                                 for_duplicate_bugdir=True)
-        if "rcs_name" in duplicate_settings:
-            duplicate_settings["rcs_name"] = "None"
+        if "vcs_name" in duplicate_settings:
+            duplicate_settings["vcs_name"] = "None"
             duplicate_settings["user_id"] = self.user_id
         if "disabled" in bug.status_values:
             # Hack to support old versions of BE bugs
@@ -533,7 +533,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         return BugDir(duplicate_path, from_disk=True, manipulate_encodings=self._manipulate_encodings)
 
     def remove_duplicate_bugdir(self):
-        self.rcs.remove_duplicate_repo()
+        self.vcs.remove_duplicate_repo()
 
     # methods for managing bugs
 
@@ -650,14 +650,14 @@ class SimpleBugDir (BugDir):
             assert os.path.exists(dir.path)
             root = dir.path
             assert_new_BugDir = True
-            rcs_init = True
+            vcs_init = True
         else:
             root = "/"
             assert_new_BugDir = False
-            rcs_init = False
+            vcs_init = False
         BugDir.__init__(self, root, sink_to_existing_root=False,
                     assert_new_BugDir=assert_new_BugDir,
-                    allow_rcs_init=rcs_init,
+                    allow_vcs_init=vcs_init,
                     manipulate_encodings=False)
         if sync_with_disk == True: # postpone cleanup since dir.__del__() removes dir.
             self._dir_ref = dir
@@ -680,8 +680,8 @@ class BugDirTestCase(unittest.TestCase):
     def setUp(self):
         self.dir = utility.Dir()
         self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
-                             allow_rcs_init=True)
-        self.rcs = self.bugdir.rcs
+                             allow_vcs_init=True)
+        self.vcs = self.bugdir.vcs
     def tearDown(self):
         self.bugdir.cleanup()
         self.dir.cleanup()
@@ -694,13 +694,13 @@ class BugDirTestCase(unittest.TestCase):
         self.assertRaises(AlreadyInitialized, BugDir,
                           self.dir.path, assertNewBugDir=True)
     def versionTest(self):
-        if self.rcs.versioned == False:
+        if self.vcs.versioned == False:
             return
-        original = self.bugdir.rcs.commit("Began versioning")
+        original = self.bugdir.vcs.commit("Began versioning")
         bugA = self.bugdir.bug_from_uuid("a")
         bugA.status = "fixed"
         self.bugdir.save()
-        new = self.rcs.commit("Fixed bug a")
+        new = self.vcs.commit("Fixed bug a")
         dupdir = self.bugdir.duplicate_bugdir(original)
         self.failUnless(dupdir.root != self.bugdir.root,
                         "%s, %s" % (dupdir.root, self.bugdir.root))
@@ -782,7 +782,7 @@ class SimpleBugDirTestCase (unittest.TestCase):
         self.original_working_dir = os.getcwd()
         os.chdir(self.dir.path)
         self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
-                             allow_rcs_init=True)
+                             allow_vcs_init=True)
         self.bugdir.new_bug("preexisting", summary="Hopefully not imported")
         self.bugdir.save()
     def tearDown(self):

@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Change tree settings"""
 import textwrap
-from libbe import cmdutil, bugdir, rcs, settings_object
+from libbe import cmdutil, bugdir, vcs, settings_object
 __desc__ = __doc__
 
 def _value_string(bd, setting):
@@ -87,12 +87,12 @@ def get_bugdir_settings():
         set = getattr(bugdir.BugDir, s)
         dstr = set.__doc__.strip()
         # per-setting comment adjustments
-        if s == "rcs_name":
+        if s == "vcs_name":
             lines = dstr.split('\n')
             while lines[0].startswith("This property defaults to") == False:
                 lines.pop(0)
             assert len(lines) != None, \
-                "Unexpected rcs_name docstring:\n  '%s'" % dstr
+                "Unexpected vcs_name docstring:\n  '%s'" % dstr
             lines.insert(
                 0, "The name of the revision control system to use.\n")
             dstr = '\n'.join(lines)

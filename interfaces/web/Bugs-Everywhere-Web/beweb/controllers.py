@@ -119,9 +119,9 @@ class Bug(PrestHandler):
             assigned = None
         bug.assigned = assigned
         bug.save()
-#        bug.rcs.precommit(bug.path)
-#        bug.rcs.commit(bug.path, "Auto-commit")
-#        bug.rcs.postcommit(bug.path)
+#        bug.vcs.precommit(bug.path)
+#        bug.vcs.commit(bug.path, "Auto-commit")
+#        bug.vcs.postcommit(bug.path)
         raise cherrypy.HTTPRedirect(bug_list_url(bug_data["project"]))
 
     def instantiate(self, project, bug):

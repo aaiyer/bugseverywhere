@@ -11,7 +11,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: 'Terminology: Version control system vs. RCS'

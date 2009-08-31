@@ -614,7 +614,7 @@ class Message (object):
         # read only bugdir.
         bd = libbe.bugdir.BugDir(from_disk=True,
                                  manipulate_encodings=False)
-        if bd.rcs.versioned == False: # no way to tell what's changed
+        if bd.vcs.versioned == False: # no way to tell what's changed
             raise NotificationFailed("Not versioned")
 
         subscribers = subscribe.get_bugdir_subscribers(bd, THIS_SERVER)
@@ -668,7 +668,7 @@ class Message (object):
             commit_msg = self.commit_command.stdout
             assert commit_msg.startswith("Committed "), commit_msg
             after_revision = commit_msg[len("Committed "):]
-            before_revision = bd.rcs.revision_id(-2)
+            before_revision = bd.vcs.revision_id(-2)
         else:
             before_revision = previous_revision
         if before_revision == None:

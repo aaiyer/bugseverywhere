@@ -33,31 +33,31 @@ import doctest
 from utility import Dir, search_parent_directories
 
 
-def _get_matching_rcs(matchfn):
-    """Return the first module for which matchfn(RCS_instance) is true"""
+def _get_matching_vcs(matchfn):
+    """Return the first module for which matchfn(VCS_instance) is true"""
     import arch
     import bzr
     import darcs
     import git
     import hg
     for module in [arch, bzr, darcs, git, hg]:
-        rcs = module.new()
-        if matchfn(rcs) == True:
-            return rcs
-        del(rcs)
-    return RCS()
+        vcs = module.new()
+        if matchfn(vcs) == True:
+            return vcs
+        del(vcs)
+    return VCS()
     
-def rcs_by_name(rcs_name):
-    """Return the module for the RCS with the given name"""
-    return _get_matching_rcs(lambda rcs: rcs.name == rcs_name)
+def vcs_by_name(vcs_name):
+    """Return the module for the VCS with the given name"""
+    return _get_matching_vcs(lambda vcs: vcs.name == vcs_name)
 
-def detect_rcs(dir):
-    """Return an RCS instance for the rcs being used in this directory"""
-    return _get_matching_rcs(lambda rcs: rcs.detect(dir))
+def detect_vcs(dir):
+    """Return an VCS instance for the vcs being used in this directory"""
+    return _get_matching_vcs(lambda vcs: vcs.detect(dir))
 
-def installed_rcs():
-    """Return an instance of an installed RCS"""
-    return _get_matching_rcs(lambda rcs: rcs.installed())
+def installed_vcs():
+    """Return an instance of an installed VCS"""
+    return _get_matching_vcs(lambda vcs: vcs.installed())
 
 
 class CommandError(Exception):
@@ -72,9 +72,9 @@ class CommandError(Exception):
 class SettingIDnotSupported(NotImplementedError):
     pass
 
-class RCSnotRooted(Exception):
+class VCSnotRooted(Exception):
     def __init__(self):
-        msg = "RCS not rooted"
+        msg = "VCS not rooted"
         Exception.__init__(self, msg)
 
 class PathNotInRoot(Exception):
@@ -95,16 +95,16 @@ class EmptyCommit(Exception):
 
 
 def new():
-    return RCS()
+    return VCS()
 
-class RCS(object):
+class VCS(object):
     """
-    This class implements a 'no-rcs' interface.
+    This class implements a 'no-vcs' interface.
 
-    Support for other RCSs can be added by subclassing this class, and
-    overriding methods _rcs_*() with code appropriate for your RCS.
+    Support for other VCSs can be added by subclassing this class, and
+    overriding methods _vcs_*() with code appropriate for your VCS.
     
-    The methods _u_*() are utility methods available to the _rcs_*()
+    The methods _u_*() are utility methods available to the _vcs_*()
     methods.
     """
     name = "None"
@@ -120,76 +120,76 @@ class RCS(object):
     def __del__(self):
         self.cleanup()
 
-    def _rcs_help(self):
+    def _vcs_help(self):
         """
         Return the command help string.
         (Allows a simple test to see if the client is installed.)
         """
         pass
-    def _rcs_detect(self, path=None):
+    def _vcs_detect(self, path=None):
         """
-        Detect whether a directory is revision controlled with this RCS.
+        Detect whether a directory is revision controlled with this VCS.
         """
         return True
-    def _rcs_root(self, path):
+    def _vcs_root(self, path):
         """
-        Get the RCS root.  This is the default working directory for
+        Get the VCS root.  This is the default working directory for
         future invocations.  You would normally set this to the root
-        directory for your RCS.
+        directory for your VCS.
         """
         if os.path.isdir(path)==False:
             path = os.path.dirname(path)
             if path == "":
                 path = os.path.abspath(".")
         return path
-    def _rcs_init(self, path):
+    def _vcs_init(self, path):
         """
         Begin versioning the tree based at path.
         """
         pass
-    def _rcs_cleanup(self):
+    def _vcs_cleanup(self):
         """
-        Remove any cruft that _rcs_init() created outside of the
+        Remove any cruft that _vcs_init() created outside of the
         versioned tree.
         """
         pass
-    def _rcs_get_user_id(self):
+    def _vcs_get_user_id(self):
         """
-        Get the RCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
-        If the RCS has not been configured with a username, return None.
+        Get the VCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
+        If the VCS has not been configured with a username, return None.
         """
         return None
-    def _rcs_set_user_id(self, value):
+    def _vcs_set_user_id(self, value):
         """
-        Set the RCS's suggested user id (e.g "John Doe <jdoe@example.com>").
-        This is run if the RCS has not been configured with a usename, so
+        Set the VCS's suggested user id (e.g "John Doe <jdoe@example.com>").
+        This is run if the VCS has not been configured with a usename, so
         that commits will have a reasonable FROM value.
         """
         raise SettingIDnotSupported
-    def _rcs_add(self, path):
+    def _vcs_add(self, path):
         """
         Add the already created file at path to version control.
         """
         pass
-    def _rcs_remove(self, path):
+    def _vcs_remove(self, path):
         """
         Remove the file at path from version control.  Optionally
         remove the file from the filesystem as well.
         """
         pass
-    def _rcs_update(self, path):
+    def _vcs_update(self, path):
         """
         Notify the versioning system of changes to the versioned file
         at path.
         """
         pass
-    def _rcs_get_file_contents(self, path, revision=None, binary=False):
+    def _vcs_get_file_contents(self, path, revision=None, binary=False):
         """
         Get the file contents as they were in a given revision.
         Revision==None specifies the current revision.
         """
         assert revision == None, \
-            "The %s RCS does not support revision specifiers" % self.name
+            "The %s VCS does not support revision specifiers" % self.name
         if binary == False:
             f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
         else:
@@ -197,14 +197,14 @@ class RCS(object):
         contents = f.read()
         f.close()
         return contents
-    def _rcs_duplicate_repo(self, directory, revision=None):
+    def _vcs_duplicate_repo(self, directory, revision=None):
         """
         Get the repository as it was in a given revision.
         revision==None specifies the current revision.
         dir specifies a directory to create the duplicate in.
         """
         shutil.copytree(self.rootdir, directory, True)
-    def _rcs_commit(self, commitfile, allow_empty=False):
+    def _vcs_commit(self, commitfile, allow_empty=False):
         """
         Commit the current working directory, using the contents of
         commitfile as the comment.  Return the name of the old
@@ -214,7 +214,7 @@ class RCS(object):
         changes to commit.
         """
         return None
-    def _rcs_revision_id(self, index):
+    def _vcs_revision_id(self, index):
         """
         Return the name of the <index>th revision.  Index will be an
         integer (possibly <= 0).  The choice of which branch to follow
@@ -226,7 +226,7 @@ class RCS(object):
         return None
     def installed(self):
         try:
-            self._rcs_help()
+            self._vcs_help()
             return True
         except OSError, e:
             if e.errno == errno.ENOENT:
@@ -235,37 +235,37 @@ class RCS(object):
             return False
     def detect(self, path="."):
         """
-        Detect whether a directory is revision controlled with this RCS.
+        Detect whether a directory is revision controlled with this VCS.
         """
-        return self._rcs_detect(path)
+        return self._vcs_detect(path)
     def root(self, path):
         """
-        Set the root directory to the path's RCS root.  This is the
+        Set the root directory to the path's VCS root.  This is the
         default working directory for future invocations.
         """
-        self.rootdir = self._rcs_root(path)
+        self.rootdir = self._vcs_root(path)
     def init(self, path):
         """
         Begin versioning the tree based at path.
-        Also roots the rcs at path.
+        Also roots the vcs at path.
         """
         if os.path.isdir(path)==False:
             path = os.path.dirname(path)
-        self._rcs_init(path)
+        self._vcs_init(path)
         self.root(path)
     def cleanup(self):
-        self._rcs_cleanup()
+        self._vcs_cleanup()
     def get_user_id(self):
         """
-        Get the RCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
-        If the RCS has not been configured with a username, return the user's
+        Get the VCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
+        If the VCS has not been configured with a username, return the user's
         id.  You can override the automatic lookup procedure by setting the
-        RCS.user_id attribute to a string of your choice.
+        VCS.user_id attribute to a string of your choice.
         """
         if hasattr(self, "user_id"):
             if self.user_id != None:
                 return self.user_id
-        id = self._rcs_get_user_id()
+        id = self._vcs_get_user_id()
         if id == None:
             name = self._u_get_fallback_username()
             email = self._u_get_fallback_email()
@@ -278,21 +278,21 @@ class RCS(object):
         return id
     def set_user_id(self, value):
         """
-        Set the RCS's suggested user id (e.g "John Doe <jdoe@example.com>").
-        This is run if the RCS has not been configured with a usename, so
+        Set the VCS's suggested user id (e.g "John Doe <jdoe@example.com>").
+        This is run if the VCS has not been configured with a usename, so
         that commits will have a reasonable FROM value.
         """
-        self._rcs_set_user_id(value)
+        self._vcs_set_user_id(value)
     def add(self, path):
         """
         Add the already created file at path to version control.
         """
-        self._rcs_add(self._u_rel_path(path))
+        self._vcs_add(self._u_rel_path(path))
     def remove(self, path):
         """
         Remove a file from both version control and the filesystem.
         """
-        self._rcs_remove(self._u_rel_path(path))
+        self._vcs_remove(self._u_rel_path(path))
         if os.path.exists(path):
             os.remove(path)
     def recursive_remove(self, dirname):
@@ -308,7 +308,7 @@ class RCS(object):
                 fullpath = os.path.join(dirpath, path)
                 if os.path.exists(fullpath) == False:
                     continue
-                self._rcs_remove(self._u_rel_path(fullpath))
+                self._vcs_remove(self._u_rel_path(fullpath))
         if os.path.exists(dirname):
             shutil.rmtree(dirname)
     def update(self, path):
@@ -316,23 +316,23 @@ class RCS(object):
         Notify the versioning system of changes to the versioned file
         at path.
         """
-        self._rcs_update(self._u_rel_path(path))
-    def get_file_contents(self, path, revision=None, allow_no_rcs=False, binary=False):
+        self._vcs_update(self._u_rel_path(path))
+    def get_file_contents(self, path, revision=None, allow_no_vcs=False, binary=False):
         """
         Get the file as it was in a given revision.
         Revision==None specifies the current revision.
         """
         if not os.path.exists(path):
             raise NoSuchFile(path)
-        if self._use_rcs(path, allow_no_rcs):
+        if self._use_vcs(path, allow_no_vcs):
             relpath = self._u_rel_path(path)
-            contents = self._rcs_get_file_contents(relpath,revision,binary=binary)
+            contents = self._vcs_get_file_contents(relpath,revision,binary=binary)
         else:
             f = codecs.open(path, "r", self.encoding)
             contents = f.read()
             f.close()
         return contents
-    def set_file_contents(self, path, contents, allow_no_rcs=False, binary=False):
+    def set_file_contents(self, path, contents, allow_no_vcs=False, binary=False):
         """
         Set the file contents under version control.
         """
@@ -344,12 +344,12 @@ class RCS(object):
         f.write(contents)
         f.close()
         
-        if self._use_rcs(path, allow_no_rcs):
+        if self._use_vcs(path, allow_no_vcs):
             if add:
                 self.add(path)
             else:
                 self.update(path)
-    def mkdir(self, path, allow_no_rcs=False, check_parents=True):
+    def mkdir(self, path, allow_no_vcs=False, check_parents=True):
         """
         Create (if neccessary) a directory at path under version
         control.
@@ -357,14 +357,14 @@ class RCS(object):
         if check_parents == True:
             parent = os.path.dirname(path)
             if not os.path.exists(parent): # recurse through parents
-                self.mkdir(parent, allow_no_rcs, check_parents)
+                self.mkdir(parent, allow_no_vcs, check_parents)
         if not os.path.exists(path):
             os.mkdir(path)
-            if self._use_rcs(path, allow_no_rcs):
+            if self._use_vcs(path, allow_no_vcs):
                 self.add(path)
         else:
             assert os.path.isdir(path)
-            if self._use_rcs(path, allow_no_rcs):
+            if self._use_vcs(path, allow_no_vcs):
                 #self.update(path)# Don't update directories.  Changing files
                 pass              # underneath them should be sufficient.
                 
@@ -376,10 +376,10 @@ class RCS(object):
         """
         # Dirname in Baseir to protect against simlink attacks.
         if self._duplicateBasedir == None:
-            self._duplicateBasedir = tempfile.mkdtemp(prefix='BErcs')
+            self._duplicateBasedir = tempfile.mkdtemp(prefix='BEvcs')
             self._duplicateDirname = \
                 os.path.join(self._duplicateBasedir, "duplicate")
-            self._rcs_duplicate_repo(directory=self._duplicateDirname,
+            self._vcs_duplicate_repo(directory=self._duplicateDirname,
                                      revision=revision)
         return self._duplicateDirname
     def remove_duplicate_repo(self):
@@ -409,7 +409,7 @@ class RCS(object):
             temp_file.write(summary)
             temp_file.flush()
             self.precommit()
-            revision = self._rcs_commit(filename, allow_empty=allow_empty)
+            revision = self._vcs_commit(filename, allow_empty=allow_empty)
             temp_file.close()
             self.postcommit()
         finally:
@@ -436,7 +436,7 @@ class RCS(object):
         """
         if index == None:
             return None
-        return self._rcs_revision_id(index)
+        return self._vcs_revision_id(index)
     def _u_any_in_string(self, list, string):
         """
         Return True if any of the strings in list are in string.
@@ -493,36 +493,36 @@ class RCS(object):
         or None if none of those files exist.
         """
         return search_parent_directories(path, filename)
-    def _use_rcs(self, path, allow_no_rcs):
+    def _use_vcs(self, path, allow_no_vcs):
         """
-        Try and decide if _rcs_add/update/mkdir/etc calls will
-        succeed.  Returns True is we think the rcs_call would
+        Try and decide if _vcs_add/update/mkdir/etc calls will
+        succeed.  Returns True is we think the vcs_call would
         succeeed, and False otherwise.
         """
-        use_rcs = True
+        use_vcs = True
         exception = None
         if self.rootdir != None:
             if self.path_in_root(path) == False:
-                use_rcs = False
+                use_vcs = False
                 exception = PathNotInRoot(path, self.rootdir)
         else:
-            use_rcs = False
-            exception = RCSnotRooted
-        if use_rcs == False and allow_no_rcs==False:
+            use_vcs = False
+            exception = VCSnotRooted
+        if use_vcs == False and allow_no_vcs==False:
             raise exception
-        return use_rcs
+        return use_vcs
     def path_in_root(self, path, root=None):
         """
         Return the relative path to path from root.
-        >>> rcs = new()
-        >>> rcs.path_in_root("/a.b/c/.be", "/a.b/c")
+        >>> vcs = new()
+        >>> vcs.path_in_root("/a.b/c/.be", "/a.b/c")
         True
-        >>> rcs.path_in_root("/a.b/.be", "/a.b/c")
+        >>> vcs.path_in_root("/a.b/.be", "/a.b/c")
         False
         """
         if root == None:
             if self.rootdir == None:
-                raise RCSnotRooted
+                raise VCSnotRooted
             root = self.rootdir
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
@@ -533,13 +533,13 @@ class RCS(object):
     def _u_rel_path(self, path, root=None):
         """
         Return the relative path to path from root.
-        >>> rcs = new()
-        >>> rcs._u_rel_path("/a.b/c/.be", "/a.b/c")
+        >>> vcs = new()
+        >>> vcs._u_rel_path("/a.b/c/.be", "/a.b/c")
         '.be'
         """
         if root == None:
             if self.rootdir == None:
-                raise RCSnotRooted
+                raise VCSnotRooted
             root = self.rootdir
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
@@ -553,20 +553,20 @@ class RCS(object):
     def _u_abspath(self, path, root=None):
         """
         Return the absolute path from a path realtive to root.
-        >>> rcs = new()
-        >>> rcs._u_abspath(".be", "/a.b/c")
+        >>> vcs = new()
+        >>> vcs._u_abspath(".be", "/a.b/c")
         '/a.b/c/.be'
         """
         if root == None:
-            assert self.rootdir != None, "RCS not rooted"
+            assert self.rootdir != None, "VCS not rooted"
             root = self.rootdir
         return os.path.abspath(os.path.join(root, path))
     def _u_create_id(self, name, email=None):
         """
-        >>> rcs = new()
-        >>> rcs._u_create_id("John Doe", "jdoe@example.com")
+        >>> vcs = new()
+        >>> vcs._u_create_id("John Doe", "jdoe@example.com")
         'John Doe <jdoe@example.com>'
-        >>> rcs._u_create_id("John Doe")
+        >>> vcs._u_create_id("John Doe")
         'John Doe'
         """
         assert len(name) > 0
@@ -576,13 +576,13 @@ class RCS(object):
             return "%s <%s>" % (name, email)
     def _u_parse_id(self, value):
         """
-        >>> rcs = new()
-        >>> rcs._u_parse_id("John Doe <jdoe@example.com>")
+        >>> vcs = new()
+        >>> vcs._u_parse_id("John Doe <jdoe@example.com>")
         ('John Doe', 'jdoe@example.com')
-        >>> rcs._u_parse_id("John Doe")
+        >>> vcs._u_parse_id("John Doe")
         ('John Doe', None)
         >>> try:
-        ...     rcs._u_parse_id("John Doe <jdoe@example.com><what?>")
+        ...     vcs._u_parse_id("John Doe <jdoe@example.com><what?>")
         ... except AssertionError:
         ...     print "Invalid match"
         Invalid match
@@ -627,131 +627,131 @@ class RCS(object):
         return (summary, body)
         
 
-def setup_rcs_test_fixtures(testcase):
-    """Set up test fixtures for RCS test case."""
-    testcase.rcs = testcase.Class()
+def setup_vcs_test_fixtures(testcase):
+    """Set up test fixtures for VCS test case."""
+    testcase.vcs = testcase.Class()
     testcase.dir = Dir()
     testcase.dirname = testcase.dir.path
 
-    rcs_not_supporting_uninitialized_user_id = []
-    rcs_not_supporting_set_user_id = ["None", "hg"]
-    testcase.rcs_supports_uninitialized_user_id = (
-        testcase.rcs.name not in rcs_not_supporting_uninitialized_user_id)
-    testcase.rcs_supports_set_user_id = (
-        testcase.rcs.name not in rcs_not_supporting_set_user_id)
+    vcs_not_supporting_uninitialized_user_id = []
+    vcs_not_supporting_set_user_id = ["None", "hg"]
+    testcase.vcs_supports_uninitialized_user_id = (
+        testcase.vcs.name not in vcs_not_supporting_uninitialized_user_id)
+    testcase.vcs_supports_set_user_id = (
+        testcase.vcs.name not in vcs_not_supporting_set_user_id)
 
-    if not testcase.rcs.installed():
+    if not testcase.vcs.installed():
         testcase.fail(
-            "%(name)s RCS not found" % vars(testcase.Class))
+            "%(name)s VCS not found" % vars(testcase.Class))
 
     if testcase.Class.name != "None":
         testcase.failIf(
-            testcase.rcs.detect(testcase.dirname),
-            "Detected %(name)s RCS before initialising"
+            testcase.vcs.detect(testcase.dirname),
+            "Detected %(name)s VCS before initialising"
                 % vars(testcase.Class))
 
-    testcase.rcs.init(testcase.dirname)
+    testcase.vcs.init(testcase.dirname)
 
 
-class RCSTestCase(unittest.TestCase):
-    """Test cases for base RCS class."""
+class VCSTestCase(unittest.TestCase):
+    """Test cases for base VCS class."""
 
-    Class = RCS
+    Class = VCS
 
     def __init__(self, *args, **kwargs):
-        super(RCSTestCase, self).__init__(*args, **kwargs)
+        super(VCSTestCase, self).__init__(*args, **kwargs)
         self.dirname = None
 
     def setUp(self):
-        super(RCSTestCase, self).setUp()
-        setup_rcs_test_fixtures(self)
+        super(VCSTestCase, self).setUp()
+        setup_vcs_test_fixtures(self)
 
     def tearDown(self):
-        del(self.rcs)
-        super(RCSTestCase, self).tearDown()
+        del(self.vcs)
+        super(VCSTestCase, self).tearDown()
 
     def full_path(self, rel_path):
         return os.path.join(self.dirname, rel_path)
 
 
-class RCS_init_TestCase(RCSTestCase):
-    """Test cases for RCS.init method."""
+class VCS_init_TestCase(VCSTestCase):
+    """Test cases for VCS.init method."""
 
     def test_detect_should_succeed_after_init(self):
-        """Should detect RCS in directory after initialization."""
+        """Should detect VCS in directory after initialization."""
         self.failUnless(
-            self.rcs.detect(self.dirname),
-            "Did not detect %(name)s RCS after initialising"
+            self.vcs.detect(self.dirname),
+            "Did not detect %(name)s VCS after initialising"
                 % vars(self.Class))
 
-    def test_rcs_rootdir_in_specified_root_path(self):
-        """RCS root directory should be in specified root path."""
-        rp = os.path.realpath(self.rcs.rootdir)
+    def test_vcs_rootdir_in_specified_root_path(self):
+        """VCS root directory should be in specified root path."""
+        rp = os.path.realpath(self.vcs.rootdir)
         dp = os.path.realpath(self.dirname)
-        rcs_name = self.Class.name
+        vcs_name = self.Class.name
         self.failUnless(
             dp == rp or rp == None,
-            "%(rcs_name)s RCS root in wrong dir (%(dp)s %(rp)s)" % vars())
+            "%(vcs_name)s VCS root in wrong dir (%(dp)s %(rp)s)" % vars())
 
 
-class RCS_get_user_id_TestCase(RCSTestCase):
-    """Test cases for RCS.get_user_id method."""
+class VCS_get_user_id_TestCase(VCSTestCase):
+    """Test cases for VCS.get_user_id method."""
 
     def test_gets_existing_user_id(self):
         """Should get the existing user ID."""
-        if not self.rcs_supports_uninitialized_user_id:
+        if not self.vcs_supports_uninitialized_user_id:
             return
 
-        user_id = self.rcs.get_user_id()
+        user_id = self.vcs.get_user_id()
         self.failUnless(
             user_id is not None,
             "unable to get a user id")
 
 
-class RCS_set_user_id_TestCase(RCSTestCase):
-    """Test cases for RCS.set_user_id method."""
+class VCS_set_user_id_TestCase(VCSTestCase):
+    """Test cases for VCS.set_user_id method."""
 
     def setUp(self):
-        super(RCS_set_user_id_TestCase, self).setUp()
+        super(VCS_set_user_id_TestCase, self).setUp()
 
-        if self.rcs_supports_uninitialized_user_id:
-            self.prev_user_id = self.rcs.get_user_id()
+        if self.vcs_supports_uninitialized_user_id:
+            self.prev_user_id = self.vcs.get_user_id()
         else:
             self.prev_user_id = "Uninitialized identity <bogus@example.org>"
 
-        if self.rcs_supports_set_user_id:
+        if self.vcs_supports_set_user_id:
             self.test_new_user_id = "John Doe <jdoe@example.com>"
-            self.rcs.set_user_id(self.test_new_user_id)
+            self.vcs.set_user_id(self.test_new_user_id)
 
     def tearDown(self):
-        if self.rcs_supports_set_user_id:
-            self.rcs.set_user_id(self.prev_user_id)
-        super(RCS_set_user_id_TestCase, self).tearDown()
+        if self.vcs_supports_set_user_id:
+            self.vcs.set_user_id(self.prev_user_id)
+        super(VCS_set_user_id_TestCase, self).tearDown()
 
     def test_raises_error_in_unsupported_vcs(self):
         """Should raise an error in a VCS that doesn't support it."""
-        if self.rcs_supports_set_user_id:
+        if self.vcs_supports_set_user_id:
             return
         self.assertRaises(
             SettingIDnotSupported,
-            self.rcs.set_user_id, "foo")
+            self.vcs.set_user_id, "foo")
 
-    def test_updates_user_id_in_supporting_rcs(self):
-        """Should update the user ID in an RCS that supports it."""
-        if not self.rcs_supports_set_user_id:
+    def test_updates_user_id_in_supporting_vcs(self):
+        """Should update the user ID in an VCS that supports it."""
+        if not self.vcs_supports_set_user_id:
             return
-        user_id = self.rcs.get_user_id()
+        user_id = self.vcs.get_user_id()
         self.failUnlessEqual(
             self.test_new_user_id, user_id,
             "user id not set correctly (expected %s, got %s)"
                 % (self.test_new_user_id, user_id))
 
 
-def setup_rcs_revision_test_fixtures(testcase):
-    """Set up revision test fixtures for RCS test case."""
+def setup_vcs_revision_test_fixtures(testcase):
+    """Set up revision test fixtures for VCS test case."""
     testcase.test_dirs = ['a', 'a/b', 'c']
     for path in testcase.test_dirs:
-        testcase.rcs.mkdir(testcase.full_path(path))
+        testcase.vcs.mkdir(testcase.full_path(path))
 
     testcase.test_files = ['a/text', 'a/b/text']
 
@@ -761,17 +761,17 @@ def setup_rcs_revision_test_fixtures(testcase):
         }
 
 
-class RCS_mkdir_TestCase(RCSTestCase):
-    """Test cases for RCS.mkdir method."""
+class VCS_mkdir_TestCase(VCSTestCase):
+    """Test cases for VCS.mkdir method."""
 
     def setUp(self):
-        super(RCS_mkdir_TestCase, self).setUp()
-        setup_rcs_revision_test_fixtures(self)
+        super(VCS_mkdir_TestCase, self).setUp()
+        setup_vcs_revision_test_fixtures(self)
 
     def tearDown(self):
         for path in reversed(sorted(self.test_dirs)):
-            self.rcs.recursive_remove(self.full_path(path))
-        super(RCS_mkdir_TestCase, self).tearDown()
+            self.vcs.recursive_remove(self.full_path(path))
+        super(VCS_mkdir_TestCase, self).tearDown()
 
     def test_mkdir_creates_directory(self):
         """Should create specified directory in filesystem."""
@@ -782,25 +782,25 @@ class RCS_mkdir_TestCase(RCSTestCase):
                 "path %(full_path)s does not exist" % vars())
 
 
-class RCS_commit_TestCase(RCSTestCase):
-    """Test cases for RCS.commit method."""
+class VCS_commit_TestCase(VCSTestCase):
+    """Test cases for VCS.commit method."""
 
     def setUp(self):
-        super(RCS_commit_TestCase, self).setUp()
-        setup_rcs_revision_test_fixtures(self)
+        super(VCS_commit_TestCase, self).setUp()
+        setup_vcs_revision_test_fixtures(self)
 
     def tearDown(self):
         for path in reversed(sorted(self.test_dirs)):
-            self.rcs.recursive_remove(self.full_path(path))
-        super(RCS_commit_TestCase, self).tearDown()
+            self.vcs.recursive_remove(self.full_path(path))
+        super(VCS_commit_TestCase, self).tearDown()
 
     def test_file_contents_as_specified(self):
         """Should set file contents as specified."""
         test_contents = self.test_contents['rev_1']
         for path in self.test_files:
             full_path = self.full_path(path)
-            self.rcs.set_file_contents(full_path, test_contents)
-            current_contents = self.rcs.get_file_contents(full_path)
+            self.vcs.set_file_contents(full_path, test_contents)
+            current_contents = self.vcs.get_file_contents(full_path)
             self.failUnlessEqual(test_contents, current_contents)
 
     def test_file_contents_as_committed(self):
@@ -808,120 +808,120 @@ class RCS_commit_TestCase(RCSTestCase):
         test_contents = self.test_contents['rev_1']
         for path in self.test_files:
             full_path = self.full_path(path)
-            self.rcs.set_file_contents(full_path, test_contents)
-            revision = self.rcs.commit("Initial file contents.")
-            current_contents = self.rcs.get_file_contents(full_path)
+            self.vcs.set_file_contents(full_path, test_contents)
+            revision = self.vcs.commit("Initial file contents.")
+            current_contents = self.vcs.get_file_contents(full_path)
             self.failUnlessEqual(test_contents, current_contents)
 
     def test_file_contents_as_set_when_uncommitted(self):
         """Should set file contents as specified after commit."""
-        if not self.rcs.versioned:
+        if not self.vcs.versioned:
             return
         for path in self.test_files:
             full_path = self.full_path(path)
-            self.rcs.set_file_contents(
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['rev_1'])
-            revision = self.rcs.commit("Initial file contents.")
-            self.rcs.set_file_contents(
+            revision = self.vcs.commit("Initial file contents.")
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['uncommitted'])
-            current_contents = self.rcs.get_file_contents(full_path)
+            current_contents = self.vcs.get_file_contents(full_path)
             self.failUnlessEqual(
                 self.test_contents['uncommitted'], current_contents)
 
     def test_revision_file_contents_as_committed(self):
         """Should get file contents as committed to specified revision."""
-        if not self.rcs.versioned:
+        if not self.vcs.versioned:
             return
         for path in self.test_files:
             full_path = self.full_path(path)
-            self.rcs.set_file_contents(
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['rev_1'])
-            revision = self.rcs.commit("Initial file contents.")
-            self.rcs.set_file_contents(
+            revision = self.vcs.commit("Initial file contents.")
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['uncommitted'])
-            committed_contents = self.rcs.get_file_contents(
+            committed_contents = self.vcs.get_file_contents(
                 full_path, revision)
             self.failUnlessEqual(
                 self.test_contents['rev_1'], committed_contents)
 
     def test_revision_id_as_committed(self):
         """Check for compatibility between .commit() and .revision_id()"""
-        if not self.rcs.versioned:
-            self.failUnlessEqual(self.rcs.revision_id(5), None)
+        if not self.vcs.versioned:
+            self.failUnlessEqual(self.vcs.revision_id(5), None)
             return
         committed_revisions = []
         for path in self.test_files:
             full_path = self.full_path(path)
-            self.rcs.set_file_contents(
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['rev_1'])
-            revision = self.rcs.commit("Initial %s contents." % path)
+            revision = self.vcs.commit("Initial %s contents." % path)
             committed_revisions.append(revision)
-            self.rcs.set_file_contents(
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['uncommitted'])
-            revision = self.rcs.commit("Altered %s contents." % path)
+            revision = self.vcs.commit("Altered %s contents." % path)
             committed_revisions.append(revision)
         for i,revision in enumerate(committed_revisions):
-            self.failUnlessEqual(self.rcs.revision_id(i), revision)
+            self.failUnlessEqual(self.vcs.revision_id(i), revision)
             i += -len(committed_revisions) # check negative indices
-            self.failUnlessEqual(self.rcs.revision_id(i), revision)
+            self.failUnlessEqual(self.vcs.revision_id(i), revision)
         i = len(committed_revisions)
-        self.failUnlessEqual(self.rcs.revision_id(i), None)
-        self.failUnlessEqual(self.rcs.revision_id(-i-1), None)
+        self.failUnlessEqual(self.vcs.revision_id(i), None)
+        self.failUnlessEqual(self.vcs.revision_id(-i-1), None)
 
     def test_revision_id_as_committed(self):
         """Check revision id before first commit"""
-        if not self.rcs.versioned:
-            self.failUnlessEqual(self.rcs.revision_id(5), None)
+        if not self.vcs.versioned:
+            self.failUnlessEqual(self.vcs.revision_id(5), None)
             return
         committed_revisions = []
         for path in self.test_files:
-            self.failUnlessEqual(self.rcs.revision_id(0), None)
+            self.failUnlessEqual(self.vcs.revision_id(0), None)
 
 
-class RCS_duplicate_repo_TestCase(RCSTestCase):
-    """Test cases for RCS.duplicate_repo method."""
+class VCS_duplicate_repo_TestCase(VCSTestCase):
+    """Test cases for VCS.duplicate_repo method."""
 
     def setUp(self):
-        super(RCS_duplicate_repo_TestCase, self).setUp()
-        setup_rcs_revision_test_fixtures(self)
+        super(VCS_duplicate_repo_TestCase, self).setUp()
+        setup_vcs_revision_test_fixtures(self)
 
     def tearDown(self):
-        self.rcs.remove_duplicate_repo()
+        self.vcs.remove_duplicate_repo()
         for path in reversed(sorted(self.test_dirs)):
-            self.rcs.recursive_remove(self.full_path(path))
-        super(RCS_duplicate_repo_TestCase, self).tearDown()
+            self.vcs.recursive_remove(self.full_path(path))
+        super(VCS_duplicate_repo_TestCase, self).tearDown()
 
     def test_revision_file_contents_as_committed(self):
         """Should match file contents as committed to specified revision."""
-        if not self.rcs.versioned:
+        if not self.vcs.versioned:
             return
         for path in self.test_files:
             full_path = self.full_path(path)
-            self.rcs.set_file_contents(
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['rev_1'])
-            revision = self.rcs.commit("Commit current status")
-            self.rcs.set_file_contents(
+            revision = self.vcs.commit("Commit current status")
+            self.vcs.set_file_contents(
                 full_path, self.test_contents['uncommitted'])
-            dup_repo_path = self.rcs.duplicate_repo(revision)
+            dup_repo_path = self.vcs.duplicate_repo(revision)
             dup_file_path = os.path.join(dup_repo_path, path)
             dup_file_contents = file(dup_file_path, 'rb').read()
             self.failUnlessEqual(
                 self.test_contents['rev_1'], dup_file_contents)
-            self.rcs.remove_duplicate_repo()
+            self.vcs.remove_duplicate_repo()
 
 
-def make_rcs_testcase_subclasses(rcs_class, namespace):
-    """Make RCSTestCase subclasses for rcs_class in the namespace."""
-    rcs_testcase_classes = [
+def make_vcs_testcase_subclasses(vcs_class, namespace):
+    """Make VCSTestCase subclasses for vcs_class in the namespace."""
+    vcs_testcase_classes = [
         c for c in (
             ob for ob in globals().values() if isinstance(ob, type))
-        if issubclass(c, RCSTestCase)]
+        if issubclass(c, VCSTestCase)]
 
-    for base_class in rcs_testcase_classes:
-        testcase_class_name = rcs_class.__name__ + base_class.__name__
+    for base_class in vcs_testcase_classes:
+        testcase_class_name = vcs_class.__name__ + base_class.__name__
         testcase_class_bases = (base_class,)
         testcase_class_dict = dict(base_class.__dict__)
-        testcase_class_dict['Class'] = rcs_class
+        testcase_class_dict['Class'] = vcs_class
         testcase_class = type(
             testcase_class_name, testcase_class_bases, testcase_class_dict)
         setattr(namespace, testcase_class_name, testcase_class)

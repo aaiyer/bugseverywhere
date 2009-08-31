@@ -200,15 +200,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                     doc="An integer version of .date")
 
     def _get_comment_body(self):
-        if self.rcs != None and self.sync_with_disk == True:
-            import rcs
+        if self.vcs != None and self.sync_with_disk == True:
+            import vcs
             binary = not self.content_type.startswith("text/")
-            return self.rcs.get_file_contents(self.get_path("body"), binary=binary)
+            return self.vcs.get_file_contents(self.get_path("body"), binary=binary)
     def _set_comment_body(self, old=None, new=None, force=False):
-        if (self.rcs != None and self.sync_with_disk == True) or force==True:
+        if (self.vcs != None and self.sync_with_disk == True) or force==True:
             assert new != None, "Can't save empty comment"
             binary = not self.content_type.startswith("text/")
-            self.rcs.set_file_contents(self.get_path("body"), new, binary=binary)
+            self.vcs.set_file_contents(self.get_path("body"), new, binary=binary)
 
     @Property
     @change_hook_property(hook=_set_comment_body)
@@ -217,15 +217,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     @doc_property(doc="The meat of the comment")
     def body(): return {}
 
-    def _get_rcs(self):
-        if hasattr(self.bug, "rcs"):
-            return self.bug.rcs
+    def _get_vcs(self):
+        if hasattr(self.bug, "vcs"):
+            return self.bug.vcs
 
     @Property
-    @cached_property(generator=_get_rcs)
-    @local_property("rcs")
+    @cached_property(generator=_get_vcs)
+    @local_property("vcs")
     @doc_property(doc="A revision control system instance.")
-    def rcs(): return {}
+    def vcs(): return {}
 
     def _extra_strings_check_fn(value):
         return utility.iterable_full_of_strings(value, \
@@ -266,8 +266,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             if uuid == None:
                 self.uuid = uuid_gen()
             self.time = int(time.time()) # only save to second precision
-            if self.rcs != None:
-                self.author = self.rcs.get_user_id()
+            if self.vcs != None:
+                self.author = self.vcs.get_user_id()
             self.in_reply_to = in_reply_to
             self.body = body
 
@@ -559,15 +559,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     def load_settings(self):
         if self.sync_with_disk == False:
             raise DiskAccessRequired("load settings")
-        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
         self._setup_saved_settings()
 
     def save_settings(self):
         if self.sync_with_disk == False:
             raise DiskAccessRequired("save settings")
-        self.rcs.mkdir(self.get_path())
+        self.vcs.mkdir(self.get_path())
         path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, self._get_saved_settings())
+        mapfile.map_save(self.vcs, path, self._get_saved_settings())
 
     def save(self):
         """
@@ -592,7 +592,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             raise DiskAccessRequired("remove")
         for comment in self.traverse():
             path = comment.get_path()
-            self.rcs.recursive_remove(path)
+            self.vcs.recursive_remove(path)
 
     def add_reply(self, reply, allow_time_inversion=False):
         if self.uuid != INVALID_UUID:

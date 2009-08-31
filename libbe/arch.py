@@ -28,8 +28,8 @@ import doctest
 
 import config
 from beuuid import uuid_gen
-import rcs
-from rcs import RCS
+import vcs
+from vcs import VCS
 
 DEFAULT_CLIENT = "tla"
 
@@ -38,7 +38,7 @@ client = config.get_val("arch_client", default=DEFAULT_CLIENT)
 def new():
     return Arch()
 
-class Arch(RCS):
+class Arch(VCS):
     name = "Arch"
     client = client
     versioned = True
@@ -48,16 +48,16 @@ class Arch(RCS):
     _project_name = None
     _tmp_project = False
     _arch_paramdir = os.path.expanduser("~/.arch-params")
-    def _rcs_help(self):
+    def _vcs_help(self):
         status,output,error = self._u_invoke_client("--help")
         return output
-    def _rcs_detect(self, path):
+    def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
         if self._u_search_parent_directories(path, "{arch}") != None :
             config.set_val("arch_client", client)
             return True
         return False
-    def _rcs_init(self, path):
+    def _vcs_init(self, path):
         self._create_archive(path)
         self._create_project(path)
         self._add_project_code(path)
@@ -65,7 +65,7 @@ class Arch(RCS):
         """
         Create a temporary Arch archive in the directory PATH.  This
         archive will be removed by
-          __del__->cleanup->_rcs_cleanup->_remove_archive
+          __del__->cleanup->_vcs_cleanup->_remove_archive
         """
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
@@ -107,7 +107,7 @@ class Arch(RCS):
         """
         Create a temporary Arch project in the directory PATH.  This
         project will be removed by
-          __del__->cleanup->_rcs_cleanup->_remove_project
+          __del__->cleanup->_vcs_cleanup->_remove_project
         """
         # http://mwolson.org/projects/GettingStartedWithArch.html
         # http://regexps.srparish.net/tutorial-tla/new-project.html#Starting_a_New_Project
@@ -163,13 +163,13 @@ class Arch(RCS):
         self._adjust_naming_conventions(path)
         self._invoke_client("import", "--summary", "Began versioning",
                             directory=path)
-    def _rcs_cleanup(self):
+    def _vcs_cleanup(self):
         if self._tmp_project == True:
             self._remove_project()
         if self._tmp_archive == True:
             self._remove_archive()
 
-    def _rcs_root(self, path):
+    def _vcs_root(self, path):
         if not os.path.isdir(path):
             dirname = os.path.dirname(path)
         else:
@@ -199,7 +199,7 @@ class Arch(RCS):
         archive_name,project_name = output.rstrip('\n').split('/')
         self._archive_name = archive_name
         self._project_name = project_name
-    def _rcs_get_user_id(self):
+    def _vcs_get_user_id(self):
         try:
             status,output,error = self._u_invoke_client('my-id')
             return output.rstrip('\n')
@@ -208,9 +208,9 @@ class Arch(RCS):
                 return None
             else:
                 raise
-    def _rcs_set_user_id(self, value):
+    def _vcs_set_user_id(self, value):
         self._u_invoke_client('my-id', value)
-    def _rcs_add(self, path):
+    def _vcs_add(self, path):
         self._u_invoke_client("add-id", path)
         realpath = os.path.realpath(self._u_abspath(path))
         pathAdded = realpath in self._list_added(self.rootdir)
@@ -239,14 +239,14 @@ class Arch(RCS):
         self._add_dir_rule(rule, os.path.dirname(path), self.rootdir)
         if os.path.realpath(path) not in self._list_added(self.rootdir):
             raise CantAddFile(path)
-    def _rcs_remove(self, path):
+    def _vcs_remove(self, path):
         if not '.arch-ids' in path:
             self._u_invoke_client("delete-id", path)
-    def _rcs_update(self, path):
+    def _vcs_update(self, path):
         pass
-    def _rcs_get_file_contents(self, path, revision=None, binary=False):
+    def _vcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return RCS._rcs_get_file_contents(self, path, revision, binary=binary)
+            return VCS._vcs_get_file_contents(self, path, revision, binary=binary)
         else:
             status,output,error = \
                 self._invoke_client("file-find", path, revision)
@@ -256,18 +256,18 @@ class Arch(RCS):
             contents = f.read()
             f.close()
             return contents
-    def _rcs_duplicate_repo(self, directory, revision=None):
+    def _vcs_duplicate_repo(self, directory, revision=None):
         if revision == None:
-            RCS._rcs_duplicate_repo(self, directory, revision)
+            VCS._vcs_duplicate_repo(self, directory, revision)
         else:
             status,output,error = \
                 self._u_invoke_client("get", revision,directory)
-    def _rcs_commit(self, commitfile, allow_empty=False):
+    def _vcs_commit(self, commitfile, allow_empty=False):
         if allow_empty == False:
             # arch applies empty commits without complaining, so check first
             status,output,error = self._u_invoke_client("changes",expect=(0,1))
             if status == 0:
-                raise rcs.EmptyCommit()
+                raise vcs.EmptyCommit()
         summary,body = self._u_parse_commitfile(commitfile)
         args = ["commit", "--summary", summary]
         if body != None:
@@ -283,7 +283,7 @@ class Arch(RCS):
         assert revpath.startswith(self._archive_project_name()+'--')
         revision = revpath[len(self._archive_project_name()+'--'):]
         return revpath
-    def _rcs_revision_id(self, index):
+    def _vcs_revision_id(self, index):
         status,output,error = self._u_invoke_client("logs")
         logs = output.splitlines()
         first_log = logs.pop(0)
@@ -301,7 +301,7 @@ class CantAddFile(Exception):
 
 
 
-rcs.make_rcs_testcase_subclasses(Arch, sys.modules[__name__])
+vcs.make_vcs_testcase_subclasses(Arch, sys.modules[__name__])
 
 unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
 suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

@@ -21,7 +21,7 @@ __desc__ = __doc__
 
 def execute(args, manipulate_encodings=True):
     """
-    >>> from libbe import utility, rcs
+    >>> from libbe import utility, vcs
     >>> import os
     >>> dir = utility.Dir()
     >>> try:
@@ -36,14 +36,14 @@ def execute(args, manipulate_encodings=True):
 
     >>> dir = utility.Dir()
     >>> os.chdir(dir.path)
-    >>> rcs = rcs.installed_rcs()
-    >>> rcs.init('.')
-    >>> print rcs.name
+    >>> vcs = vcs.installed_vcs()
+    >>> vcs.init('.')
+    >>> print vcs.name
     Arch
     >>> execute([], manipulate_encodings=False)
     Using Arch for revision control.
     Directory initialized.
-    >>> rcs.cleanup()
+    >>> vcs.cleanup()
 
     >>> try:
     ...     execute(['--root', '.'], manipulate_encodings=False)
@@ -70,8 +70,8 @@ def execute(args, manipulate_encodings=True):
     except bugdir.AlreadyInitialized:
         raise cmdutil.UserError("Directory already initialized: %s" % options.root_dir)
     bd.save()
-    if bd.rcs.name is not "None":
-        print "Using %s for revision control." % bd.rcs.name
+    if bd.vcs.name is not "None":
+        print "Using %s for revision control." % bd.vcs.name
     else:
         print "No revision control detected."
     print "Directory initialized."
@@ -86,7 +86,7 @@ def get_parser():
 longhelp="""
 This command initializes Bugs Everywhere support for the specified directory
 and all its subdirectories.  It will auto-detect any supported revision control
-system.  You can use "be set rcs_name" to change the rcs being used.
+system.  You can use "be set vcs_name" to change the vcs being used.
 
 The directory defaults to your current working directory.
 
