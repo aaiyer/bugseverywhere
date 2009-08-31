@@ -12,7 +12,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Upgrade path for on-disk representation

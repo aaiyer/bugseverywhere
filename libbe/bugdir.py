@@ -26,17 +26,17 @@ import time
 import unittest
 import doctest
 
+import bug
+import encoding
 from properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, fn_checked_property, \
     cached_property, primed_property, change_hook_property, \
     settings_property
-import settings_object
 import mapfile
-import bug
 import rcs
-import encoding
+import settings_object
+import upgrade
 import utility
-
 
 class NoBugDir(Exception):
     def __init__(self, path):
@@ -73,9 +73,6 @@ class DiskAccessRequired (Exception):
     def __init__(self, goal):
         msg = "Cannot %s without accessing the disk" % goal
         Exception.__init__(self, msg)
-
-
-TREE_VERSION_STRING = "Bugs Everywhere Tree 1 0\n"
 
 
 class BugDir (list, settings_object.SavedSettingsObject):
@@ -429,8 +426,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
         if path == None:
             path = self.get_path("version")
-        tree_version = RCS.get_file_contents(path)
-        return tree_version
+        version = RCS.get_file_contents(path).rstrip("\n")
+        return version
 
     def set_version(self):
         """
@@ -440,7 +437,7 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
             raise DiskAccessRequired("set version")
         self.rcs.mkdir(self.get_path())
         self.rcs.set_file_contents(self.get_path("version"),
-                                   TREE_VERSION_STRING)
+                                   upgrade.BUGDIR_DISK_VERSION+"\n")
 
     # methods controlling disk access
 
@@ -459,9 +456,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         Reqires disk access
         """
         version = self.get_version(use_none_rcs=True)
-        if version != TREE_VERSION_STRING:
-            raise NotImplementedError, \
-                "BugDir cannot handle version '%s' yet." % version
+        if version != upgrade.BUGDIR_DISK_VERSION:
+            upgrade.upgrade(self.root, version)
         else:
             if not os.path.exists(self.get_path()):
                 raise NoBugDir(self.get_path())
