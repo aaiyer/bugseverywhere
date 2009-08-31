@@ -15,12 +15,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+Define editor_string(), a function that invokes an editor to accept
+user-produced text as a string.
+"""
+
 import codecs
 import locale
 import os
 import sys
 import tempfile
 import doctest
+
 
 default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
 

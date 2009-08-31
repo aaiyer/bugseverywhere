@@ -17,6 +17,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+Bazaar (bzr) backend.
+"""
+
 import os
 import re
 import sys
@@ -24,12 +28,12 @@ import unittest
 import doctest
 
 import vcs
-from vcs import VCS
+
 
 def new():
     return Bzr()
 
-class Bzr(VCS):
+class Bzr(vcs.VCS):
     name = "bzr"
     client = "bzr"
     versioned = True
@@ -60,14 +64,14 @@ class Bzr(VCS):
         pass
     def _vcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return VCS._vcs_get_file_contents(self, path, revision, binary=binary)
+            return vcs.VCS._vcs_get_file_contents(self, path, revision, binary=binary)
         else:
             status,output,error = \
                 self._u_invoke_client("cat","-r",revision,path)
             return output
     def _vcs_duplicate_repo(self, directory, revision=None):
         if revision == None:
-            VCS._vcs_duplicate_repo(self, directory, revision)
+            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
         else:
             self._u_invoke_client("branch", "--revision", revision,
                                   ".", directory)

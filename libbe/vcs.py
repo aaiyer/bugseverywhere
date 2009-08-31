@@ -18,6 +18,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+Define the base VCS (Version Control System) class, which should be
+subclassed by other Version Control System backends.  The base class
+implements a "do not version" VCS.
+"""
+
 from subprocess import Popen, PIPE
 import codecs
 import os

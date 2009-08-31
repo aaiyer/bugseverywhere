@@ -16,6 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+Git backend.
+"""
+
 import os
 import re
 import sys
@@ -23,12 +27,12 @@ import unittest
 import doctest
 
 import vcs
-from vcs import VCS
+
 
 def new():
     return Git()
 
-class Git(VCS):
+class Git(vcs.VCS):
     name="git"
     client="git"
     versioned=True
@@ -89,14 +93,14 @@ class Git(VCS):
         self._vcs_add(path)
     def _vcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return VCS._vcs_get_file_contents(self, path, revision, binary=binary)
+            return vcs.VCS._vcs_get_file_contents(self, path, revision, binary=binary)
         else:
             arg = "%s:%s" % (revision,path)
             status,output,error = self._u_invoke_client("show", arg)
             return output
     def _vcs_duplicate_repo(self, directory, revision=None):
         if revision==None:
-            VCS._vcs_duplicate_repo(self, directory, revision)
+            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
         else:
             #self._u_invoke_client("archive", revision, directory) # makes tarball
             self._u_invoke_client("clone", "--no-checkout",".",directory)

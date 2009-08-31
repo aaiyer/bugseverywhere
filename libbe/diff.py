@@ -14,11 +14,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Compare two bug trees"""
-from libbe import bugdir, bug, settings_object, tree
-from libbe.utility import time_to_str
+
+"""Compare two bug trees."""
+
 import difflib
 import doctest
+
+from libbe import bugdir, bug, settings_object, tree
+from libbe.utility import time_to_str
+
 
 class DiffTree (tree.Tree):
     """

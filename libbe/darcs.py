@@ -14,6 +14,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+Darcs backend.
+"""
+
 import codecs
 import os
 import re
@@ -27,12 +31,12 @@ import doctest
 import unittest
 
 import vcs
-from vcs import VCS
+
 
 def new():
     return Darcs()
 
-class Darcs(VCS):
+class Darcs(vcs.VCS):
     name="darcs"
     client="darcs"
     versioned=True
@@ -90,7 +94,7 @@ class Darcs(VCS):
         pass # darcs notices changes
     def _vcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return VCS._vcs_get_file_contents(self, path, revision,
+            return vcs.VCS._vcs_get_file_contents(self, path, revision,
                                               binary=binary)
         else:
             try:
@@ -118,7 +122,7 @@ class Darcs(VCS):
                 status,output,error = self._u_invoke(args, stdin=target_patch)
 
                 if os.path.exists(os.path.join(self.rootdir, path)) == True:
-                    contents = VCS._vcs_get_file_contents(self, path,
+                    contents = vcs.VCS._vcs_get_file_contents(self, path,
                                                           binary=binary)
                 else:
                     contents = ""
@@ -128,12 +132,12 @@ class Darcs(VCS):
                 status,output,error = self._u_invoke(args, stdin=target_patch)
                 args=["patch", path]
                 status,output,error = self._u_invoke(args, stdin=major_patch)
-                current_contents = VCS._vcs_get_file_contents(self, path,
+                current_contents = vcs.VCS._vcs_get_file_contents(self, path,
                                                               binary=binary)
                 return contents
     def _vcs_duplicate_repo(self, directory, revision=None):
         if revision==None:
-            VCS._vcs_duplicate_repo(self, directory, revision)
+            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
         else:
             self._u_invoke_client("put", "--to-patch", revision, directory)
     def _vcs_commit(self, commitfile, allow_empty=False):

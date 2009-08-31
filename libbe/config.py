@@ -14,12 +14,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""
+Create, save, and load the per-user config file at path().
+"""
+
 import ConfigParser
 import codecs
 import locale
 import os.path
 import sys
 import doctest
+
 
 default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
 

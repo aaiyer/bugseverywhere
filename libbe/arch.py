@@ -17,6 +17,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+GNU Arch (tla) backend.
+"""
+
 import codecs
 import os
 import re
@@ -26,10 +30,11 @@ import time
 import unittest
 import doctest
 
-import config
 from beuuid import uuid_gen
+import config
 import vcs
-from vcs import VCS
+
+
 
 DEFAULT_CLIENT = "tla"
 
@@ -38,7 +43,7 @@ client = config.get_val("arch_client", default=DEFAULT_CLIENT)
 def new():
     return Arch()
 
-class Arch(VCS):
+class Arch(vcs.VCS):
     name = "Arch"
     client = client
     versioned = True
@@ -246,7 +251,7 @@ class Arch(VCS):
         pass
     def _vcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
-            return VCS._vcs_get_file_contents(self, path, revision, binary=binary)
+            return vcs.VCS._vcs_get_file_contents(self, path, revision, binary=binary)
         else:
             status,output,error = \
                 self._invoke_client("file-find", path, revision)
@@ -258,7 +263,7 @@ class Arch(VCS):
             return contents
     def _vcs_duplicate_repo(self, directory, revision=None):
         if revision == None:
-            VCS._vcs_duplicate_repo(self, directory, revision)
+            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
         else:
             status,output,error = \
                 self._u_invoke_client("get", revision,directory)

@@ -17,6 +17,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""
+Define the BugDir class for representing bug comments.
+"""
+
 import copy
 import errno
 import os
@@ -37,6 +42,7 @@ import vcs
 import settings_object
 import upgrade
 import utility
+
 
 class NoBugDir(Exception):
     def __init__(self, path):
