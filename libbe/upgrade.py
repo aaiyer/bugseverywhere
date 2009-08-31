@@ -74,21 +74,57 @@ class Upgrader (object):
     def _upgrade(self):
         raise NotImplementedError
 
+
 class Upgrade_1_0_to_2 (Upgrader):
     initial_version = "Bugs Everywhere Tree 1 0"
     final_version = "Bugs Everywhere Directory v2"
+    def _upgrade_mapfile(self, path):
+        contents = self.rcs.get_file_contents(path)
+        old_format = False
+        for line in contents.splitlines():
+            if len(line.split("=")) == 2:
+                old_format = True
+                break
+        if old_format == True:
+            # translate to YAML.
+            newlines = []
+            for line in contents.splitlines():
+                line = line.rstrip('\n')
+                if len(line) == 0:
+                    continue
+                fields = line.split("=")
+                if len(fields) == 2:
+                    key,value = fields
+                    newlines.append('%s: "%s"' % (key, value.replace('"','\\"')))
+                else:
+                    newlines.append(line)
+            contents = '\n'.join(newlines)
+            # load the YAML and save
+            map = mapfile.parse(contents)
+            mapfile.map_save(self.rcs, path, map)
+
     def _upgrade(self):
+        """
+        Comment value field "From" -> "Author".
+        Homegrown mapfile -> YAML.
+        """
+        path = self.get_path("settings")
+        self._upgrade_mapfile(path)
         for bug_uuid in os.listdir(self.get_path("bugs")):
+            path = self.get_path("bugs", bug_uuid, "values")
+            self._upgrade_mapfile(path)
             c_path = ["bugs", bug_uuid, "comments"]
             if not os.path.exists(self.get_path(*c_path)):
                 continue # no comments for this bug
             for comment_uuid in os.listdir(self.get_path(*c_path)):
                 path_list = c_path + [comment_uuid, "values"]
                 path = self.get_path(*path_list)
+                self._upgrade_mapfile(path)
                 settings = mapfile.map_load(self.rcs, path)
                 if "From" in settings:
                     settings["Author"] = settings.pop("From")
                     mapfile.map_save(self.rcs, path, settings)
+
 
 upgraders = [Upgrade_1_0_to_2]
 upgrade_classes = {}

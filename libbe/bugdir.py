@@ -411,7 +411,8 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
         settings = self._get_saved_settings()
         self._save_settings(self.get_path("settings"), settings)
 
-    def get_version(self, path=None, use_none_rcs=False):
+    def get_version(self, path=None, use_none_rcs=False,
+                    for_duplicate_bugdir=False):
         """
         Requires disk access.
         """
@@ -426,7 +427,11 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
         if path == None:
             path = self.get_path("version")
-        version = RCS.get_file_contents(path).rstrip("\n")
+        allow_no_rcs = not RCS.path_in_root(path)
+        if allow_no_rcs == True:
+            assert for_duplicate_bugdir == True
+        version = RCS.get_file_contents(
+            path, allow_no_rcs=allow_no_rcs).rstrip("\n")
         return version
 
     def set_version(self):
@@ -503,6 +508,12 @@ settings easy.  Don't set this attribute.  Set .rcs instead, and
 
     def duplicate_bugdir(self, revision):
         duplicate_path = self.rcs.duplicate_repo(revision)
+
+        duplicate_version_path = os.path.join(duplicate_path, ".be", "version")
+        version = self.get_version(duplicate_version_path,
+                                   for_duplicate_bugdir=True)
+        if version != upgrade.BUGDIR_DISK_VERSION:
+            upgrade.upgrade(duplicate_path, version)
 
         # setup revision RCS as None, since the duplicate may not be
         # initialized for versioning
