@@ -510,8 +510,14 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
         duplicate_path = self.vcs.duplicate_repo(revision)
 
         duplicate_version_path = os.path.join(duplicate_path, ".be", "version")
-        version = self.get_version(duplicate_version_path,
-                                   for_duplicate_bugdir=True)
+        try:
+            version = self.get_version(duplicate_version_path,
+                                       for_duplicate_bugdir=True)
+        except DiskAccessRequired:
+            self.sync_with_disk = True # temporarily allow access
+            version = self.get_version(duplicate_version_path,
+                                       for_duplicate_bugdir=True)
+            self.sync_with_disk = False
         if version != upgrade.BUGDIR_DISK_VERSION:
             upgrade.upgrade(duplicate_path, version)
 
