@@ -282,7 +282,7 @@ class PGPMimeMessageFactory (object):
     True
     >>> target_emails(header) == [to_addr]
     True
-    >>> m = EncryptedMessageFactory('check 1 2\\ncheck 1 2\\n')
+    >>> m = PGPMimeMessageFactory('check 1 2\\ncheck 1 2\\n')
     >>> print flatten(m.clearBodyPart())
     Content-Type: text/plain; charset="us-ascii"
     MIME-Version: 1.0
@@ -591,7 +591,7 @@ if __name__ == '__main__':
     if body == None:
         raise Exception, "missing body"
 
-    m = EncryptedMessageFactory(body)
+    m = PGPMimeMessageFactory(body)
     if options.mode == "sign":
         bodymsg = m.sign(header)
     elif options.mode == "encrypt":
