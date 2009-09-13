@@ -1,3 +1,6 @@
+encoding: utf-8
+
+
 extra_strings:
 - "SUBSCRIBE:W. Trevor King <wking@drexel.edu>\tall\t*"
 
