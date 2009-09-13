@@ -496,7 +496,7 @@ class Message (object):
         if tag_type == u"new":
             commands = self.parse_new()
         elif tag_type == u"comment":
-            commands = self.parse_comment()
+            commands = self.parse_comment(value)
         elif tag_type == u"control":
             commands = self.parse_control()
         else:
@@ -515,7 +515,7 @@ class Message (object):
                                            options)
         args = [u"--reporter", options[u"Reporter"]]
         args.append(summary)
-        commands = [Command(self, command, args))]
+        commands = [Command(self, command, args)]
         comment_body = self._strip_footer(comment_body)
         id = ID(commands[0])
         if len(comment_body) > 0:
@@ -534,9 +534,9 @@ class Message (object):
             args = [id, value]
             commands.append(Command(self, command, args))
         return commands
-    def parse_comment(self):
+    def parse_comment(self, bug_uuid):
         command = u"comment"
-        bug_id = value
+        bug_id = bug_uuid
         author = self.author_addr()
         alt_id = self.message_id()
         body,mime_type = list(self._get_bodies_and_mime_types())[0]
