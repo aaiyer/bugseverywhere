@@ -26,8 +26,8 @@ according to the subject tag that procmail used grab the email in the
 first place.  There are three parsing styles:
     Style                 Subject
     creating bugs         [be-bug:submit] new bug summary
-    commenting on bugs    [be-bug:<bug-id>] human-specific subject
-    control               [be-bug] human-specific subject
+    commenting on bugs    [be-bug:<bug-id>] commit message
+    control               [be-bug] commit message
 These are analogous to submit@bugs.debian.org, nnn@bugs.debian.org,
 and control@bugs.debian.org respectively.
 
