@@ -21,7 +21,7 @@
 import os
 import sys
 
-from libbe import cmdutil, _version
+from libbe import cmdutil, version
 
 __doc__ = cmdutil.help()
 
@@ -51,7 +51,7 @@ except cmdutil.GetCompletions, e:
     sys.exit(0)
 
 if options.version == True:
-    print _version.version_info["revision_id"]
+    print version.version()
     sys.exit(0)
 if options.dir != None:
     os.chdir(options.dir)
