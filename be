@@ -31,6 +31,8 @@ parser = cmdutil.CmdOptionParser(usage)
 parser.command = "be"
 parser.add_option("--version", action="store_true", dest="version",
                   help="Print version string and exit.")
+parser.add_option("--verbose-version", action="store_true", dest="verbose_version",
+                  help="Print verbose version information and exit.")
 parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
                   help="Run this command from DIR instead of the current directory.")
 
@@ -50,8 +52,8 @@ except cmdutil.GetCompletions, e:
     print '\n'.join(e.completions)
     sys.exit(0)
 
-if options.version == True:
-    print version.version()
+if options.version == True or options.verbose_version == True:
+    print version.version(verbose=options.verbose_version)
     sys.exit(0)
 if options.dir != None:
     os.chdir(options.dir)
