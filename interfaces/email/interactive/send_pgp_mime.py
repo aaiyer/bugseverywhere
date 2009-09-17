@@ -51,7 +51,7 @@ except ImportError:
     from email.MIMENonMultipart import MIMENonMultipart
     from email.Encoders import encode_7or8bit
     from email.Generator import Generator
-    from email.parser import Parser
+    from email.Parser import Parser
     from email.Utils import getaddresses
 
     getaddress = getaddresses
