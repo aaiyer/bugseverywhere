@@ -89,7 +89,7 @@ class Bzr(vcs.VCS):
                 if self._u_any_in_string(strings, error) == True:
                     raise vcs.EmptyCommit()
                 else:
-                    raise vcs.CommandError(args, status, error)
+                    raise vcs.CommandError(args, status, stdout="", stderr=error)
         revision = None
         revline = re.compile("Committed revision (.*)[.]")
         match = revline.search(error)

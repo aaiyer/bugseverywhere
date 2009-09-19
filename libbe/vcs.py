@@ -67,13 +67,14 @@ def installed_vcs():
 
 
 class CommandError(Exception):
-    def __init__(self, command, status, err_str):
-        strerror = ["Command failed (%d):\n  %s\n" % (status, err_str),
+    def __init__(self, command, status, stdout, stderr):
+        strerror = ["Command failed (%d):\n  %s\n" % (status, stderr),
                     "while executing\n  %s" % command]
         Exception.__init__(self, "\n".join(strerror))
         self.command = command
         self.status = status
-        self.err_str = err_str
+        self.stdout = stdout
+        self.stderr = stderr
 
 class SettingIDnotSupported(NotImplementedError):
     pass
@@ -469,13 +470,13 @@ class VCS(object):
                 q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, 
                           shell=True, cwd=cwd)
         except OSError, e :
-            raise CommandError(args, e.args[0], e)
-        output, error = q.communicate(input=stdin)
+            raise CommandError(args, status=e.args[0], stdout="", stderr=e)
+        output,error = q.communicate(input=stdin)
         status = q.wait()
         if self.verboseInvoke == True:
             print >> sys.stderr, "%d\n%s%s" % (status, output, error)
         if status not in expect:
-            raise CommandError(args, status, error)
+            raise CommandError(args, status, output, error)
         return status, output, error
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)

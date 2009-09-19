@@ -134,7 +134,7 @@ class Git(vcs.VCS):
         if status == 128:
             if error.startswith("fatal: ambiguous argument 'HEAD': unknown "):
                 return None
-            raise vcs.CommandError(args, status, error)
+            raise vcs.CommandError(args, status, stdout="", stderr=error)
         commits = output.splitlines()
         try:
             return commits[index]
