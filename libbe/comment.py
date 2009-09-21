@@ -128,7 +128,7 @@ def loadComments(bug, load_full=False):
     if bug.sync_with_disk == False:
         raise DiskAccessRequired("load comments")
     path = bug.get_path("comments")
-    if not os.path.isdir(path):
+    if not os.path.exists(path):
         return Comment(bug, uuid=INVALID_UUID)
     comments = []
     for uuid in os.listdir(path):
