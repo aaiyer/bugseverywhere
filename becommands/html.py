@@ -71,7 +71,7 @@ def execute(args, manipulate_encodings=True):
         st[s] = 0
     for b in sorted(bd, reverse=True):
         stime[b.uuid]  = b.time
-        if b.status in ["open", "test", "unconfirmed", "assigned"]:
+        if b.active == True:
             bugs_active.append(b)
         else:
             bugs_inactive.append(b)
