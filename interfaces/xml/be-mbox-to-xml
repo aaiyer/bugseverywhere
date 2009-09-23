@@ -65,11 +65,13 @@ def comment_message_to_xml(message, fields=None):
                 fields[u'in-reply-to'] = refs[0] # default to the first
     else: # check for mutliple in-reply-to references.
         refs = fields[u'in-reply-to'].split()
+        found_ref = False
         for ref in refs: # search for a known reference id.
             if ref in KNOWN_IDS:
                 fields[u'in-reply-to'] = ref
+                found_ref = True
                 break
-        if fields[u'in-reply-to'] == None and len(refs) > 0:
+        if found_ref == False and len(refs) > 0:
             fields[u'in-reply-to'] = refs[0] # default to the first
 
     if fields['alt-id'] != None:
