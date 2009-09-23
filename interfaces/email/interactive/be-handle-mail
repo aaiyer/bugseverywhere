@@ -47,7 +47,7 @@ executed, with the email's post-tag subject as the commit message.
 """
 
 import codecs
-import cStringIO as StringIO
+import StringIO as StringIO
 import email
 from email.mime.multipart import MIMEMultipart
 import email.utils
@@ -228,11 +228,8 @@ class Command (object):
         self.normalize_args()
         # set stdin and catch stdout and stderr
         if self.stdin != None:
-            new_stdin = StringIO.StringIO(self.stdin)
-            orig___stdin = sys.__stdin__
-            sys.__stdin__ = new_stdin
             orig_stdin = sys.stdin
-            sys.stdin = new_stdin
+            sys.stdin = StringIO.StringIO(self.stdin)
         new_stdout = codecs.getwriter(ENCODING)(StringIO.StringIO())
         new_stderr = codecs.getwriter(ENCODING)(StringIO.StringIO())
         orig_stdout = sys.stdout
@@ -256,8 +253,6 @@ class Command (object):
                                       "%s\n%s" % (type(e), unicode(e)))
         # restore stdin, stdout, and stderr
         if self.stdin != None:
-            sys.__stdin__ = new_stdin
-            sys.__stdin__ = orig___stdin
             sys.stdin = orig_stdin
         sys.stdout.flush()
         sys.stderr.flush()
@@ -437,10 +432,14 @@ class Message (object):
         Traverse the email message returning (body, mime_type) for
         each non-mulitpart portion of the message.
         """
+        msg_charset = self.msg.get_content_charset(ENCODING).lower()
         for part in self.msg.walk():
             if part.is_multipart():
                 continue
-            body,mime_type=(part.get_payload(decode=1),part.get_content_type())
+            body,mime_type=(part.get_payload(decode=True),part.get_content_type())
+            charset = part.get_content_charset(msg_charset).lower()
+            if mime_type.startswith("text/"):
+                body = unicode(body, charset) # convert text types to unicode
             yield (body, mime_type)
     def _parse_body_pseudoheaders(self, body, required, optional,
                                   dictionary=None):

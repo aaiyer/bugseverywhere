@@ -38,8 +38,8 @@ MODULES += ${DOC_DIR}
 
 RM = rm
 
-PREFIX = /usr/local
-#PREFIX = ${HOME}
+#PREFIX = /usr/local
+PREFIX = ${HOME}
 INSTALL_OPTIONS = "--prefix=${PREFIX}"
 
 
