@@ -25,8 +25,9 @@ followed by a blank line.
 import base64
 import email.utils
 from libbe.encoding import get_encoding, set_IO_stream_encodings
+from libbe.utility import time_to_str
 from mailbox import mbox, Message  # the mailbox people really want an on-disk copy
-from time import asctime, gmtime
+from time import asctime, gmtime, mktime
 import types
 from xml.sax.saxutils import escape
 
@@ -36,7 +37,22 @@ set_IO_stream_encodings(DEFAULT_ENCODING)
 KNOWN_IDS = []
 
 def normalize_email_address(address):
+    """
+    Standardize whitespace, etc.
+    """
     return email.utils.formataddr(email.utils.parseaddr(address))
+
+def normalize_RFC_2822_date(date):
+    """
+    Some email clients write non-RFC 2822-compliant date tags like:
+      Fri, 18 Sep 2009 08:49:02 -0400 (EDT)
+    with the non-standard (EDT) timezone name.  This funtion attempts
+    to deal with such inconsistencies.
+    """
+    time_tuple = email.utils.parsedate(date)
+    assert time_tuple != None, \
+        'unparsable date: "%s"' % date
+    return time_to_str(mktime(time_tuple))
 
 def comment_message_to_xml(message, fields=None):
     if fields == None:
@@ -46,6 +62,8 @@ def comment_message_to_xml(message, fields=None):
     new_fields[u'in-reply-to'] = message[u'in-reply-to']
     new_fields[u'author'] = normalize_email_address(message[u'from'])
     new_fields[u'date'] = message[u'date']
+    if new_fields[u'date'] != None:
+        new_fields[u'date'] = normalize_RFC_2822_date(new_fields[u'date'])
     new_fields[u'content-type'] = message.get_content_type()
     for k,v in new_fields.items():
         if v != None and type(v) != types.UnicodeType:
@@ -77,8 +95,8 @@ def comment_message_to_xml(message, fields=None):
         if found_ref == False and len(refs) > 0:
             fields[u'in-reply-to'] = refs[0] # default to the first
 
-    if fields['alt-id'] != None:
-        KNOWN_IDS.append(fields['alt-id'])
+    if fields[u'alt-id'] != None:
+        KNOWN_IDS.append(fields[u'alt-id'])
 
     if message.is_multipart():
         ret = []
