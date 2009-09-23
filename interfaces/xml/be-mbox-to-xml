@@ -35,13 +35,16 @@ set_IO_stream_encodings(DEFAULT_ENCODING)
 
 KNOWN_IDS = []
 
+def normalize_email_address(address):
+    return email.utils.formataddr(email.utils.parseaddr(address))
+
 def comment_message_to_xml(message, fields=None):
     if fields == None:
         fields = {}
     new_fields = {}
     new_fields[u'alt-id'] = message[u'message-id']
     new_fields[u'in-reply-to'] = message[u'in-reply-to']
-    new_fields[u'author'] = message[u'from']
+    new_fields[u'author'] = normalize_email_address(message[u'from'])
     new_fields[u'date'] = message[u'date']
     new_fields[u'content-type'] = message.get_content_type()
     for k,v in new_fields.items():
