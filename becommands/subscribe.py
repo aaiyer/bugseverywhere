@@ -325,6 +325,8 @@ def get_subscribers(extra_strings, type, server, type_root,
     ['Jane Doe <J@doe.com>', 'John Doe <j@doe.com>']
     """
     for string in extra_strings:
+        if not string.startswith(TAG):
+            continue
         subscriber,types,servers = _parse_string(string, type_root)
         type_match = False
         if type in types:
