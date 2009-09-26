@@ -483,6 +483,7 @@ class Message (object):
         for i,line in enumerate(body_lines):
             if line.startswith(BREAK):
                 break
+            i += 1 # increment past the current valid line.
         return u"\n".join(body_lines[:i]).strip()
     def parse(self):
         """
