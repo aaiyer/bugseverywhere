@@ -265,6 +265,7 @@ class Command (object):
             raise self.err
         return (self.ret, self.stdout, self.stderr)
     def response_msg(self):
+        if self.ret == None: self.ret = -1
         response_body = [u"Results of running: (exit code %d)" % self.ret,
                          u"  %s %s" % (self.command, u" ".join(self.args))]
         if self.stdout != None and len(self.stdout) > 0:
