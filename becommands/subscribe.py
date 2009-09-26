@@ -135,21 +135,30 @@ def execute(args, manipulate_encodings=True):
         bug = bd.bug_from_shortname(args[0])
         entity = bug
         entity_name = bug.uuid
+    if options.list_all == True:
+        entity_name = "anything in the bug directory"
 
     types = [type_from_name(name, type_root, default=INVALID_TYPE,
                             default_ok=options.unsubscribe)
              for name in types]
     estrs = entity.extra_strings
-    if options.unsubscribe == True:
-        estrs = unsubscribe(estrs, subscriber, types, servers, type_root)
-    else: # add the tag
-        estrs = subscribe(estrs, subscriber, types, servers, type_root)
-    entity.extra_strings = estrs # reassign to notice change
+    if options.list == True or options.list_all == True:
+        pass
+    else: # alter subscriptions
+        if options.unsubscribe == True:
+            estrs = unsubscribe(estrs, subscriber, types, servers, type_root)
+        else: # add the tag
+            estrs = subscribe(estrs, subscriber, types, servers, type_root)
+        entity.extra_strings = estrs # reassign to notice change
 
-    subscriptions = []
-    for estr in entity.extra_strings:
-        if estr.startswith(TAG):
-            subscriptions.append(estr[len(TAG):])
+    if options.list_all == True:
+        bd.load_all_bugs()
+        subscriptions = get_bugdir_subscribers(bd, servers[0])
+    else:
+        subscriptions = []
+        for estr in entity.extra_strings:
+            if estr.startswith(TAG):
+                subscriptions.append(estr[len(TAG):])
 
     if len(subscriptions) > 0:
         print "Subscriptions for %s:" % entity_name
@@ -161,6 +170,12 @@ def get_parser():
     parser.add_option("-u", "--unsubscribe", action="store_true",
                       dest="unsubscribe", default=False,
                       help="Unsubscribe instead of subscribing.")
+    parser.add_option("-a", "--list-all", action="store_true",
+                      dest="list_all", default=False,
+                      help="List all subscribers (no ID argument, read only action).")
+    parser.add_option("-l", "--list", action="store_true",
+                      dest="list", default=False,
+                      help="List subscribers (read only action).")
     parser.add_option("-s", "--subscriber", dest="subscriber",
                       metavar="SUBSCRIBER",
                       help="Email address of the subscriber (defaults to bugdir.user_id).")
@@ -325,7 +340,7 @@ def get_subscribers(extra_strings, type, server, type_root,
                     type_match = True
                     break
         server_match = False
-        if server in servers or servers == ["*"]:
+        if server in servers or servers == ["*"] or server == "*":
             server_match = True
         if type_match == True and server_match == True:
             yield subscriber
@@ -337,6 +352,9 @@ def get_bugdir_subscribers(bugdir, server):
       subscribers[user][id] = types
     where id is either a bug.uuid (in the case of a bug subscription)
     or "DIR" (in the case of a bugdir subscription).
+
+    Only checks bugs that are currently in memory, so you might want
+    to call bugdir.load_all_bugs() first.
 
     >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
     >>> a = bd.bug_from_shortname("a")
