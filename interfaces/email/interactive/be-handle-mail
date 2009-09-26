@@ -85,7 +85,8 @@ SUBJECT_TAG_CONTROL = None
 BREAK = u"--"
 NEW_REQUIRED_PSEUDOHEADERS = [u"Version"]
 NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter", u"Assign", u"Depend", u"Severity",
-                              u"Status", u"Tag", u"Target"]
+                              u"Status", u"Tag", u"Target",
+                              u"Confirm", u"Subscribe"]
 CONTROL_COMMENT = u"#"
 ALLOWED_COMMANDS = [u"assign", u"comment", u"commit", u"depend", u"help",
                     u"list", u"merge", u"new", u"open", u"severity", u"show",
@@ -353,6 +354,11 @@ class Message (object):
             if LOGFILE != None:
                 LOGFILE.write(u"handling %s\n" % self.author_addr())
                 LOGFILE.write(u"\n%s\n\n" % self.text)
+        self.confirm = True # enable/disable confirmation email
+    def _yes_no(self, boolean):
+        if boolean == True:
+            return "yes"
+        return "no"
     def author_tuple(self):
         """
         Extract and normalize the sender's email address.  Returns a
@@ -506,18 +512,28 @@ class Message (object):
         command = u"new"
         tag,subject = self._split_subject()
         summary = subject
-        options = {u"Reporter": self.author_addr()}
+        options = {u"Reporter": self.author_addr(),
+                   u"Confirm": self._yes_no(self.confirm),
+                   u"Subscribe": "no",
+                   }
         body,mime_type = list(self._get_bodies_and_mime_types())[0]
         comment_body,options = \
             self._parse_body_pseudoheaders(body,
                                            NEW_REQUIRED_PSEUDOHEADERS,
                                            NEW_OPTIONAL_PSEUDOHEADERS,
                                            options)
+        if options[u"Confirm"].lower() == "no":
+            self.confirm = False
+        if options[u"Subscribe"].lower() == "yes" and self.confirm == True:
+            # respond with the subscription format rather than the
+            # normal command-output format, because the subscription
+            # format is more user-friendly.
+            self.confirm = False
         args = [u"--reporter", options[u"Reporter"]]
         args.append(summary)
         commands = [Command(self, command, args)]
-        comment_body = self._strip_footer(comment_body)
         id = ID(commands[0])
+        comment_body = self._strip_footer(comment_body)
         if len(comment_body) > 0:
             command = u"comment"
             comment = u"Version: %s\n\n"%options[u"Version"] + comment_body
@@ -528,10 +544,14 @@ class Message (object):
             args.append(u"-")
             commands.append(Command(self, u"comment", args, stdin=comment))
         for key,value in options.items():
-            if key in [u"Version", u"Reporter"]:
+            if key in [u"Version", u"Reporter", u"Confirm"]:
                 continue # we've already handled these options
             command = key.lower()
             args = [id, value]
+            if key == u"Subscribe":
+                if value.lower() != "yes":
+                    continue
+                args = ["--subscriber", self.author_addr(), id]
             commands.append(Command(self, command, args))
         return commands
     def parse_comment(self, bug_uuid):
@@ -639,17 +659,30 @@ class Message (object):
         for subscriber,subscriptions in subscribers.items():
             header.replace_header("to", subscriber)
             parts = []
-            for id,types in subscriptions.items():
+            if "DIR" in subscriptions: # make sure we check the DIR level first
+                ordered_subscriptions = [("DIR", subscriptions.pop("DIR"))]
+            else:
+                ordered_subscriptions = []
+            ordered_subscriptions.extend(subscriptions.items())
+            for id,types in ordered_subscriptions:
                 if id == "DIR":
                     if subscribe.BUGDIR_TYPE_ALL in types:
                         parts.append(diff_tree.report_or_none())
-                        break
+                        break # we've attached everything, so stop checking.
                     if subscribe.BUGDIR_TYPE_NEW in types:
                         new = diff_tree.child_by_path("/bugs/new")
                         parts.append(new.report_or_none())
                     continue # move on to next id
+                # if we get this far, id refers to a bug.
                 assert types == [subscribe.BUG_TYPE_ALL], types
+                if id not in bug_index:
+                    continue # no changes here, move on to next id
                 type,bug_root = bug_index[id]
+                if type == "added" \
+                        and "DIR" in subscriptions \
+                        and subscriptions["DIR"] == subscribe.BUGDIR_TYPE_NEW:
+                    # this info already attached at the DIR level
+                    continue # move on to next id
                 parts.append(bug_root.report_or_none())
             parts = [p for p in parts if p != None]
             if len(parts) == 0:
@@ -833,12 +866,15 @@ def main(args):
         response = m.response_email()
     if options.output == True:
         print send_pgp_mime.flatten(response, to_unicode=True)
-    else:
+    elif m.confirm == True:
         if LOGFILE != None:
-            LOGFILE.write(u"sending response to %s\n" % m.author_addr())
+            LOGFILE.write(u"Sending response to %s\n" % m.author_addr())
             LOGFILE.write(u"\n%s\n\n" % send_pgp_mime.flatten(response,
                                                               to_unicode=True))
         send_pgp_mime.mail(response, send_pgp_mime.sendmail)
+    else:
+        if LOGFILE != None:
+            LOGFILE.write(u"Response declined by %s\n" % m.author_addr())
     if options.subscribers == True:
         if LOGFILE != None:
             LOGFILE.write(u"Checking for subscribers\n")
