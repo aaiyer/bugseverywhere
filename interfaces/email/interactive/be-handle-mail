@@ -617,7 +617,9 @@ class Message (object):
         if bd.vcs.versioned == False: # no way to tell what's changed
             raise NotificationFailed("Not versioned")
 
+        bd.load_all_bugs()
         subscribers = subscribe.get_bugdir_subscribers(bd, THIS_SERVER)
+
         if len(subscribers) == 0:
             return [] 
 
