@@ -165,7 +165,7 @@ class ID (object):
         self.command = command
     def extract_id(self):
         if hasattr(self, "cached_id"):
-            return self.cached_id
+            return self._cached_id
         assert self.command.ret == 0, self.command.ret
         if self.command.command == u"new":
             regexp = re.compile(u"Created bug with ID (.*)")
@@ -173,8 +173,8 @@ class ID (object):
             raise NotImplementedError, self.command.command
         match = regexp.match(self.command.stdout)
         assert len(match.groups()) == 1, str(match.groups())
-        self.cached_id = match.group(1)
-        return self.cached_id
+        self._cached_id = match.group(1)
+        return self._cached_id
     def __str__(self):
         if self.command.ret != 0:
             return "<id for %s>" % repr(self.command)
@@ -359,9 +359,9 @@ class Message (object):
         (name, email) tuple.
         """
         if not hasattr(self, "author_tuple_cache"):
-            self.author_tuple_cache = \
+            self._author_tuple_cache = \
                 send_pgp_mime.source_email(self.msg, return_realname=True)
-        return self.author_tuple_cache
+        return self._author_tuple_cache
     def author_addr(self):
         return email.utils.formataddr(self.author_tuple())
     def author_name(self):
