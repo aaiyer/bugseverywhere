@@ -1,9 +1,61 @@
 #!/bin/bash
 #
+# Copyright (C) 2009 W. Trevor King <wking@drexel.edu>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 # Update copyright information in source code with information from
 # the bzr repository.  Run from the BE repository root.
+#
+# Replaces everything starting with '^# Copyright' and continuing with
+# '^#' with an auto-generated copyright blurb.  If you want to add
+# #-commented material after a copyright blurb, please insert a blank
+# line between the blurb and your comment (as in this file), so the
+# next run of update_copyright.sh doesn't clobber your comment.
+#
+# usage: update_copyright.sh [files ...]
+#
+# If no files are given, a list of files to update is generated
+# automatically.
 
 set -o pipefail
+
+if [ $# -gt 0 ]; then
+    FILES="$*"
+else
+    FILES=`grep -rc "# Copyright" . | grep -v ':0$' | cut -d: -f1`
+fi
+
+COPYRIGHT_TEXT="#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA."
+# escape newlines and special characters
+SED_RM_TRAIL_END='s/[\]n$//'         # strip trailing newline escape
+SED_ESC_SPECIAL='s/\([()/]\)/\\\1/g' # escape special characters
+ESCAPED_TEXT=`echo "$COPYRIGHT_TEXT" | awk '{printf("%s\\\\n", $0)}' | sed "$SED_RM_TRAIL_END" | sed "$SED_ESC_SPECIAL"`
 
 # adjust the AUTHORS file
 AUTHORS=`bzr log | grep '^ *committer\|^ *author' | cut -d: -f2 | sed 's/ <.*//;s/^ *//' | sort | uniq`
@@ -12,7 +64,6 @@ echo "Bugs Everywhere was written by:" > AUTHORS
 echo "$AUTHORS" >> AUTHORS
 
 CURRENT_YEAR=`date +"%Y"`
-FILES=`grep -rc "# Copyright" . | grep -v ':0$' | cut -d: -f1`
 TMP=`mktemp BE_update_copyright.XXXXXXX`
 
 for file in $FILES
@@ -91,10 +142,10 @@ do
 	    COPYRIGHT=`echo "$COPYRIGHT\\n#               $DATE_SPACE $AUTHOR"`
 	done < <(echo "$OTHER_AUTHORS")
     fi
-    echo -e "$COPYRIGHT"
+    COPYRIGHT=`echo "$COPYRIGHT\\n$ESCAPED_TEXT"`
 
     # Strip old copyright info and replace with tag
-    awk 'BEGIN{incopy=0}{if(match($0, "^# Copyright")>0){incopy=1; print "-xyz-COPYRIGHT-zyx-"}else{if(incopy=0){print $0}else{if(match($0, "^#          ")==0){incopy=0; print $0}}}}' "$file" > "$TMP"
+    awk 'BEGIN{incopy==0}{if(match($0, "^# Copyright")>0){incopy=1; print "-xyz-COPYRIGHT-zyx-"}else{if(incopy==0){print $0}else{if(match($0, "^#")==0){incopy=0; print $0}}}}' "$file" > "$TMP"
 
     # Replace tag in with new string
     sed -i "s/^-xyz-COPYRIGHT-zyx-$/$COPYRIGHT/" "$TMP"

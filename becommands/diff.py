@@ -1,20 +1,19 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """Compare bug reports with older tree"""
 from libbe import cmdutil, bugdir, diff
@@ -25,10 +24,10 @@ def execute(args, test=False):
     """
     >>> import os
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> original = bd.rcs.commit("Original status")
     >>> bug = bd.bug_from_uuid("a")
     >>> bug.status = "closed"
-    >>> bd.save()
     >>> changed = bd.rcs.commit("Closed bug a")
     >>> os.chdir(bd.root)
     >>> if bd.rcs.versioned == True:
@@ -38,7 +37,6 @@ def execute(args, test=False):
     Modified bug reports:
     a:cm: Bug A
       status: open -> closed
-    <BLANKLINE>
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -54,7 +52,7 @@ def execute(args, test=False):
         print "This directory is not revision-controlled."
     else:
         old_bd = bd.duplicate_bugdir(revision)
-        r,m,a = diff.diff(old_bd, bd)
+        r,m,a = diff.bug_diffs(old_bd, bd)
         
         optbugs = []
         if options.all == True:
@@ -69,7 +67,9 @@ def execute(args, test=False):
             for bug in optbugs:
                 print bug.uuid
         else :
-            print diff.diff_report((r,m,a), bd).encode(bd.encoding)
+            rep = diff.diff_report((r,m,a), old_bd, bd).encode(bd.encoding)
+            if len(rep) > 0:
+                print rep
         bd.remove_duplicate_bugdir()
 
 def get_parser():
@@ -89,9 +89,10 @@ def get_parser():
     return parser
 
 longhelp="""
-Uses the RCS to compare the current tree with a previous tree, and prints
-a pretty report.  If specifier is given, it is a specifier for the particular
-previous tree to use.  Specifiers are specific to their RCS.  
+Uses the RCS to compare the current tree with a previous tree, and
+prints a pretty report.  If REVISION is given, it is a specifier for
+the particular previous tree to use.  Specifiers are specific to their
+RCS.
 
 For Arch your specifier must be a fully-qualified revision name.
 

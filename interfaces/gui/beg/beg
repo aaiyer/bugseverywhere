@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+import table
+from Tkinter import *
+from libbe import bugdir
+
+tk = Tk()
+Label(tk, text="Bug list").pack()
+mlb = table.MultiListbox(tk, (('Severity', 4), ('Creator', 8), ('Summary', 40)))
+for bug in [b for b in bugdir.tree_root(".").list() if b.active]:
+    mlb.insert(END, (bug.severity, bug.creator, bug.summary))
+mlb.pack(expand=YES,fill=BOTH)
+tk.mainloop()

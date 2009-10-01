@@ -1,19 +1,18 @@
 # Copyright (C) 2008-2009 W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Show or change a bug's status"""
 from libbe import cmdutil, bugdir, bug
 __desc__ = __doc__
@@ -48,7 +47,6 @@ def execute(args, test=False):
             if e.name != "status":
                 raise
             raise cmdutil.UserError ("Invalid status: %s" % e.value)
-        bd.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be status BUG-ID [STATUS]")
@@ -56,24 +54,39 @@ def get_parser():
 
 
 def help():
-    longhelp=["""
-Show or change a bug's status.
-
-If no status is specified, the current value is printed.  If a status
-is specified, it will be assigned to the bug.
-
-Status levels are:
-"""]
     try: # See if there are any per-tree status configurations
         bd = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
     except bugdir.NoBugDir, e:
         pass # No tree, just show the defaults
     longest_status_len = max([len(s) for s in bug.status_values])
-    for status in bug.status_values :
+    active_statuses = []
+    for status in bug.active_status_values :
         description = bug.status_description[status]
-        s = "%*s : %s\n" % (longest_status_len, status, description)
-        longhelp.append(s)
-    longhelp = ''.join(longhelp)
+        s = "%*s : %s" % (longest_status_len, status, description)
+        active_statuses.append(s)
+    inactive_statuses = []
+    for status in bug.inactive_status_values :
+        description = bug.status_description[status]
+        s = "%*s : %s" % (longest_status_len, status, description)
+        inactive_statuses.append(s)
+    longhelp="""
+Show or change a bug's status.
+
+If no status is specified, the current value is printed.  If a status
+is specified, it will be assigned to the bug.
+
+There are two classes of statuses, active and inactive, which are only
+important for commands like "be list" that show only active bugs by
+default.
+
+Active status levels are:
+  %s
+Inactive status levels are:
+  %s
+
+You can overide the list of allowed statuses on a per-repository basis.
+See "be set --help" for more details.
+""" % ('\n  '.join(active_statuses), '\n  '.join(inactive_statuses))
     return get_parser().help_str() + longhelp
 
 def complete(options, args, parser):

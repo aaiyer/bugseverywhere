@@ -1,18 +1,18 @@
 # Copyright (C) 2009 W. Trevor King <wking@drexel.edu>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Tag a bug, or search bugs for tags"""
 from libbe import cmdutil, bugdir
 import os, copy
@@ -22,6 +22,7 @@ def execute(args, test=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.simple_bug_dir()
+    >>> bd.set_sync_with_disk(True)
     >>> os.chdir(bd.root)
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
@@ -56,7 +57,6 @@ def execute(args, test=False):
     >>> a.extra_strings = []
     >>> print a.extra_strings
     []
-    >>> a.save()
     >>> execute(["a"], test=True)
     >>> bd._clear_bugs() # resync our copy of bug
     >>> a = bd.bug_from_shortname("a")
@@ -102,7 +102,6 @@ def execute(args, test=False):
         else: # add the tag
             estrs.append(tag_string)
         bug.extra_strings = estrs # reassign to notice change
-        bug.save()
 
     tags = []
     for estr in bug.extra_strings:

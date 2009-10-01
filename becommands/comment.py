@@ -1,25 +1,28 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
 #                         Chris Ball <cjb@laptop.org>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Add a comment to a bug"""
-from libbe import cmdutil, bugdir, settings_object, editor
+from libbe import cmdutil, bugdir, comment, editor
 import os
 import sys
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
 __desc__ = __doc__
 
 def execute(args, test=False):
@@ -39,7 +42,7 @@ def execute(args, test=False):
     True
     >>> comment.time <= int(time.time())
     True
-    >>> comment.in_reply_to is settings_object.EMPTY
+    >>> comment.in_reply_to is None
     True
 
     >>> if 'EDITOR' in os.environ:
@@ -77,7 +80,8 @@ def execute(args, test=False):
         bugname = shortname
         is_reply = False
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=not test)
     bug = bd.bug_from_shortname(bugname)
     bug.load_comments(load_full=False)
     if is_reply:
@@ -88,7 +92,13 @@ def execute(args, test=False):
     
     if len(args) == 1: # try to launch an editor for comment-body entry
         try:
-            body = editor.editor_string("Please enter your comment above")
+            if parent == bug.comment_root:
+                parent_body = bug.summary+"\n"
+            else:
+                parent_body = parent.body
+            estr = "Please enter your comment above\n\n> %s\n" \
+                % ("\n> ".join(parent_body.splitlines()))
+            body = editor.editor_string(estr)
         except editor.CantFindEditor, e:
             raise cmdutil.UserError, "No comment supplied, and EDITOR not specified."
         if body is None:
@@ -108,15 +118,67 @@ def execute(args, test=False):
         if not body.endswith('\n'):
             body+='\n'
     
-    comment = parent.new_reply(body=body)
-    if options.content_type != None:
-        comment.content_type = options.content_type
-    bd.save()
+    if options.XML == False:
+        new = parent.new_reply(body=body)
+        if options.author != None:
+            new.From = options.author
+        if options.alt_id != None:
+            new.alt_id = options.alt_id
+        if options.content_type != None:
+            new.content_type = options.content_type
+    else: # import XML comment [list]
+        # read in the comments
+        str_body = body.encode("unicode_escape").replace(r'\n', '\n')
+        comment_list = ElementTree.XML(str_body)
+        if comment_list.tag not in ["bug", "comment-list"]:
+            raise comment.InvalidXML(
+                comment_list, "root element must be <bug> or <comment-list>")
+        new_comments = []
+        ids = []
+        for c in bug.comment_root.traverse():
+            ids.append(c.uuid)
+            if c.alt_id != None:
+                ids.append(c.alt_id)
+        for child in comment_list.getchildren():
+            if child.tag == "comment":
+                new = comment.Comment(bug)
+                new.from_xml(unicode(ElementTree.tostring(child)).decode("unicode_escape"))
+                if new.alt_id in ids:
+                    raise cmdutil.UserError(
+                        "Clashing comment alt_id: %s" % new.alt_id)
+                ids.append(new.uuid)
+                if new.alt_id != None:
+                    ids.append(new.alt_id)
+                if new.in_reply_to == None:
+                    new.in_reply_to = parent.uuid
+                new_comments.append(new)
+            else:
+                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                    % (child.tag, comment_list.tag)
+        try:
+            comment.list_to_root(new_comments,bug,root=parent, # link new comments
+                                 ignore_missing_references=options.ignore_missing_references)
+        except comment.MissingReference, e:
+            raise cmdutil.UserError(e)
+        # Protect against programmer error causing data loss:
+        kids = [c.uuid for c in parent.traverse()]
+        for nc in new_comments:
+            assert nc.uuid in kids, "%s wasn't added to %s" % (nc.uuid, parent.uuid)
+            nc.save()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
+    parser.add_option("-a", "--author", metavar="AUTHOR", dest="author",
+                      help="Set the comment author", default=None)
+    parser.add_option("--alt-id", metavar="ID", dest="alt_id",
+                      help="Set an alternate comment ID", default=None)
     parser.add_option("-c", "--content-type", metavar="MIME", dest="content_type",
                       help="Set comment content-type (e.g. text/plain)", default=None)
+    parser.add_option("-x", "--xml", action="store_true", default=False,
+                      dest='XML', help="Use COMMENT to specify an XML comment description rather than the comment body.  The root XML element should be either <bug> or <comment-list> with one or more <comment> children.  The syntax for the <comment> elements should match that generated by 'be show --xml COMMENT-ID'.  Unrecognized tags are ignored.  Missing tags are left at the default value.  The comment UUIDs are always auto-generated, so if you set a <uuid> field, but no <alt-id> field, your <uuid> will be used as the comment's <alt-id>.  An exception is raised if <alt-id> conflicts with an existing comment.")
+    parser.add_option("-i", "--ignore-missing-references", action="store_true",
+                      dest="ignore_missing_references",
+                      help="For XML import, if any comment's <in-reply-to> refers to a non-existent comment, ignore it (instead of raising an exception).")
     return parser
 
 longhelp="""

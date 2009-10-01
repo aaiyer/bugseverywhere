@@ -7,11 +7,20 @@
 # Copyright (C) 2008-2009 Ben Finney <benf@cybersource.com.au>
 #                         Chris Ball <cjb@laptop.org>
 #                         W. Trevor King <wking@drexel.edu>
-# This is free software; you may copy, modify and/or distribute this work
-# under the terms of the GNU General Public License, version 2 or later.
-# No warranty expressed or implied. See the file COPYING for details.
-
-# Makefile for Bugs Everywhere project
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 SHELL = /bin/bash
 PATH = /usr/bin:/bin
@@ -29,6 +38,7 @@ MODULES += ${DOC_DIR}
 
 RM = rm
 
+#PREFIX = /usr/local
 PREFIX = ${HOME}
 INSTALL_OPTIONS = "--prefix=${PREFIX}"
 
@@ -47,12 +57,14 @@ build: libbe/_version.py
 .PHONY: install
 install: doc build
 	python setup.py install ${INSTALL_OPTIONS}
-	cp -v xml/* ${PREFIX}/bin
+	cp -v interfaces/xml/* ${PREFIX}/bin
+	cp -v interfaces/email/catmutt ${PREFIX}/bin
 
 
 .PHONY: clean
 clean:
 	$(RM) -rf ${GENERATED_FILES}
 
+.PHONY: libbe/_version.py
 libbe/_version.py:
 	bzr version-info --format python > $@

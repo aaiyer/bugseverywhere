@@ -18,6 +18,8 @@ set -v # verbose, echo commands to stdout
 exec 6>&2 # save stderr to file descriptor 6
 exec 2>&1 # fd 2 now writes to stdout
 
+ONLY_TEST_COMMIT="true"
+
 if [ $# -gt 1 ]
 then
     echo "usage: test_usage.sh [RCS]"
@@ -75,8 +77,8 @@ then
     darcs init
 elif [ "$RCS" == "git" ]
 then
-    NAME=`git-config user.name`
-    EMAIL=`git-config user.email`
+    NAME=`git config user.name`
+    EMAIL=`git config user.email`
     ID="$NAME <$EMAIL>"
     git init
 elif [ "$RCS" == "hg" ]
@@ -124,7 +126,16 @@ BUGB=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
 be comment $BUGB "Blissfully unaware of a similar bug"
 be merge $BUG $BUGB     # join BUGB to BUG
 be show $BUG            # show bug details & comments
+# you can also export/import XML bugs/comments
+OUT=`be new 'yet more fun'`
+BUGC=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
+be comment $BUGC "The ants go marching..."
+be show --xml $BUGC | be comment --xml ${BUG}:2 -
 be remove $BUG # decide that you don't like that bug after all
+be commit "You can even commit using BE"
+be commit --allow-empty "And you can add empty commits if you like"
+be commit "But this will fail" || echo "Failed"
+
 cd /
 rm -rf $TESTDIR
 

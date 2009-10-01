@@ -2,21 +2,20 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
 #                         W. Trevor King <wking@drexel.edu>
-# <abentley@panoramicfeedback.com>
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """List bugs"""
 from libbe import cmdutil, bugdir, bug
 import os
@@ -135,11 +134,12 @@ def execute(args, test=False):
         return True
 
     bugs = [b for b in bd if filter(b) ]
-    if len(bugs) == 0:
+    if len(bugs) == 0 and options.xml == False:
         print "No matching bugs found"
     
     def list_bugs(cur_bugs, title=None, just_uuids=False, xml=False):
         if xml == True:
+            print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
             print "<bugs>"
         if len(cur_bugs) > 0:
             if title != None and xml == False:

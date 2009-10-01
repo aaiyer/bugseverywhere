@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+import wx
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+import sys, os.path
+from libbe import bugdir, names
+from libbe.bug import cmp_status, cmp_severity, cmp_time, cmp_full
+
+class MyApp(wx.App):
+    def OnInit(self):
+        frame = BugListFrame(None, title="Bug List")
+        frame.Show(True)
+        self.SetTopWindow(frame)
+        return True
+
+class BugListFrame(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        wx.Frame.__init__(self, *args, **kwargs)
+        bugs = BugList(self)
+
+        # Widgets to display/sort/edit will go in this panel
+        # for now it is just a placeholder
+        panel = wx.Panel(self)
+        panel.SetBackgroundColour("RED")
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(panel, 0, wx.EXPAND)
+        vbox.Add(bugs, 1, wx.EXPAND)
+        
+        self.SetAutoLayout(True)
+        self.SetSizer(vbox)
+        self.Layout()
+
+class BugList(wx.ListCtrl, ListCtrlAutoWidthMixin):
+    def __init__(self, parent):
+        wx.ListCtrl.__init__(self, parent,
+                             style=wx.LC_REPORT)
+        ListCtrlAutoWidthMixin.__init__(self)
+
+        self.bugdir = bugdir.tree_root(".")
+        self.buglist = list(self.bugdir.list())
+        self.buglist.sort()
+        self.columns = ("id", "status", "severity", "summary")
+
+        dataIndex = 0
+        for x in range(len(self.columns)):
+            self.InsertColumn(x, self.columns[x].capitalize())
+            self.SetColumnWidth(x, wx.LIST_AUTOSIZE_USEHEADER)
+        for bug in [b for b in self.buglist if b.active]:
+            name = names.unique_name(bug, self.buglist)
+            id = self.InsertStringItem(self.GetItemCount(), name)
+            self.SetStringItem(id, 1, bug.status)
+            self.SetStringItem(id, 2, bug.severity)
+            self.SetStringItem(id, 3, bug.summary)
+            self.SetItemData(id, dataIndex) # set keys for each line
+            dataIndex += 1
+            self.EnsureVisible(id)
+        for x in range(len(self.columns)):
+            self.SetColumnWidth(x, wx.LIST_AUTOSIZE)
+            conts_width = self.GetColumnWidth(x)
+            self.SetColumnWidth(x, wx.LIST_AUTOSIZE_USEHEADER)
+            if conts_width > self.GetColumnWidth(x):
+                self.SetColumnWidth(x, conts_width)
+
+        self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self.bugcmp_fn = cmp_full
+        # For reasons I don't understant, sorting is broken...
+        #self.SortItems(self.Sorter)
+        #self.Refresh()
+    def Sorter(self, key1, key2):
+        """Get bug info from the keys and pass to self.bugcmp_fn"""
+        bug1 = self.buglist[key1-1]
+        bug2 = self.buglist[key2-1]
+        # Another way of getting bug information
+        #bug1uuid = self.GetItem(key1, 0).GetText()
+        #bug2uuid = self.GetItem(key2, 0).GetText()
+        #print bug1uuid, bug2uuid
+        #bug1 = self.bugdir.get_bug(bug1uuid)
+        #bug2 = self.bugdir.get_bug(bug1uuid)
+        print self.bugcmp_fn(bug1,bug2)
+        return self.bugcmp_fn(bug1,bug2)
+    def OnColumnClick(self, event):
+        """Resort bug list depending on which column was clicked"""
+        print "TODO: sort by column %d" % event.Column
+        # change self.bugcmp_fn and resort, but I can't get it working
+
+app = MyApp()
+app.MainLoop()
