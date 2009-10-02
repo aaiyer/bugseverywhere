@@ -13,12 +13,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """
 Backwards compatibility support for Python 2.4.  Once people give up
 on 2.4 ;), the uuid call should be merged into bugdir.py
 """
 
 import unittest
+
 
 try:
     from uuid import uuid4 # Python >= 2.5

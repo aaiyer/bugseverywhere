@@ -57,8 +57,8 @@ build: libbe/_version.py
 .PHONY: install
 install: doc build
 	python setup.py install ${INSTALL_OPTIONS}
-	cp -v interfaces/xml/* ${PREFIX}/bin
-	cp -v interfaces/email/catmutt ${PREFIX}/bin
+#cp -v interfaces/xml/* ${PREFIX}/bin
+#cp -v interfaces/email/catmutt ${PREFIX}/bin
 
 
 .PHONY: clean

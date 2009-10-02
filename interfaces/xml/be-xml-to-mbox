@@ -129,7 +129,7 @@ class Comment (LimitedAttrDict):
               u"alt-id",
               u"short-name",
               u"in-reply-to",
-              u"from",
+              u"author",
               u"date",
               u"content-type",
               u"body"]
@@ -137,7 +137,7 @@ class Comment (LimitedAttrDict):
         if bug == None:
             bug = Bug()
             bug[u"uuid"] = u"no-uuid"
-        name,addr = email.utils.parseaddr(self["from"])
+        name,addr = email.utils.parseaddr(self["author"])
         print "From %s %s" % (addr, rfc2822_to_asctime(self["date"]))
         if "uuid" in self:     id = self["uuid"]
         elif "alt-id" in self: id = self["alt-id"]
@@ -145,7 +145,7 @@ class Comment (LimitedAttrDict):
         if id != None:
             print "Message-ID: <%s@%s>" % (id, DEFAULT_DOMAIN)
         print "Date: %s" % self["date"]
-        print "From: %s" % self["from"]
+        print "From: %s" % self["author"]
         subject = ""
         if "short-name" in self:
             subject += self["short-name"]+u": "

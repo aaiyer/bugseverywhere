@@ -9,5 +9,5 @@ inactive_status:
   - Unknown meaning.  For backwards compatibility with old BE bugs.
 
 
-rcs_name: bzr
+vcs_name: bzr
 

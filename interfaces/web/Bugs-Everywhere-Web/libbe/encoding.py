@@ -14,16 +14,26 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""
+Support input/output/filesystem encodings (e.g. UTF-8).
+"""
+
 import codecs
 import locale
 import sys
 import doctest
+
+
+ENCODING = None # override get_encoding() output by setting this
 
 def get_encoding():
     """
     Guess a useful input/output/filesystem encoding...  Maybe we need
     seperate encodings for input/output and filesystem?  Hmm...
     """
+    if ENCODING != None:
+        return ENCODING
     encoding = locale.getpreferredencoding() or sys.getdefaultencoding()
     if sys.platform != 'win32' or sys.version_info[:2] > (2, 3):
         encoding = locale.getlocale(locale.LC_TIME)[1] or encoding

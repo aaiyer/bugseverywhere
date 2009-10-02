@@ -148,7 +148,8 @@ def versioned_property(name, doc,
             checked = checked_property(allowed=allowed)
             fulldoc += "\n\nThe allowed values for this property are: %s." \
                        % (', '.join(allowed))
-        hooked      = change_hook_property(hook=change_hook, mutable=mutable)
+        hooked      = change_hook_property(hook=change_hook, mutable=mutable,
+                                           default=EMPTY)
         primed      = primed_property(primer=primer, initVal=UNPRIMED)
         settings    = settings_property(name=name, null=UNPRIMED)
         docp        = doc_property(doc=fulldoc)
@@ -385,30 +386,24 @@ class SavedSettingsObjectTests(unittest.TestCase):
         self.failUnless(SAVES == [], SAVES)
         self.failUnless(t._settings_loaded == True, t._settings_loaded)
         self.failUnless(t.list_type == None, t.list_type)
-        self.failUnless(SAVES == [
-                "'None' -> '<class 'libbe.settings_object.EMPTY'>'"
-                ], SAVES)
+        self.failUnless(SAVES == [], SAVES)
         self.failUnless(t.settings["List-type"]==EMPTY,t.settings["List-type"])
         t.list_type = []
         self.failUnless(t.settings["List-type"] == [], t.settings["List-type"])
         self.failUnless(SAVES == [
-                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'"
                 ], SAVES)
         t.list_type.append(5)
         self.failUnless(SAVES == [
-                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
                 ], SAVES)
         self.failUnless(t.settings["List-type"] == [5],t.settings["List-type"])
         self.failUnless(SAVES == [ # the append(5) has not yet been saved
-                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
                 ], SAVES)
         self.failUnless(t.list_type == [5], t.list_type) # <-get triggers saved
 
         self.failUnless(SAVES == [ # now the append(5) has been saved.
-                "'None' -> '<class 'libbe.settings_object.EMPTY'>'",
                 "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
                 "'[]' -> '[5]'"
                 ], SAVES)
