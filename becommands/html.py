@@ -44,12 +44,13 @@ def execute(args, manipulate_encodings=True):
     >>> bd.cleanup()
     """
     parser = get_parser()
+    
     options, args = parser.parse_args(args)
     complete(options, args, parser)
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==False})
     
-    
+
     if len(args) == 0:
         out_dir = options.outdir
         css_file = options.css_file
@@ -57,7 +58,8 @@ def execute(args, manipulate_encodings=True):
             _css_file = "default"
         else:
             _css_file = css_file
-        print "Creating the html output in %s using %s style"%(out_dir, _css_file)
+        if options.verbose != None:
+            print "Creating the html output in %s using %s style"%(out_dir, _css_file)
     else:
         out_dir = args[0]
     if len(args) > 0:
@@ -91,11 +93,13 @@ def execute(args, manipulate_encodings=True):
     html_gen.create_index_file(out_dir,  st, bugs_inactive, ordered_bug_list, "inactive", bd.encoding)
     
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be open OUTPUT_DIR")
+    parser = cmdutil.CmdOptionParser("be html [-v][-o][-s]")
     parser.add_option("-o", "--output", metavar="export_dir", dest="outdir",
         help="Set the output path, default is ./html_export", default="html_export")  
     parser.add_option("-s", "--css-file", metavar="css_file", dest="css_file",
         help="Use a different css file, default is empty", default=None)
+    parser.add_option("-v", "--verbose", metavar="verbose", dest="verbose",
+        help="Verbose output, default is no", default=None)
     return parser
 
 longhelp="""
