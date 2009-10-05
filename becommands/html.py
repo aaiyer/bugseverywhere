@@ -51,13 +51,13 @@ def execute(args, manipulate_encodings=True):
 
     if len(args) == 0:
         out_dir = options.outdir
-        css_file = options.css_file
-        if css_file == None:
+        template = options.template
+        if template == None:
             _css_file = "default"
         else:
-            _css_file = css_file
+            _css_file = template
         if options.verbose == True:
-            print "Creating the html output in %s using %s style"%(out_dir, _css_file)
+            print "Creating the html output in %s using %s template"%(out_dir, _css_file)
     else:
         out_dir = args[0]
     if len(args) > 0:
@@ -86,7 +86,7 @@ def execute(args, manipulate_encodings=True):
     ordered_bug_list_in = sorted([(value,key) for (key,value) in stime.items()])
     #open_bug_list = sorted([(value,key) for (key,value) in bugs.items()])
     
-    html_gen = BEHTMLGen(bd, css_file, options.verbose)
+    html_gen = BEHTMLGen(bd, template, options.verbose)
     html_gen.create_index_file(out_dir,  st, bugs_active, ordered_bug_list, "active", bd.encoding)
     html_gen.create_index_file(out_dir,  st, bugs_inactive, ordered_bug_list, "inactive", bd.encoding)
     
@@ -94,8 +94,8 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be html [options]")
     parser.add_option("-o", "--output", metavar="export_dir", dest="outdir",
         help="Set the output path, default is ./html_export", default="html_export")  
-    parser.add_option("-s", "--css-file", metavar="css_file", dest="css_file",
-        help="Use a different css file, default is empty", default=None)
+    parser.add_option("-t", "--template", metavar="template", dest="template",
+        help="Use a different template, default is empty", default=None)
     parser.add_option("-v", "--verbose",  action="store_true", metavar="verbose", dest="verbose",
         help="Verbose output, default is no", default=False)
     return parser
@@ -130,257 +130,13 @@ class BEHTMLGen():
         self.index_value = ""    
         self.bd = bd
         self.verbose = verbose
-        self.css_file = """
-        body {
-        font-family: "lucida grande", "sans serif";
-        color: #333;
-        width: auto;
-        margin: auto;
-        }
-        
-        
-        div.main {
-        padding: 20px;
-        margin: auto;
-        padding-top: 0;
-        margin-top: 1em;
-        background-color: #fcfcfc;
-        }
-        
-        .comment {
-        padding: 20px;
-        margin: auto;
-        padding-top: 20px;
-        margin-top: 0;
-        }
-        
-        .commentF {
-        padding: 0px;
-        margin: auto;
-        padding-top: 0px;
-        paddin-bottom: 20px;
-        margin-top: 0;
-        }
-        
-        tb {
-        border = 1;
-        }
-        
-        .wishlist-row {
-        background-color: #B4FF9B;
-        width: auto;
-        }
-        
-        .minor-row {
-        background-color: #FCFF98;
-        width: auto;
-        }
-        
-        
-        .serious-row {
-        background-color: #FFB648;
-        width: auto;
-        }
-        
-        .critical-row {
-        background-color: #FF752A;
-        width: auto;
-        }
-        
-        .fatal-row {
-        background-color: #FF3300;
-        width: auto;
-        }
-                
-        .person {
-        font-family: courier;
-        }
-        
-        a, a:visited {
-        background: inherit;
-        text-decoration: none;
-        }
-        
-        a {
-        color: #003d41;
-        }
-        
-        a:visited {
-        color: #553d41;
-        }
-        
-        ul {
-        list-style-type: none;
-        padding: 0;
-        }
-        
-        p {
-        width: auto;
-        }
-        
-        .inline-status-image {
-        position: relative;
-        top: 0.2em;
-        }
-        
-        .dimmed {
-        color: #bbb;
-        }
-        
-        table {
-        border-style: 10px solid #313131;
-        border-spacing: 0;
-        width: auto;
-        }
-        
-        table.log {
-        }
-        
-        td {
-        border-width: 0;
-        border-style: none;
-        padding-right: 0.5em;
-        padding-left: 0.5em;
-        width: auto;
-        }
-        
-        .td_sel {
-        background-color: #afafaf;
-        border: 1px solid #afafaf;
-        font-weight:bold;
-        padding-right: 1em;
-        padding-left: 1em;
-        
-        }
-        
-        .td_nsel {
-        border: 0px;
-        padding-right: 1em;
-        padding-left: 1em;
-        }
-        
-        tr {
-        vertical-align: top;
-        width: auto;
-        }
-        
-        h1 {
-        padding: 0.5em;
-        background-color: #305275;
-        margin-top: 0;
-        margin-bottom: 0;
-        color: #fff;
-        margin-left: -20px;
-        margin-right: -20px;  
-        }
-        
-        wid {
-        text-transform: uppercase;
-        font-size: smaller;
-        margin-top: 1em;
-        margin-left: -0.5em;  
-        /*background: #fffbce;*/
-        /*background: #628a0d;*/
-        padding: 5px;
-        color: #305275;
-        }
-        
-        .attrname {
-        text-align: right;
-        font-size: smaller;
-        }
-        
-        .attrval {
-        color: #222;
-        }
-        
-        .issue-closed-fixed {
-        background-image: "green-check.png";
-        }
-        
-        .issue-closed-wontfix {
-        background-image: "red-check.png";
-        }
-        
-        .issue-closed-reorg {
-        background-image: "blue-check.png";
-        }
-        
-        .inline-issue-link {
-        text-decoration: underline;
-        }
-        
-        img {
-        border: 0;
-        }
-        
-        
-        div.footer {
-        font-size: small;
-        padding-left: 20px;
-        padding-right: 20px;
-        padding-top: 5px;
-        padding-bottom: 5px;
-        margin: auto;
-        background: #305275;
-        color: #fffee7;
-        }
-        
-        .footer a {
-        color: #508d91;
-        }
-        
-        
-        .header {
-        font-family: "lucida grande", "sans serif";
-        font-size: smaller;
-        background-color: #a9a9a9;
-        text-align: left;
-        
-        padding-right: 0.5em;
-        padding-left: 0.5em;
-        
-        }
-        
-        
-        .selected-cell {
-        background-color: #e9e9e2;
-        }
-        
-        .plain-cell {
-        background-color: #f9f9f9;
-        }
-        
-        
-        .logcomment {
-        padding-left: 4em;
-        font-size: smaller;
-        }
-        
-        .id {
-        font-family: courier;
-        }
-        
-        .table_bug {
-        background-color: #afafaf;
-        border: 2px solid #afafaf;
-        }
-        
-        .message {
-        }
-        
-        .progress-meter-done {
-        background-color: #03af00;
-        }
-        
-        .progress-meter-undone {
-        background-color: #ddd;
-        }
-        
-        .progress-meter {
-        }
-        
-        """
+        if template == None:
+            self.template = "default"
+        else:
+            self.template = template
+        FI = open("./templates/%s/style.css"%self.template)
+        self.css_file = FI.read()
+        FI.close()
         
         self.index_first = """
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -485,11 +241,6 @@ class BEHTMLGen():
         </html>
         """ 
         
-        if template != None:
-            FO = open(template)
-            newCss = FO.read()
-            FO.close()
-            self.css_file = newCss
         
     def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug, fileid, encoding):
         try:
