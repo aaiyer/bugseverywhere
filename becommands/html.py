@@ -44,12 +44,10 @@ def execute(args, manipulate_encodings=True):
     >>> bd.cleanup()
     """
     parser = get_parser()
-    
     options, args = parser.parse_args(args)
     complete(options, args, parser)
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==False})
-    
 
     if len(args) == 0:
         out_dir = options.outdir
@@ -58,7 +56,7 @@ def execute(args, manipulate_encodings=True):
             _css_file = "default"
         else:
             _css_file = css_file
-        if options.verbose != None:
+        if options.verbose == True:
             print "Creating the html output in %s using %s style"%(out_dir, _css_file)
     else:
         out_dir = args[0]
@@ -88,18 +86,18 @@ def execute(args, manipulate_encodings=True):
     ordered_bug_list_in = sorted([(value,key) for (key,value) in stime.items()])
     #open_bug_list = sorted([(value,key) for (key,value) in bugs.items()])
     
-    html_gen = BEHTMLGen(bd, css_file)
+    html_gen = BEHTMLGen(bd, css_file, options.verbose)
     html_gen.create_index_file(out_dir,  st, bugs_active, ordered_bug_list, "active", bd.encoding)
     html_gen.create_index_file(out_dir,  st, bugs_inactive, ordered_bug_list, "inactive", bd.encoding)
     
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be html [-v][-o][-s]")
+    parser = cmdutil.CmdOptionParser("be html [options]")
     parser.add_option("-o", "--output", metavar="export_dir", dest="outdir",
         help="Set the output path, default is ./html_export", default="html_export")  
     parser.add_option("-s", "--css-file", metavar="css_file", dest="css_file",
         help="Use a different css file, default is empty", default=None)
-    parser.add_option("-v", "--verbose", metavar="verbose", dest="verbose",
-        help="Verbose output, default is no", default=None)
+    parser.add_option("-v", "--verbose",  action="store_true", metavar="verbose", dest="verbose",
+        help="Verbose output, default is no", default=False)
     return parser
 
 longhelp="""
@@ -128,10 +126,10 @@ def escape(string):
     return "".join(chars)
 
 class BEHTMLGen():
-    def __init__(self, bd, template):
+    def __init__(self, bd, template, verbose):
         self.index_value = ""    
         self.bd = bd
-
+        self.verbose = verbose
         self.css_file = """
         body {
         font-family: "lucida grande", "sans serif";
@@ -515,9 +513,13 @@ class BEHTMLGen():
         
         try:
             if fileid == "active":
+                if self.verbose:
+                    print "Creating active bug index..."
                 FO = codecs.open(out_dir_path+"/index.html", "w", encoding)
                 FO.write(self.index_first%('td_sel','td_nsel'))
             if fileid == "inactive":
+                if self.verbose:
+                    print "Creating inactive bug index..."
                 FO = codecs.open(out_dir_path+"/index_inactive.html", "w", encoding)
                 FO.write(self.index_first%('td_nsel','td_sel'))
         except:
@@ -526,6 +528,8 @@ class BEHTMLGen():
         c = 0
         t = len(bugs) - 1
         for l in range(t,  -1,  -1):
+            if self.verbose:
+                print "Creating bug entry: %s"%escape(bugs[l].uuid[0:3])
             line = self.bug_line%(escape(bugs[l].severity),
                                   escape(bugs[l].uuid), escape(bugs[l].uuid[0:3]),
                                   escape(bugs[l].uuid), escape(bugs[l].status),
@@ -535,6 +539,8 @@ class BEHTMLGen():
                                   )
             FO.write(line)
             c += 1
+            if self.verbose:
+                print "\tCreating detail entry for bug: %s"%escape(bugs[l].uuid[0:3])
             self.create_detail_file(bugs[l], out_dir_path, fileid, encoding)
         when = time.ctime()
         FO.write(self.index_last%when)
