@@ -124,13 +124,12 @@ class VCS(object):
         self._duplicateBasedir = None
         self._duplicateDirname = None
         self.encoding = encoding
-
-    def _vcs_help(self):
+        self.version = self._get_version()
+    def _vcs_version(self):
         """
-        Return the command help string.
-        (Allows a simple test to see if the client is installed.)
+        Return the VCS version string.
         """
-        pass
+        return "0.0"
     def _vcs_detect(self, path=None):
         """
         Detect whether a directory is revision controlled with this VCS.
@@ -229,15 +228,21 @@ class VCS(object):
         specified revision does not exist.
         """
         return None
-    def installed(self):
+    def _get_version(self):
         try:
-            self._vcs_help()
-            return True
+            ret = self._vcs_version()
+            return ret
         except OSError, e:
             if e.errno == errno.ENOENT:
-                return False
+                return None
+            else:
+                raise OSError, e
         except CommandError:
-            return False
+            return None
+    def installed(self):
+        if self.version != None:
+            return True
+        return False
     def detect(self, path="."):
         """
         Detect whether a directory is revision controlled with this VCS.
