@@ -305,6 +305,7 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
             self.root = self._find_root(root)
         else:
             if not os.path.exists(root):
+                self.root = None
                 raise NoRootEntry(root)
             self.root = root
         # get a temporary vcs until we've loaded settings
@@ -324,9 +325,6 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
             self.vcs = vcs
             self._setup_user_id(self.user_id)
 
-    def __del__(self):
-        self.cleanup()
-
     def cleanup(self):
         self.vcs.cleanup()
 
@@ -339,6 +337,7 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
         then only if sink_to_existing_root == True.
         """
         if not os.path.exists(path):
+            self.root = None
             raise NoRootEntry(path)
         versionfile=utility.search_parent_directories(path,
                                                       os.path.join(".be", "version"))
@@ -349,6 +348,7 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
         else:
             beroot = utility.search_parent_directories(path, ".be")
             if beroot == None:
+                self.root = None
                 raise NoBugDir(path)
             return beroot
 
@@ -671,7 +671,7 @@ class SimpleBugDir (BugDir):
                     assert_new_BugDir=assert_new_BugDir,
                     allow_vcs_init=vcs_init,
                     manipulate_encodings=False)
-        if sync_with_disk == True: # postpone cleanup since dir.__del__() removes dir.
+        if sync_with_disk == True: # postpone cleanup since dir.cleanup() removes dir.
             self._dir_ref = dir
         bug_a = self.new_bug("a", summary="Bug A")
         bug_a.creator = "John Doe <jdoe@example.com>"
