@@ -53,8 +53,8 @@ class Arch(vcs.VCS):
     _project_name = None
     _tmp_project = False
     _arch_paramdir = os.path.expanduser("~/.arch-params")
-    def _vcs_help(self):
-        status,output,error = self._u_invoke_client("--help")
+    def _vcs_version(self):
+        status,output,error = self._u_invoke_client("--version")
         return output
     def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
