@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Commit the currently pending changes to the repository"""
-from libbe import cmdutil, bugdir, editor, rcs
+from libbe import cmdutil, bugdir, editor, vcs
 import sys
 __desc__ = __doc__
 
@@ -22,13 +22,14 @@ def execute(args, manipulate_encodings=True):
     """
     >>> import os, time
     >>> from libbe import bug
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> full_path = "testfile"
     >>> test_contents = "A test file"
-    >>> bd.rcs.set_file_contents(full_path, test_contents)
+    >>> bd.vcs.set_file_contents(full_path, test_contents)
     >>> execute(["Added %s." % (full_path)], manipulate_encodings=False) # doctest: +ELLIPSIS
     Committed ...
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -48,11 +49,11 @@ def execute(args, manipulate_encodings=True):
     elif options.body == "EDITOR":
         body = editor.editor_string("Please enter your commit message above")
     else:
-        body = bd.rcs.get_file_contents(options.body, allow_no_rcs=True)
+        body = bd.vcs.get_file_contents(options.body, allow_no_vcs=True)
     try:
-        revision = bd.rcs.commit(summary, body=body,
+        revision = bd.vcs.commit(summary, body=body,
                                  allow_empty=options.allow_empty)
-    except rcs.EmptyCommit, e:
+    except vcs.EmptyCommit, e:
         print e
         return 1
     else:

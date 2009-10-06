@@ -1,0 +1,22 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+extra_strings:
+- BLOCKS:22b6f620-d2f7-42a5-a02e-145733a4e366
+- BLOCKS:427e0ca7-17f5-4a5a-8c68-98cc111a2495
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Upgrade path for on-disk representation
+
+
+time: Sun, 16 Aug 2009 19:05:59 +0000
+

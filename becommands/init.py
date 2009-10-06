@@ -19,9 +19,9 @@ import os.path
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
-    >>> from libbe import utility, rcs
+    >>> from libbe import utility, vcs
     >>> import os
     >>> dir = utility.Dir()
     >>> try:
@@ -29,28 +29,28 @@ def execute(args, test=False):
     ... except bugdir.NoBugDir, e:
     ...     True
     True
-    >>> execute(['--root', dir.path], test=True)
+    >>> execute(['--root', dir.path], manipulate_encodings=False)
     No revision control detected.
     Directory initialized.
     >>> del(dir)
 
     >>> dir = utility.Dir()
     >>> os.chdir(dir.path)
-    >>> rcs = rcs.installed_rcs()
-    >>> rcs.init('.')
-    >>> print rcs.name
+    >>> vcs = vcs.installed_vcs()
+    >>> vcs.init('.')
+    >>> print vcs.name
     Arch
-    >>> execute([], test=True)
+    >>> execute([], manipulate_encodings=False)
     Using Arch for revision control.
     Directory initialized.
-    >>> rcs.cleanup()
+    >>> vcs.cleanup()
 
     >>> try:
-    ...     execute(['--root', '.'], test=True)
+    ...     execute(['--root', '.'], manipulate_encodings=False)
     ... except cmdutil.UserError, e:
     ...     str(e).startswith("Directory already initialized: ")
     True
-    >>> execute(['--root', '/highly-unlikely-to-exist'], test=True)
+    >>> execute(['--root', '/highly-unlikely-to-exist'], manipulate_encodings=False)
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
     >>> os.chdir('/')
@@ -64,14 +64,14 @@ def execute(args, test=False):
         bd = bugdir.BugDir(options.root_dir, from_disk=False,
                            sink_to_existing_root=False,
                            assert_new_BugDir=True,
-                           manipulate_encodings=not test)
+                           manipulate_encodings=manipulate_encodings)
     except bugdir.NoRootEntry:
         raise cmdutil.UserError("No such directory: %s" % options.root_dir)
     except bugdir.AlreadyInitialized:
         raise cmdutil.UserError("Directory already initialized: %s" % options.root_dir)
     bd.save()
-    if bd.rcs.name is not "None":
-        print "Using %s for revision control." % bd.rcs.name
+    if bd.vcs.name is not "None":
+        print "Using %s for revision control." % bd.vcs.name
     else:
         print "No revision control detected."
     print "Directory initialized."
@@ -86,7 +86,7 @@ def get_parser():
 longhelp="""
 This command initializes Bugs Everywhere support for the specified directory
 and all its subdirectories.  It will auto-detect any supported revision control
-system.  You can use "be set rcs_name" to change the rcs being used.
+system.  You can use "be set vcs_name" to change the vcs being used.
 
 The directory defaults to your current working directory.
 

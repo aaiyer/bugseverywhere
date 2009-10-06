@@ -15,12 +15,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+Define editor_string(), a function that invokes an editor to accept
+user-produced text as a string.
+"""
+
 import codecs
 import locale
 import os
 import sys
 import tempfile
 import doctest
+
 
 default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
 
@@ -62,7 +68,8 @@ def editor_string(comment=None, encoding=None):
     fhandle, fname = tempfile.mkstemp()
     try:
         if comment is not None:
-            os.write(fhandle, '\n'+comment_string(comment))
+            cstring = u'\n'+comment_string(comment)
+            os.write(fhandle, cstring.encode(encoding))
         os.close(fhandle)
         oldmtime = os.path.getmtime(fname)
         os.system("%s %s" % (editor, fname))

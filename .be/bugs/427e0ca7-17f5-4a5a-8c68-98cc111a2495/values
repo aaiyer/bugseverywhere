@@ -1,0 +1,21 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+extra_strings:
+- BLOCKED-BY:51930348-9ccc-4165-af41-6c7450de050e
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: 'Terminology: Version control system vs. RCS'
+
+
+time: Mon, 03 Aug 2009 23:10:02 +0000
+

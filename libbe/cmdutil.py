@@ -15,6 +15,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""
+Define assorted utilities to make command-line handling easier.
+"""
+
 import glob
 import optparse
 import os
@@ -70,10 +75,11 @@ def get_command(command_name):
     return cmd
 
 
-def execute(cmd, args):
+def execute(cmd, args, manipulate_encodings=True):
     enc = encoding.get_encoding()
     cmd = get_command(cmd)
-    ret = cmd.execute([a.decode(enc) for a in args])
+    ret = cmd.execute([a.decode(enc) for a in args],
+                      manipulate_encodings=manipulate_encodings)
     if ret == None:
         ret = 0
     return ret
@@ -206,6 +212,15 @@ def underlined(instring):
     
     return "%s\n%s" % (instring, "="*len(instring))
 
+def bug_from_shortname(bdir, shortname):
+    """
+    Exception translation for the command-line interface.
+    """
+    try:
+        bug = bdir.bug_from_shortname(shortname)
+    except (bugdir.MultipleBugMatches, bugdir.NoBugMatches), e:
+        raise UserError(e.message)
+    return bug
 
 def _test():
     import doctest

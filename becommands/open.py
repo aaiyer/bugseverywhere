@@ -20,17 +20,18 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> print bd.bug_from_shortname("b").status
     closed
-    >>> execute(["b"], test=True)
+    >>> execute(["b"], manipulate_encodings=False)
     >>> bd._clear_bugs()
     >>> print bd.bug_from_shortname("b").status
     open
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -40,8 +41,9 @@ def execute(args, test=False):
         raise cmdutil.UsageError, "Please specify a bug id."
     if len(args) > 1:
         raise cmdutil.UsageError, "Too many arguments."
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(args[0])
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     bug.status = "open"
 
 def get_parser():

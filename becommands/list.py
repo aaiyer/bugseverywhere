@@ -26,16 +26,17 @@ __desc__ = __doc__
 AVAILABLE_CMPS = [fn[4:] for fn in dir(bug) if fn[:4] == 'cmp_']
 AVAILABLE_CMPS.remove("attr") # a cmp_* template.
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
-    >>> execute([], test=True)
+    >>> execute([], manipulate_encodings=False)
     a:om: Bug A
-    >>> execute(["--status", "all"], test=True)
+    >>> execute(["--status", "all"], manipulate_encodings=False)
     a:om: Bug A
     b:cm: Bug B
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -46,11 +47,13 @@ def execute(args, test=False):
     if options.sort_by != None:
         for cmp in options.sort_by.split(','):
             if cmp not in AVAILABLE_CMPS:
-                raise cmdutil.UserError("Invalid sort on '%s'.\nValid sorts:\n  %s"
-                                        % (cmp, '\n  '.join(AVAILABLE_CMPS)))
+                raise cmdutil.UserError(
+                    "Invalid sort on '%s'.\nValid sorts:\n  %s"
+                    % (cmp, '\n  '.join(AVAILABLE_CMPS)))
             cmp_list.append(eval('bug.cmp_%s' % cmp))
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     bd.load_all_bugs()
     # select status
     if options.status != None:

@@ -15,6 +15,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""
+Define the Bug class for representing bugs.
+"""
+
 import os
 import os.path
 import errno
@@ -32,6 +37,11 @@ import mapfile
 import comment
 import utility
 
+
+class DiskAccessRequired (Exception):
+    def __init__(self, goal):
+        msg = "Cannot %s without accessing the disk" % goal
+        Exception.__init__(self, msg)
 
 ### Define and describe valid bug categories
 # Use a tuple of (category, description) tuples since we don't have
@@ -216,15 +226,15 @@ class Bug(settings_object.SavedSettingsObject):
     @doc_property(doc="The trunk of the comment tree")
     def comment_root(): return {}
 
-    def _get_rcs(self):
-        if hasattr(self.bugdir, "rcs"):
-            return self.bugdir.rcs
+    def _get_vcs(self):
+        if hasattr(self.bugdir, "vcs"):
+            return self.bugdir.vcs
 
     @Property
-    @cached_property(generator=_get_rcs)
-    @local_property("rcs")
+    @cached_property(generator=_get_vcs)
+    @local_property("vcs")
     @doc_property(doc="A revision control system instance.")
-    def rcs(): return {}
+    def vcs(): return {}
 
     def __init__(self, bugdir=None, uuid=None, from_disk=False,
                  load_comments=False, summary=None):
@@ -238,17 +248,20 @@ class Bug(settings_object.SavedSettingsObject):
             if uuid == None:
                 self.uuid = uuid_gen()
             self.time = int(time.time()) # only save to second precision
-            if self.rcs != None:
-                self.creator = self.rcs.get_user_id()
+            if self.vcs != None:
+                self.creator = self.vcs.get_user_id()
             self.summary = summary
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
 
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
-        for comment in self.comments():
-            comment.set_sync_with_disk(value)
+    def __str__(self):
+        return self.string(shortlist=True)
+
+    def __cmp__(self, other):
+        return cmp_full(self, other)
+
+    # serializing methods
 
     def _setting_attr_string(self, setting):
         value = getattr(self, setting)
@@ -331,24 +344,56 @@ class Bug(settings_object.SavedSettingsObject):
             output = bugout
         return output
 
-    def __str__(self):
-        return self.string(shortlist=True)
+    # methods for saving/loading/acessing settings and properties.
 
-    def __cmp__(self, other):
-        return cmp_full(self, other)
+    def get_path(self, *args):
+        dir = os.path.join(self.bugdir.get_path("bugs"), self.uuid)
+        if len(args) == 0:
+            return dir
+        assert args[0] in ["values", "comments"], str(args)
+        return os.path.join(dir, *args)
 
-    def get_path(self, name=None):
-        my_dir = os.path.join(self.bugdir.get_path("bugs"), self.uuid)
-        if name is None:
-            return my_dir
-        assert name in ["values", "comments"]
-        return os.path.join(my_dir, name)
+    def set_sync_with_disk(self, value):
+        self.sync_with_disk = value
+        for comment in self.comments():
+            comment.set_sync_with_disk(value)
 
     def load_settings(self):
-        self.settings = mapfile.map_load(self.rcs, self.get_path("values"))
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("load settings")
+        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
         self._setup_saved_settings()
 
+    def save_settings(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("save settings")
+        assert self.summary != None, "Can't save blank bug"
+        self.vcs.mkdir(self.get_path())
+        path = self.get_path("values")
+        mapfile.map_save(self.vcs, path, self._get_saved_settings())
+
+    def save(self):
+        """
+        Save any loaded contents to disk.  Because of lazy loading of
+        comments, this is actually not too inefficient.
+        
+        However, if self.sync_with_disk = True, then any changes are
+        automatically written to disk as soon as they happen, so
+        calling this method will just waste time (unless something
+        else has been messing with your on-disk files).
+        """
+        sync_with_disk = self.sync_with_disk
+        if sync_with_disk == False:
+            self.set_sync_with_disk(True)
+        self.save_settings()
+        if len(self.comment_root) > 0:
+            comment.saveComments(self)
+        if sync_with_disk == False:
+            self.set_sync_with_disk(False)
+
     def load_comments(self, load_full=True):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("load comments")
         if load_full == True:
             # Force a complete load of the whole comment tree
             self.comment_root = self._get_comment_root(load_full=True)
@@ -361,32 +406,15 @@ class Bug(settings_object.SavedSettingsObject):
             self.comment_root = None
             self.sync_with_disk = True
 
-    def save_settings(self):
-        assert self.summary != None, "Can't save blank bug"
-        
-        self.rcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.rcs, path, self._get_saved_settings())
-        
-    def save(self):
-        """
-        Save any loaded contents to disk.  Because of lazy loading of
-        comments, this is actually not too inefficient.
-        
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
-        """
-        self.save_settings()
-        if len(self.comment_root) > 0:
-            comment.saveComments(self)
-
     def remove(self):
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("remove")
         self.comment_root.remove()
         path = self.get_path()
-        self.rcs.recursive_remove(path)
+        self.vcs.recursive_remove(path)
     
+    # methods for managing comments
+
     def comments(self):
         for comment in self.comment_root.traverse():
             yield comment
@@ -489,8 +517,12 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
         return cmp(val_1, val_2)
 
 # alphabetical rankings (a < z)
+cmp_uuid = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "uuid")
 cmp_creator = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "creator")
 cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
+cmp_target = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "target")
+cmp_reporter = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "reporter")
+cmp_summary = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "summary")
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
@@ -512,7 +544,8 @@ def cmp_comments(bug_1, bug_2):
     return 0
 
 DEFAULT_CMP_FULL_CMP_LIST = \
-    (cmp_status,cmp_severity,cmp_assigned,cmp_time,cmp_creator,cmp_comments)
+    (cmp_status, cmp_severity, cmp_assigned, cmp_time, cmp_creator,
+     cmp_reporter, cmp_target, cmp_comments, cmp_summary, cmp_uuid)
 
 class BugCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):

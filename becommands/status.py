@@ -17,27 +17,29 @@
 from libbe import cmdutil, bugdir, bug
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
-    >>> execute(["a"], test=True)
+    >>> execute(["a"], manipulate_encodings=False)
     open
-    >>> execute(["a", "closed"], test=True)
-    >>> execute(["a"], test=True)
+    >>> execute(["a", "closed"], manipulate_encodings=False)
+    >>> execute(["a"], manipulate_encodings=False)
     closed
-    >>> execute(["a", "none"], test=True)
+    >>> execute(["a", "none"], manipulate_encodings=False)
     Traceback (most recent call last):
     UserError: Invalid status: none
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
     complete(options, args, parser)
     if len(args) not in (1,2):
         raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    bug = bd.bug_from_shortname(args[0])
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 1:
         print bug.status
     else:
@@ -55,7 +57,8 @@ def get_parser():
 
 def help():
     try: # See if there are any per-tree status configurations
-        bd = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
+        bd = bugdir.BugDir(from_disk=True,
+                           manipulate_encodings=False)
     except bugdir.NoBugDir, e:
         pass # No tree, just show the defaults
     longest_status_len = max([len(s) for s in bug.status_values])

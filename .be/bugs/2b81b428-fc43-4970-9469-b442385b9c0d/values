@@ -1,0 +1,17 @@
+creator: gianluca <gian@galactica>
+
+
+reporter: gianluca <gian@galactica>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Use the get_parser in becommands/html.py
+
+
+time: Wed, 08 Jul 2009 21:27:37 +0000
+

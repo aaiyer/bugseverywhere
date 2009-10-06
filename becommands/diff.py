@@ -20,23 +20,35 @@ from libbe import cmdutil, bugdir, diff
 import os
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
-    >>> original = bd.rcs.commit("Original status")
+    >>> original = bd.vcs.commit("Original status")
     >>> bug = bd.bug_from_uuid("a")
     >>> bug.status = "closed"
-    >>> changed = bd.rcs.commit("Closed bug a")
+    >>> changed = bd.vcs.commit("Closed bug a")
     >>> os.chdir(bd.root)
-    >>> if bd.rcs.versioned == True:
-    ...     execute([original], test=True)
+    >>> if bd.vcs.versioned == True:
+    ...     execute([original], manipulate_encodings=False)
     ... else:
-    ...     print "a:cm: Bug A\\nstatus: open -> closed\\n"
-    Modified bug reports:
-    a:cm: Bug A
-      status: open -> closed
+    ...     print "Modified bugs:\\n  a:cm: Bug A\\n    Changed bug settings:\\n      status: open -> closed"
+    Modified bugs:
+      a:cm: Bug A
+        Changed bug settings:
+          status: open -> closed
+    >>> if bd.vcs.versioned == True:
+    ...     execute(["--modified", original], manipulate_encodings=False)
+    ... else:
+    ...     print "a"
+    a
+    >>> if bd.vcs.versioned == False:
+    ...     execute([original], manipulate_encodings=False)
+    ... else:
+    ...     print "This directory is not revision-controlled."
+    This directory is not revision-controlled.
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -47,28 +59,31 @@ def execute(args, test=False):
         revision = args[0]
     if len(args) > 1:
         raise cmdutil.UsageError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
-    if bd.rcs.versioned == False:
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
+    if bd.vcs.versioned == False:
         print "This directory is not revision-controlled."
     else:
+        if revision == None: # get the most recent revision
+            revision = bd.vcs.revision_id(-1)
         old_bd = bd.duplicate_bugdir(revision)
-        r,m,a = diff.bug_diffs(old_bd, bd)
-        
-        optbugs = []
+        d = diff.Diff(old_bd, bd)
+        tree = d.report_tree()
+
+        uuids = []
         if options.all == True:
             options.new = options.modified = options.removed = True
         if options.new == True:
-            optbugs.extend(a)
+            uuids.extend([c.name for c in tree.child_by_path("/bugs/new")])
         if options.modified == True:
-            optbugs.extend([new for old,new in m])
+            uuids.extend([c.name for c in tree.child_by_path("/bugs/mod")])
         if options.removed == True:
-            optbugs.extend(r)
-        if len(optbugs) > 0:
-            for bug in optbugs:
-                print bug.uuid
+            uuids.extend([c.name for c in tree.child_by_path("/bugs/rem")])
+        if (options.new or options.modified or options.removed) == True:
+            print "\n".join(uuids)
         else :
-            rep = diff.diff_report((r,m,a), old_bd, bd).encode(bd.encoding)
-            if len(rep) > 0:
+            rep = tree.report_string()
+            if rep != None:
                 print rep
         bd.remove_duplicate_bugdir()
 
@@ -85,14 +100,14 @@ def get_parser():
         long = "--%s" % s[1]
         help = s[2]
         parser.add_option(short, long, action="store_true",
-                          dest=attr, help=help)
+                          default=False, dest=attr, help=help)
     return parser
 
 longhelp="""
-Uses the RCS to compare the current tree with a previous tree, and
+Uses the VCS to compare the current tree with a previous tree, and
 prints a pretty report.  If REVISION is given, it is a specifier for
 the particular previous tree to use.  Specifiers are specific to their
-RCS.
+VCS.
 
 For Arch your specifier must be a fully-qualified revision name.
 

@@ -18,34 +18,34 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> from libbe import utility
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
     >>> os.chdir(bd.root)
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
     []
-    >>> execute(["a", "GUI"], test=True)
+    >>> execute(["a", "GUI"], manipulate_encodings=False)
     Tags for a:
     GUI
     >>> bd._clear_bugs() # resync our copy of bug
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
     ['TAG:GUI']
-    >>> execute(["a", "later"], test=True)
+    >>> execute(["a", "later"], manipulate_encodings=False)
     Tags for a:
     GUI
     later
-    >>> execute(["a"], test=True)
+    >>> execute(["a"], manipulate_encodings=False)
     Tags for a:
     GUI
     later
-    >>> execute(["--list"], test=True)
+    >>> execute(["--list"], manipulate_encodings=False)
     GUI
     later
-    >>> execute(["a", "Alphabetically first"], test=True)
+    >>> execute(["a", "Alphabetically first"], manipulate_encodings=False)
     Tags for a:
     Alphabetically first
     GUI
@@ -57,15 +57,16 @@ def execute(args, test=False):
     >>> a.extra_strings = []
     >>> print a.extra_strings
     []
-    >>> execute(["a"], test=True)
+    >>> execute(["a"], manipulate_encodings=False)
     >>> bd._clear_bugs() # resync our copy of bug
     >>> a = bd.bug_from_shortname("a")
     >>> print a.extra_strings
     []
-    >>> execute(["a", "Alphabetically first"], test=True)
+    >>> execute(["a", "Alphabetically first"], manipulate_encodings=False)
     Tags for a:
     Alphabetically first
-    >>> execute(["--remove", "a", "Alphabetically first"], test=True)
+    >>> execute(["--remove", "a", "Alphabetically first"], manipulate_encodings=False)
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -78,7 +79,8 @@ def execute(args, test=False):
         help()
         raise cmdutil.UsageError("Too many arguments.")
     
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     if options.list:
         bd.load_all_bugs()
         tags = []
@@ -92,7 +94,7 @@ def execute(args, test=False):
         if len(tags) > 0:
             print '\n'.join(tags)
         return
-    bug = bd.bug_from_shortname(args[0])
+    bug = cmdutil.bug_from_shortname(bd, args[0])
     if len(args) == 2:
         given_tag = args[1]
         estrs = bug.extra_strings

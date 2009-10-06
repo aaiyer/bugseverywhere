@@ -1,0 +1,24 @@
+> Currently, the code and interface of Bugs Everywhere speaks loosely
+> about the term “RCS”. Sometimes it means “revision control system”
+> referring in general to these types of system, and sometimes it talks
+> about GNU RCS, a specific system.
+
+I don't think we ever rever to GNU RCS.  Our current libbe.rcs.RCS
+default implementation is a "don't version" backend for BE, but
+perhaps this is what you're refereing to.
+
+> I propose that “Version Control System” (“VCS”) has emerged as a
+> consensus term to refer to such systems in general, with no specific
+> reference to any particular system.
+
+Fair enough.
+
+> This will change some interface (e.g. the ‘rcs_name’ configuration
+> setting, and some of the methods on objects), but making this change
+> while Bugs Everywhere is small will be much less painful than making it
+> later.
+
+Hmm, we really need a method for upgrading the on-disk BugDir version.
+It's hard when you need to maintain backwards compatibilty with
+earlier versions in the VCS history....
+

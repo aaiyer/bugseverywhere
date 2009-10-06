@@ -1,3 +1,10 @@
+encoding: utf-8
+
+
+extra_strings:
+- "SUBSCRIBE:W. Trevor King <wking@drexel.edu>\tall\t*"
+
+
 inactive_status:
 - - closed
   - The bug is no longer relevant.
@@ -9,5 +16,5 @@ inactive_status:
   - Unknown meaning.  For backwards compatibility with old BE bugs.
 
 
-rcs_name: bzr
+vcs_name: bzr
 

@@ -14,11 +14,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-import yaml
-import os.path
+
+"""
+Provide a means of saving and loading dictionaries of parameters.  The
+saved "mapfiles" should be clear, flat-text files, and allow easy merging of
+independent/conflicting changes.
+"""
+
 import errno
-import utility
+import os.path
+import yaml
 import doctest
+
 
 class IllegalKey(Exception):
     def __init__(self, key):
@@ -95,33 +102,15 @@ def parse(contents):
     >>> dict["e"]
     'f'
     """
-    old_format = False
-    for line in contents.splitlines():
-        if len(line.split("=")) == 2:
-            old_format = True
-            break
-    if old_format: # translate to YAML.  Hack to deal with old BE bugs.
-        newlines = []
-        for line in contents.splitlines():
-            line = line.rstrip('\n')
-            if len(line) == 0:
-                continue
-            fields = line.split("=")
-            if len(fields) == 2:
-                key,value = fields
-                newlines.append('%s: "%s"' % (key, value.replace('"','\\"')))
-            else:
-                newlines.append(line)
-        contents = '\n'.join(newlines)
     return yaml.load(contents) or {}
 
-def map_save(rcs, path, map, allow_no_rcs=False):
+def map_save(vcs, path, map, allow_no_vcs=False):
     """Save the map as a mapfile to the specified path"""
     contents = generate(map)
-    rcs.set_file_contents(path, contents, allow_no_rcs)
+    vcs.set_file_contents(path, contents, allow_no_vcs)
 
-def map_load(rcs, path, allow_no_rcs=False):
-    contents = rcs.get_file_contents(path, allow_no_rcs=allow_no_rcs)
+def map_load(vcs, path, allow_no_vcs=False):
+    contents = vcs.get_file_contents(path, allow_no_vcs=allow_no_vcs)
     return parse(contents)
 
 suite = doctest.DocTestSuite()

@@ -22,12 +22,12 @@ import sys
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, test=False):
+def execute(args, manipulate_encodings=True):
     """
     >>> import os
-    >>> bd = bugdir.simple_bug_dir()
+    >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
-    >>> execute (["a",], test=True) # doctest: +ELLIPSIS
+    >>> execute (["a",], manipulate_encodings=False) # doctest: +ELLIPSIS
               ID : a
       Short name : a
         Severity : minor
@@ -39,7 +39,7 @@ def execute(args, test=False):
          Created : ...
     Bug A
     <BLANKLINE>
-    >>> execute (["--xml", "a"], test=True) # doctest: +ELLIPSIS
+    >>> execute (["--xml", "a"], manipulate_encodings=False) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="..." ?>
     <bug>
       <uuid>a</uuid>
@@ -50,6 +50,7 @@ def execute(args, test=False):
       <created>...</created>
       <summary>Bug A</summary>
     </bug>
+    >>> bd.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -57,7 +58,8 @@ def execute(args, test=False):
                              bugid_args={-1: lambda bug : bug.active==True})
     if len(args) == 0:
         raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True, manipulate_encodings=not test)
+    bd = bugdir.BugDir(from_disk=True,
+                       manipulate_encodings=manipulate_encodings)
     if options.XML:
         print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
     for shortname in args:
@@ -72,7 +74,7 @@ def execute(args, test=False):
             is_comment = False
         if is_comment == True and options.comments == False:
             continue
-        bug = bd.bug_from_shortname(bugname)
+        bug = cmdutil.bug_from_shortname(bd, bugname)
         if is_comment == False:
             if options.XML:
                 print bug.xml(show_comments=options.comments)

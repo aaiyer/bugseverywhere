@@ -1,0 +1,17 @@
+creator: Gianluca Montecchi <gian@grys.it>
+
+
+reporter: Gianluca Montecchi <gian@grys.it>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Comment should be threaded in the "be html" output
+
+
+time: Tue, 21 Jul 2009 21:39:52 +0000
+

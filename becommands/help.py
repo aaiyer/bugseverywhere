@@ -19,9 +19,11 @@
 from libbe import cmdutil, utility
 __desc__ = __doc__
 
-def execute(args):
+def execute(args, manipulate_encodings=False):
     """
-    Print help of specified command.
+    Print help of specified command (the manipulate_encodings argument
+    is ignored).
+
     >>> execute(["help"])
     Usage: be help [COMMAND]
     <BLANKLINE>
