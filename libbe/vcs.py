@@ -50,7 +50,7 @@ def _get_matching_vcs(matchfn):
         vcs = module.new()
         if matchfn(vcs) == True:
             return vcs
-        del(vcs)
+        vcs.cleanup()
     return VCS()
     
 def vcs_by_name(vcs_name):
@@ -124,8 +124,6 @@ class VCS(object):
         self._duplicateBasedir = None
         self._duplicateDirname = None
         self.encoding = encoding
-    def __del__(self):
-        self.cleanup()
 
     def _vcs_help(self):
         """
@@ -674,7 +672,7 @@ class VCSTestCase(unittest.TestCase):
         setup_vcs_test_fixtures(self)
 
     def tearDown(self):
-        del(self.vcs)
+        self.vcs.cleanup()
         super(VCSTestCase, self).tearDown()
 
     def full_path(self, rel_path):

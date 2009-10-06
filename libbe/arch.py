@@ -70,7 +70,7 @@ class Arch(vcs.VCS):
         """
         Create a temporary Arch archive in the directory PATH.  This
         archive will be removed by
-          __del__->cleanup->_vcs_cleanup->_remove_archive
+          cleanup->_vcs_cleanup->_remove_archive
         """
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
@@ -112,7 +112,7 @@ class Arch(vcs.VCS):
         """
         Create a temporary Arch project in the directory PATH.  This
         project will be removed by
-          __del__->cleanup->_vcs_cleanup->_remove_project
+          cleanup->_vcs_cleanup->_remove_project
         """
         # http://mwolson.org/projects/GettingStartedWithArch.html
         # http://regexps.srparish.net/tutorial-tla/new-project.html#Starting_a_New_Project
