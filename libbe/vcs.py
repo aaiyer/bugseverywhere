@@ -50,7 +50,7 @@ def _get_matching_vcs(matchfn):
         vcs = module.new()
         if matchfn(vcs) == True:
             return vcs
-        del(vcs)
+        vcs.cleanup()
     return VCS()
     
 def vcs_by_name(vcs_name):
@@ -124,15 +124,12 @@ class VCS(object):
         self._duplicateBasedir = None
         self._duplicateDirname = None
         self.encoding = encoding
-    def __del__(self):
-        self.cleanup()
-
-    def _vcs_help(self):
+        self.version = self._get_version()
+    def _vcs_version(self):
         """
-        Return the command help string.
-        (Allows a simple test to see if the client is installed.)
+        Return the VCS version string.
         """
-        pass
+        return "0.0"
     def _vcs_detect(self, path=None):
         """
         Detect whether a directory is revision controlled with this VCS.
@@ -231,15 +228,21 @@ class VCS(object):
         specified revision does not exist.
         """
         return None
-    def installed(self):
+    def _get_version(self):
         try:
-            self._vcs_help()
-            return True
+            ret = self._vcs_version()
+            return ret
         except OSError, e:
             if e.errno == errno.ENOENT:
-                return False
+                return None
+            else:
+                raise OSError, e
         except CommandError:
-            return False
+            return None
+    def installed(self):
+        if self.version != None:
+            return True
+        return False
     def detect(self, path="."):
         """
         Detect whether a directory is revision controlled with this VCS.
@@ -674,7 +677,7 @@ class VCSTestCase(unittest.TestCase):
         setup_vcs_test_fixtures(self)
 
     def tearDown(self):
-        del(self.vcs)
+        self.vcs.cleanup()
         super(VCSTestCase, self).tearDown()
 
     def full_path(self, rel_path):
@@ -837,6 +840,7 @@ class VCS_commit_TestCase(VCSTestCase):
 
     def test_revision_file_contents_as_committed(self):
         """Should get file contents as committed to specified revision."""
+        import sys
         if not self.vcs.versioned:
             return
         for path in self.test_files:

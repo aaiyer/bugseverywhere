@@ -40,8 +40,10 @@ class Darcs(vcs.VCS):
     name="darcs"
     client="darcs"
     versioned=True
-    def _vcs_help(self):
-        status,output,error = self._u_invoke_client("--help")
+    def _vcs_version(self):
+        status,output,error = self._u_invoke_client("--version")
+        num_part = output.split(" ")[0]
+        self.parsed_version = [int(i) for i in num_part.split(".")]
         return output
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, "_darcs") != None :
@@ -95,20 +97,20 @@ class Darcs(vcs.VCS):
     def _vcs_get_file_contents(self, path, revision=None, binary=False):
         if revision == None:
             return vcs.VCS._vcs_get_file_contents(self, path, revision,
-                                              binary=binary)
+                                                  binary=binary)
         else:
-            try:
-                return self._u_invoke_client("show", "contents", "--patch", revision, path)
-            except vcs.CommandError:
+            if self.parsed_version[0] >= 2:
+                status,output,error = self._u_invoke_client( \
+                    "show", "contents", "--patch", revision, path)
+                return output
+            else:
                 # Darcs versions < 2.0.0pre2 lack the "show contents" command
 
-                status,output,error = self._u_invoke_client("diff", "--unified",
-                                                            "--from-patch",
-                                                            revision, path)
+                status,output,error = self._u_invoke_client( \
+                    "diff", "--unified", "--from-patch", revision, path)
                 major_patch = output
-                status,output,error = self._u_invoke_client("diff", "--unified",
-                                                            "--patch",
-                                                            revision, path)
+                status,output,error = self._u_invoke_client( \
+                    "diff", "--unified", "--patch", revision, path)
                 target_patch = output
                 
                 # "--output -" to be supported in GNU patch > 2.5.9

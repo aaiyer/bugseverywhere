@@ -36,8 +36,8 @@ class Git(vcs.VCS):
     name="git"
     client="git"
     versioned=True
-    def _vcs_help(self):
-        status,output,error = self._u_invoke_client("--help")
+    def _vcs_version(self):
+        status,output,error = self._u_invoke_client("--version")
         return output
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, ".git") != None :

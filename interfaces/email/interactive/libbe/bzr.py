@@ -37,8 +37,8 @@ class Bzr(vcs.VCS):
     name = "bzr"
     client = "bzr"
     versioned = True
-    def _vcs_help(self):
-        status,output,error = self._u_invoke_client("--help")
+    def _vcs_version(self):
+        status,output,error = self._u_invoke_client("--version")
         return output        
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, ".bzr") != None :

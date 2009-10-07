@@ -32,7 +32,7 @@ def execute(args, manipulate_encodings=True):
     >>> execute(['--root', dir.path], manipulate_encodings=False)
     No revision control detected.
     Directory initialized.
-    >>> del(dir)
+    >>> dir.cleanup()
 
     >>> dir = utility.Dir()
     >>> os.chdir(dir.path)

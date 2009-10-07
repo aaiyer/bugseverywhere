@@ -53,8 +53,8 @@ class Arch(vcs.VCS):
     _project_name = None
     _tmp_project = False
     _arch_paramdir = os.path.expanduser("~/.arch-params")
-    def _vcs_help(self):
-        status,output,error = self._u_invoke_client("--help")
+    def _vcs_version(self):
+        status,output,error = self._u_invoke_client("--version")
         return output
     def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
@@ -70,7 +70,7 @@ class Arch(vcs.VCS):
         """
         Create a temporary Arch archive in the directory PATH.  This
         archive will be removed by
-          __del__->cleanup->_vcs_cleanup->_remove_archive
+          cleanup->_vcs_cleanup->_remove_archive
         """
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
@@ -112,7 +112,7 @@ class Arch(vcs.VCS):
         """
         Create a temporary Arch project in the directory PATH.  This
         project will be removed by
-          __del__->cleanup->_vcs_cleanup->_remove_project
+          cleanup->_vcs_cleanup->_remove_project
         """
         # http://mwolson.org/projects/GettingStartedWithArch.html
         # http://regexps.srparish.net/tutorial-tla/new-project.html#Starting_a_New_Project
