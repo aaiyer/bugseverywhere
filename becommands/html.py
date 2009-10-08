@@ -456,7 +456,7 @@ class BEHTMLGen():
         
         %s
         
-        
+        %s
         </tbody>
         </table>
         </div>
@@ -472,21 +472,14 @@ class BEHTMLGen():
         <td align="right">%s</td><td>%s</td>
         </tr>
         """
-        
 
         
-        self.comment_section = """
-        """
-        
-        self.begin_comment_section ="""
+        self.comment_section ="""
         <tr>
         <td align="right">Comments:
         </td>
         <td>
-        """
-        
-        
-        self.end_comment_section ="""
+        %s
         </td>
         </tr>
         """
@@ -511,7 +504,12 @@ class BEHTMLGen():
                 FI.close()
             except:
                 pass
-
+            try:
+                FI.open("%s/comment_section.tpl"%self.template)
+                self.comment_section = FI.read()
+                FI.close()
+            except:
+                pass
         
     def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug, fileid, encoding):
         
@@ -602,21 +600,16 @@ class BEHTMLGen():
         det_line += self.detail_line%("Created : ", escape(bug.time_string))
         det_line += self.detail_line%("Summary : ", escape(bug.summary))
         det_line += """<tr><td colspan="2"><hr /></td></tr>"""
-        
-        if fileid == "active":
-            FD.write(detail_file_%(encoding, "../index.html", det_line, "../index.html"))
-        if fileid == "inactive":
-            FD.write(detail_file_%(encoding, "../index_inactive.html", det_line, "../index_inactive.html"))
-            
-        FD.write(self.begin_comment_section)
+
         tr = []
         b = ''
         level = 0
         stack = []
+        com = ""
         for depth,comment in bug_.comment_root.thread(flatten=False):
             while len(stack) > depth:
                 stack.pop(-1)      # pop non-parents off the stack
-                FD.write("</div>\n") # close non-parent <div class="comment...
+                com += "</div>\n" # close non-parent <div class="comment...
             assert len(stack) == depth
             stack.append(comment)
             lines = ["--------- Comment ---------",
@@ -626,14 +619,20 @@ class BEHTMLGen():
                      ""]
             lines.extend(escape(comment.body).splitlines())
             if depth == 0:
-                FD.write('<div class="commentF">')
+                com += '<div class="commentF">'
             else:
-                FD.write('<div class="comment">')
-            FD.write("<br />\n".join(lines)+"<br />\n")
+                com += '<div class="comment">'
+            #FD.write("<br />\n".join(lines)+"<br />\n")
+            com += "<br />\n".join(lines)+"<br />\n"
         while len(stack) > 0:
             stack.pop(-1)
-            FD.write("</div>\n") # close every remaining <div class="comment...
-        FD.write(self.end_comment_section)
+            com += "</div>\n" # close every remaining <div class="comment...
+        comments = self.comment_section%com
+        
+        if fileid == "active":
+            FD.write(detail_file_%(encoding, "../index.html", det_line, comments, "../index.html"))
+        if fileid == "inactive":
+            FD.write(detail_file_%(encoding, "../index_inactive.html", det_line, comments, "../index_inactive.html"))
         FD.close()
         
    
