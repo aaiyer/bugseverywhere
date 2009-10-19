@@ -48,15 +48,21 @@ def execute(args, manipulate_encodings=True):
     complete(options, args, parser)
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==False})
-    
+
     if len(args) == 0:
         out_dir = options.outdir
-        print "Creating the html output in %s"%out_dir
+        template = options.template
+        if template == None:
+            _css_file = "default"
+        else:
+            _css_file = template
+        if options.verbose == True:
+            print "Creating the html output in %s using %s template"%(out_dir, _css_file)
     else:
         out_dir = args[0]
     if len(args) > 0:
         raise cmdutil.UsageError, "Too many arguments."
-    
+
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     bd.load_all_bugs()
@@ -79,15 +85,19 @@ def execute(args, manipulate_encodings=True):
     ordered_bug_list = sorted([(value,key) for (key,value) in stime.items()])
     ordered_bug_list_in = sorted([(value,key) for (key,value) in stime.items()])
     #open_bug_list = sorted([(value,key) for (key,value) in bugs.items()])
-    
-    html_gen = BEHTMLGen(bd)
+
+    html_gen = BEHTMLGen(bd, template, options.verbose)
     html_gen.create_index_file(out_dir,  st, bugs_active, ordered_bug_list, "active", bd.encoding)
     html_gen.create_index_file(out_dir,  st, bugs_inactive, ordered_bug_list, "inactive", bd.encoding)
-    
+
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be open OUTPUT_DIR")
+    parser = cmdutil.CmdOptionParser("be html [options]")
     parser.add_option("-o", "--output", metavar="export_dir", dest="outdir",
-        help="Set the output path, default is ./html_export", default="html_export")    
+        help="Set the output path, default is ./html_export", default="html_export")
+    parser.add_option("-t", "--template-dir", metavar="template", dest="template",
+        help="Use a different template, default is empty", default=None)
+    parser.add_option("-v", "--verbose",  action="store_true", metavar="verbose", dest="verbose",
+        help="Verbose output, default is no", default=False)
     return parser
 
 longhelp="""
@@ -102,7 +112,7 @@ def complete(options, args, parser):
     for option, value in cmdutil.option_value_pairs(options, parser):
         if "--complete" in args:
             raise cmdutil.GetCompletions() # no positional arguments for list
-        
+
 
 def escape(string):
     if string == None:
@@ -116,289 +126,305 @@ def escape(string):
     return "".join(chars)
 
 class BEHTMLGen():
-    def __init__(self, bd):
-        self.index_value = ""    
+    def __init__(self, bd, template, verbose):
+        self.index_value = ""
         self.bd = bd
-        
+        self.verbose = verbose
+        if template == None:
+            self.template = "default"
+        else:
+            self.template = template
+
         self.css_file = """
-        body {
-        font-family: "lucida grande", "sans serif";
-        color: #333;
-        width: auto;
-        margin: auto;
-        }
-        
-        
-        div.main {
-        padding: 20px;
-        margin: auto;
-        padding-top: 0;
-        margin-top: 1em;
-        background-color: #fcfcfc;
-        }
-        
-        .comment {
-        padding: 20px;
-        margin: auto;
-        padding-top: 20px;
-        margin-top: 0;
-        }
-        
-        .commentF {
-        padding: 0px;
-        margin: auto;
-        padding-top: 0px;
-        paddin-bottom: 20px;
-        margin-top: 0;
-        }
-        
-        tb {
-        border = 1;
-        }
-        
-        .wishlist-row {
-        background-color: #B4FF9B;
-        width: auto;
-        }
-        
-        .minor-row {
-        background-color: #FCFF98;
-        width: auto;
-        }
-        
-        
-        .serious-row {
-        background-color: #FFB648;
-        width: auto;
-        }
-        
-        .critical-row {
-        background-color: #FF752A;
-        width: auto;
-        }
-        
-        .fatal-row {
-        background-color: #FF3300;
-        width: auto;
-        }
-                
-        .person {
-        font-family: courier;
-        }
-        
-        a, a:visited {
-        background: inherit;
-        text-decoration: none;
-        }
-        
-        a {
-        color: #003d41;
-        }
-        
-        a:visited {
-        color: #553d41;
-        }
-        
-        ul {
-        list-style-type: none;
-        padding: 0;
-        }
-        
-        p {
-        width: auto;
-        }
-        
-        .inline-status-image {
-        position: relative;
-        top: 0.2em;
-        }
-        
-        .dimmed {
-        color: #bbb;
-        }
-        
-        table {
-        border-style: 10px solid #313131;
-        border-spacing: 0;
-        width: auto;
-        }
-        
-        table.log {
-        }
-        
-        td {
-        border-width: 0;
-        border-style: none;
-        padding-right: 0.5em;
-        padding-left: 0.5em;
-        width: auto;
-        }
-        
-        .td_sel {
-        background-color: #afafaf;
-        border: 1px solid #afafaf;
-        font-weight:bold;
-        padding-right: 1em;
-        padding-left: 1em;
-        
-        }
-        
-        .td_nsel {
-        border: 0px;
-        padding-right: 1em;
-        padding-left: 1em;
-        }
-        
-        tr {
-        vertical-align: top;
-        width: auto;
-        }
-        
-        h1 {
-        padding: 0.5em;
-        background-color: #305275;
-        margin-top: 0;
-        margin-bottom: 0;
-        color: #fff;
-        margin-left: -20px;
-        margin-right: -20px;  
-        }
-        
-        wid {
-        text-transform: uppercase;
-        font-size: smaller;
-        margin-top: 1em;
-        margin-left: -0.5em;  
-        /*background: #fffbce;*/
-        /*background: #628a0d;*/
-        padding: 5px;
-        color: #305275;
-        }
-        
-        .attrname {
-        text-align: right;
-        font-size: smaller;
-        }
-        
-        .attrval {
-        color: #222;
-        }
-        
-        .issue-closed-fixed {
-        background-image: "green-check.png";
-        }
-        
-        .issue-closed-wontfix {
-        background-image: "red-check.png";
-        }
-        
-        .issue-closed-reorg {
-        background-image: "blue-check.png";
-        }
-        
-        .inline-issue-link {
-        text-decoration: underline;
-        }
-        
-        img {
-        border: 0;
-        }
-        
-        
-        div.footer {
-        font-size: small;
-        padding-left: 20px;
-        padding-right: 20px;
-        padding-top: 5px;
-        padding-bottom: 5px;
-        margin: auto;
-        background: #305275;
-        color: #fffee7;
-        }
-        
-        .footer a {
-        color: #508d91;
-        }
-        
-        
-        .header {
-        font-family: "lucida grande", "sans serif";
-        font-size: smaller;
-        background-color: #a9a9a9;
-        text-align: left;
-        
-        padding-right: 0.5em;
-        padding-left: 0.5em;
-        
-        }
-        
-        
-        .selected-cell {
-        background-color: #e9e9e2;
-        }
-        
-        .plain-cell {
-        background-color: #f9f9f9;
-        }
-        
-        
-        .logcomment {
-        padding-left: 4em;
-        font-size: smaller;
-        }
-        
-        .id {
-        font-family: courier;
-        }
-        
-        .table_bug {
-        background-color: #afafaf;
-        border: 2px solid #afafaf;
-        }
-        
-        .message {
-        }
-        
-        .progress-meter-done {
-        background-color: #03af00;
-        }
-        
-        .progress-meter-undone {
-        background-color: #ddd;
-        }
-        
-        .progress-meter {
-        }
-        
+            body {
+            font-family: "lucida grande", "sans serif";
+            color: #333;
+            width: auto;
+            margin: auto;
+            }
+
+
+            div.main {
+            padding: 20px;
+            margin: auto;
+            padding-top: 0;
+            margin-top: 1em;
+            background-color: #fcfcfc;
+            }
+
+            .comment {
+            padding: 20px;
+            margin: auto;
+            padding-top: 20px;
+            margin-top: 0;
+            }
+
+            .commentF {
+            padding: 0px;
+            margin: auto;
+            padding-top: 0px;
+            paddin-bottom: 20px;
+            margin-top: 0;
+            }
+
+            tb {
+            border = 1;
+            }
+
+            .wishlist-row {
+            background-color: #B4FF9B;
+            width: auto;
+            }
+
+            .minor-row {
+            background-color: #FCFF98;
+            width: auto;
+            }
+
+
+            .serious-row {
+            background-color: #FFB648;
+            width: auto;
+            }
+
+            .critical-row {
+            background-color: #FF752A;
+            width: auto;
+            }
+
+            .fatal-row {
+            background-color: #FF3300;
+            width: auto;
+            }
+
+            .person {
+            font-family: courier;
+            }
+
+            a, a:visited {
+            background: inherit;
+            text-decoration: none;
+            }
+
+            a {
+            color: #003d41;
+            }
+
+            a:visited {
+            color: #553d41;
+            }
+
+            ul {
+            list-style-type: none;
+            padding: 0;
+            }
+
+            p {
+            width: auto;
+            }
+
+            .inline-status-image {
+            position: relative;
+            top: 0.2em;
+            }
+
+            .dimmed {
+            color: #bbb;
+            }
+
+            table {
+            border-style: 10px solid #313131;
+            border-spacing: 0;
+            width: auto;
+            }
+
+            table.log {
+            }
+
+            td {
+            border-width: 0;
+            border-style: none;
+            padding-right: 0.5em;
+            padding-left: 0.5em;
+            width: auto;
+            }
+
+            .td_sel {
+            background-color: #afafaf;
+            border: 1px solid #afafaf;
+            font-weight:bold;
+            padding-right: 1em;
+            padding-left: 1em;
+
+            }
+
+            .td_nsel {
+            border: 0px;
+            padding-right: 1em;
+            padding-left: 1em;
+            }
+
+            tr {
+            vertical-align: top;
+            width: auto;
+            }
+
+            h1 {
+            padding: 0.5em;
+            background-color: #305275;
+            margin-top: 0;
+            margin-bottom: 0;
+            color: #fff;
+            margin-left: -20px;
+            margin-right: -20px;
+            }
+
+            wid {
+            text-transform: uppercase;
+            font-size: smaller;
+            margin-top: 1em;
+            margin-left: -0.5em;
+            /*background: #fffbce;*/
+            /*background: #628a0d;*/
+            padding: 5px;
+            color: #305275;
+            }
+
+            .attrname {
+            text-align: right;
+            font-size: smaller;
+            }
+
+            .attrval {
+            color: #222;
+            }
+
+            .issue-closed-fixed {
+            background-image: "green-check.png";
+            }
+
+            .issue-closed-wontfix {
+            background-image: "red-check.png";
+            }
+
+            .issue-closed-reorg {
+            background-image: "blue-check.png";
+            }
+
+            .inline-issue-link {
+            text-decoration: underline;
+            }
+
+            img {
+            border: 0;
+            }
+
+
+            div.footer {
+            font-size: small;
+            padding-left: 20px;
+            padding-right: 20px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            margin: auto;
+            background: #305275;
+            color: #fffee7;
+            }
+
+            .footer a {
+            color: #508d91;
+            }
+
+
+            .header {
+            font-family: "lucida grande", "sans serif";
+            font-size: smaller;
+            background-color: #a9a9a9;
+            text-align: left;
+
+            padding-right: 0.5em;
+            padding-left: 0.5em;
+
+            }
+
+
+            .selected-cell {
+            background-color: #e9e9e2;
+            }
+
+            .plain-cell {
+            background-color: #f9f9f9;
+            }
+
+
+            .logcomment {
+            padding-left: 4em;
+            font-size: smaller;
+            }
+
+            .id {
+            font-family: courier;
+            }
+
+            .table_bug {
+            background-color: #afafaf;
+            border: 2px solid #afafaf;
+            }
+
+            .message {
+            }
+
+            .progress-meter-done {
+            background-color: #03af00;
+            }
+
+            .progress-meter-undone {
+            background-color: #ddd;
+            }
+
+            .progress-meter {
+            }
         """
-        
-        self.index_first = """
-        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-        <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-        <head>
-        <title>BugsEverywhere Issue Tracker</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=%s" />
-        <link rel="stylesheet" href="style.css" type="text/css" />
-        </head>
-        <body>
-        
-        
-        <div class="main">
-        <h1>BugsEverywhere Bug List</h1>
-        <p></p>
-        <table>
-        
-        <tr>
-        <td class="%%s"><a href="index.html">Active Bugs</a></td>
-        <td class="%%s"><a href="index_inactive.html">Inactive Bugs</a></td>
-        </tr>
-        
-        </table>
-        <table class="table_bug">
-        <tbody>
-        """ % self.bd.encoding
-        
+
+        self.index_file = """
+            <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+            "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+            <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+            <head>
+            <title>BugsEverywhere Issue Tracker</title>
+            <meta http-equiv="Content-Type" content="text/html; charset=%s" />
+            <link rel="stylesheet" href="style.css" type="text/css" />
+            </head>
+            <body>
+
+
+            <div class="main">
+            <h1>BugsEverywhere Bug List</h1>
+            <p></p>
+            <table>
+
+            <tr>
+            <td class="%s"><a href="index.html">Active Bugs</a></td>
+            <td class="%s"><a href="index_inactive.html">Inactive Bugs</a></td>
+            </tr>
+
+            </table>
+            <table class="table_bug">
+            <tbody>
+
+            %s
+
+            </tbody>
+            </table>
+
+            </div>
+
+            <div class="footer">Generated by <a href="http://www.bugseverywhere.org/">BugsEverywhere</a> on %s</div>
+
+            </body>
+            </html>
+        """
+
         self.bug_line ="""
         <tr class="%s-row">
         <td ><a href="bugs/%s.html">%s</a></td>
@@ -408,8 +434,8 @@ class BEHTMLGen():
         <td><a href="bugs/%s.html">%s</a></td>
         </tr>
         """
-        
-        self.detail_first = """
+
+        self.detail_file = """
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
           "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -419,53 +445,18 @@ class BEHTMLGen():
         <link rel="stylesheet" href="../style.css" type="text/css" />
         </head>
         <body>
-        
-        
+
+
         <div class="main">
         <h1>BugsEverywhere Bug List</h1>
         <h5><a href="%%s">Back to Index</a></h5>
         <h2>Bug: _bug_id_</h2>
         <table >
         <tbody>
-        """ % self.bd.encoding
-        
-        
-        
-        self.detail_line ="""
-        <tr>
-        <td align="right">%s</td><td>%s</td>
-        </tr>
-        """
-        
-        self.index_last = """
-        </tbody>
-        </table>
-        
-        </div>
-        
-        <div class="footer">Generated by <a href="http://www.bugseverywhere.org/">BugsEverywhere</a> on %s</div>
-        
-        </body>
-        </html>
-        """
-        
-        self.comment_section = """
-        """
-        
-        self.begin_comment_section ="""
-        <tr>
-        <td align="right">Comments:
-        </td>
-        <td>
-        """
-        
-        
-        self.end_comment_section ="""
-        </td>
-        </tr>
-        """
-        
-        self.detail_last = """
+
+        %s
+
+        %s
         </tbody>
         </table>
         </div>
@@ -473,10 +464,55 @@ class BEHTMLGen():
         <div class="footer">Generated by <a href="http://www.bugseverywhere.org/">BugsEverywhere</a>.</div>
         </body>
         </html>
-        """   
-        
-        
+
+        """
+
+        self.detail_line ="""
+        <tr>
+        <td align="right">%s</td><td>%s</td>
+        </tr>
+        """
+
+
+        self.comment_section ="""
+        <tr>
+        <td align="right">Comments:
+        </td>
+        <td>
+        %s
+        </td>
+        </tr>
+        """
+
+        if template != None:
+            try:
+                FI = open("%s/style.css"%self.template)
+                self.css_file = FI.read()
+                FI.close()
+            except:
+                pass
+            try:
+                FI = open("%s/index_file.tpl"%self.template)
+                self.index_first = FI.read()
+                FI.close()
+            except:
+                pass
+
+            try:
+                FI.open("%s/detail_file.tpl"%self.template)
+                self.detail_first = FI.read()
+                FI.close()
+            except:
+                pass
+            try:
+                FI.open("%s/comment_section.tpl"%self.template)
+                self.comment_section = FI.read()
+                FI.close()
+            except:
+                pass
+
     def create_index_file(self, out_dir_path,  summary,  bugs, ordered_bug, fileid, encoding):
+
         try:
             os.stat(out_dir_path)
         except:
@@ -490,37 +526,54 @@ class BEHTMLGen():
             FO.close()
         except:
             raise  cmdutil.UsageError, "Cannot create the style.css file."
-        
+
         try:
             os.mkdir(out_dir_path+"/bugs")
         except:
             pass
-        
+
         try:
             if fileid == "active":
+                if self.verbose:
+                    print "Creating active bug index..."
                 FO = codecs.open(out_dir_path+"/index.html", "w", encoding)
-                FO.write(self.index_first%('td_sel','td_nsel'))
             if fileid == "inactive":
+                if self.verbose:
+                    print "Creating inactive bug index..."
                 FO = codecs.open(out_dir_path+"/index_inactive.html", "w", encoding)
-                FO.write(self.index_first%('td_nsel','td_sel'))
         except:
             raise  cmdutil.UsageError, "Cannot create the index.html file."
-        
+
         c = 0
         t = len(bugs) - 1
+        line = ""
         for l in range(t,  -1,  -1):
-            line = self.bug_line%(escape(bugs[l].severity),
+            if self.verbose:
+                print "Creating bug entry: %s"%escape(bugs[l].uuid[0:3])
+            line += self.bug_line%(escape(bugs[l].severity),
                                   escape(bugs[l].uuid), escape(bugs[l].uuid[0:3]),
                                   escape(bugs[l].uuid), escape(bugs[l].status),
                                   escape(bugs[l].uuid), escape(bugs[l].severity),
                                   escape(bugs[l].uuid), escape(bugs[l].summary),
                                   escape(bugs[l].uuid), escape(bugs[l].time_string)
                                   )
-            FO.write(line)
             c += 1
+            if self.verbose:
+                print "\tCreating detail entry for bug: %s"%escape(bugs[l].uuid[0:3])
             self.create_detail_file(bugs[l], out_dir_path, fileid, encoding)
         when = time.ctime()
-        FO.write(self.index_last%when)
+
+        try:
+            if fileid == "active":
+                if self.verbose:
+                    print "Writing active bug index..."
+                FO.write(self.index_file%(encoding, 'td_sel','td_nsel', line, when))
+            if fileid == "inactive":
+                if self.verbose:
+                    print "Writing inactive bug index..."
+                FO.write(self.index_file%(encoding,'td_nsel','td_sel', line, when))
+        except:
+            raise  cmdutil.UsageError, "Cannot create the index.html file."
 
 
     def create_detail_file(self, bug, out_dir_path, fileid, encoding):
@@ -531,37 +584,32 @@ class BEHTMLGen():
         except:
             raise  cmdutil.UsageError, "Cannot create the detail html file."
 
-        detail_first_ = re.sub('_bug_id_', bug.uuid[0:3], self.detail_first)
-        if fileid == "active":
-            FD.write(detail_first_%"../index.html")
-        if fileid == "inactive":
-            FD.write(detail_first_%"../index_inactive.html")
-            
-        
-         
+        detail_file_ = re.sub('_bug_id_', bug.uuid[0:3], self.detail_file)
+
         bug_ = self.bd.bug_from_shortname(bug.uuid)
         bug_.load_comments(load_full=True)
-        
-        FD.write(self.detail_line%("ID : ", bug.uuid))
-        FD.write(self.detail_line%("Short name : ", escape(bug.uuid[0:3])))
-        FD.write(self.detail_line%("Severity : ", escape(bug.severity)))
-        FD.write(self.detail_line%("Status : ", escape(bug.status)))
-        FD.write(self.detail_line%("Assigned : ", escape(bug.assigned)))
-        FD.write(self.detail_line%("Target : ", escape(bug.target)))
-        FD.write(self.detail_line%("Reporter : ", escape(bug.reporter)))
-        FD.write(self.detail_line%("Creator : ", escape(bug.creator)))
-        FD.write(self.detail_line%("Created : ", escape(bug.time_string)))
-        FD.write(self.detail_line%("Summary : ", escape(bug.summary)))
-        FD.write("<tr><td colspan=\"2\"><hr /></td></tr>")
-        FD.write(self.begin_comment_section)
+        det_line = ""
+        det_line += self.detail_line%("ID : ", bug.uuid)
+        det_line += self.detail_line%("Short name : ", escape(bug.uuid[0:3]))
+        det_line += self.detail_line%("Severity : ", escape(bug.severity))
+        det_line += self.detail_line%("Status : ", escape(bug.status))
+        det_line += self.detail_line%("Assigned : ", escape(bug.assigned))
+        det_line += self.detail_line%("Target : ", escape(bug.target))
+        det_line += self.detail_line%("Reporter : ", escape(bug.reporter))
+        det_line += self.detail_line%("Creator : ", escape(bug.creator))
+        det_line += self.detail_line%("Created : ", escape(bug.time_string))
+        det_line += self.detail_line%("Summary : ", escape(bug.summary))
+        det_line += """<tr><td colspan="2"><hr /></td></tr>"""
+
         tr = []
         b = ''
         level = 0
         stack = []
+        com = ""
         for depth,comment in bug_.comment_root.thread(flatten=False):
             while len(stack) > depth:
                 stack.pop(-1)      # pop non-parents off the stack
-                FD.write("</div>\n") # close non-parent <div class="comment...
+                com += "</div>\n" # close non-parent <div class="comment...
             assert len(stack) == depth
             stack.append(comment)
             lines = ["--------- Comment ---------",
@@ -571,18 +619,18 @@ class BEHTMLGen():
                      ""]
             lines.extend(escape(comment.body).splitlines())
             if depth == 0:
-                FD.write('<div class="commentF">')
+                com += '<div class="commentF">'
             else:
-                FD.write('<div class="comment">')
-            FD.write("<br />\n".join(lines)+"<br />\n")
+                com += '<div class="comment">'
+            #FD.write("<br />\n".join(lines)+"<br />\n")
+            com += "<br />\n".join(lines)+"<br />\n"
         while len(stack) > 0:
             stack.pop(-1)
-            FD.write("</div>\n") # close every remaining <div class="comment...
-        FD.write(self.end_comment_section)
+            com += "</div>\n" # close every remaining <div class="comment...
+        comments = self.comment_section%com
+
         if fileid == "active":
-            FD.write(self.detail_last%"../index.html")
+            FD.write(detail_file_%(encoding, "../index.html", det_line, comments, "../index.html"))
         if fileid == "inactive":
-            FD.write(self.detail_last%"../index_inactive.html")
+            FD.write(detail_file_%(encoding, "../index_inactive.html", det_line, comments, "../index_inactive.html"))
         FD.close()
-        
-   
