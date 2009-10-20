@@ -159,9 +159,27 @@ class HTMLGen (object):
         if self.verbose:
             print "\tCreating bug file for %s" % self.bd.bug_shortname(bug)
         assert hasattr(self, "out_dir_bugs"), "Must run after ._create_output_directories()"
-        esc = self._escape
 
         bug.load_comments(load_full=True)
+        comment_entries = self._generate_bug_comment_entries(bug)
+        filename = "%s.html" % bug.uuid
+        fullpath = os.path.join(self.out_dir_bugs, filename)
+        template_info = {'title':self.title,
+                         'charset':self.encoding,
+                         'up_link':up_link,
+                         'shortname':self.bd.bug_shortname(bug),
+                         'comment_entries':comment_entries,
+                         'generation_time':self.generation_time}
+        for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
+                     'reporter', 'creator', 'time_string', 'summary']:
+            template_info[attr] = self._escape(getattr(bug, attr))
+        f = codecs.open(fullpath, "w", self.encoding)
+        f.write(self.bug_file % template_info)
+        f.close()
+
+    def _generate_bug_comment_entries(self, bug):
+        assert hasattr(self, "out_dir_bugs"), "Must run after ._create_output_directories()"
+
         stack = []
         comment_entries = []
         for depth,comment in bug.comment_root.thread(flatten=False):
@@ -178,34 +196,40 @@ class HTMLGen (object):
             for attr in ['uuid', 'author', 'date', 'body']:
                 value = getattr(comment, attr)
                 if attr == 'body':
+                    save_body = False
                     if comment.content_type == 'text/html':
                         pass # no need to escape html...
                     elif comment.content_type.startswith('text/'):
-                        value = '<pre>\n'+esc(value)+'\n</pre>'
+                        value = '<pre>\n'+self._escape(value)+'\n</pre>'
+                    elif comment.content_type.startswith('image/'):
+                        save_body = True
+                        value = '<img src="./%s/%s" />' \
+                            % (bug.uuid, comment.uuid)
                     else:
-                        value = "TODO: linkout to %s" % comment.content_type
+                        save_body = True
+                        value = '<a href="./%s/%s">Link to %s file</a>.' \
+                            % (bug.uuid, comment.uuid, comment.content_type)
+                    if save_body == True:
+                        per_bug_dir = os.path.join(self.out_dir_bugs, bug.uuid)
+                        if not os.path.exists(per_bug_dir):
+                            os.mkdir(per_bug_dir)
+                        comment_path = os.path.join(per_bug_dir, comment.uuid)
+                        f = codecs.open(os.path.join(per_bug_dir, '.htaccess'),
+                                        'a', self.encoding)
+                        f.write('<Files %s>\n  ForceType %s\n</Files>' \
+                                    % (comment.uuid, comment.content_type))
+                        f.close()
+                        f = open(os.path.join(per_bug_dir, comment.uuid), "wb")
+                        f.write(comment.body)
+                        f.close
                 else:
-                    value = esc(value)
+                    value = self._escape(value)
                 template_info[attr] = value
             comment_entries.append(self.bug_comment_entry % template_info)
         while len(stack) > 0:
             stack.pop(-1)
             comment_entries.append("</div>\n") # close every remaining <div class="comment...
-
-        filename = "%s.html" % bug.uuid
-        fullpath = os.path.join(self.out_dir_bugs, filename)
-        template_info = {'title':self.title,
-                         'charset':self.encoding,
-                         'up_link':up_link,
-                         'shortname':self.bd.bug_shortname(bug),
-                         'comment_entries':'\n'.join(comment_entries),
-                         'generation_time':self.generation_time}
-        for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
-                     'reporter', 'creator', 'time_string', 'summary']:
-            template_info[attr] = esc(getattr(bug, attr))
-        f = codecs.open(fullpath, "w", self.encoding)
-        f.write(self.bug_file % template_info)
-        f.close()
+        return '\n'.join(comment_entries)
 
     def _write_index_file(self, bugs, title, index_header, bug_type="active"):
         if self.verbose:
@@ -213,15 +237,7 @@ class HTMLGen (object):
         assert hasattr(self, "out_dir"), "Must run after ._create_output_directories()"
         esc = self._escape
 
-        bug_entries = []
-        for b in bugs:
-            if self.verbose:
-                print "\tCreating bug entry for %s" % self.bd.bug_shortname(b)
-            template_info = {'shortname':self.bd.bug_shortname(b)}
-            for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
-                         'reporter', 'creator', 'time_string', 'summary']:
-                template_info[attr] = esc(getattr(b, attr))
-            bug_entries.append(self.index_bug_entry % template_info)
+        bug_entries = self._generate_index_bug_entries(bugs)
 
         if bug_type == "active":
             filename = "index.html"
@@ -234,7 +250,7 @@ class HTMLGen (object):
                          'charset':self.encoding,
                          'active_class':'tab sel',
                          'inactive_class':'tab nsel',
-                         'bug_entries':'\n'.join(bug_entries),
+                         'bug_entries':bug_entries,
                          'generation_time':self.generation_time}
         if bug_type == "inactive":
             template_info['active_class'] = 'tab nsel'
@@ -243,6 +259,18 @@ class HTMLGen (object):
         f = codecs.open(os.path.join(self.out_dir, filename), "w", self.encoding)
         f.write(self.index_file % template_info)
         f.close()
+
+    def _generate_index_bug_entries(self, bugs):
+        bug_entries = []
+        for bug in bugs:
+            if self.verbose:
+                print "\tCreating bug entry for %s" % self.bd.bug_shortname(bug)
+            template_info = {'shortname':self.bd.bug_shortname(bug)}
+            for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
+                         'reporter', 'creator', 'time_string', 'summary']:
+                template_info[attr] = self._escape(getattr(bug, attr))
+            bug_entries.append(self.index_bug_entry % template_info)
+        return '\n'.join(bug_entries)
 
     def _escape(self, string):
         if string == None:
