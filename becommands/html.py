@@ -50,12 +50,16 @@ def execute(args, manipulate_encodings=True):
         raise cmdutil.UsageError, 'Too many arguments.'
 
     template = options.template
+
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     bd.load_all_bugs()
 
     html_gen = HTMLGen(bd, template=options.template, verbose=options.verbose,
                        title=options.title, index_header=options.index_header )
+    if options.exp_template == True:
+        html_gen.write_default_template(options.exp_dir_template)
+        return
     html_gen.run(options.out_dir)
 
 def get_parser():
@@ -71,7 +75,11 @@ def get_parser():
         help='Set the index page headers (%default)',
         default='BugsEverywhere Bug List')
     parser.add_option('-v', '--verbose',  action='store_true', metavar='verbose', dest='verbose',
-        help='Verbose output, default is no', default=False)
+        help='Verbose output, default is %default', default=False)
+    parser.add_option('-e', '--export-template',  action='store_true', metavar='STRING', dest='exp_template',
+        help='Export the default template into a directory (%default)', default='./templates/default')
+    parser.add_option('-d', '--export-dir_template', metavar='STRING', dest='exp_dir_template',
+        help='Export the default template into a directory (%default)', default='./templates/default')
     return parser
 
 longhelp="""
@@ -110,11 +118,13 @@ class HTMLGen (object):
         if template != None:
             self._load_user_templates()
 
+
+            
     def run(self, out_dir):
         if self.verbose == True:
             print "Creating the html output in %s using templates in %s" \
                 % (out_dir, self.template)
-
+        
         bugs_active = []
         bugs_inactive = []
         bugs = [b for b in self.bd]
@@ -134,6 +144,31 @@ class HTMLGen (object):
                                index_header=self.index_header, bug_type="active")
         self._write_index_file(bugs_inactive, title=self.title,
                                index_header=self.index_header, bug_type="inactive")
+
+    def write_default_template(self, out_dir):
+        if self.verbose:
+            print "Creating output directories"
+        self.out_dir = os.path.abspath(os.path.expanduser(out_dir))
+        if not os.path.exists(self.out_dir):
+            try:
+                os.mkdir(self.out_dir)
+            except:
+                raise cmdutil.UsageError, "Cannot create output directory '%s'." % self.out_dir
+        if self.verbose:
+            print "Creating css file"            
+        self._write_css_file()
+        if self.verbose:
+            print "Creating index_file.tpl file"        
+        self._write_file(self.index_file, "index_file.tpl")
+        if self.verbose:
+            print "Creating index_bug_entry.tpl file"        
+        self._write_file(self.index_bug_entry, "index_bug_entry.tpl")
+        if self.verbose:
+            print "Creating bug_file.tpl file"
+        self._write_file(self.bug_file, "bug_file.tpl")
+        if self.verbose:
+            print "Creating bug_comment_entry.tpl file"
+        self._write_file(self.bug_comment_entry, "bug_comment_entry.tpl")
 
     def _create_output_directories(self, out_dir):
         if self.verbose:
@@ -297,7 +332,12 @@ class HTMLGen (object):
                 f = codecs.open(fullpath, "r", self.encoding)
                 setattr(self, attr, f.read())
                 f.close()
-
+                
+    def _write_file(self, tpl, filename ):
+        f = codecs.open(os.path.join(self.out_dir, filename), "w", self.encoding)
+        f.write(tpl)
+        f.close()
+        
     def _load_default_templates(self):
         self.css_file = """
             body {
