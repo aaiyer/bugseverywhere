@@ -119,13 +119,11 @@ def execute(args, manipulate_encodings=True):
             body+='\n'
 
     if options.XML == False:
-        new = parent.new_reply(body=body)
+        new = parent.new_reply(body=body, content_type=options.content_type)
         if options.author != None:
             new.author = options.author
         if options.alt_id != None:
             new.alt_id = options.alt_id
-        if options.content_type != None:
-            new.content_type = options.content_type
     else: # import XML comment [list]
         # read in the comments
         str_body = body.encode("unicode_escape").replace(r'\n', '\n')
