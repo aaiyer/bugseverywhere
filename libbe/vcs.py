@@ -840,7 +840,6 @@ class VCS_commit_TestCase(VCSTestCase):
 
     def test_revision_file_contents_as_committed(self):
         """Should get file contents as committed to specified revision."""
-        import sys
         if not self.vcs.versioned:
             return
         for path in self.test_files:

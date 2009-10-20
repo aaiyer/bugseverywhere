@@ -604,7 +604,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             reply.in_reply_to = self.uuid
         self.append(reply)
 
-    def new_reply(self, body=None):
+    def new_reply(self, body=None, content_type=None):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
         >>> repA = comm.new_reply("Critique original comment")
@@ -613,6 +613,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         True
         """
         reply = Comment(self.bug, body=body)
+        if content_type != None: # set before saving body to decide binary format
+            reply.content_type = content_type
         if self.bug != None:
             reply.set_sync_with_disk(self.bug.sync_with_disk)
         if reply.sync_with_disk == True:

@@ -104,7 +104,6 @@ class HTMLGen (object):
         self.verbose = verbose
         self.title = title
         self.index_header = index_header
-        
         if encoding != None:
             self.encoding = encoding
         else:
@@ -118,13 +117,11 @@ class HTMLGen (object):
         if template != None:
             self._load_user_templates()
 
-
-            
     def run(self, out_dir):
         if self.verbose == True:
             print "Creating the html output in %s using templates in %s" \
                 % (out_dir, self.template)
-        
+
         bugs_active = []
         bugs_inactive = []
         bugs = [b for b in self.bd]
@@ -281,7 +278,6 @@ class HTMLGen (object):
             filename = "index_inactive.html"
         else:
             raise Exception, "Unrecognized bug_type: '%s'" % bug_type
-        
         template_info = {'title':title,
                          'index_header':index_header,
                          'charset':self.encoding,
