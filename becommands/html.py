@@ -55,7 +55,7 @@ def execute(args, manipulate_encodings=True):
     bd.load_all_bugs()
 
     html_gen = HTMLGen(bd, template=options.template, verbose=options.verbose,
-                       title=options.title, )
+                       title=options.title, index_header=options.index_header )
     html_gen.run(options.out_dir)
 
 def get_parser():
@@ -96,7 +96,7 @@ class HTMLGen (object):
         self.verbose = verbose
         self.title = title
         self.index_header = index_header
-
+        
         if encoding != None:
             self.encoding = encoding
         else:
@@ -246,6 +246,7 @@ class HTMLGen (object):
             filename = "index_inactive.html"
         else:
             raise Exception, "Unrecognized bug_type: '%s'" % bug_type
+        
         template_info = {'title':title,
                          'index_header':index_header,
                          'charset':self.encoding,
