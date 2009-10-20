@@ -7,7 +7,7 @@ reporter: gianluca <gian@galactica>
 severity: wishlist
 
 
-status: open
+status: fixed
 
 
 summary: Add a verbose option to "be html"?
