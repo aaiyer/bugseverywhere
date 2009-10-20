@@ -469,7 +469,7 @@ class HTMLGen (object):
         """
 
         self.index_bug_entry ="""
-            <tr class="%(severity)s-row">
+            <tr class="%(severity)s">
               <td><a href="bugs/%(uuid)s.html">%(shortname)s</a></td>
               <td><a href="bugs/%(uuid)s.html">%(status)s</a></td>
               <td><a href="bugs/%(uuid)s.html">%(severity)s</a></td>
