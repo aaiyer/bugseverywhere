@@ -78,7 +78,7 @@ def get_parser():
         help='Verbose output, default is %default', default=False)
     parser.add_option('-e', '--export-template',  action='store_true', metavar='STRING', dest='exp_template',
         help='Export the default template into a directory (%default)', default='./templates/default')
-    parser.add_option('-d', '--export-dir_template', metavar='STRING', dest='exp_dir_template',
+    parser.add_option('-d', '--export-dir-template', metavar='STRING', dest='exp_dir_template',
         help='Export the default template into a directory (%default)', default='./templates/default')
     return parser
 
