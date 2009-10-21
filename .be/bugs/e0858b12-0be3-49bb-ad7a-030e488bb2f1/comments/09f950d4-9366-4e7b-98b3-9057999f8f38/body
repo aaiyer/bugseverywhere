@@ -1,0 +1,19 @@
+On Thu, Jul 16, 2009 at 09:39:30AM -0400, W. Trevor King wrote:
+> Disclaimer: I imaging the current implementation will choke on
+> non-text/plain content types.  Also possibly on non-ascii encodings.
+
+Non-ascii encodings are now handled (although now the output is
+base64-encoded).  This is limited by poor unicode handling in the
+email module for current pythons, see the log for more details.
+
+> I should probably allow the "help" command ... ;).
+
+Added, but it currently shows _all_ commands, not just allowed
+commands.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

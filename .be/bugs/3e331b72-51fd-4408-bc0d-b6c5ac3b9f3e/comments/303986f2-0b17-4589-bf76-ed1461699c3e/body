@@ -1,0 +1,16 @@
+Perhaps something like
+  be-handle-mail --notify-since <revision-id>
+to tell subscribers about changes since the specified revision.
+
+This would duplicate mail to P in our first example above, but that's
+not too annoying, and P might _want_ to know what R had merged from Q.
+
+On the other hand it would be annoying if 10 other repos merged Q and
+ran the notification.
+
+We could make the subscription something like
+  subscribe BUG-ID HOST-LIST
+e.g.
+  subscribe 1234 bugseverywhere.org,fancy_branch.com
+  subscribe abcd *
+To allow users to whitelist hosts they want updates from.

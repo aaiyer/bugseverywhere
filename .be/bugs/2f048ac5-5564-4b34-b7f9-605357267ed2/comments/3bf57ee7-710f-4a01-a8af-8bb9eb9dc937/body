@@ -1,0 +1,25 @@
+Gianluca Montecchi <gian@grys.it> writes:
+
+> On Monday 06 July 2009 12:48:39 W. Trevor King wrote:
+> > Gianluca is clearly thinking about a static report [for a collection
+> > of HTML files as output]:
+> 
+> You are right, static, but not exactly a report as I think Ben is
+> thinking
+
+I think it exactly is a report: multiple, static, browseable pages
+reporting the state of the database at a point in time.
+
+What makes you think that term doesn't apply?
+
+-- 
+ \        “The problem with television is that the people must sit and |
+  `\    keep their eyes glued on a screen: the average American family |
+_o__)                 hasn't time for it.” —_The New York Times_, 1939 |
+Ben Finney
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

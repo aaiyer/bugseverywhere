@@ -1,0 +1,17 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: utf8 problems in xml parsing
+
+
+time: Sat, 11 Jul 2009 15:48:32 +0000
+

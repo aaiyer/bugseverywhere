@@ -1,0 +1,32 @@
+On Sat, Jul 11, 2009 at 11:25:07AM -0400, W. Trevor King wrote:
+> The easiest implementation I can think of would be to keep local
+> branches (on whatever computer is hosting your web interface)
+> following your favorite repos.
+>   proxectX/
+>   |-- repoA
+>   |-- repoB
+>   `-- repoC
+> You'd pull upstream changes with a cron job.
+> Listing bugs would be something along the lines of
+>   projectX$ for repo in *
+>             do
+>               pushd $repo
+>               be list
+>               popd
+>             done | sort | uniq
+> ...
+
+I've reworked option handling for be, so my branch now supports
+  projectX$ for repo in *
+            do
+              be --dir $repo list
+            done | sort | uniq
+etc.  This also makes it easy to use your uninstalled development
+version of be on any bug directory on your local machine.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

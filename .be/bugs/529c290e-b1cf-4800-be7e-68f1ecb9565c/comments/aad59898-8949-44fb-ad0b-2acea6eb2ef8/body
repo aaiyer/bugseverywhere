@@ -1,0 +1,30 @@
+Hi,
+
+   > That's not a changelog, that's a commit log of every source-level
+   > commit made. Far too much detail for a changelog of
+   > *user-visible* changes associated with a release.
+
+I think I agree with both of you. :) It seems like it's both true that
+there's no point in keeping a GNU-style ChangeLog these days, and that
+if we make a release we should write an announce mail that directly
+mentions new user-visible changes as well as attaching the commit log.
+That smaller list of highly user-visible changes could live in NEWS,
+or in the announce mail, or both.
+
+   > I agree that's a problem. I think the solution is to start making
+   > releases, with specific version strings, as source tarballs.
+
+I'm happy to do this if people think it would be useful, and I don't
+yet have a strong opinion on whether the releases should come with
+version numbers or timestamps.
+
+Thanks,
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

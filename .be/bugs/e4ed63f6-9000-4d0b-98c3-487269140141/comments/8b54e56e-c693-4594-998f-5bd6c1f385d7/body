@@ -1,0 +1,5 @@
+For example, this works:
+
+python -c 'from xml.etree import ElementTree; a=u"<body>\u1234</body>"; print type(a), a; b=ElementTree.XML(a.encode("unicode_escape")); print type(b.text), unicode(b.text).decode("unicode_escape");'
+
+Ugly though :p.  Ah well.

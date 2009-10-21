@@ -1,0 +1,5 @@
+Isolated problem to:
+
+python -c 'from xml.etree import ElementTree; a=u"<body>\u1234</body>"; print type(a), a; b=ElementTree.XML(a);'
+
+Output attached below

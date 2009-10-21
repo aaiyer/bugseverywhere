@@ -1,0 +1,56 @@
+On Mon, Jul 20, 2009 at 05:03:18PM -0400, Chris Ball wrote:
+> Hi Gianluca,
+> 
+>    > In any case, having the possibility to set a due date does not
+>    > means that it is obligatory to do it and should be a good idea to
+>    > offer as many possibilities as we can to the users of BE
+> 
+> Okay, sounds reasonable.  Would you like to write a patch for
+> associating due dates and open/closed with a target?
+
+I've been mulling this over, and I think that targets are a lot like
+bugs.  Here's a list of issue/implementation pairs:
+
+  * Targeting normal bugs
+
+  With "be depend".  I think we should remove the "target" field from
+  bugs, and move target dependencies over into the "be depend"
+  framework.  Of course, we could add "blocks" (in addition to the
+  current "blocked-by") tags to make target lookup more efficient.
+
+  * "due_by"
+
+  We could add "due-by" to Bug.extra_strings as well, so that anyone
+  could set due dates for any issue they wanted.
+
+  * Bugdir-wide target
+
+  Just a pointer to the current target bug.
+
+  * Target dependency tree / time-series.
+  
+  Use BLOCKS/BLOCKED-BY tags between targets, so you'd know which ones
+  came first.
+
+  * be target list
+
+  Would become "be list --severity target".  A target "severity" would
+  keep target bugs distinct from other bug/issue types.
+
+  * Commenting on targets
+  
+  They'd be Bug()s, so commenting already build in, e.g. to add
+  release notes, layout roadmaps, etc.
+
+If you want, we could maintain the current "be target" interface,
+and just use all this stuff behind the scenes.
+
+Thoughts?
+Trevor
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

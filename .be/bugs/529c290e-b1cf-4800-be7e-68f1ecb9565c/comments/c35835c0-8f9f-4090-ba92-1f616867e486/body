@@ -1,0 +1,102 @@
+On Thursday 16 July 2009 12:38:55 W. Trevor King wrote:
+> On Thu, Jul 16, 2009 at 07:32:31PM +1000, Ben Finney wrote:
+> > "W. Trevor King" <wking@drexel.edu> writes:
+> > > On Wed, Jul 15, 2009 at 12:54:05AM +1000, Ben Finney wrote:
+> > > > "W. Trevor King" <wking@drexel.edu> writes:
+> > > > > On Tue, Jul 14, 2009 at 10:36:26PM +1000, Ben Finney wrote:
+> > > > > > Please, no. Timestamps aren't version strings, that's conflating
+> > > > > > two pieces of information with very different meanings.
+> > > > > > Correlating the two is the job of a [NEWS file].
+> > > >
+> > > > If you want a monotonically-increasing indicator of which revision
+> > > > we're up to, that's immediately available with the revision number
+> > > > from VCS on the main branch. That also has the advantage of
+> > > > producing consecutive numbers for each revision, by definition.
+> > >
+> > > But not during branch-switches, while my method skips large regions,
+> > > but probably increases during any reasonable branch-switch.
+> >
+> > I've read this several times now, and I don't see what it's saying.
+> >
+> > The assumption I'm making is that there is a single canonical “main
+> > branch”, from which releases will be made.
+>
+> I don't think you need to assume this.  See my "virtual branch"
+> argument below.
+
+But if we have a canonical "main branch" that  we release, and the packager 
+get, we can refer to it as the stable branch, that it is not a bad idea.
+
+
+
+> > The version number set in that branch is the one which determines
+> > the version of Bugs Everywhere as a whole.
+>
+> If you are suggesting that the dev branches adjust their release
+> number _by_hand_ to match the current trunk release number, that
+> allows switching, but sounds like a lot of work and isn't correct
+> anyway, since they are not in the same state as the trunk.
+
+The version number of trunk _is_ should be the official version number of the 
+Bugs Everywhere releases. 
+The version number in branch does not means nothing outside the branch.
+At least we can have a mechanism to build a version number scheme that is 
+consistent for us to be able to merge branch easily.
+
+> > The revision number is only useful in the context of the branch, so it
+> > only matters when comparing versions within a branch. When you switch
+> > between branches, if you're interested in the revision number you'll
+> > still need to know which branch you're talking about.
+>
+> I think this is our main disagreement.  I see all the branches as part
+> of the same codebase, with monotonically increasing timestamp patch
+> numbers.  If you were to collapse all the commit snapshots down into a
+> single chronological "virtual branch", it would still make sense, it
+> would just be a bit unorganized.  We do all try to move in the same
+> general direction ;).
+
+I don't think that, outside the developers, a version number like
+
+cjb@laptop.org-20090713154540-ve4pmydqzb1ghgvc
+
+is a good choice, not for the user of BE, not for the packager of BE
+
+
+> > This, then, is an argument for not having the revision number in the
+> > version string at all. The version then becomes a more traditional
+> > “major.minor.patch” tuple, and is only ever updated when some release
+> > manager of the canonical branch decides it's correct to do so.
+>
+> It is an argument for not using the revision number.  You can avoid
+> revision numbers by using hand-coded patch numbers, or by using
+> timestamps, which is what we're trying to decide on :p.
+
+We can use both.
+During the development we can use version number like
+
+x.y.z.timestamp
+
+As we decide to release a stable version, the release manager set the version 
+number to a more traditional x.y.z format, and create a branch (stable branch)
+
+This way we have these advantages:
+
+1) an user have a simple version number to use for bug report/feature 
+request/help request
+
+2) a packager have an easy life to choose to package a stable or a trunk 
+version, knowing what are they doing
+
+bonus) we can maintain a stable and a developmente source tree/branch, where 
+in the development tree we can make also backward incompatible modification to 
+the source without making any damage to the users/packagers, while in the 
+stable branch we can make only bugfix/security fix or port from the devel branch 
+some interesting features as long as they don't break compatibility.
+
+bye
+Gianluca
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

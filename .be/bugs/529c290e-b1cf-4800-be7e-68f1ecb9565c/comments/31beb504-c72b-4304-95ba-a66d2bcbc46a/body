@@ -1,0 +1,52 @@
+On Tue, Jul 14, 2009 at 07:34:04PM +0100, jnrowe@gmail.com wrote:
+> [This time to the list]
+> 
+> * W. Trevor King (wking@drexel.edu) wrote:
+> > On Tue, Jul 14, 2009 at 03:29:42PM +0100, James Rowe wrote:
+> > >   Isn't there a bzr web interface that at least supports creating
+> > > tarballs/zips?  It is pretty standard functionality for most other VCS'
+> > > web interfaces so I'm guessing there must be, but loggerhead seems not
+> > > to support it.
+> > 
+> > Unfortunately, people would still need bzr to install the versioned source:
+> > 
+> >   libbe/_version.py:
+> >           bzr version-info --format python > $@
+> 
+>   I hadn't even seen that change go in.  The last upstream change in the
+> version I have installed locally was by you on 2008-11-24.
+
+It's only been in Chris' http://bzr.bugseverywhere.org/be/ branch
+since revno: 321, 2009-06-25.  Obviously we may have to adjust the
+--verison output once we settle on a versioning scheme, but whatever
+we pick, I think having the auto-generated libbe/_version.py around
+for pinpointing bugs is worth the trouble of requiring bzr when
+building distribution tarballs.
+
+> > So you'll need a "release" target in the makefile to build a bzr-less
+> > install.  While you're at it, you should probably compile the manpage
+> > too to remove the docbook-to-man dependency.
+> 
+>   Maybe for others.  Our packages just don't have the manpage as it is only
+> the "be help" text reformatted, the easy option is sometimes the right
+> one :)  Also, I've just noticed that it has even less documentation in
+> the bzr tree[1] making its installation much less compelling unless your
+> packaging rules require a man page like Debians.
+> 
+>   Out of curiosity why is the Makefile being used for this stuff anyway?
+> It is going to make it difficult to build locally when we finally get
+> around to merging.  Examples: If distutils was being used exclusively it
+> would fix the #! lines in xml/*.  We'd be able to point Python
+> $version_of_the_day at setup.py instead of having to sed the Makefile or
+> run setup and manually install other files.
+
+I speak Makefile better than I speak distutils ;).  I'm not sure how
+to translate the be.1 generation/installation or the libbe/_version.py
+generation into distutils.  Anyone else?
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

@@ -1,0 +1,25 @@
+Ronny Pfannschmidt <Ronny.Pfannschmidt@gmx.de> writes:
+
+> the basic idea is to take a look at all public branches (for exaple
+> all on lp/bitbucket/github) in order to tell the user of a
+> webinterface that bug foo is fixed in branch xyz, and if its merged to
+> the main branch
+
+I don't understand. The state of the bug in the main branch is right
+there in the main branch; if it's not fixed there, it's not fixed there.
+If it's merged in from a different branch, the bug state follows all the
+other changes when they come in.
+
+Can you give an example of what would be done differently?
+
+-- 
+ \           “The basic fact about human existence is not that it is a |
+  `\                tragedy, but that it is a bore.” —Henry L. Mencken |
+_o__)                                                                  |
+Ben Finney
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

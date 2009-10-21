@@ -1,0 +1,27 @@
+Ah, it's been a good day :).  My email interface now supports bug
+creation/comments that look like:
+
+    $ cat | mail -s "[be-bug] new" "whatever-dev@fancyprojects.com"
+    The demuxulizer is broken
+    
+    <describe bug>
+    ^D
+
+Which is probably easy enough for just about anybody ;).  Also easy
+for other projects to wrap into one of their tools:
+
+    $ cat | projectAexecutable --report-bug
+    The demuxulizer is broken
+    
+    <describe bug>
+    ^D
+
+Which could do things like automatically add the version string, OS
+name, etc.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

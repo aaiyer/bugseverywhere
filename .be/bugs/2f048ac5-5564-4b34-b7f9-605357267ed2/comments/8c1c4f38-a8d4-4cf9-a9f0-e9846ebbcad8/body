@@ -1,0 +1,47 @@
+On Saturday 04 July 2009 02:19:35 Ben Finney wrote:
+> Gianluca Montecchi <gian@grys.it> writes:
+
+>
+> > I am open to suggestion about it of course.
+>
+> Instead of a separate command for each output format, could we have a
+> single “produce a static report of the bug database” command, and
+> specify output format as an option?
+>
+> How about:
+>
+>     be report
+>     be report --format ascii
+>     be report --format rst
+>     be report --format html
+>
+> Where the ‘--format’ option has a default of, e.g., “ascii”.
+>
+> This would mean that you are implementing the ‘html’ format of this
+> putative command.
+>
+
+This sound like an interesting idea, but what i'd like to do is not, strictly 
+speaking, a report. It is a full tree of html pages that are browseable, both 
+on line and offline
+
+> > 2) I see that every command is implemented with a python file in the
+> > becommand dir. For a better code, I'd like to split the command
+> > implementation into two files: a file that contain the actual code and
+> > a second file that have the html related part, any problem with this ?
+>
+> This sounds quite sensible to me. The existence of a command implies a
+> module of the same name in ‘becommand’, but there's no necessary
+> implication that that module can't import modules from elsewhere to do
+> its work.
+
+The "elsewhere"  for now is the same directory, just another module
+
+bye
+Gianluca
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

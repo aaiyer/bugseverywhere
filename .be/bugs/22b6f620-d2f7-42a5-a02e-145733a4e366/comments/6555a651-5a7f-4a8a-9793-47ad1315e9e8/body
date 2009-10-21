@@ -1,0 +1,26 @@
+Hi,
+
+   > For example, let's assume we have target a, b, c There is a way
+   > to know that "a" is a past target, "b" is the current target and
+   > "c" is a future target ?
+
+We could add a "date due" field for each target.
+
+   > More: there is a way to know if a target is closed or open ?
+
+We could add a "target close" operation that moves all open bugs
+assigned to one target to the next date-due target.
+
+I see problems with these ideas in general, because we're assuming
+agreement by all parties/branches on when a target's date due is.
+Maybe it's okay to demand that social conventions be used to handle
+such a disagreement, or maybe not.
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

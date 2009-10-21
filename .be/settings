@@ -1,3 +1,10 @@
+encoding: utf-8
+
+
+extra_strings:
+- "SUBSCRIBE:W. Trevor King <wking@drexel.edu>\tall\t*"
+
+
 inactive_status:
 - - closed
   - The bug is no longer relevant.

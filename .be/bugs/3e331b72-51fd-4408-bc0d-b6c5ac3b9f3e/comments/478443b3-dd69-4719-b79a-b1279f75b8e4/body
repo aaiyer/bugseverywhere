@@ -1,0 +1,5 @@
+"all" and "new" might be valid shortnames?
+
+Nope, UUID string representations are restricted to hex (0-9a-f) and
+"-" as per RFC 4122 section 3.
+

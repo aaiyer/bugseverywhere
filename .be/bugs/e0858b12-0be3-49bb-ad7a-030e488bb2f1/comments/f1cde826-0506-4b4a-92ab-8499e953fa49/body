@@ -1,0 +1,38 @@
+I finally did something towards a useful interactive email interface
+;).  As per our new guidelines, I'll develop this feature in it's own
+branch:
+  http://www.physics.drexel.edu/~wking/code/bzr/be-email
+
+The interface is basically "place your be command in the subject line"
+with a few exceptions.  Some examples:
+  Subject: [be-bug] list --status=all
+  Subject: [be-bug] show --xml ID
+  Subject: [be-bug] new
+  Subject: [be-bug] comment ID
+In the case of "new", the bug description is extracted from the first
+non-blank body line.  In the case of "comment", the email body is used
+as the comment.  Currently only "list", "show", "new", and "comment"
+are allowed.
+
+You should get a reply email with exit status, stdout, and stderr from
+your command.
+
+Send some mail to [wking (at) tremily (dot) us] to try it out!  Depending
+on spam attraction, this might be a limited time offer ;).
+
+Hopefully this lowers the entry barrier for bug reporting :).
+
+Disclaimer: I imaging the current implementation will choke on
+non-text/plain content types.  Also possibly on non-ascii encodings.
+Probably lots of other bugs too... ;).  For example, I should probably
+allow the "help" command ... ;).
+
+Cheers,
+Trevor
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

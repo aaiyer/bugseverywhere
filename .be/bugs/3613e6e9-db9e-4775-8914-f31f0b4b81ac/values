@@ -4,7 +4,7 @@ creator: abentley
 severity: minor
 
 
-status: closed
+status: fixed
 
 
 summary: auto-add files to revision control

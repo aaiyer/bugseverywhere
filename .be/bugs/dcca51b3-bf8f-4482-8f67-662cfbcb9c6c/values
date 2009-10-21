@@ -1,0 +1,17 @@
+creator: Gianluca Montecchi <gian@grys.it>
+
+
+reporter: Gianluca Montecchi <gian@grys.it>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: BE should not crash if user.email  and user.name are not defined
+
+
+time: Mon, 03 Aug 2009 20:30:43 +0000
+

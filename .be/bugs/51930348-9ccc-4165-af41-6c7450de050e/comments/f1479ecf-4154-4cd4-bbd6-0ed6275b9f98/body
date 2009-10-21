@@ -1,0 +1,16 @@
+There is no obvious means of using
+".be/version"/"libbe.bugdir.TREE_VERSION_STRING".  In the past I've
+worked around this by keeping all the disk-reading backwards
+compatible (e.g. homemade mapfile -> YAML, the "From" hack in
+libbe.comment.Comment.load_settings, possibly others).  However, this
+is not the road to easily maintainable code.
+
+Most projects only need to maintain backwards compatibility with the
+last few versions of their disk cache, to allow users an easy upgrade
+path.  The difficulties come with "be diff", which must be able to
+read _every_ disk-image of the bugdir ever committed into something
+comparible with the current cutting edge.  This makes sweeping changes
+very difficult.  VCSs themselves avoid this by never showing their
+disk-cache to another program, but we've shown ours to the VCS, and
+it's difficult (or impossible, depending on the VCS) to change history
+to match the current format.

@@ -1,0 +1,20 @@
+Hello
+
+Just a question and only for curiosity: there is an easy way to determine the 
+target succession ?
+
+For example, let's assume we have target a, b, c
+There is a way to know that  "a" is a past target, "b" is the current target 
+and "c" is a future target ? More: there is a way to know if a target is 
+closed or open ?
+
+thanks
+
+bye
+Gianluca
+
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel
