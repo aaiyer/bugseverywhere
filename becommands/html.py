@@ -49,16 +49,14 @@ def execute(args, manipulate_encodings=True):
     if len(args) > 0:
         raise cmdutil.UsageError, 'Too many arguments.'
 
-    template = options.template
-
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     bd.load_all_bugs()
 
     html_gen = HTMLGen(bd, template=options.template, verbose=options.verbose,
-                       title=options.title, index_header=options.index_header )
+                       title=options.title, index_header=options.index_header)
     if options.exp_template == True:
-        html_gen.write_default_template(options.exp_dir_template)
+        html_gen.write_default_template(options.exp_template_dir)
         return
     html_gen.run(options.out_dir)
 
@@ -67,19 +65,23 @@ def get_parser():
     parser.add_option('-o', '--output', metavar='DIR', dest='out_dir',
         help='Set the output path (%default)', default='./html_export')
     parser.add_option('-t', '--template-dir', metavar='DIR', dest='template',
-        help='Use a different template, defaults to internal templates', default=None)
+        help='Use a different template, defaults to internal templates',
+        default=None)
     parser.add_option('--title', metavar='STRING', dest='title',
         help='Set the bug repository title (%default)',
         default='BugsEverywhere Issue Tracker')
     parser.add_option('--index-header', metavar='STRING', dest='index_header',
         help='Set the index page headers (%default)',
         default='BugsEverywhere Bug List')
-    parser.add_option('-v', '--verbose',  action='store_true', metavar='verbose', dest='verbose',
+    parser.add_option('-v', '--verbose',  action='store_true',
+        metavar='verbose', dest='verbose',
         help='Verbose output, default is %default', default=False)
-    parser.add_option('-e', '--export-template',  action='store_true', metavar='STRING', dest='exp_template',
-        help='Export the default template into a directory (%default)', default='./templates/default')
-    parser.add_option('-d', '--export-dir-template', metavar='STRING', dest='exp_dir_template',
-        help='Export the default template into a directory (%default)', default='./templates/default')
+    parser.add_option('-e', '--export-template',  action='store_true',
+        dest='exp_template',
+        help='Export the default template and exit.', default=False)
+    parser.add_option('-d', '--export-template-dir', metavar='DIR',
+        dest='exp_template_dir', default='./default-templates/',
+        help='Set the directory for the template export (%default)')
     return parser
 
 longhelp="""
@@ -137,61 +139,33 @@ class HTMLGen (object):
             else:
                 up_link = "../index_inactive.html"
             self._write_bug_file(b, up_link)
-        self._write_index_file(bugs_active, title=self.title,
-                               index_header=self.index_header, bug_type="active")
-        self._write_index_file(bugs_inactive, title=self.title,
-                               index_header=self.index_header, bug_type="inactive")
-
-    def write_default_template(self, out_dir):
-        if self.verbose:
-            print "Creating output directories"
-        self.out_dir = os.path.abspath(os.path.expanduser(out_dir))
-        if not os.path.exists(self.out_dir):
-            try:
-                os.mkdir(self.out_dir)
-            except:
-                raise cmdutil.UsageError, "Cannot create output directory '%s'." % self.out_dir
-        if self.verbose:
-            print "Creating css file"            
-        self._write_css_file()
-        if self.verbose:
-            print "Creating index_file.tpl file"        
-        self._write_file(self.index_file, "index_file.tpl")
-        if self.verbose:
-            print "Creating index_bug_entry.tpl file"        
-        self._write_file(self.index_bug_entry, "index_bug_entry.tpl")
-        if self.verbose:
-            print "Creating bug_file.tpl file"
-        self._write_file(self.bug_file, "bug_file.tpl")
-        if self.verbose:
-            print "Creating bug_comment_entry.tpl file"
-        self._write_file(self.bug_comment_entry, "bug_comment_entry.tpl")
+        self._write_index_file(
+            bugs_active, title=self.title,
+            index_header=self.index_header, bug_type="active")
+        self._write_index_file(
+            bugs_inactive, title=self.title,
+            index_header=self.index_header, bug_type="inactive")
 
     def _create_output_directories(self, out_dir):
         if self.verbose:
             print "Creating output directories"
-        self.out_dir = os.path.abspath(os.path.expanduser(out_dir))
-        if not os.path.exists(self.out_dir):
-            try:
-                os.makedirs(self.out_dir)
-            except:
-                raise cmdutil.UsageError, "Cannot create output directory '%s'." % self.out_dir
-        self.out_dir_bugs = os.path.join(self.out_dir, "bugs")
-        if not os.path.exists(self.out_dir_bugs):
-            os.mkdir(self.out_dir_bugs)
+        self.out_dir = self._make_dir(out_dir)
+        self.out_dir_bugs = self._make_dir(
+            os.path.join(self.out_dir, "bugs"))
 
     def _write_css_file(self):
         if self.verbose:
             print "Writing css file"
-        assert hasattr(self, "out_dir"), "Must run after ._create_output_directories()"
-        f = codecs.open(os.path.join(self.out_dir,"style.css"), "w", self.encoding)
-        f.write(self.css_file)
-        f.close()
+        assert hasattr(self, "out_dir"), \
+            "Must run after ._create_output_directories()"
+        self._write_file(self.css_file,
+                         [self.out_dir,"style.css"])
 
     def _write_bug_file(self, bug, up_link):
         if self.verbose:
             print "\tCreating bug file for %s" % self.bd.bug_shortname(bug)
-        assert hasattr(self, "out_dir_bugs"), "Must run after ._create_output_directories()"
+        assert hasattr(self, "out_dir_bugs"), \
+            "Must run after ._create_output_directories()"
 
         bug.load_comments(load_full=True)
         comment_entries = self._generate_bug_comment_entries(bug)
@@ -206,19 +180,20 @@ class HTMLGen (object):
         for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
                      'reporter', 'creator', 'time_string', 'summary']:
             template_info[attr] = self._escape(getattr(bug, attr))
-        f = codecs.open(fullpath, "w", self.encoding)
-        f.write(self.bug_file % template_info)
-        f.close()
+        self._write_file(self.bug_file % template_info, [fullpath])
 
     def _generate_bug_comment_entries(self, bug):
-        assert hasattr(self, "out_dir_bugs"), "Must run after ._create_output_directories()"
+        assert hasattr(self, "out_dir_bugs"), \
+            "Must run after ._create_output_directories()"
 
         stack = []
         comment_entries = []
         for depth,comment in bug.comment_root.thread(flatten=False):
             while len(stack) > depth:
-                stack.pop(-1)      # pop non-parents off the stack
-                comment_entries.append("</div>\n") # close non-parent <div class="comment...
+                # pop non-parents off the stack
+                stack.pop(-1)
+                # close non-parent <div class="comment...
+                comment_entries.append("</div>\n")
             assert len(stack) == depth
             stack.append(comment)
             if depth == 0:
@@ -247,14 +222,13 @@ class HTMLGen (object):
                         if not os.path.exists(per_bug_dir):
                             os.mkdir(per_bug_dir)
                         comment_path = os.path.join(per_bug_dir, comment.uuid)
-                        f = codecs.open(os.path.join(per_bug_dir, '.htaccess'),
-                                        'a', self.encoding)
-                        f.write('<Files %s>\n  ForceType %s\n</Files>' \
-                                    % (comment.uuid, comment.content_type))
-                        f.close()
-                        f = open(os.path.join(per_bug_dir, comment.uuid), "wb")
-                        f.write(comment.body)
-                        f.close
+                        self._write_file(
+                            '<Files %s>\n  ForceType %s\n</Files>' \
+                                % (comment.uuid, comment.content_type),
+                            [per_bug_dir, '.htaccess'], mode='a')
+                        self._write_file(
+                            comment.body,
+                            [per_bug_dir, comment.uuid], mode='wb')
                 else:
                     value = self._escape(value)
                 template_info[attr] = value
@@ -289,9 +263,8 @@ class HTMLGen (object):
             template_info['active_class'] = 'tab nsel'
             template_info['inactive_class'] = 'tab sel'
 
-        f = codecs.open(os.path.join(self.out_dir, filename), "w", self.encoding)
-        f.write(self.index_file % template_info)
-        f.close()
+        self._write_file(self.index_file % template_info,
+                         [self.out_dir, filename])
 
     def _generate_index_bug_entries(self, bugs):
         bug_entries = []
@@ -325,15 +298,52 @@ class HTMLGen (object):
                               ('bug_comment_entry.tpl','bug_comment_entry')]:
             fullpath = os.path.join(self.template, filename)
             if os.path.exists(fullpath):
-                f = codecs.open(fullpath, "r", self.encoding)
-                setattr(self, attr, f.read())
-                f.close()
-                
-    def _write_file(self, tpl, filename ):
-        f = codecs.open(os.path.join(self.out_dir, filename), "w", self.encoding)
-        f.write(tpl)
+                setattr(self, attr, self._read_file([fullpath]))
+
+    def _make_dir(self, dir_path):
+        dir_path = os.path.abspath(os.path.expanduser(dir_path))
+        if not os.path.exists(dir_path):
+            try:
+                os.makedirs(dir_path)
+            except:
+                raise cmdutil.UsageError, "Cannot create output directory '%s'." % dir_path
+        return dir_path
+
+    def _write_file(self, content, path_array, mode='w'):
+        f = codecs.open(os.path.join(*path_array), mode, self.encoding)
+        f.write(content)
         f.close()
-        
+
+    def _read_file(self, path_array, mode='r'):
+        f = codecs.open(os.path.join(*path_array), mode, self.encoding)
+        content = f.read()
+        f.close()
+        return content
+
+    def write_default_template(self, out_dir):
+        if self.verbose:
+            print "Creating output directories"
+        self.out_dir = self._make_dir(out_dir)
+        if self.verbose:
+            print "Creating css file"
+        self._write_css_file()
+        if self.verbose:
+            print "Creating index_file.tpl file"
+        self._write_file(self.index_file,
+                         [self.out_dir, "index_file.tpl"])
+        if self.verbose:
+            print "Creating index_bug_entry.tpl file"
+        self._write_file(self.index_bug_entry,
+                         [self.out_dir, "index_bug_entry.tpl"])
+        if self.verbose:
+            print "Creating bug_file.tpl file"
+        self._write_file(self.bug_file,
+                         [self.out_dir, "bug_file.tpl"])
+        if self.verbose:
+            print "Creating bug_comment_entry.tpl file"
+        self._write_file(self.bug_comment_entry,
+                         [self.out_dir, "bug_comment_entry.tpl"])
+
     def _load_default_templates(self):
         self.css_file = """
             body {
@@ -442,9 +452,9 @@ class HTMLGen (object):
             /* bug detail pages */
 
             td.bug_detail_label { text-align: right; }
-            td.bug_detail { } 
+            td.bug_detail { }
             td.bug_comment_label { text-align: right; vertical-align: top; }
-            td.bug_comment { } 
+            td.bug_comment { }
 
             div.comment {
               padding: 20px;
@@ -524,14 +534,14 @@ class HTMLGen (object):
             <link rel="stylesheet" href="../style.css" type="text/css" />
             </head>
             <body>
-    
+
             <div class="main">
             <h1>BugsEverywhere Bug List</h1>
             <h5><a href="%(up_link)s">Back to Index</a></h5>
             <h2>Bug: %(shortname)s</h2>
             <table>
             <tbody>
-    
+
             <tr><td class="bug_detail_label">ID :</td>
                 <td class="bug_detail">%(uuid)s</td></tr>
             <tr><td class="bug_detail_label">Short name :</td>
@@ -593,5 +603,5 @@ class HTMLGen (object):
         for attr in ['css_file', 'index_file', 'index_bug_entry', 'bug_file',
                      'bug_comment_entry']:
             value = getattr(self, attr)
-            value = '\n'.join(value.split('\n'+' '*12))
+            value = value.replace('\n'+' '*12, '\n')
             setattr(self, attr, value.strip()+'\n')
