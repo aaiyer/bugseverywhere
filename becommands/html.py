@@ -304,7 +304,7 @@ class HTMLGen (object):
         dir_path = os.path.abspath(os.path.expanduser(dir_path))
         if not os.path.exists(dir_path):
             try:
-                os.mkdir(dir_path)
+                os.makedirs(dir_path)
             except:
                 raise cmdutil.UsageError, "Cannot create output directory '%s'." % dir_path
         return dir_path
