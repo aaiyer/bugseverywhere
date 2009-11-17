@@ -83,7 +83,7 @@ class Arch(vcs.VCS):
         self._archive_dir = "/tmp/%s" % trailer
         self._tmp_archive = True
         self._u_invoke_client("make-archive", self._archive_name,
-                              self._archive_dir, directory=path)
+                              self._archive_dir, cwd=path)
     def _invoke_client(self, *args, **kwargs):
         """
         Invoke the client on our archive.
@@ -121,7 +121,7 @@ class Arch(vcs.VCS):
         version = "0.1"
         self._project_name = "%s--%s--%s" % (category, branch, version)
         self._invoke_client("archive-setup", self._project_name,
-                            directory=path)
+                            cwd=path)
         self._tmp_project = True
     def _remove_project(self):
         assert self._tmp_project == True
@@ -164,10 +164,10 @@ class Arch(vcs.VCS):
         # http://regexps.srparish.net/tutorial-tla/new-source.html
         # http://regexps.srparish.net/tutorial-tla/importing-first.html
         self._invoke_client("init-tree", self._project_name,
-                              directory=path)
+                            cwd=path)
         self._adjust_naming_conventions(path)
         self._invoke_client("import", "--summary", "Began versioning",
-                            directory=path)
+                            cwd=path)
     def _vcs_cleanup(self):
         if self._tmp_project == True:
             self._remove_project()
@@ -198,7 +198,7 @@ class Arch(vcs.VCS):
         assert self._archive_name != None
     def _get_archive_project_name(self, root):
         # get project names
-        status,output,error = self._u_invoke_client("tree-version", directory=root)
+        status,output,error = self._u_invoke_client("tree-version", cwd=root)
         # e.g output
         # jdoe@example.com--bugs-everywhere-auto-2008.22.24.52/be--mainline--0.1
         archive_name,project_name = output.rstrip('\n').split('/')
@@ -266,7 +266,7 @@ class Arch(vcs.VCS):
             vcs.VCS._vcs_duplicate_repo(self, directory, revision)
         else:
             status,output,error = \
-                self._u_invoke_client("get", revision,directory)
+                self._u_invoke_client("get", revision, directory)
     def _vcs_commit(self, commitfile, allow_empty=False):
         if allow_empty == False:
             # arch applies empty commits without complaining, so check first

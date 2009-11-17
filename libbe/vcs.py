@@ -488,12 +488,9 @@ class VCS(object):
             raise CommandError(args, status, stdout, stderr)
         return status, stdout, stderr
     def _u_invoke_client(self, *args, **kwargs):
-        directory = kwargs.get('directory',None)
-        expect = kwargs.get('expect', (0,))
-        stdin = kwargs.get('stdin', None)
         cl_args = [self.client]
         cl_args.extend(args)
-        return self._u_invoke(cl_args, stdin=stdin,expect=expect,cwd=directory)
+        return self._u_invoke(cl_args, **kwargs)
     def _u_search_parent_directories(self, path, filename):
         """
         Find the file (or directory) named filename in path or in any

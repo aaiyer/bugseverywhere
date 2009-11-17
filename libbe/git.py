@@ -50,12 +50,12 @@ class Git(vcs.VCS):
         if os.path.isdir(path) != True:
             path = os.path.dirname(path)
         status,output,error = self._u_invoke_client("rev-parse", "--git-dir",
-                                                    directory=path)
+                                                    cwd=path)
         gitdir = os.path.join(path, output.rstrip('\n'))
         dirname = os.path.abspath(os.path.dirname(gitdir))
         return dirname
     def _vcs_init(self, path):
-        self._u_invoke_client("init", directory=path)
+        self._u_invoke_client("init", cwd=path)
     def _vcs_get_user_id(self):
         status,output,error = \
             self._u_invoke_client("config", "user.name", expect=(0,1))
@@ -102,9 +102,8 @@ class Git(vcs.VCS):
         if revision==None:
             vcs.VCS._vcs_duplicate_repo(self, directory, revision)
         else:
-            #self._u_invoke_client("archive", revision, directory) # makes tarball
-            self._u_invoke_client("clone", "--no-checkout",".",directory)
-            self._u_invoke_client("checkout", revision, directory=directory)
+            self._u_invoke_client("clone", "--no-checkout", ".", directory)
+            self._u_invoke_client("checkout", revision, cwd=directory)
     def _vcs_commit(self, commitfile, allow_empty=False):
         args = ['commit', '--all', '--file', commitfile]
         if allow_empty == True:
