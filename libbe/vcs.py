@@ -456,10 +456,13 @@ class VCS(object):
             if list_string in string:
                 return True
         return False
-    def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None):
+    def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None,
+                  unicode_output=True):
         """
         expect should be a tuple of allowed exit codes.  cwd should be
-        the directory from which the command will be executed.
+        the directory from which the command will be executed.  When
+        unicode_output == True, convert stdout and stdin strings to
+        unicode before returing them.
         """
         if cwd == None:
             cwd = self.rootdir
@@ -476,6 +479,9 @@ class VCS(object):
             raise CommandError(args, status=e.args[0], stdout="", stderr=e)
         stdout,stderr = q.communicate(input=stdin)
         status = q.wait()
+        if unicode_output == True:
+            stdout = unicode(stdout, self.encoding)
+            stderr = unicode(stderr, self.encoding)
         if self.verboseInvoke == True:
             print >> sys.stderr, "%d\n%s%s" % (status, stdout, stderr)
         if status not in expect:
