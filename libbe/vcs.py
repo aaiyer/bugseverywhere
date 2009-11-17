@@ -384,7 +384,7 @@ class VCS(object):
         revision==None specifies the current revision.
         Return the path to the arbitrary directory at the base of the new repo.
         """
-        # Dirname in Baseir to protect against simlink attacks.
+        # Dirname in Basedir to protect against simlink attacks.
         if self._duplicateBasedir == None:
             self._duplicateBasedir = tempfile.mkdtemp(prefix='BEvcs')
             self._duplicateDirname = \
@@ -456,10 +456,13 @@ class VCS(object):
             if list_string in string:
                 return True
         return False
-    def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None):
+    def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None,
+                  unicode_output=True):
         """
         expect should be a tuple of allowed exit codes.  cwd should be
-        the directory from which the command will be executed.
+        the directory from which the command will be executed.  When
+        unicode_output == True, convert stdout and stdin strings to
+        unicode before returing them.
         """
         if cwd == None:
             cwd = self.rootdir
@@ -474,20 +477,20 @@ class VCS(object):
                           shell=True, cwd=cwd)
         except OSError, e :
             raise CommandError(args, status=e.args[0], stdout="", stderr=e)
-        output,error = q.communicate(input=stdin)
+        stdout,stderr = q.communicate(input=stdin)
         status = q.wait()
+        if unicode_output == True:
+            stdout = unicode(stdout, self.encoding)
+            stderr = unicode(stderr, self.encoding)
         if self.verboseInvoke == True:
-            print >> sys.stderr, "%d\n%s%s" % (status, output, error)
+            print >> sys.stderr, "%d\n%s%s" % (status, stdout, stderr)
         if status not in expect:
-            raise CommandError(args, status, output, error)
-        return status, output, error
+            raise CommandError(args, status, stdout, stderr)
+        return status, stdout, stderr
     def _u_invoke_client(self, *args, **kwargs):
-        directory = kwargs.get('directory',None)
-        expect = kwargs.get('expect', (0,))
-        stdin = kwargs.get('stdin', None)
         cl_args = [self.client]
         cl_args.extend(args)
-        return self._u_invoke(cl_args, stdin=stdin,expect=expect,cwd=directory)
+        return self._u_invoke(cl_args, **kwargs)
     def _u_search_parent_directories(self, path, filename):
         """
         Find the file (or directory) named filename in path or in any
@@ -678,6 +681,7 @@ class VCSTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.vcs.cleanup()
+        self.dir.cleanup()
         super(VCSTestCase, self).tearDown()
 
     def full_path(self, rel_path):

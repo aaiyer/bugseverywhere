@@ -60,7 +60,7 @@ class Darcs(vcs.VCS):
             return None
         return os.path.dirname(darcs_dir)
     def _vcs_init(self, path):
-        self._u_invoke_client("init", directory=path)
+        self._u_invoke_client("init", cwd=path)
     def _vcs_get_user_id(self):
         # following http://darcs.net/manual/node4.html#SECTION00410030000000000000
         # as of June 29th, 2009
@@ -107,10 +107,12 @@ class Darcs(vcs.VCS):
                 # Darcs versions < 2.0.0pre2 lack the "show contents" command
 
                 status,output,error = self._u_invoke_client( \
-                    "diff", "--unified", "--from-patch", revision, path)
+                    "diff", "--unified", "--from-patch", revision, path,
+                    unicode_output=False)
                 major_patch = output
                 status,output,error = self._u_invoke_client( \
-                    "diff", "--unified", "--patch", revision, path)
+                    "diff", "--unified", "--patch", revision, path,
+                    unicode_output=False)
                 target_patch = output
                 
                 # "--output -" to be supported in GNU patch > 2.5.9

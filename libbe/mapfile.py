@@ -75,7 +75,7 @@ def generate(map):
             assert(len(key) > 0)
         except AssertionError:
             raise IllegalKey(unicode(key).encode('unicode_escape'))
-        if "\n" in map[key]:
+        if '\n' in map[key]:
             raise IllegalValue(unicode(map[key]).encode('unicode_escape'))
 
     lines = []
@@ -83,7 +83,7 @@ def generate(map):
         lines.append(yaml.safe_dump({key: map[key]},
                                     default_flow_style=False,
                                     allow_unicode=True))
-        lines.append("")
+        lines.append('')
     return '\n'.join(lines)
 
 def parse(contents):
@@ -101,16 +101,21 @@ def parse(contents):
     'd'
     >>> dict["e"]
     'f'
+    >>> contents = generate({"q":u"Fran\u00e7ais"})
+    >>> dict = parse(contents)
+    >>> dict["q"]
+    u'Fran\\xe7ais'
     """
     return yaml.load(contents) or {}
 
 def map_save(vcs, path, map, allow_no_vcs=False):
     """Save the map as a mapfile to the specified path"""
     contents = generate(map)
-    vcs.set_file_contents(path, contents, allow_no_vcs)
+    vcs.set_file_contents(path, contents, allow_no_vcs, binary=True)
 
 def map_load(vcs, path, allow_no_vcs=False):
-    contents = vcs.get_file_contents(path, allow_no_vcs=allow_no_vcs)
+    contents = vcs.get_file_contents(path, allow_no_vcs=allow_no_vcs,
+                                     binary=True)
     return parse(contents)
 
 suite = doctest.DocTestSuite()

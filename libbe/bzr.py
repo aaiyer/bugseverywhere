@@ -49,7 +49,7 @@ class Bzr(vcs.VCS):
         status,output,error = self._u_invoke_client("root", path)
         return output.rstrip('\n')
     def _vcs_init(self, path):
-        self._u_invoke_client("init", directory=path)
+        self._u_invoke_client("init", cwd=path)
     def _vcs_get_user_id(self):
         status,output,error = self._u_invoke_client("whoami")
         return output.rstrip('\n')

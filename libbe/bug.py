@@ -267,7 +267,9 @@ class Bug(settings_object.SavedSettingsObject):
         value = getattr(self, setting)
         if value == None:
             return ""
-        return str(value)
+        if type(value) not in types.StringTypes:
+            return str(value)
+        return value
 
     def xml(self, show_comments=False):
         if self.bugdir == None:
