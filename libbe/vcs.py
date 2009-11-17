@@ -485,7 +485,7 @@ class VCS(object):
         if self.verboseInvoke == True:
             print >> sys.stderr, "%d\n%s%s" % (status, stdout, stderr)
         if status not in expect:
-            raise CommandStderr(args, status, stdout, stderr)
+            raise CommandError(args, status, stdout, stderr)
         return status, stdout, stderr
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)
