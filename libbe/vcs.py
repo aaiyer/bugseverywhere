@@ -384,7 +384,7 @@ class VCS(object):
         revision==None specifies the current revision.
         Return the path to the arbitrary directory at the base of the new repo.
         """
-        # Dirname in Baseir to protect against simlink attacks.
+        # Dirname in Basedir to protect against simlink attacks.
         if self._duplicateBasedir == None:
             self._duplicateBasedir = tempfile.mkdtemp(prefix='BEvcs')
             self._duplicateDirname = \
@@ -684,6 +684,7 @@ class VCSTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.vcs.cleanup()
+        self.dir.cleanup()
         super(VCSTestCase, self).tearDown()
 
     def full_path(self, rel_path):
