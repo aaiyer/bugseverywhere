@@ -474,13 +474,13 @@ class VCS(object):
                           shell=True, cwd=cwd)
         except OSError, e :
             raise CommandError(args, status=e.args[0], stdout="", stderr=e)
-        output,error = q.communicate(input=stdin)
+        stdout,stderr = q.communicate(input=stdin)
         status = q.wait()
         if self.verboseInvoke == True:
-            print >> sys.stderr, "%d\n%s%s" % (status, output, error)
+            print >> sys.stderr, "%d\n%s%s" % (status, stdout, stderr)
         if status not in expect:
-            raise CommandError(args, status, output, error)
-        return status, output, error
+            raise CommandStderr(args, status, stdout, stderr)
+        return status, stdout, stderr
     def _u_invoke_client(self, *args, **kwargs):
         directory = kwargs.get('directory',None)
         expect = kwargs.get('expect', (0,))
