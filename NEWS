@@ -1,3 +1,33 @@
+November 17, 2009
+ * new becommands:
+   commit
+   depend
+   html
+   merge
+   remove
+   status
+   subscribe
+   tag
+ * renamed becommands:
+   set_root => init
+ * removed becommands:
+   inprogress
+   upgrade
+ * new interfaces:
+   email:
+     interactive
+     catmutt
+   xml:
+     be-mbox-to-xml
+     be-xml-to-mbox
+ * deprecated interfaces:
+   gui:
+     beg
+     wxbe
+   web:
+     Bugs-Everywhere-Web
+ * lots of bugfixes and cleanups, see `be diff 200` for details.
+
 April 10, 2006
  * Updated BeWeb to TurboGear 0.9
 
