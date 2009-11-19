@@ -1,5 +1,6 @@
 # Copyright (C) 2007-2009 Aaron Bentley and Panometrics, Inc.
-#                         Ben Finney <ben+python@benfinney.id.au>
+#                         Ben Finney <benf@cybersource.com.au>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This program is free software; you can redistribute it and/or modify

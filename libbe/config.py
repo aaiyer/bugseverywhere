@@ -1,4 +1,5 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
+#                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This program is free software; you can redistribute it and/or modify

@@ -1,5 +1,6 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
-#                         Ben Finney <ben+python@benfinney.id.au>
+#                         Ben Finney <benf@cybersource.com.au>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         James Rowe <jnrowe@ukfsn.org>
 #                         W. Trevor King <wking@drexel.edu>
 #

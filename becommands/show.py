@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
-#                         Chris Ball <cjb@laptop.org>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>

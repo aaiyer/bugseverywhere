@@ -1,6 +1,7 @@
 # Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
 #                         Alexander Belchenko <bialix@ukr.net>
 #                         Chris Ball <cjb@laptop.org>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
 #                         W. Trevor King <wking@drexel.edu>
 #

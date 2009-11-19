@@ -1,5 +1,5 @@
 # Bugs Everywhere, a distributed bugtracker
-# Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
+# Copyright (C) 2008-2009 Gianluca Montecchi <gian@grys.it>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
 #

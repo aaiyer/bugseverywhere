@@ -1,5 +1,6 @@
-# Copyright (C) 2008-2009 Ben Finney <ben+python@benfinney.id.au>
+# Copyright (C) 2008-2009 Ben Finney <benf@cybersource.com.au>
 #                         Chris Ball <cjb@laptop.org>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This program is free software; you can redistribute it and/or modify

@@ -1,4 +1,5 @@
 # Copyright (C) 2006-2009 Aaron Bentley and Panometrics, Inc.
+#                         Gianluca Montecchi <gian@grys.it>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         W. Trevor King <wking@drexel.edu>
 #
