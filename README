@@ -15,25 +15,9 @@ Getting started
 To get started, you must set the bugtracker root.  Typically, you will want to
 set the bug root to your project root, so that Bugs Everywhere works in any
 part of your project tree.
-$ be init $PROJECT_ROOT
+$ be init -r $PROJECT_ROOT
 
 To create bugs, use "be new $DESCRIPTION".  To comment on bugs, you
 can can use "be comment $BUG_ID".  To close a bug, use "be close
 $BUG_ID" or "be status $BUG_ID fixed".  For more commands, see "be
 help".  You can also look at the usage examples in test_usage.sh.
-
-
-Using BeWeb, the web UI
-=======================
-BeWeb uses the Turbogears framework: http://www.turbogears.org/
-Please ensure you have Turbogears 0.8a5 or a compatible release installed.
-Because it uses BE data, the web UI does not require a database.
-
-To use BeWeb, first create a configuration file, telling it which projects
-to track, and what to call them.  An example configuration file 
-(beweb/beweb/config.py.example) is provided.
-
-Next, cd to beweb, and run ./beweb-start.py
-
-BeWeb allows you to create, view and edit bugs, but it is in an early stage of
-development, so some features are missing.

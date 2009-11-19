@@ -1,7 +1,20 @@
-Bugs-Everywhere-Web
+Using BeWeb, the web UI
+=======================
+BeWeb uses the Turbogears framework: http://www.turbogears.org/
+Please ensure you have Turbogears 0.8a5 or a compatible release installed.
+Because it uses BE data, the web UI does not require a database.
 
-This is a TurboGears (http://www.turbogears.org) project. It can be
-started by running the start-beweb.py script.
+To use BeWeb, first create a configuration file, telling it which projects
+to track, and what to call them.  An example configuration file 
+(beweb/beweb/config.py.example) is provided.
+
+Next, cd to this directory, and run ./start-beweb.py
+
+BeWeb allows you to create, view and edit bugs, but it is in an early stage of
+development, so some features are missing.
+
+Configuration file
+------------------
 
 Configure by creating an appropriate beweb/config.py from
 beweb/config.py.example.  The server will edit the repositories that
@@ -12,6 +25,9 @@ as you require to keep the branches in sync.
 See
   http://docs.turbogears.org/1.0/Configuration
 For standard turbogears configuration information.
+
+Actions
+-------
 
 Currently, you need to login for any methods with a
 @identity.require() decorator.  The only group in the current
@@ -27,6 +43,8 @@ Editbugs required actions:
  * Reply to comments
  * Update comment info
 
+Users
+-----
 
 All login attempts will fail unless you have added some valid users. See
   http://docs.turbogears.org/1.0/GettingStartedWithIdentity
