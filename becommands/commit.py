@@ -20,7 +20,7 @@ __desc__ = __doc__
 
 def execute(args, manipulate_encodings=True):
     """
-    >>> import os, time
+    >>> import os
     >>> from libbe import bug
     >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
