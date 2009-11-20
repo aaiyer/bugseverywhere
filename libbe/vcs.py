@@ -25,7 +25,6 @@ subclassed by other Version Control System backends.  The base class
 implements a "do not version" VCS.
 """
 
-from subprocess import Popen, PIPE
 import codecs
 import os
 import os.path
@@ -38,6 +37,7 @@ import unittest
 import doctest
 
 from utility import Dir, search_parent_directories
+from subproc import CommandError, invoke
 
 
 def _get_matching_vcs(matchfn):
@@ -67,15 +67,6 @@ def installed_vcs():
     return _get_matching_vcs(lambda vcs: vcs.installed())
 
 
-class CommandError(Exception):
-    def __init__(self, command, status, stdout, stderr):
-        strerror = ["Command failed (%d):\n  %s\n" % (status, stderr),
-                    "while executing\n  %s" % command]
-        Exception.__init__(self, "\n".join(strerror))
-        self.command = command
-        self.status = status
-        self.stdout = stdout
-        self.stderr = stderr
 
 class SettingIDnotSupported(NotImplementedError):
     pass
@@ -457,37 +448,14 @@ class VCS(object):
             if list_string in string:
                 return True
         return False
-    def _u_invoke(self, args, stdin=None, expect=(0,), cwd=None,
-                  unicode_output=True):
-        """
-        expect should be a tuple of allowed exit codes.  cwd should be
-        the directory from which the command will be executed.  When
-        unicode_output == True, convert stdout and stdin strings to
-        unicode before returing them.
-        """
-        if cwd == None:
-            cwd = self.rootdir
-        if self.verboseInvoke == True:
-            print >> sys.stderr, "%s$ %s" % (cwd, " ".join(args))
-        try :
-            if sys.platform != "win32":
-                q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=cwd)
-            else:
-                # win32 don't have os.execvp() so have to run command in a shell
-                q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, 
-                          shell=True, cwd=cwd)
-        except OSError, e :
-            raise CommandError(args, status=e.args[0], stdout="", stderr=e)
-        stdout,stderr = q.communicate(input=stdin)
-        status = q.wait()
-        if unicode_output == True:
-            stdout = unicode(stdout, self.encoding)
-            stderr = unicode(stderr, self.encoding)
-        if self.verboseInvoke == True:
-            print >> sys.stderr, "%d\n%s%s" % (status, stdout, stderr)
-        if status not in expect:
-            raise CommandError(args, status, stdout, stderr)
-        return status, stdout, stderr
+    def _u_invoke(self, *args, **kwargs):
+        if 'cwd' not in kwargs:
+            kwargs['cwd'] = self.rootdir
+        if 'verbose' not in kwargs:
+            kwargs['verbose'] = self.verboseInvoke
+        if 'encoding' not in kwargs:
+            kwargs['encoding'] = self.encoding
+        return invoke(*args, **kwargs)
     def _u_invoke_client(self, *args, **kwargs):
         cl_args = [self.client]
         cl_args.extend(args)

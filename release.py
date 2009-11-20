@@ -20,10 +20,10 @@ import os
 import os.path
 import shutil
 import string
-from subprocess import Popen
 import sys
 
-from update_copyright import Pipe, update_authors, update_files
+from libbe.subproc import Pipe, invoke
+from update_copyright import update_authors, update_files
 
 def validate_tag(tag):
     """
@@ -93,8 +93,8 @@ def make_version():
 
 def make_changelog(filename, tag):
     print 'generate ChangeLog file', filename, 'up to tag', tag
-    p = Popen(['bzr', 'log', '--gnu-changelog', '-n1', '-r',
-               '..tag:%s' % tag], stdout=file(filename, 'w'))
+    p = invoke(['bzr', 'log', '--gnu-changelog', '-n1', '-r',
+                '..tag:%s' % tag], stdout=file(filename, 'w'))
     status = p.wait()
     assert status == 0, status
 
