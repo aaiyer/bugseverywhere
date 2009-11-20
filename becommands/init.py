@@ -40,6 +40,7 @@ def execute(args, manipulate_encodings=True):
     >>> _vcs = vcs.installed_vcs()
     >>> _vcs.init('.')
     >>> _vcs.name in vcs.VCS_ORDER
+    True
     >>> execute([], manipulate_encodings=False)  # doctest: +ELLIPSIS
     Using ... for revision control.
     Directory initialized.
