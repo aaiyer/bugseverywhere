@@ -7,7 +7,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: wishlist
 
 
-status: open
+status: fixed
 
 
 summary: How should we version BE?

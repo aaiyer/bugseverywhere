@@ -1,0 +1,51 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> ** NEWS file
+
+Speaking as the package maintainer, I would like a ‘ChangeLog’ file
+separate from a ‘NEWS’ file.
+
+The ‘NEWS’ file would continue to be hand-edited, and would be a
+high-level view of user-visible changes in the project each version.
+Users could reasonably expect to be interested in this file when
+installing a new version. It would also make sense to retire old news
+From this file once it becomes sufficiently old, to keep it relevant to
+users to read.
+
+
+The ‘ChangeLog’ would be an automatically-generated changelog of
+low-level changes, not for general human consumption but for letting
+recipients have a fighting chance at knowing the historical context of a
+particular change without access to the VCS. It would probably be best
+done as Trevor says:
+
+> Depending on our level of masochism, either something starting out
+> along the lines of [2]
+>   bzr log --gnu-changelog -n1 -r 200..
+
+That makes it necessary to add the changelog file to the tarball, since
+it won't be a file tracked by VCS and therefore won't be exported. Not a
+problem::
+
+    $ release_version="1.0.0"
+    $ release_name="be-$release_version"
+    $ tarball_file=../$release_name.tar.gz
+    $ work_dir=$(mktemp -t -d)
+    $ export_dir=$work_dir/$release_name
+    $ changelog_file=$export_dir/ChangeLog
+
+    $ bzr export $export_dir
+    $ bzr log --gnu-changelog -n1 -r ..tag:"$release_version" > $changelog_file
+    $ tar -czf $tarball_file $export_dir
+    $ rm -r $work_dir/
+
+    $ ls $tarball_file
+    ../be-1.0.0.tar.gz
+    $ tar -tzf $tarball_file | grep ChangeLog
+    be-1.0.0/ChangeLog
+
+-- 
+ \        “I bought a dog the other day. I named him Stay. It's fun to |
+  `\     call him. ‘Come here, Stay! Come here, Stay!’ He went insane. |
+_o__)         Now he just ignores me and keeps typing.” —Steven Wright |
+Ben Finney
