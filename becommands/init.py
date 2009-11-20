@@ -37,14 +37,13 @@ def execute(args, manipulate_encodings=True):
 
     >>> dir = utility.Dir()
     >>> os.chdir(dir.path)
-    >>> vcs = vcs.installed_vcs()
-    >>> vcs.init('.')
-    >>> print vcs.name
-    Arch
-    >>> execute([], manipulate_encodings=False)
-    Using Arch for revision control.
+    >>> _vcs = vcs.installed_vcs()
+    >>> _vcs.init('.')
+    >>> _vcs.name in vcs.VCS_ORDER
+    >>> execute([], manipulate_encodings=False)  # doctest: +ELLIPSIS
+    Using ... for revision control.
     Directory initialized.
-    >>> vcs.cleanup()
+    >>> _vcs.cleanup()
 
     >>> try:
     ...     execute(['--root', '.'], manipulate_encodings=False)

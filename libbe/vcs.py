@@ -38,16 +38,23 @@ import doctest
 
 from utility import Dir, search_parent_directories
 from subproc import CommandError, invoke
+from plugin import get_plugin
 
+# List VCS modules in order of preference.
+# Don't list this module, it is implicitly last.
+VCS_ORDER = ['arch', 'bzr', 'darcs', 'git', 'hg']
+
+def set_preferred_vcs(name):
+    global VCS_ORDER
+    assert name in VCS_ORDER, \
+        'unrecognized VCS %s not in\n  %s' % (name, VCS_ORDER)
+    VCS_ORDER.remove(name)
+    VCS_ORDER.insert(0, name)
 
 def _get_matching_vcs(matchfn):
     """Return the first module for which matchfn(VCS_instance) is true"""
-    import arch
-    import bzr
-    import darcs
-    import git
-    import hg
-    for module in [arch, bzr, darcs, git, hg]:
+    for submodname in VCS_ORDER:
+        module = get_plugin('libbe', submodname)
         vcs = module.new()
         if matchfn(vcs) == True:
             return vcs
@@ -117,6 +124,10 @@ class VCS(object):
         self._duplicateDirname = None
         self.encoding = encoding
         self.version = self._get_version()
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__, id(self))
+    def __repr__(self):
+        return str(self)
     def _vcs_version(self):
         """
         Return the VCS version string.

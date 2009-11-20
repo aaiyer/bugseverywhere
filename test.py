@@ -8,7 +8,7 @@ When called with module name arguments, only run the doctests from
 those modules.
 """
 
-from libbe import plugin
+from libbe import plugin, vcs
 import unittest
 import doctest
 import sys
@@ -41,9 +41,10 @@ else:
     for modname,module in plugin.iter_plugins("becommands"):
         suite.addTest(doctest.DocTestSuite(module))
 
-#for s in suite._tests:
-#    print s
-#exit(0)
+_vcs = vcs.installed_vcs()
+vcs.set_preferred_vcs(_vcs.name)
+print 'Using %s as the testing VCS' % _vcs.name
+
 result = unittest.TextTestRunner(verbosity=2).run(suite)
 
 numErrors = len(result.errors)

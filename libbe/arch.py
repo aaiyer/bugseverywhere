@@ -45,7 +45,7 @@ def new():
     return Arch()
 
 class Arch(vcs.VCS):
-    name = "Arch"
+    name = "arch"
     client = client
     versioned = True
     _archive_name = None

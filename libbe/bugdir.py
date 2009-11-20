@@ -213,7 +213,7 @@ that the Arch VCS backend *enforces* ids with this format.""",
 settings easy.  Don't set this attribute.  Set .vcs instead, and
 .vcs_name will be automatically adjusted.""",
                          default="None",
-                         allowed=["None", "Arch", "bzr", "darcs", "git", "hg"])
+                         allowed=["None"]+vcs.VCS_ORDER)
     def vcs_name(): return {}
 
     def _get_vcs(self, vcs_name=None):
