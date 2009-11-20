@@ -27,6 +27,9 @@ from encoding import get_encoding
 _MSWINDOWS = sys.platform == 'win32'
 _POSIX = not _MSWINDOWS
 
+if _POSIX == True:
+    import select
+
 class CommandError(Exception):
     def __init__(self, command, status, stdout=None, stderr=None):
         strerror = ['Command failed (%d):\n  %s\n' % (status, stderr),
