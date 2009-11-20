@@ -28,6 +28,7 @@ _MSWINDOWS = sys.platform == 'win32'
 _POSIX = not _MSWINDOWS
 
 if _POSIX == True:
+    import os
     import select
 
 class CommandError(Exception):
