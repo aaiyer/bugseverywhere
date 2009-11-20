@@ -25,6 +25,10 @@ import os.path
 import errno
 import time
 import types
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
 import xml.sax.saxutils
 import doctest
 
@@ -271,40 +275,100 @@ class Bug(settings_object.SavedSettingsObject):
             return str(value)
         return value
 
-    def xml(self, show_comments=False):
-        if self.bugdir == None:
-            shortname = self.uuid
-        else:
-            shortname = self.bugdir.bug_shortname(self)
+    def xml(self, indent=0, shortname=None, show_comments=False):
+        if shortname == None:
+            if self.bugdir == None:
+                shortname = self.uuid
+            else:
+                shortname = self.bugdir.bug_shortname(self)
 
         if self.time == None:
             timestring = ""
         else:
             timestring = utility.time_to_str(self.time)
 
-        info = [("uuid", self.uuid),
-                ("short-name", shortname),
-                ("severity", self.severity),
-                ("status", self.status),
-                ("assigned", self.assigned),
-                ("target", self.target),
-                ("reporter", self.reporter),
-                ("creator", self.creator),
-                ("created", timestring),
-                ("summary", self.summary)]
-        ret = '<bug>\n'
+        info = [('uuid', self.uuid),
+                ('short-name', shortname),
+                ('severity', self.severity),
+                ('status', self.status),
+                ('assigned', self.assigned),
+                ('target', self.target),
+                ('reporter', self.reporter),
+                ('creator', self.creator),
+                ('created', timestring),
+                ('summary', self.summary)]
+        lines = ['<bug>']
         for (k,v) in info:
             if v is not None:
-                ret += '  <%s>%s</%s>\n' % (k,xml.sax.saxutils.escape(v),k)
+                lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
         for estr in self.extra_strings:
-            ret += '  <extra-string>%s</extra-string>\n' % estr
+            lines.append('  <extra-string>%s</extra-string>\n' % estr)
         if show_comments == True:
-            comout = self.comment_root.xml_thread(auto_name_map=True,
+            comout = self.comment_root.xml_thread(indent=indent+2,
+                                                  auto_name_map=True,
                                                   bug_shortname=shortname)
             if len(comout) > 0:
-                ret += comout+'\n'
-        ret += '</bug>'
-        return ret
+                lines.append(comout)
+        lines.append('</bug>')
+        istring = ' '*indent
+        sep = '\n' + istring
+        return istring + sep.join(lines).rstrip('\n')
+
+    def from_xml(self, xml_string, verbose=True):
+        """
+        Note: If a bug uuid is given, set .alt_id to it's value.
+        >>> bugA = Bug(uuid="0123", summary="Need to test Bug.from_xml()")
+        >>> bugA.date = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> bugA.creator = u'Fran\xe7ois'
+        >>> bugA.extra_strings += ['TAG: very helpful']
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commB = bugA.comment_root.new_reply(body='comment B')
+        >>> commC = commA.new_reply(body='comment C')
+        >>> xml = bugA.xml(shortname="bug-1")
+        >>> bugB = Bug()
+        >>> bugB.from_xml(xml, verbose=True)
+        >>> bugB.xml(shortname="bug-1") == xml
+        False
+        >>> bugB.uuid = bugB.alt_id
+        >>> bugB.xml(shortname="bug-1") == xml
+        True
+        """
+        if type(xml_string) == types.UnicodeType:
+            xml_string = xml_string.strip().encode('unicode_escape')
+        bug = ElementTree.XML(xml_string)
+        if bug.tag != 'bug':
+            raise utility.InvalidXML( \
+                'bug', bug, 'root element must be <comment>')
+        tags=['uuid','short-name','severity','status','assigned','target',
+              'reporter', 'creator', 'created', 'summary', 'extra-string',
+              'comment']
+        uuid = None
+        estrs = []
+        for child in bug.getchildren():
+            if child.tag == 'short-name':
+                pass
+            elif child.tag in tags:
+                if child.text == None or len(child.text) == 0:
+                    text = settings_object.EMPTY
+                else:
+                    text = xml.sax.saxutils.unescape(child.text)
+                    text = text.decode('unicode_escape').strip()
+                if child.tag == "uuid":
+                    uuid = text
+                    continue # don't set the bug's uuid tag.
+                if child.tag == 'extra-string':
+                    estrs.append(text)
+                    continue # don't set the bug's extra_string yet.
+                else:
+                    attr_name = child.tag.replace('-','_')
+                setattr(self, attr_name, text)
+            elif verbose == True:
+                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                    % (child.tag, comment.tag)
+        if uuid not in [None, self.uuid]:
+            if not hasattr(self, 'alt_id') or self.alt_id == None:
+                self.alt_id = uuid
+        self.extra_strings = estrs
 
     def string(self, shortlist=False, show_comments=False):
         if self.bugdir == None:
@@ -525,6 +589,7 @@ cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
 cmp_target = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "target")
 cmp_reporter = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "reporter")
 cmp_summary = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "summary")
+cmp_extra_strings = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "extra_strings")
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
@@ -547,7 +612,8 @@ def cmp_comments(bug_1, bug_2):
 
 DEFAULT_CMP_FULL_CMP_LIST = \
     (cmp_status, cmp_severity, cmp_assigned, cmp_time, cmp_creator,
-     cmp_reporter, cmp_target, cmp_comments, cmp_summary, cmp_uuid)
+     cmp_reporter, cmp_target, cmp_comments, cmp_summary, cmp_uuid,
+     cmp_extra_strings)
 
 class BugCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):
