@@ -23,7 +23,7 @@ import string
 from subprocess import Popen
 import sys
 
-from update_copyright import Pipe
+from update_copyright import Pipe, update_authors, update_files
 
 def validate_tag(tag):
     """
@@ -103,7 +103,7 @@ def set_vcs_name(filename, vcs_name='None'):
     something that will work.
       vcs_name: new_vcs_name
     """
-    print 'set_vcs_name in', filename, 'to', vcs_name
+    print 'set vcs_name in', filename, 'to', vcs_name
     p = Pipe([['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
                filename]])
     assert p.status == 0, p.statuses
@@ -154,6 +154,8 @@ For example
         print "Handle pending changes before releasing."
         sys.exit(1)
     set_release_version(tag)
+    update_authors()
+    update_files()
     bzr_commit("Bumped to version %s" % tag)
     bzr_tag(tag)
     create_tarball(tag)

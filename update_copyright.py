@@ -409,6 +409,19 @@ def update_file(filename, verbose=True):
     f.write(contents)
     f.close()
 
+def update_files(files=None):
+    if files == None or len(files) == 0:
+        p = Pipe([['grep', '-rc', '# Copyright', '.'],
+                  ['grep', '-v', ':0$'],
+                  ['cut', '-d:', '-f1']])
+        assert p.status == 0
+        files = p.stdout.rstrip().split('\n')
+
+    for filename in files:
+        if ignored_file(filename) == True:
+            continue
+        update_file(filename)
+
 def test():
     import doctest
     doctest.testmod() 
@@ -439,16 +452,4 @@ automatically.
         sys.exit(0)
 
     update_authors()
-
-    files = args
-    if len(files) == 0:
-        p = Pipe([['grep', '-rc', '# Copyright', '.'],
-                  ['grep', '-v', ':0$'],
-                  ['cut', '-d:', '-f1']])
-        assert p.status == 0
-        files = p.stdout.rstrip().split('\n')
-
-    for filename in files:
-        if ignored_file(filename) == True:
-            continue
-        update_file(filename)
+    update_files(files=args)
