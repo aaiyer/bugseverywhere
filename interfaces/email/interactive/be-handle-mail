@@ -242,7 +242,8 @@ class Command (object):
         os.chdir(BE_DIR)
         try:
             self.ret = libbe.cmdutil.execute(self.command, self.args,
-                                             manipulate_encodings=False)
+                                             manipulate_encodings=False,
+                                             restrict_file_access=True)
         except libbe.cmdutil.GetHelp:
             print libbe.cmdutil.help(command)
         except libbe.cmdutil.GetCompletions:

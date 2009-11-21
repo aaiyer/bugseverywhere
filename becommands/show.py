@@ -22,7 +22,7 @@ import sys
 from libbe import cmdutil, bugdir, comment, version, _version
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()

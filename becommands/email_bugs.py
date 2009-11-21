@@ -33,7 +33,7 @@ __desc__ = __doc__
 
 sendmail='/usr/sbin/sendmail -t'
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> from libbe import bug

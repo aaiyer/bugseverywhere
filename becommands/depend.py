@@ -35,7 +35,7 @@ class BrokenLink (Exception):
         self.blocking_bug = blocking_bug
 
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.SimpleBugDir()

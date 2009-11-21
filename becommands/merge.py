@@ -19,7 +19,7 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.SimpleBugDir()

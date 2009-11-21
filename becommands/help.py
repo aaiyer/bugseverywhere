@@ -20,7 +20,7 @@
 from libbe import cmdutil, utility
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     Print help of specified command (the manipulate_encodings argument
     is ignored).

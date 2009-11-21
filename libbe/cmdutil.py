@@ -76,11 +76,12 @@ def get_command(command_name):
     return cmd
 
 
-def execute(cmd, args, manipulate_encodings=True):
+def execute(cmd, args, manipulate_encodings=True, restrict_file_access=False):
     enc = encoding.get_encoding()
     cmd = get_command(cmd)
     ret = cmd.execute([a.decode(enc) for a in args],
-                      manipulate_encodings=manipulate_encodings)
+                      manipulate_encodings=manipulate_encodings,
+                      restrict_file_access=restrict_file_access)
     if ret == None:
         ret = 0
     return ret
@@ -212,6 +213,22 @@ def underlined(instring):
     """
     
     return "%s\n%s" % (instring, "="*len(instring))
+
+def restrict_file_access(bugdir, path):
+    """
+    Check that the file at path is inside bugdir.root.  This is
+    important if you allow other users to execute becommands with your
+    username (e.g. if you're running be-handle-mail through your
+    ~/.procmailrc).  If this check wasn't made, a user could e.g.
+    run
+      be commit -b ~/.ssh/id_rsa "Hack to expose ssh key"
+    which would expose your ssh key to anyone who could read the VCS
+    log.
+    """
+    in_root = bugdir.vcs.path_in_root(path, bugdir.root)
+    if in_root == False:
+        raise UserError('file access restricted!\n  %s not in %s'
+                        % (path, bugdir.root))
 
 def parse_id(id):
     """

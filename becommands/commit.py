@@ -18,7 +18,7 @@ from libbe import cmdutil, bugdir, editor, vcs
 import sys
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> from libbe import bug
@@ -49,6 +49,8 @@ def execute(args, manipulate_encodings=True):
     elif options.body == "EDITOR":
         body = editor.editor_string("Please enter your commit message above")
     else:
+        if restrict_file_access == True:
+            cmdutil.restrict_file_access(bd, options.body)
         body = bd.vcs.get_file_contents(options.body, allow_no_vcs=True)
     try:
         revision = bd.vcs.commit(summary, body=body,

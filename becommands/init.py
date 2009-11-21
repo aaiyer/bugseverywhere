@@ -20,7 +20,7 @@ import os.path
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility, vcs
     >>> import os

@@ -24,7 +24,7 @@ except ImportError: # look for non-core module
     from elementtree import ElementTree
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import time
     >>> import StringIO
@@ -69,6 +69,8 @@ def execute(args, manipulate_encodings=True):
     if filename == '-':
         xml = sys.stdin.read()
     else:
+        if restrict_file_access == True:
+            cmdutil.restrict_file_access(bd, options.body)
         xml = bd.vcs.get_file_contents(filename, allow_no_vcs=True)
     str_xml = xml.encode('unicode_escape').replace(r'\n', '\n')
     # unicode read + encode to string so we know the encoding,
