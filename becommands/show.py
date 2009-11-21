@@ -79,42 +79,7 @@ def execute(args, manipulate_encodings=True):
                 "--only-raw-body requires a comment ID, not '%s'" % args[0])
         sys.__stdout__.write(comment.body)
         sys.exit(0)
-
-    bugs,root_comments = _sort_ids(args, options.comments)
-    if options.XML:
-        print _xml_header(bd.encoding)
-    else:
-        spaces_left = len(args) - 1
-    for bugname in bugs:
-        bug = cmdutil.bug_from_id(bd, bugname)
-        if options.XML:
-            print bug.xml(indent=2, show_comments=options.comments)
-        else:
-            print bug.string(show_comments=options.comments)
-            if spaces_left > 0:
-                spaces_left -= 1
-                print '' # add a blank line between bugs/comments
-    for bugname,comments in root_comments.items():
-        bug = cmdutil.bug_from_id(bd, bugname)
-        if options.XML:
-            print '  <bug>'
-            print '    <uuid>%s</uuid>' % bug.uuid
-        for commname in comments:
-            try:
-                comment = bug.comment_root.comment_from_shortname(commname)
-            except comment.InvalidShortname, e:
-                raise UserError(e.message)
-            if options.XML:
-                print comment.xml(indent=4, shortname=bugname)
-            else:
-                print comment.string(shortname=shortname)
-                if spaces_left > 0:
-                    spaces_left -= 1
-                    print '' # add a blank line between bugs/comments
-        if options.XML:
-            print '</bug>'
-    if options.XML:
-        print _xml_footer()
+    print output(args, bd, as_xml=options.XML, with_comments=options.comments)
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show [options] ID [ID ...]")
@@ -173,7 +138,45 @@ def _xml_header(encoding):
         value = _version.version_info[tag.replace('-', '_')]
         lines.append('    <%s>%s</%s>' % (tag, value, tag))
     lines.append('  </version>')
-    return '\n'.join(lines)
+    return lines
 
 def _xml_footer():
-    return '</be-xml>'
+    return ['</be-xml>']
+
+def output(ids, bd, as_xml=True, with_comments=True):
+    bugs,root_comments = _sort_ids(ids, with_comments)
+    lines = []
+    if as_xml:
+        lines.extend(_xml_header(bd.encoding))
+    else:
+        spaces_left = len(ids) - 1
+    for bugname in bugs:
+        bug = cmdutil.bug_from_id(bd, bugname)
+        if as_xml:
+            lines.append(bug.xml(indent=2, show_comments=with_comments))
+        else:
+            lines.append(bug.string(show_comments=with_comments))
+            if spaces_left > 0:
+                spaces_left -= 1
+                lines.append('') # add a blank line between bugs/comments
+    for bugname,comments in root_comments.items():
+        bug = cmdutil.bug_from_id(bd, bugname)
+        if as_xml:
+            lines.extend(['  <bug>', '    <uuid>%s</uuid>' % bug.uuid])
+        for commname in comments:
+            try:
+                comment = bug.comment_root.comment_from_shortname(commname)
+            except comment.InvalidShortname, e:
+                raise UserError(e.message)
+            if as_xml:
+                lines.append(comment.xml(indent=4, shortname=bugname))
+            else:
+                lines.append(comment.string(shortname=shortname))
+                if spaces_left > 0:
+                    spaces_left -= 1
+                    lines.append('') # add a blank line between bugs/comments
+        if as_xml:
+            lines.append('</bug>')
+    if as_xml:
+        lines.extend(_xml_footer())
+    return '\n'.join(lines)

@@ -247,8 +247,11 @@ User creates a new bug
   <Describe bug>
   ...
 User exports bug as xml and emails it to the developers
-  user$ be show --xml --version 48f > 48f.xml
+  user$ be show --xml 48f > 48f.xml
   user$ cat 48f.xml | mail -s "Demuxulizer bug xml" devs@b.com
+or equivalently (with a slightly fancier be-handle-mail compatible
+email):
+  user$ be email-bugs 48f
 Devs recieve email, and save it's contents as demux-bug.xml
   dev$ cat demux-bug.xml | be import-xml -
 """

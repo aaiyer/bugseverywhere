@@ -27,6 +27,7 @@ from libbe import cmdutil, bugdir
 from libbe.subproc import invoke
 from libbe.utility import time_to_str
 from libbe.vcs import detect_vcs, installed_vcs
+import show
 
 __desc__ = __doc__
 
@@ -52,31 +53,41 @@ def execute(args, manipulate_encodings=True):
     Subject: [be-bug:xml] Updates to a, b
     <BLANKLINE>
     <?xml version=3D"1.0" encoding=3D"utf-8" ?>
-    <bugs>
-    <bug>
-      <uuid>a</uuid>
-      <short-name>a</short-name>
-      <severity>minor</severity>
-      <status>open</status>
-      <creator>John Doe &lt;jdoe@example.com&gt;</creator>
-      <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
-      <summary>Bug A</summary>
-    </bug>
-    <bug>
-      <uuid>b</uuid>
-      <short-name>b</short-name>
-      <severity>minor</severity>
-      <status>closed</status>
-      <creator>Jane Doe &lt;jdoe@example.com&gt;</creator>
-      <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
-      <summary>Bug B</summary>
-    </bug>
-    </bugs>
+    <be-xml>
+      <version>
+        <tag>...</tag>
+        <branch-nick>...</branch-nick>
+        <revno>...</revno>
+        <revision-id>...
+      </version>
+      <bug>
+        <uuid>a</uuid>
+        <short-name>a</short-name>
+        <severity>minor</severity>
+        <status>open</status>
+        <creator>John Doe &lt;jdoe@example.com&gt;</creator>
+        <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+        <summary>Bug A</summary>
+      </bug>
+      <bug>
+        <uuid>b</uuid>
+        <short-name>b</short-name>
+        <severity>minor</severity>
+        <status>closed</status>
+        <creator>Jane Doe &lt;jdoe@example.com&gt;</creator>
+        <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+        <summary>Bug B</summary>
+      </bug>
+    </be-xml>
     >>> bd.cleanup()
 
     Note that the '=3D' bits in
       <?xml version=3D"1.0" encoding=3D"utf-8" ?>
     are the way quoted-printable escapes '='.
+    
+    The unclosed <revision-id>... is because revision ids can be long
+    enough to cause line wraps, and we want to ensure we match even if
+    the closing </revision-id> is split by the wrapping.
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
@@ -86,19 +97,14 @@ def execute(args, manipulate_encodings=True):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    lines = [u'<?xml version="1.0" encoding="%s" ?>' % bd.encoding,
-             u'<bugs>']
-    for shortname in args:
-        bug = cmdutil.bug_from_id(bd, shortname)
-        lines.append(bug.xml(show_comments=True))
-    lines.append(u'</bugs>')
+    xml = show.output(args, bd, as_xml=True, with_comments=True)
     subject = options.subject
     if subject == None:
         subject = '[be-bug:xml] Updates to %s' % ', '.join(args)
     submit_email = TextEmail(to_address=options.to_address,
                              from_address=options.from_address,
                              subject=subject,
-                             body=u'\n'.join(lines),
+                             body=xml,
                              encoding=bd.encoding,
                              subtype='xml')
     if options.output == True:
