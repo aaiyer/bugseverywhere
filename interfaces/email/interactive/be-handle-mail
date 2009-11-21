@@ -564,8 +564,10 @@ class Message (object):
         if mime_type == "text/plain":
             body = self._strip_footer(body)
         content_type = mime_type
-        args = [u"--author", author, u"--alt-id", alt_id,
-                u"--content-type", content_type, bug_id, u"-"]
+        args = [u"--author", author]
+        if alt_id != None:
+            args.extend([u"--alt-id", alt_id])
+        args.extend([u"--content-type", content_type, bug_id, u"-"])
         commands = [Command(self, command, args, stdin=body)]
         return commands
     def parse_control(self):
