@@ -89,7 +89,7 @@ def execute(args, manipulate_encodings=True):
     lines = [u'<?xml version="1.0" encoding="%s" ?>' % bd.encoding,
              u'<bugs>']
     for shortname in args:
-        bug = cmdutil.bug_from_shortname(bd, shortname)
+        bug = cmdutil.bug_from_id(bd, shortname)
         lines.append(bug.xml(show_comments=True))
     lines.append(u'</bugs>')
     subject = options.subject

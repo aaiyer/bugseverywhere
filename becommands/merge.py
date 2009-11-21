@@ -137,9 +137,9 @@ def execute(args, manipulate_encodings=True):
     
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    bugA = cmdutil.bug_from_shortname(bd, args[0])
+    bugA = cmdutil.bug_from_id(bd, args[0])
     bugA.load_comments()
-    bugB = cmdutil.bug_from_shortname(bd, args[1])
+    bugB = cmdutil.bug_from_id(bd, args[1])
     bugB.load_comments()
     mergeA = bugA.new_comment("Merged from bug %s" % bugB.uuid)
     newCommTree = copy.deepcopy(bugB.comment_root)

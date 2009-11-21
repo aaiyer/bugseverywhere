@@ -40,7 +40,7 @@ def execute(args, manipulate_encodings=True):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    bug = cmdutil.bug_from_shortname(bd, args[0])
+    bug = cmdutil.bug_from_id(bd, args[0])
     if len(args) == 1:
         print bug.status
     else:

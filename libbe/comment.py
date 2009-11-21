@@ -641,6 +641,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         bug-1:2 b
         bug-1:3 c
         bug-1:4 d
+        >>> for id,name in a.comment_shortnames():
+        ...     print id, name.uuid
+        :1 a
+        :2 b
+        :3 c
+        :4 d
         """
         if bug_shortname == None:
             bug_shortname = ""

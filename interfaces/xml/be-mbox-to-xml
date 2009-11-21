@@ -15,8 +15,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-Convert an mbox into xml suitable for imput into be.
-  $ cat mbox | be-mbox-to-xml | be comment --xml <ID> -
+Convert an mbox into xml suitable for input into be.
+  $ be-mbox-to-xml file.mbox | be import-xml -c <ID> -
 mbox is a flat-file format, consisting of a series of messages.
 Messages begin with a a From_ line, followed by RFC 822 email,
 followed by a blank line.
@@ -140,10 +140,10 @@ def comment_message_to_xml(message, fields=None):
 def main(mbox_filename):
     mb = mbox(mbox_filename)
     print u'<?xml version="1.0" encoding="%s" ?>' % DEFAULT_ENCODING
-    print u"<comment-list>"
+    print u"<be-xml>"
     for message in mb:
         print comment_message_to_xml(message)
-    print u"</comment-list>"
+    print u"</be-xml>"
 
 
 if __name__ == "__main__":
