@@ -26,7 +26,7 @@ __desc__ = __doc__
 AVAILABLE_CMPS = [fn[4:] for fn in dir(bug) if fn[:4] == 'cmp_']
 AVAILABLE_CMPS.remove("attr") # a cmp_* template.
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()

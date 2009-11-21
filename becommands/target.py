@@ -22,7 +22,7 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -55,7 +55,7 @@ def execute(args, manipulate_encodings=True):
             if target and isinstance(target,str):
                 print target
         return
-    bug = cmdutil.bug_from_shortname(bd, args[0])
+    bug = cmdutil.bug_from_id(bd, args[0])
     if len(args) == 1:
         if bug.target is None:
             print "No target assigned."

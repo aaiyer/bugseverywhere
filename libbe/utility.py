@@ -29,6 +29,21 @@ import time
 import types
 import doctest
 
+class InvalidXML(ValueError):
+    """
+    Invalid XML while parsing for a *.from_xml() method.
+    type    - string identifying *, e.g. "bug", "comment", ...
+    element - ElementTree.Element instance which caused the error
+    error   - string describing the error
+    """
+    def __init__(self, type, element, error):
+        msg = 'Invalid %s xml: %s\n  %s\n' \
+            % (type, error, ElementTree.tostring(element))
+        ValueError.__init__(self, msg)
+        self.type = type
+        self.element = element
+        self.error = error
+
 def search_parent_directories(path, filename):
     """
     Find the file (or directory) named filename in path or in any

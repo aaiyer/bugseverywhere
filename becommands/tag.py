@@ -19,7 +19,7 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.SimpleBugDir()
@@ -95,7 +95,7 @@ def execute(args, manipulate_encodings=True):
         if len(tags) > 0:
             print '\n'.join(tags)
         return
-    bug = cmdutil.bug_from_shortname(bd, args[0])
+    bug = cmdutil.bug_from_id(bd, args[0])
     if len(args) == 2:
         given_tag = args[1]
         estrs = bug.extra_strings

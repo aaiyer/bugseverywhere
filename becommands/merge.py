@@ -19,7 +19,7 @@ from libbe import cmdutil, bugdir
 import os, copy
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.SimpleBugDir()
@@ -137,9 +137,9 @@ def execute(args, manipulate_encodings=True):
     
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    bugA = cmdutil.bug_from_shortname(bd, args[0])
+    bugA = cmdutil.bug_from_id(bd, args[0])
     bugA.load_comments()
-    bugB = cmdutil.bug_from_shortname(bd, args[1])
+    bugB = cmdutil.bug_from_id(bd, args[1])
     bugB.load_comments()
     mergeA = bugA.new_comment("Merged from bug %s" % bugB.uuid)
     newCommTree = copy.deepcopy(bugB.comment_root)

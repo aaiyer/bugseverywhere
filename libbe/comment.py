@@ -51,14 +51,6 @@ class InvalidShortname(KeyError):
         self.shortname = shortname
         self.shortnames = shortnames
 
-class InvalidXML(ValueError):
-    def __init__(self, element, comment):
-        msg = "Invalid comment xml: %s\n  %s\n" \
-            % (comment, ElementTree.tostring(element))
-        ValueError.__init__(self, msg)
-        self.element = element
-        self.comment = comment
-
 class MissingReference(ValueError):
     def __init__(self, comment):
         msg = "Missing reference to %s" % (comment.in_reply_to)
@@ -331,27 +323,29 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         if shortname == None:
             shortname = self.uuid
-        if self.content_type.startswith("text/"):
-            body = (self.body or "").rstrip('\n')
+        if self.content_type.startswith('text/'):
+            body = (self.body or '').rstrip('\n')
         else:
             maintype,subtype = self.content_type.split('/',1)
             msg = email.mime.base.MIMEBase(maintype, subtype)
-            msg.set_payload(self.body or "")
+            msg.set_payload(self.body or '')
             email.encoders.encode_base64(msg)
-            body = base64.encodestring(self.body or "")
-        info = [("uuid", self.uuid),
-                ("alt-id", self.alt_id),
-                ("short-name", shortname),
-                ("in-reply-to", self.in_reply_to),
-                ("author", self._setting_attr_string("author")),
-                ("date", self.date),
-                ("content-type", self.content_type),
-                ("body", body)]
-        lines = ["<comment>"]
+            body = base64.encodestring(self.body or '')
+        info = [('uuid', self.uuid),
+                ('alt-id', self.alt_id),
+                ('short-name', shortname),
+                ('in-reply-to', self.in_reply_to),
+                ('author', self._setting_attr_string('author')),
+                ('date', self.date),
+                ('content-type', self.content_type),
+                ('body', body)]
+        lines = ['<comment>']
         for (k,v) in info:
             if v != None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
-        lines.append("</comment>")
+        for estr in self.extra_strings:
+            lines.append('  <extra-string>%s</extra-string>\n' % estr)
+        lines.append('</comment>')
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
@@ -363,58 +357,61 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
         >>> commA.uuid = "0123"
         >>> commA.date = "Thu, 01 Jan 1970 00:00:00 +0000"
+        >>> commA.author = u'Fran\xe7ois'
+        >>> commA.extra_strings += ['TAG: very helpful']
         >>> xml = commA.xml(shortname="com-1")
         >>> commB = Comment()
-        >>> commB.from_xml(xml)
-        >>> attrs=['uuid','alt_id','in_reply_to','author','date','content_type','body']
-        >>> for attr in attrs: # doctest: +ELLIPSIS
-        ...     if getattr(commB, attr) != getattr(commA, attr):
-        ...         estr = "Mismatch on %s: '%s' should be '%s'"
-        ...         args = (attr, getattr(commB, attr), getattr(commA, attr))
-        ...         print estr % args
-        Mismatch on uuid: '...' should be '0123'
-        Mismatch on alt_id: '0123' should be 'None'
-        >>> print commB.alt_id
-        0123
-        >>> commA.author
-        >>> commB.author
+        >>> commB.from_xml(xml, verbose=True)
+        >>> commB.xml(shortname="com-1") == xml
+        False
+        >>> commB.uuid = commB.alt_id
+        >>> commB.alt_id = None
+        >>> commB.xml(shortname="com-1") == xml
+        True
         """
         if type(xml_string) == types.UnicodeType:
-            xml_string = xml_string.strip().encode("unicode_escape")
+            xml_string = xml_string.strip().encode('unicode_escape')
         comment = ElementTree.XML(xml_string)
-        if comment.tag != "comment":
-            raise InvalidXML(comment, "root element must be <comment>")
-        tags=['uuid','alt-id','in-reply-to','author','date','content-type','body']
+        if comment.tag != 'comment':
+            raise utility.InvalidXML( \
+                'comment', comment, 'root element must be <comment>')
+        tags=['uuid','alt-id','in-reply-to','author','date','content-type',
+              'body','extra-string']
         uuid = None
         body = None
+        estrs = []
         for child in comment.getchildren():
-            if child.tag == "short-name":
+            if child.tag == 'short-name':
                 pass
             elif child.tag in tags:
                 if child.text == None or len(child.text) == 0:
                     text = settings_object.EMPTY
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
-                    text = unicode(text).decode("unicode_escape").strip()
-                if child.tag == "uuid":
+                    text = text.decode('unicode_escape').strip()
+                if child.tag == 'uuid':
                     uuid = text
-                    continue # don't set the bug's uuid tag.
-                if child.tag == "body":
+                    continue # don't set the comment's uuid tag.
+                if child.tag == 'body':
                     body = text
-                    continue # don't set the bug's body yet.
+                    continue # don't set the comment's body yet.
+                if child.tag == 'extra-string':
+                    estrs.append(text)
+                    continue # don't set the comment's extra_string yet.
                 else:
                     attr_name = child.tag.replace('-','_')
                 setattr(self, attr_name, text)
             elif verbose == True:
-                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
                     % (child.tag, comment.tag)
         if self.alt_id == None and uuid not in [None, self.uuid]:
             self.alt_id = uuid
         if body != None:
-            if self.content_type.startswith("text/"):
-                self.body = body+"\n" # restore trailing newline
+            if self.content_type.startswith('text/'):
+                self.body = body+'\n' # restore trailing newline
             else:
                 self.body = base64.decodestring(body)
+        self.extra_strings = estrs
 
     def string(self, indent=0, shortname=None):
         """
@@ -644,6 +641,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         bug-1:2 b
         bug-1:3 c
         bug-1:4 d
+        >>> for id,name in a.comment_shortnames():
+        ...     print id, name.uuid
+        :1 a
+        :2 b
+        :3 c
+        :4 d
         """
         if bug_shortname == None:
             bug_shortname = ""
@@ -726,12 +729,14 @@ cmp_author = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "autho
 cmp_in_reply_to = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "in_reply_to")
 cmp_content_type = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "content_type")
 cmp_body = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "body")
+cmp_extra_strings = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "extra_strings")
 # chronological rankings (newer < older)
 cmp_time = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "time", invert=True)
 
+
 DEFAULT_CMP_FULL_CMP_LIST = \
     (cmp_time, cmp_author, cmp_content_type, cmp_body, cmp_in_reply_to,
-     cmp_uuid)
+     cmp_uuid, cmp_extra_strings)
 
 class CommentCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):

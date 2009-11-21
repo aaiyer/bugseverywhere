@@ -1,0 +1,18 @@
+Since we'll be distributing a non-bzr-repo version, it would be nice
+to adapt our 'submit bug' procedure
+  $ be new "The demuxulizer is broken"
+  Created bug with ID 48f
+  $ be comment 48f
+  <Describe bug>
+  $ bzr commit --message "Reported bug in demuxulizer"
+  $ bzr send --mail-to "be-devel@bugseverywhere.org"
+to one that works with this setup.  Without guaranteed versioning,
+that would probably be something along the lines of
+  $ be new "The demuxulizer is broken"
+  Created bug with ID 48f
+  $ be comment 48f
+  <Describe bug>
+  $ be email-bugs [--to be-devel@bugseverywhere.org] 48f
+With interfaces/email/interactive listening on the recieving end to
+grab new-bug emails and import them into an incoming bug repository.
+

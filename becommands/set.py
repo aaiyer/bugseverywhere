@@ -32,7 +32,7 @@ def _value_string(bd, setting):
             val = None
     return str(val)
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()

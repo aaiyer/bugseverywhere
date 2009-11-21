@@ -81,6 +81,7 @@ SUBJECT_TAG_START = None
 SUBJECT_TAG_NEW = None
 SUBJECT_TAG_COMMENT = None
 SUBJECT_TAG_CONTROL = None
+SUBJECT_TAG_XML = None
 
 BREAK = u"--"
 NEW_REQUIRED_PSEUDOHEADERS = [u"Version"]
@@ -90,7 +91,7 @@ NEW_OPTIONAL_PSEUDOHEADERS = [u"Reporter", u"Assign", u"Depend", u"Severity",
 CONTROL_COMMENT = u"#"
 ALLOWED_COMMANDS = [u"assign", u"comment", u"commit", u"depend", u"help",
                     u"list", u"merge", u"new", u"open", u"severity", u"show",
-                    u"status", u"subscribe", u"tag", u"target"]
+                    u"status", u"subscribe", u"tag", u"target", u"import-xml"]
 
 AUTOCOMMIT = True
 
@@ -241,7 +242,8 @@ class Command (object):
         os.chdir(BE_DIR)
         try:
             self.ret = libbe.cmdutil.execute(self.command, self.args,
-                                             manipulate_encodings=False)
+                                             manipulate_encodings=False,
+                                             restrict_file_access=True)
         except libbe.cmdutil.GetHelp:
             print libbe.cmdutil.help(command)
         except libbe.cmdutil.GetCompletions:
@@ -402,8 +404,8 @@ class Message (object):
     def _subject_tag_type(self):
         """
         Parse subject tag, return (type, value), where type is one of
-        None, "new", "comment", or "control"; and value is None except
-        in the case of "comment", in which case it's the bug
+        None, "new", "comment", "control", or "xml"; and value is None
+        except in the case of "comment", in which case it's the bug
         ID/shortname.
         """
         tag,subject = self._split_subject()
@@ -413,6 +415,8 @@ class Message (object):
             type = u"new"
         elif tag == SUBJECT_TAG_CONTROL:
             type = u"control"
+        elif tag == SUBJECT_TAG_XML:
+            type = u"xml"
         else:
             match = SUBJECT_TAG_COMMENT.match(tag)
             if len(match.groups()) == 1:
@@ -506,6 +510,8 @@ class Message (object):
             commands = self.parse_comment(value)
         elif tag_type == u"control":
             commands = self.parse_control()
+        elif tag_type == u"xml":
+            commands = self.parse_xml()
         else:
             raise Exception, u"Unrecognized tag type '%s'" % tag_type
         return commands
@@ -564,8 +570,10 @@ class Message (object):
         if mime_type == "text/plain":
             body = self._strip_footer(body)
         content_type = mime_type
-        args = [u"--author", author, u"--alt-id", alt_id,
-                u"--content-type", content_type, bug_id, u"-"]
+        args = [u"--author", author]
+        if alt_id != None:
+            args.extend([u"--alt-id", alt_id])
+        args.extend([u"--content-type", content_type, bug_id, u"-"])
         commands = [Command(self, command, args, stdin=body)]
         return commands
     def parse_control(self):
@@ -582,6 +590,16 @@ class Message (object):
             commands.append(Command(self, command, args))
         if len(commands) == 0:
             raise InvalidEmail(self, u"No commands in control email.")
+        return commands
+    def parse_xml(self):
+        command = u"import-xml"
+        body,mime_type = list(self._get_bodies_and_mime_types())[0]
+        if mime_type != "text/xml":
+            raise InvalidEmail(self,
+                u"Emails to %s must have MIME type 'text/xml', not '%s'."
+                % (SUBJECT_TAG_XML, mime_type))
+        args = [u"-"]
+        commands = [Command(self, command, args, stdin=body)]
         return commands
     def run(self):
         self._begin_response()
@@ -736,13 +754,15 @@ def generate_global_tags(tag_base=u"be-bug"):
     Generate a series of tags from a base tag string.
     """
     global SUBJECT_TAG_BASE, SUBJECT_TAG_START, SUBJECT_TAG_RESPONSE, \
-        SUBJECT_TAG_NEW, SUBJECT_TAG_COMMENT, SUBJECT_TAG_CONTROL
+        SUBJECT_TAG_NEW, SUBJECT_TAG_COMMENT, SUBJECT_TAG_CONTROL, \
+        SUBJECT_TAG_XML
     SUBJECT_TAG_BASE = tag_base
     SUBJECT_TAG_START = u"[%s" % tag_base
     SUBJECT_TAG_RESPONSE = u"[%s]" % tag_base
     SUBJECT_TAG_NEW = u"[%s:submit]" % tag_base
     SUBJECT_TAG_COMMENT = re.compile(u"\[%s:([\-0-9a-z]*)]" % tag_base)
     SUBJECT_TAG_CONTROL = SUBJECT_TAG_RESPONSE
+    SUBJECT_TAG_XML = u"[%s:xml]" % tag_base
 
 def open_logfile(logpath=None):
     """
@@ -945,6 +965,10 @@ class GenerateGlobalTagsTestCase (unittest.TestCase):
         m = SUBJECT_TAG_COMMENT.match("[projectX-bug:xyz-123]")
         self.failUnlessEqual(len(m.groups()), 1)
         self.failUnlessEqual(m.group(1), u"xyz-123")
+    def test_subject_tag_xml(self):
+        "Should set SUBJECT_TAG_XML global correctly"
+        generate_global_tags(u"projectX-bug")
+        self.failUnlessEqual(SUBJECT_TAG_XML, u"[projectX-bug:xml]")
 
 if __name__ == "__main__":
     main(sys.argv)

@@ -35,7 +35,7 @@ class BrokenLink (Exception):
         self.blocking_bug = blocking_bug
 
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility
     >>> bd = bugdir.SimpleBugDir()
@@ -95,7 +95,7 @@ def execute(args, manipulate_encodings=True):
                              for blockee,blocker in fixed])
         return 0
 
-    bugA = cmdutil.bug_from_shortname(bd, args[0])
+    bugA = cmdutil.bug_from_id(bd, args[0])
 
     if options.tree_depth != None:
         dtree = DependencyTree(bd, bugA, options.tree_depth)
@@ -112,7 +112,7 @@ def execute(args, manipulate_encodings=True):
         return 0
 
     if len(args) == 2:
-        bugB = cmdutil.bug_from_shortname(bd, args[1])
+        bugB = cmdutil.bug_from_id(bd, args[1])
         if options.remove == True:
             remove_block(bugA, bugB)
         else: # add the dependency

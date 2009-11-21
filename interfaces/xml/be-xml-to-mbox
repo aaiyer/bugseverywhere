@@ -86,21 +86,23 @@ class Bug (LimitedAttrDict):
               u"comments",
               u"extra-strings"]
     def print_to_mbox(self):
-        name,addr = email.utils.parseaddr(self["creator"])
-        print "From %s %s" % (addr, rfc2822_to_asctime(self["created"]))
-        print "Message-ID: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
-        print "Date: %s" % self["created"]
-        print "From: %s" % self["creator"]
-        print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
-        print "Content-Transfer-Encoding: 8bit"
-        print "Subject: %s: %s" % (self["short-name"], self["summary"])
-        print ""
-        print self["summary"]
-        print ""
-        if "extra-strings" in self:
-            print "extra strings:\n  ",
-            print '\n  '.join(self["extra_strings"])
-        print ""
+        if "creator" in self:
+            # otherwise, probably a `be show` uuid-only bug to avoid
+            # root comments.
+            name,addr = email.utils.parseaddr(self["creator"])
+            print "From %s %s" % (addr, rfc2822_to_asctime(self["created"]))
+            print "Message-id: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
+            print "Date: %s" % self["created"]
+            print "From: %s" % self["creator"]
+            print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
+            print "Content-Transfer-Encoding: 8bit"
+            print "Subject: %s: %s" % (self["short-name"], self["summary"])
+            if "extra-strings" in self:
+                for estr in self["extra_strings"]:
+                    print "X-Extra-String: %s" % estr
+            print ""
+            print self["summary"]
+            print ""
         if "comments" in self:
             for comment in self["comments"]:
                 comment.print_to_mbox(self)            
@@ -131,7 +133,8 @@ class Comment (LimitedAttrDict):
               u"author",
               u"date",
               u"content-type",
-              u"body"]
+              u"body",
+              u"extra-strings"]
     def print_to_mbox(self, bug=None):
         if bug == None:
             bug = Bug()
@@ -142,7 +145,7 @@ class Comment (LimitedAttrDict):
         elif "alt-id" in self: id = self["alt-id"]
         else:                  id = None
         if id != None:
-            print "Message-ID: <%s@%s>" % (id, DEFAULT_DOMAIN)
+            print "Message-id: <%s@%s>" % (id, DEFAULT_DOMAIN)
         print "Date: %s" % self["date"]
         print "From: %s" % self["author"]
         subject = ""
@@ -156,6 +159,9 @@ class Comment (LimitedAttrDict):
         if "in-reply-to" not in self.keys():
             self["in-reply-to"] = bug["uuid"]
         print "In-Reply-To: <%s@%s>" % (self["in-reply-to"], DEFAULT_DOMAIN)
+        if "extra-strings" in self:
+            for estr in self["extra_strings"]:
+                print "X-Extra-String: %s" % estr
         if self["content-type"].startswith("text/"):
             print "Content-Transfer-Encoding: 8bit"
             print "Content-Type: %s; charset=%s" % (self["content-type"], DEFAULT_ENCODING)
@@ -168,9 +174,15 @@ class Comment (LimitedAttrDict):
         assert element.tag == "comment", element.tag
         for field in element.getchildren():
             text = unescape(unicode(field.text).decode("unicode_escape").strip())
-            if field.tag == "body":
-                text+="\n"
-            self[field.tag] = text
+            if field.tag == "extra-string":
+                if "extra-strings" in self:
+                    self["extra-strings"].append(text)
+                else:
+                    self["extra-strings"] = [text]
+            else:
+                if field.tag == "body":
+                    text+="\n"
+                self[field.tag] = text
 
 def print_to_mbox(element):
     if element.tag == "bug":
@@ -181,16 +193,9 @@ def print_to_mbox(element):
         c = Comment()
         c.init_from_etree(element)
         c.print_to_mbox()
-    elif element.tag in ["bugs", "bug-list"]:
-        for b_elt in element.getchildren():
-            b = Bug()
-            b.init_from_etree(b_elt)
-            b.print_to_mbox()
-    elif element.tag in ["comments", "comment-list"]:
-        for c_elt in element.getchildren():
-            c = Comment()
-            c.init_from_etree(c_elt)
-            c.print_to_mbox()
+    elif element.tag in ["be-xml"]:
+        for elt in element.getchildren():
+            print_to_mbox(elt)
 
 if __name__ == "__main__":
     import sys

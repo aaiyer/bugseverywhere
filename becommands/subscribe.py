@@ -55,7 +55,7 @@ class InvalidType (ValueError):
         self.type_root = type_root
 
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)

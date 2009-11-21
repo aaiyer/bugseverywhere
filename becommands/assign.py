@@ -21,7 +21,7 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -57,7 +57,7 @@ def execute(args, manipulate_encodings=True):
         raise cmdutil.UsageError("Too many arguments.")
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    bug = cmdutil.bug_from_shortname(bd, args[0])
+    bug = cmdutil.bug_from_id(bd, args[0])
     bug = bd.bug_from_shortname(args[0])
     if len(args) == 1:
         bug.assigned = bd.user_id

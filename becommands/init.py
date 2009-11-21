@@ -20,7 +20,7 @@ import os.path
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True):
+def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
     >>> from libbe import utility, vcs
     >>> import os
@@ -37,14 +37,14 @@ def execute(args, manipulate_encodings=True):
 
     >>> dir = utility.Dir()
     >>> os.chdir(dir.path)
-    >>> vcs = vcs.installed_vcs()
-    >>> vcs.init('.')
-    >>> print vcs.name
-    Arch
-    >>> execute([], manipulate_encodings=False)
-    Using Arch for revision control.
+    >>> _vcs = vcs.installed_vcs()
+    >>> _vcs.init('.')
+    >>> _vcs.name in vcs.VCS_ORDER
+    True
+    >>> execute([], manipulate_encodings=False)  # doctest: +ELLIPSIS
+    Using ... for revision control.
     Directory initialized.
-    >>> vcs.cleanup()
+    >>> _vcs.cleanup()
 
     >>> try:
     ...     execute(['--root', '.'], manipulate_encodings=False)
