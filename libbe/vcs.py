@@ -334,6 +334,10 @@ class VCS(object):
         """
         Get the file as it was in a given revision.
         Revision==None specifies the current revision.
+
+        allow_no_vcs==True allows direct access to files through
+        codecs.open() or open() if the vcs decides it can't handle the
+        given path.
         """
         if not os.path.exists(path):
             raise NoSuchFile(path)
@@ -341,7 +345,10 @@ class VCS(object):
             relpath = self._u_rel_path(path)
             contents = self._vcs_get_file_contents(relpath,revision,binary=binary)
         else:
-            f = codecs.open(path, "r", self.encoding)
+            if binary == True:
+                f = codecs.open(path, "r", self.encoding)
+            else:
+                f = open(path, "rb")
             contents = f.read()
             f.close()
         return contents
