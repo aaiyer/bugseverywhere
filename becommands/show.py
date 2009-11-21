@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Show a particular bug"""
+"""Show a particular bug, comment, or combination of both."""
 import sys
-from libbe import cmdutil, bugdir
+from libbe import cmdutil, bugdir, comment, version, _version
 __desc__ = __doc__
 
 def execute(args, manipulate_encodings=True):
@@ -41,15 +41,23 @@ def execute(args, manipulate_encodings=True):
     <BLANKLINE>
     >>> execute (["--xml", "a"], manipulate_encodings=False) # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="..." ?>
-    <bug>
-      <uuid>a</uuid>
-      <short-name>a</short-name>
-      <severity>minor</severity>
-      <status>open</status>
-      <creator>John Doe &lt;jdoe@example.com&gt;</creator>
-      <created>...</created>
-      <summary>Bug A</summary>
-    </bug>
+    <be-xml>
+      <version>
+        <tag>...</tag>
+        <branch-nick>...</branch-nick>
+        <revno>...</revno>
+        <revision-id>...</revision-id>
+      </version>
+      <bug>
+        <uuid>a</uuid>
+        <short-name>a</short-name>
+        <severity>minor</severity>
+        <status>open</status>
+        <creator>John Doe &lt;jdoe@example.com&gt;</creator>
+        <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+        <summary>Bug A</summary>
+      </bug>
+    </be-xml>
     >>> bd.cleanup()
     """
     parser = get_parser()
@@ -60,31 +68,53 @@ def execute(args, manipulate_encodings=True):
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
+
+    if options.only_raw_body == True:
+        if len(args) != 1:
+            raise cmdutil.UsageError(
+                'only one ID accepted with --only-raw-body')
+        bug,comment = cmdutil.bug_comment_from_id(bd, args[0])
+        if comment == bug.comment_root:
+            raise cmdutil.UsageError(
+                "--only-raw-body requires a comment ID, not '%s'" % args[0])
+        sys.__stdout__.write(comment.body)
+        sys.exit(0)
+
+    bugs,root_comments = _sort_ids(args, options.comments)
     if options.XML:
-        print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
-    for shortname in args:
-        bugname,commname = cmdutil.parse_id(shortname)
-        if commname == None: # bug shortname
-            bug = cmdutil.bug_from_id(bd, shortname)
+        print _xml_header(bd.encoding)
+    else:
+        spaces_left = len(args) - 1
+    for bugname in bugs:
+        bug = cmdutil.bug_from_id(bd, bugname)
+        if options.XML:
+            print bug.xml(indent=2, show_comments=options.comments)
+        else:
+            print bug.string(show_comments=options.comments)
+            if spaces_left > 0:
+                spaces_left -= 1
+                print '' # add a blank line between bugs/comments
+    for bugname,comments in root_comments.items():
+        bug = cmdutil.bug_from_id(bd, bugname)
+        if options.XML:
+            print '  <bug>'
+            print '    <uuid>%s</uuid>' % bug.uuid
+        for commname in comments:
+            try:
+                comment = bug.comment_root.comment_from_shortname(commname)
+            except comment.InvalidShortname, e:
+                raise UserError(e.message)
             if options.XML:
-                print bug.xml(show_comments=options.comments)
+                print comment.xml(indent=4, shortname=bugname)
             else:
-                print bug.string(show_comments=options.comments)
-        elif options.comments == False:
-            continue
-        else: # comment shortname
-            bug,comment = cmdutil.bug_comment_from_id(shortname)
-            comment = bug.comment_root.comment_from_shortname(
-                shortname, bug_shortname=bugname)
-            if options.XML:
-                print comment.xml(shortname=shortname)
-            else:
-                if len(args) == 1 and options.only_raw_body == True:
-                    sys.__stdout__.write(comment.body)
-                else:
-                    print comment.string(shortname=shortname)
-        if shortname != args[-1] and options.XML == False:
-            print "" # add a blank line between bugs/comments
+                print comment.string(shortname=shortname)
+                if spaces_left > 0:
+                    spaces_left -= 1
+                    print '' # add a blank line between bugs/comments
+        if options.XML:
+            print '</bug>'
+    if options.XML:
+        print _xml_footer()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be show [options] ID [ID ...]")
@@ -101,9 +131,49 @@ def get_parser():
 longhelp="""
 Show all information about the bugs or comments whose IDs are given.
 
-It's probably not a good idea to mix bug and comment IDs in a single
-call, but you're free to do so if you like.
+Without the --xml flag set, it's probably not a good idea to mix bug
+and comment IDs in a single call, but you're free to do so if you
+like.  With the --xml flag set, there will never be any root comments,
+so mix and match away (the bug listings for directly requested
+comments will be restricted to the bug uuid and the requested
+comment(s)).
+
+Directly requested comments will be grouped by their parent bug and
+placed at the end of the output, so the ordering may not match the
+order of the listed IDs.
 """
 
 def help():
     return get_parser().help_str() + longhelp
+
+def _sort_ids(ids, with_comments=True):
+    bugs = []
+    root_comments = {}
+    for id in ids:
+        bugname,commname = cmdutil.parse_id(id)
+        if commname == None:
+            bugs.append(bugname)
+        elif with_comments == True:
+            if bugname not in root_comments:
+                root_comments[bugname] = [commname]
+            else:
+                root_comments[bugname].append(commname)
+    for bugname in root_comments.keys():
+        assert bugname not in bugs, \
+            "specifically requested both '%s%s' and '%s'" \
+            % (bugname, root_comments[bugname][0], bugname)
+    return (bugs, root_comments)
+
+def _xml_header(encoding):
+    lines = ['<?xml version="1.0" encoding="%s" ?>' % encoding,
+             '<be-xml>',
+             '  <version>',
+             '    <tag>%s</tag>' % version.version()]
+    for tag in ['branch-nick', 'revno', 'revision-id']:
+        value = _version.version_info[tag.replace('-', '_')]
+        lines.append('    <%s>%s</%s>' % (tag, value, tag))
+    lines.append('  </version>')
+    return '\n'.join(lines)
+
+def _xml_footer():
+    return '</be-xml>'

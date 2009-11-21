@@ -86,20 +86,23 @@ class Bug (LimitedAttrDict):
               u"comments",
               u"extra-strings"]
     def print_to_mbox(self):
-        name,addr = email.utils.parseaddr(self["creator"])
-        print "From %s %s" % (addr, rfc2822_to_asctime(self["created"]))
-        print "Message-id: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
-        print "Date: %s" % self["created"]
-        print "From: %s" % self["creator"]
-        print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
-        print "Content-Transfer-Encoding: 8bit"
-        print "Subject: %s: %s" % (self["short-name"], self["summary"])
-        if "extra-strings" in self:
-            for estr in self["extra_strings"]:
-                print "X-Extra-String: %s" % estr
-        print ""
-        print self["summary"]
-        print ""
+        if "creator" in self:
+            # otherwise, probably a `be show` uuid-only bug to avoid
+            # root comments.
+            name,addr = email.utils.parseaddr(self["creator"])
+            print "From %s %s" % (addr, rfc2822_to_asctime(self["created"]))
+            print "Message-id: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
+            print "Date: %s" % self["created"]
+            print "From: %s" % self["creator"]
+            print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
+            print "Content-Transfer-Encoding: 8bit"
+            print "Subject: %s: %s" % (self["short-name"], self["summary"])
+            if "extra-strings" in self:
+                for estr in self["extra_strings"]:
+                    print "X-Extra-String: %s" % estr
+            print ""
+            print self["summary"]
+            print ""
         if "comments" in self:
             for comment in self["comments"]:
                 comment.print_to_mbox(self)            

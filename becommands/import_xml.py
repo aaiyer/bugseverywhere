@@ -172,8 +172,8 @@ The XML file should be formatted similarly to
   <be-xml>
     <version>
       <tag>1.0.0</tag>
-      <nick>be</nick>
-      <revision>446</revision>
+      <branch-nick>be</branch-nick>
+      <revno>446</revno>
       <revision-id>a@b.com-20091119214553-iqyw2cpqluww3zna</revision-id>
     <version>
     <bug>
@@ -186,10 +186,10 @@ The XML file should be formatted similarly to
     <comment>...</comment>
   </be-xml>
 where the ellipses mark output commpatible with Bug.xml() and
-Comment.xml().  Take a look at the output of `be show --xml --version`
-for some explicit examples.  Unrecognized tags are ignored.  Missing
-tags are left at the default value.  The version tag is not required,
-but is strongly recommended.
+Comment.xml().  Take a look at the output of `be show --xml` for some
+explicit examples.  Unrecognized tags are ignored.  Missing tags are
+left at the default value.  The version tag is not required, but is
+strongly recommended.
 
 The bug and comment UUIDs are always auto-generated, so if you set a
 <uuid> field, but no <alt-id> field, your <uuid> will be used as the
