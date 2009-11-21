@@ -23,13 +23,15 @@ execution.
 
 Once be-handle-mail receives the email, the parsing method is selected
 according to the subject tag that procmail used grab the email in the
-first place.  There are three parsing styles:
+first place.  There are four parsing styles:
     Style                 Subject
     creating bugs         [be-bug:submit] new bug summary
     commenting on bugs    [be-bug:<bug-id>] commit message
     control               [be-bug] commit message
+    xml                   [be-bug:xml] commit message
 These are analogous to submit@bugs.debian.org, nnn@bugs.debian.org,
-and control@bugs.debian.org respectively.
+and control@bugs.debian.org respectively.  The xml style has no Debian
+analog.
 
 Creating bugs
 =============
@@ -105,6 +107,15 @@ shlex.split().
     
     --
     Goofy tagline ignored.
+
+XML
+===
+
+This interface allows users without access to the versioned source of
+the program to conveniently submit bugs and comments using be.  You
+should not attempt to compose emails for this interface by hand.  See
+the documentation for the `email-bugs' and `import-xml' be commands
+for details.
 
 Example emails
 ==============
