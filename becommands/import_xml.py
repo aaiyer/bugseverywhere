@@ -105,37 +105,42 @@ def execute(args, manipulate_encodings=True):
                 % (child.tag, comment_list.tag)
 
     # merge the new root_comments
-    croot_cids = []
-    for c in croot_bug.comment_root.traverse():
-        croot_cids.append(c.uuid)
-        if c.alt_id != None:
-            croot_cids.append(c.alt_id)
-    for new in root_comments:
-        if new.alt_id in croot_cids:
-            raise cmdutil.UserError(
-                'clashing comment alt_id: %s' % new.alt_id)
-        croot_cids.append(new.uuid)
-        if new.alt_id != None:
-            croot_cids.append(new.alt_id)
-        if new.in_reply_to == None:
-            new.in_reply_to = croot_comment.uuid
-    try:
-        # link new comments
-        comment.list_to_root(root_comments,croot_bug,root=croot_comment,
-                             ignore_missing_references= \
-                                 options.ignore_missing_references)
-    except comment.MissingReference, e:
-        raise cmdutil.UserError(e)
-
+    if len(root_comments) > 0:
+        if croot_bug == None:
+            raise UserError(
+                '--comment-root option is required for your root comments:\n%s'
+                % '\n\n'.join([c.string() for c in root_comments]))
+        croot_cids = []
+        for c in croot_bug.comment_root.traverse():
+            croot_cids.append(c.uuid)
+            if c.alt_id != None:
+                croot_cids.append(c.alt_id)
+        for new in root_comments:
+            if new.alt_id in croot_cids:
+                raise cmdutil.UserError(
+                    'clashing comment alt_id: %s' % new.alt_id)
+            croot_cids.append(new.uuid)
+            if new.alt_id != None:
+                croot_cids.append(new.alt_id)
+            if new.in_reply_to == None:
+                new.in_reply_to = croot_comment.uuid
+        try:
+            # link new comments
+            comment.list_to_root(root_comments,croot_bug,root=croot_comment,
+                                 ignore_missing_references= \
+                                     options.ignore_missing_references)
+        except comment.MissingReference, e:
+            raise cmdutil.UserError(e)
     # merge the new croot_bugs
     for new in root_bugs:
         bd.append(new)
 
     # protect against programmer error causing data loss:
-    comms = [c.uuid for c in croot_comment.traverse()]
-    for new in root_comments:
-        assert new.uuid in comms, \
-            "comment %s wasn't added to %s" % (new.uuid, croot_comment.uuid)
+    if croot_bug != None:
+        comms = [c.uuid for c in croot_comment.traverse()]
+        for new in root_comments:
+            assert new.uuid in comms, \
+                "comment %s wasn't added to %s" % (new.uuid, croot_comment.uuid)
     for new in root_bugs:
         assert bd.has_bug(new.uuid), \
             "bug %s wasn't added" % (new.uuid)
