@@ -20,6 +20,7 @@
 Define the Bug class for representing bugs.
 """
 
+import copy
 import os
 import os.path
 import errno
@@ -302,7 +303,7 @@ class Bug(settings_object.SavedSettingsObject):
             if v is not None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
         for estr in self.extra_strings:
-            lines.append('  <extra-string>%s</extra-string>\n' % estr)
+            lines.append('  <extra-string>%s</extra-string>' % estr)
         if show_comments == True:
             comout = self.comment_root.xml_thread(indent=indent+2,
                                                   auto_name_map=True,
@@ -332,6 +333,8 @@ class Bug(settings_object.SavedSettingsObject):
         >>> bugB.uuid = bugB.alt_id
         >>> bugB.xml(shortname="bug-1") == xml
         True
+        >>> bugB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
+        ['uuid', 'severity', 'status', 'creator', 'created', 'summary']
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
@@ -340,8 +343,9 @@ class Bug(settings_object.SavedSettingsObject):
             raise utility.InvalidXML( \
                 'bug', bug, 'root element must be <comment>')
         tags=['uuid','short-name','severity','status','assigned','target',
-              'reporter', 'creator', 'created', 'summary', 'extra-string',
+              'reporter', 'creator','created','summary','extra-string',
               'comment']
+        self.explicit_attrs = []
         uuid = None
         estrs = []
         for child in bug.getchildren():
@@ -353,22 +357,119 @@ class Bug(settings_object.SavedSettingsObject):
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
                     text = text.decode('unicode_escape').strip()
-                if child.tag == "uuid":
+                if child.tag == 'uuid':
                     uuid = text
                     continue # don't set the bug's uuid tag.
-                if child.tag == 'extra-string':
+                elif child.tag == 'extra-string':
                     estrs.append(text)
                     continue # don't set the bug's extra_string yet.
-                else:
-                    attr_name = child.tag.replace('-','_')
+                attr_name = child.tag.replace('-','_')
+                self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
                 print >> sys.stderr, "Ignoring unknown tag %s in %s" \
                     % (child.tag, comment.tag)
-        if uuid not in [None, self.uuid]:
+        if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
+
+    def merge(self, other, allow_changes=True, allow_new_comments=True):
+        """
+        Merge info from other into this bug.  Overrides any attributes
+        in self that are listed in other.explicit_attrs.
+        >>> bugA = Bug(uuid='0123', summary='Need to test Bug.merge()')
+        >>> bugA.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
+        >>> bugA.creator = 'Frank'
+        >>> bugA.extra_strings += ['TAG: very helpful']
+        >>> bugA.extra_strings += ['TAG: favorite']
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'uuid-commA'
+        >>> bugB = Bug(uuid='3210', summary='More tests for Bug.merge()')
+        >>> bugB.date = 'Fri, 02 Jan 1970 00:00:00 +0000'
+        >>> bugB.creator = 'John'
+        >>> bugB.explicit_attrs = ['creator', 'summary']
+        >>> bugB.extra_strings += ['TAG: very helpful']
+        >>> bugB.extra_strings += ['TAG: useful']
+        >>> commB = bugB.comment_root.new_reply(body='comment B')
+        >>> commB.uuid = 'uuid-commB'
+        >>> bugA.merge(bugB, allow_changes=False)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would change creator "Frank"->"John" for bug 0123
+        >>> bugA.merge(bugB, allow_new_comments=False)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add comment uuid-commB (alt: None) to bug 0123
+        >>> bugA.merge(bugB)
+        >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
+        <bug>
+          <uuid>0123</uuid>
+          <short-name>0123</short-name>
+          <severity>minor</severity>
+          <status>open</status>
+          <creator>John</creator>
+          <created>...</created>
+          <summary>More tests for Bug.merge()</summary>
+          <extra-string>TAG: favorite</extra-string>
+          <extra-string>TAG: useful</extra-string>
+          <extra-string>TAG: very helpful</extra-string>
+          <comment>
+            <uuid>uuid-commA</uuid>
+            <short-name>0123:1</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment A</body>
+          </comment>
+          <comment>
+            <uuid>uuid-commB</uuid>
+            <short-name>0123:2</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment B</body>
+          </comment>
+        </bug>
+        """
+        for attr in other.explicit_attrs:
+            old = getattr(self, attr)
+            new = getattr(other, attr)
+            if old != new:
+                if allow_changes == True:
+                    setattr(self, attr, new)
+                else:
+                    raise ValueError, \
+                        'Merge would change %s "%s"->"%s" for bug %s' \
+                        % (attr, old, new, self.uuid)
+        if allow_changes == False and len(other.extra_strings) > 0:
+            raise ValueError, \
+                'Merge would change extra_strings for bug %s' % self.uuid
+        for estr in other.extra_strings:
+            if not estr in self.extra_strings:
+                self.extra_strings.append(estr)
+        import sys
+        for o_comm in other.comments():
+            s_comm = None
+            try:
+                s_comm = self.comment_root.comment_from_uuid(o_comm.uuid)
+            except KeyError, e:
+                try:
+                    s_comm = self.comment_root.comment_from_uuid(o_comm.alt_id)
+                except KeyError, e:
+                    pass
+            if s_comm == None:
+                if allow_new_comments == False:
+                    raise ValueError, \
+                        'Merge would add comment %s (alt: %s) to bug %s' \
+                        % (o_comm.uuid, o_comm.alt_id, self.uuid)
+                o_comm_copy = copy.copy(o_comm)
+                o_comm_copy.bug = self
+                print >> sys.stderr, "add comment %s" % o_comm.uuid
+                self.comment_root.add_reply(o_comm_copy)
+            else:
+                print >> sys.stderr, "merge comment %s into %s" % (o_comm.uuid, s_comm.uuid)
+                s_comm.merge(o_comm, allow_changes=allow_changes)
 
     def string(self, shortlist=False, show_comments=False):
         if self.bugdir == None:
@@ -493,8 +594,8 @@ class Bug(settings_object.SavedSettingsObject):
         return self.comment_root.comment_from_shortname(shortname,
                                                         *args, **kwargs)
 
-    def comment_from_uuid(self, uuid):
-        return self.comment_root.comment_from_uuid(uuid)
+    def comment_from_uuid(self, uuid, *args, **kwargs):
+        return self.comment_root.comment_from_uuid(uuid, *args, **kwargs)
 
     def comment_shortnames(self, shortname=None):
         """
