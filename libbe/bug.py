@@ -325,32 +325,44 @@ class Bug(settings_object.SavedSettingsObject):
         >>> commA = bugA.comment_root.new_reply(body='comment A')
         >>> commB = bugA.comment_root.new_reply(body='comment B')
         >>> commC = commA.new_reply(body='comment C')
-        >>> xml = bugA.xml(shortname="bug-1")
+        >>> xml = bugA.xml(shortname="bug-1", show_comments=True)
         >>> bugB = Bug()
         >>> bugB.from_xml(xml, verbose=True)
-        >>> bugB.xml(shortname="bug-1") == xml
+        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
         False
         >>> bugB.uuid = bugB.alt_id
-        >>> bugB.xml(shortname="bug-1") == xml
+        >>> for comm in bugB.comments():
+        ...     comm.uuid = comm.alt_id
+        ...     comm.alt_id = None
+        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
         True
         >>> bugB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
-        ['uuid', 'severity', 'status', 'creator', 'created', 'summary']
+        ['severity', 'status', 'creator', 'created', 'summary']
+        >>> len(list(bugB.comments()))
+        3
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
-        bug = ElementTree.XML(xml_string)
+        if hasattr(xml_string, 'getchildren'): # already an ElementTree Element
+            bug = xml_string
+        else:
+            bug = ElementTree.XML(xml_string)
         if bug.tag != 'bug':
             raise utility.InvalidXML( \
                 'bug', bug, 'root element must be <comment>')
         tags=['uuid','short-name','severity','status','assigned','target',
-              'reporter', 'creator','created','summary','extra-string',
-              'comment']
+              'reporter', 'creator','created','summary','extra-string']
         self.explicit_attrs = []
         uuid = None
         estrs = []
         for child in bug.getchildren():
             if child.tag == 'short-name':
                 pass
+            elif child.tag == 'comment':
+                comm = comment.Comment(bug=self)
+                comm.from_xml(child)
+                self.add_comment(comm)
+                continue
             elif child.tag in tags:
                 if child.text == None or len(child.text) == 0:
                     text = settings_object.EMPTY
@@ -373,6 +385,75 @@ class Bug(settings_object.SavedSettingsObject):
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
+
+    def add_comment(self, new_comment):
+        """
+        Add a comment too the current bug, under the parent specified
+        by comment.in_reply_to.
+        Note: If a bug uuid is given, set .alt_id to it's value.
+        >>> bugA = Bug(uuid='0123', summary='Need to test Bug.add_comment()')
+        >>> bugA.creator = 'Jack'
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'commA'
+        >>> commB = comment.Comment(body='comment B')
+        >>> commB.uuid = 'commB'
+        >>> bugA.add_comment(commB)
+        >>> commC = comment.Comment(body='comment C')
+        >>> commC.uuid = 'commC'
+        >>> commC.in_reply_to = commA.uuid
+        >>> bugA.add_comment(commC)
+        >>> print bugA.xml(shortname="bug-1", show_comments=True)  # doctest: +ELLIPSIS
+        <bug>
+          <uuid>0123</uuid>
+          <short-name>bug-1</short-name>
+          <severity>minor</severity>
+          <status>open</status>
+          <creator>Jack</creator>
+          <created>...</created>
+          <summary>Need to test Bug.add_comment()</summary>
+          <comment>
+            <uuid>commA</uuid>
+            <short-name>bug-1:1</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment A</body>
+          </comment>
+          <comment>
+            <uuid>commC</uuid>
+            <short-name>bug-1:2</short-name>
+            <in-reply-to>commA</in-reply-to>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment C</body>
+          </comment>
+          <comment>
+            <uuid>commB</uuid>
+            <short-name>bug-1:3</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment B</body>
+          </comment>
+        </bug>
+        """
+        uuid_map = {}
+        for c in self.comments():
+            uuid_map[c.uuid] = c
+            if c.alt_id != None:
+                uuid_map[c.alt_id] = c
+        assert new_comment.uuid not in uuid_map
+        if new_comment.alt_id != None:
+            assert new_comment.alt_id not in uuid_map
+        if new_comment.in_reply_to == comment.INVALID_UUID:
+            new_comment.in_reply_to = None
+        if new_comment.in_reply_to == None:
+            parent = self.comment_root
+        else:
+            parent = uuid_map[new_comment.in_reply_to]
+        new_comment.bug = self
+        parent.append(new_comment)
 
     def merge(self, other, allow_changes=True, allow_new_comments=True):
         """
@@ -450,14 +531,13 @@ class Bug(settings_object.SavedSettingsObject):
                 self.extra_strings.append(estr)
         import sys
         for o_comm in other.comments():
-            s_comm = None
             try:
                 s_comm = self.comment_root.comment_from_uuid(o_comm.uuid)
             except KeyError, e:
                 try:
                     s_comm = self.comment_root.comment_from_uuid(o_comm.alt_id)
                 except KeyError, e:
-                    pass
+                    s_comm = None
             if s_comm == None:
                 if allow_new_comments == False:
                     raise ValueError, \

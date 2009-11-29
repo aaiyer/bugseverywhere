@@ -373,7 +373,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
-        comment = ElementTree.XML(xml_string)
+        if hasattr(xml_string, 'getchildren'): # already an ElementTree Element
+            comment = xml_string
+        else:
+            comment = ElementTree.XML(xml_string)
         if comment.tag != 'comment':
             raise utility.InvalidXML( \
                 'comment', comment, 'root element must be <comment>')
