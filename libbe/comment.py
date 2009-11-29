@@ -65,53 +65,6 @@ class DiskAccessRequired (Exception):
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def list_to_root(comments, bug, root=None,
-                 ignore_missing_references=False):
-    """
-    Convert a raw list of comments to single root comment.  We use a
-    dummy root comment by default, because there can be several
-    comment threads rooted on the same parent bug.  To simplify
-    comment interaction, we condense these threads into a single
-    thread with a Comment dummy root.  Can also be used to append
-    a list of subcomments to a non-dummy root comment, so long as
-    all the new comments are descendants of the root comment.
-    
-    No Comment method should use the dummy comment.
-    """
-    root_comments = []
-    uuid_map = {}
-    for comment in comments:
-        assert comment.uuid != None
-        uuid_map[comment.uuid] = comment
-    for comment in comments:
-        if comment.alt_id != None and comment.alt_id not in uuid_map:
-            uuid_map[comment.alt_id] = comment
-    if root == None:
-        root = Comment(bug, uuid=INVALID_UUID)
-    else:
-        uuid_map[root.uuid] = root
-    for comm in comments:
-        if comm.in_reply_to == INVALID_UUID:
-            comm.in_reply_to = None
-        rep = comm.in_reply_to
-        if rep == None or rep == bug.uuid:
-            root_comments.append(comm)
-        else:
-            parentUUID = comm.in_reply_to
-            try:
-                parent = uuid_map[parentUUID]
-                parent.add_reply(comm)
-            except KeyError, e:
-                if ignore_missing_references == True:
-                    print >> sys.stderr, \
-                        "Ignoring missing reference to %s" % parentUUID
-                    comm.in_reply_to = None
-                    root_comments.append(comm)
-                else:
-                    raise MissingReference(comm)
-    root.extend(root_comments)
-    return root
-
 def loadComments(bug, load_full=False):
     """
     Set load_full=True when you want to load the comment completely
@@ -132,7 +85,9 @@ def loadComments(bug, load_full=False):
             comm.load_settings()
             dummy = comm.body # force the body to load
         comments.append(comm)
-    return list_to_root(comments, bug)
+    bug.comment_root = Comment(bug, uuid=INVALID_UUID)
+    bug.add_comments(comments)
+    return bug.comment_root
 
 def saveComments(bug):
     if bug.sync_with_disk == False:

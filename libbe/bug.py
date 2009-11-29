@@ -228,7 +228,7 @@ class Bug(settings_object.SavedSettingsObject):
     @Property
     @cached_property(generator=_get_comment_root)
     @local_property("comment_root")
-    @doc_property(doc="The trunk of the comment tree")
+    @doc_property(doc="The trunk of the comment tree.  We use a dummy root comment by default, because there can be several comment threads rooted on the same parent bug.  To simplify comment interaction, we condense these threads into a single thread with a Comment dummy root.")
     def comment_root(): return {}
 
     def _get_vcs(self):
@@ -355,13 +355,14 @@ class Bug(settings_object.SavedSettingsObject):
         self.explicit_attrs = []
         uuid = None
         estrs = []
+        comments = []
         for child in bug.getchildren():
             if child.tag == 'short-name':
                 pass
             elif child.tag == 'comment':
                 comm = comment.Comment(bug=self)
                 comm.from_xml(child)
-                self.add_comment(comm)
+                comments.append(comm)
                 continue
             elif child.tag in tags:
                 if child.text == None or len(child.text) == 0:
@@ -385,8 +386,9 @@ class Bug(settings_object.SavedSettingsObject):
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
+        self.add_comments(comments)
 
-    def add_comment(self, new_comment):
+    def add_comment(self, comment, *args, **kwargs):
         """
         Add a comment too the current bug, under the parent specified
         by comment.in_reply_to.
@@ -438,22 +440,47 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
         </bug>
         """
+        self.add_comments([comment], **kwargs)
+
+    def add_comments(self, comments, default_parent=None,
+                     ignore_missing_references=False):
+        """
+        Convert a raw list of comments to single root comment.  If a
+        comment does not specify a parent with .in_reply_to, the
+        parent defaults to .comment_root, but you can specify another
+        default parent via default_parent.
+        """
         uuid_map = {}
-        for c in self.comments():
+        if default_parent == None:
+            default_parent = self.comment_root
+        for c in list(self.comments()) + comments:
+            assert c.uuid != None
+            assert c.uuid not in uuid_map
             uuid_map[c.uuid] = c
             if c.alt_id != None:
                 uuid_map[c.alt_id] = c
-        assert new_comment.uuid not in uuid_map
-        if new_comment.alt_id != None:
-            assert new_comment.alt_id not in uuid_map
-        if new_comment.in_reply_to == comment.INVALID_UUID:
-            new_comment.in_reply_to = None
-        if new_comment.in_reply_to == None:
-            parent = self.comment_root
-        else:
-            parent = uuid_map[new_comment.in_reply_to]
-        new_comment.bug = self
-        parent.append(new_comment)
+        uuid_map[None] = self.comment_root
+        if default_parent != self.comment_root:
+            assert default_parent.uuid in uuid_map, default_parent
+        for c in comments:
+            if c.in_reply_to == None \
+                    and default_parent.uuid != comment.INVALID_UUID:
+                c.in_reply_to = default_parent.uuid
+            elif c.in_reply_to == comment.INVALID_UUID:
+                c.in_reply_to = None
+            try:
+                parent = uuid_map[c.in_reply_to]
+            except KeyError:
+                if ignore_missing_references == True:
+                    print >> sys.stderr, \
+                        "Ignoring missing reference to %s" % c.in_reply_to
+                    parent = default_parent
+                    if parent.uuid != comment.INVALID_UUID:
+                        c.in_reply_to = parent.uuid
+                else:
+                    raise comment.MissingReference(c)
+            c.bug = self
+            parent.append(c)
 
     def merge(self, other, allow_changes=True, allow_new_comments=True):
         """
@@ -545,10 +572,8 @@ class Bug(settings_object.SavedSettingsObject):
                         % (o_comm.uuid, o_comm.alt_id, self.uuid)
                 o_comm_copy = copy.copy(o_comm)
                 o_comm_copy.bug = self
-                print >> sys.stderr, "add comment %s" % o_comm.uuid
                 self.comment_root.add_reply(o_comm_copy)
             else:
-                print >> sys.stderr, "merge comment %s into %s" % (o_comm.uuid, s_comm.uuid)
                 s_comm.merge(o_comm, allow_changes=allow_changes)
 
     def string(self, shortlist=False, show_comments=False):
