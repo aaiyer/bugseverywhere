@@ -145,7 +145,7 @@ def complete(options, args, parser):
                     bd = bugdir.BugDir(from_disk=True,
                                        manipulate_encodings=False)
                     bugs = []
-                    for uuid in bd.list_uuids():
+                    for uuid in bd.uuids():
                         if uuid.startswith(partial):
                             bug = bd.bug_from_uuid(uuid)
                             if bug.active == True:

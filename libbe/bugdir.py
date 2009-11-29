@@ -239,7 +239,7 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
         map = {}
         for bug in self:
             map[bug.uuid] = bug
-        for uuid in self.list_uuids():
+        for uuid in self.uuids():
             if uuid not in map:
                 map[uuid] = None
         self._bug_map_value = map # ._bug_map_value used by @local_property
@@ -483,7 +483,7 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
         if self.sync_with_disk == False:
             raise DiskAccessRequired("load all bugs")
         self._clear_bugs()
-        for uuid in self.list_uuids():
+        for uuid in self.uuids():
             self._load_bug(uuid)
 
     def save(self):
@@ -550,7 +550,7 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
 
     # methods for managing bugs
 
-    def list_uuids(self):
+    def uuids(self):
         uuids = []
         if self.sync_with_disk == True and os.path.exists(self.get_path()):
             # list the uuids on disk
@@ -651,7 +651,7 @@ class SimpleBugDir (BugDir):
     """
     For testing.  Set sync_with_disk==False for a memory-only bugdir.
     >>> bugdir = SimpleBugDir()
-    >>> uuids = list(bugdir.list_uuids())
+    >>> uuids = list(bugdir.uuids())
     >>> uuids.sort()
     >>> print uuids
     ['a', 'b']
@@ -741,7 +741,7 @@ class BugDirTestCase(unittest.TestCase):
         self.bugdir.new_bug(uuid="c", summary="Praying mantis")
         length = len(self.bugdir)
         self.failUnless(length == 3, "%d != 3 bugs" % length)
-        uuids = list(self.bugdir.list_uuids())
+        uuids = list(self.bugdir.uuids())
         self.failUnless(len(uuids) == 3, "%d != 3 uuids" % len(uuids))
         self.failUnless(uuids == ["a","b","c"], str(uuids))
         bugA = self.bugdir.bug_from_uuid("a")

@@ -50,7 +50,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     if options.list:
-        ts = set([bd.bug_from_uuid(bug).target for bug in bd.list_uuids()])
+        ts = set([bd.bug_from_uuid(bug).target for bug in bd.uuids()])
         for target in sorted(ts):
             if target and isinstance(target,str):
                 print target

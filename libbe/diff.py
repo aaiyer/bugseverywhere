@@ -207,7 +207,7 @@ class Diff (object):
         added = []
         removed = []
         modified = []
-        for uuid in self.new_bugdir.list_uuids():
+        for uuid in self.new_bugdir.uuids():
             new_bug = self.new_bugdir.bug_from_uuid(uuid)
             try:
                 old_bug = self.old_bugdir.bug_from_uuid(uuid)
@@ -220,7 +220,7 @@ class Diff (object):
                     new_bug.load_comments()
                 if old_bug != new_bug:
                     modified.append((old_bug, new_bug))
-        for uuid in self.old_bugdir.list_uuids():
+        for uuid in self.old_bugdir.uuids():
             if not self.new_bugdir.has_bug(uuid):
                 old_bug = self.old_bugdir.bug_from_uuid(uuid)
                 removed.append(old_bug)
