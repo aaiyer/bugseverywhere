@@ -366,7 +366,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             elif verbose == True:
                 print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
                     % (child.tag, comment.tag)
-        if self.alt_id == None:
+        if uuid != self.uuid and self.alt_id == None:
             self.explicit_attrs.append('alt_id')
             self.alt_id = uuid
         if body != None:
@@ -437,6 +437,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                     raise ValueError, \
                         'Merge would change %s "%s"->"%s" for comment %s' \
                         % (attr, old, new, self.uuid)
+        if self.alt_id == self.uuid:
+            self.alt_id = None
         for estr in other.extra_strings:
             if not estr in self.extra_strings:
                 if accept_extra_strings == True:
