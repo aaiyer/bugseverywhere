@@ -1,0 +1,28 @@
+> With interfaces/email/interactive listening on the recieving end to
+> grab new-bug emails and import them into an incoming bug repository.
+
+The email-bugs -> be-handle-mail import is based on `be import-xml`.
+The current import-xml implementation allows good control over what
+gets overwritten during a merge by overriding only those fields
+defined in the incoming XML.
+
+For clients without the versioned bugdir (e.g. they installed via a
+release tarball or their distro's packaging system), `be email-bugs`
+will not know what fields have been changed/added/etc., so it sets
+_all_ the fields in the outgoing XML.  Importing that XML file will
+override any changes that may have been made to the listed
+bugs/comments between the release and your current source version, so
+you may have to do some manual tweaking of the post-merge bugdir.
+
+One possible workaround would be to change the merge algorithm in
+import-xml to take advantage of version information given in the XML
+file.  import-xml could checkout the shared root version of any
+modified bugs, and compute the changes made by the remote user and
+those made in the local tree.  It could then merge these changes more
+intelligently, by prompting the user, keeping the local changes,
+keeping the remote changes, etc.
+
+While the more automated approach might be better, it's also more
+complicated, so for now we'll stick with the simple "override all
+fields defined in the XML" approach.
+
