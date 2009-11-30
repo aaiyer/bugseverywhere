@@ -598,7 +598,7 @@ class Message (object):
             raise InvalidEmail(self,
                 u"Emails to %s must have MIME type 'text/xml', not '%s'."
                 % (SUBJECT_TAG_XML, mime_type))
-        args = [u"-"]
+        args = [u"--add-only", u"-"]
         commands = [Command(self, command, args, stdin=body)]
         return commands
     def run(self):
