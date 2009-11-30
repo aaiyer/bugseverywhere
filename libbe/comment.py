@@ -376,7 +376,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 self.body = base64.decodestring(body)
         self.extra_strings = estrs
 
-    def merge(self, other, allow_changes=True):
+    def merge(self, other, accept_changes=True, 
+              accept_extra_strings=True, change_exception=False):
         """
         Merge info from other into this comment.  Overrides any
         attributes in self that are listed in other.explicit_attrs.
@@ -393,11 +394,26 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> commB.explicit_attrs = ['author', 'body']
         >>> commB.extra_strings += ['TAG: very helpful']
         >>> commB.extra_strings += ['TAG: useful']
-        >>> commA.merge(commB, allow_changes=False)
+        >>> commA.merge(commB, accept_changes=False,
+        ...             accept_extra_strings=False, change_exception=False)
+        >>> commA.merge(commB, accept_changes=False,
+        ...             accept_extra_strings=False, change_exception=True)
         Traceback (most recent call last):
           ...
         ValueError: Merge would change author "Frank"->"John" for comment 0123
-        >>> commA.merge(commB)
+        >>> commA.merge(commB, accept_changes=True,
+        ...             accept_extra_strings=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add extra string "TAG: useful" to comment 0123
+        >>> print commA.author
+        John
+        >>> print commA.extra_strings
+        ['TAG: favorite', 'TAG: very helpful']
+        >>> commA.merge(commB, accept_changes=True,
+        ...             accept_extra_strings=True, change_exception=True)
+        >>> print commA.extra_strings
+        ['TAG: favorite', 'TAG: useful', 'TAG: very helpful']
         >>> print commA.xml()
         <comment>
           <uuid>0123</uuid>
@@ -415,18 +431,20 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             old = getattr(self, attr)
             new = getattr(other, attr)
             if old != new:
-                if allow_changes == True:
+                if accept_changes == True:
                     setattr(self, attr, new)
-                else:
+                elif change_exception == True:
                     raise ValueError, \
                         'Merge would change %s "%s"->"%s" for comment %s' \
                         % (attr, old, new, self.uuid)
-        if allow_changes == False and len(other.extra_strings) > 0:
-            raise ValueError, \
-                'Merge would change extra_strings for comment %s' % self.uuid
         for estr in other.extra_strings:
             if not estr in self.extra_strings:
-                self.extra_strings.append(estr)
+                if accept_extra_strings == True:
+                    self.extra_strings.append(estr)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would add extra string "%s" to comment %s' \
+                        % (estr, self.uuid)
 
     def string(self, indent=0, shortname=None):
         """

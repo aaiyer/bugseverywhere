@@ -482,7 +482,9 @@ class Bug(settings_object.SavedSettingsObject):
             c.bug = self
             parent.append(c)
 
-    def merge(self, other, allow_changes=True, allow_new_comments=True):
+    def merge(self, other, accept_changes=True,
+              accept_extra_strings=True, accept_comments=True,
+              change_exception=False):
         """
         Merge info from other into this bug.  Overrides any attributes
         in self that are listed in other.explicit_attrs.
@@ -501,15 +503,35 @@ class Bug(settings_object.SavedSettingsObject):
         >>> bugB.extra_strings += ['TAG: useful']
         >>> commB = bugB.comment_root.new_reply(body='comment B')
         >>> commB.uuid = 'uuid-commB'
-        >>> bugA.merge(bugB, allow_changes=False)
+        >>> bugA.merge(bugB, accept_changes=False, accept_extra_strings=False,
+        ...            accept_comments=False, change_exception=False)
+        >>> print bugA.creator
+        Frank
+        >>> bugA.merge(bugB, accept_changes=False, accept_extra_strings=False,
+        ...            accept_comments=False, change_exception=True)
         Traceback (most recent call last):
           ...
         ValueError: Merge would change creator "Frank"->"John" for bug 0123
-        >>> bugA.merge(bugB, allow_new_comments=False)
+        >>> print bugA.creator
+        Frank
+        >>> bugA.merge(bugB, accept_changes=True, accept_extra_strings=False,
+        ...            accept_comments=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add extra string "TAG: useful" for bug 0123
+        >>> print bugA.creator
+        John
+        >>> print bugA.extra_strings
+        ['TAG: favorite', 'TAG: very helpful']
+        >>> bugA.merge(bugB, accept_changes=True, accept_extra_strings=True,
+        ...            accept_comments=False, change_exception=True)
         Traceback (most recent call last):
           ...
         ValueError: Merge would add comment uuid-commB (alt: None) to bug 0123
-        >>> bugA.merge(bugB)
+        >>> print bugA.extra_strings
+        ['TAG: favorite', 'TAG: useful', 'TAG: very helpful']
+        >>> bugA.merge(bugB, accept_changes=True, accept_extra_strings=True,
+        ...            accept_comments=True, change_exception=True)
         >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
         <bug>
           <uuid>0123</uuid>
@@ -544,19 +566,20 @@ class Bug(settings_object.SavedSettingsObject):
             old = getattr(self, attr)
             new = getattr(other, attr)
             if old != new:
-                if allow_changes == True:
+                if accept_changes == True:
                     setattr(self, attr, new)
-                else:
+                elif change_exception == True:
                     raise ValueError, \
                         'Merge would change %s "%s"->"%s" for bug %s' \
                         % (attr, old, new, self.uuid)
-        if allow_changes == False and len(other.extra_strings) > 0:
-            raise ValueError, \
-                'Merge would change extra_strings for bug %s' % self.uuid
         for estr in other.extra_strings:
             if not estr in self.extra_strings:
-                self.extra_strings.append(estr)
-        import sys
+                if accept_extra_strings == True:
+                    self.extra_strings.append(estr)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would add extra string "%s" for bug %s' \
+                        % (estr, self.uuid)
         for o_comm in other.comments():
             try:
                 s_comm = self.comment_root.comment_from_uuid(o_comm.uuid)
@@ -566,15 +589,18 @@ class Bug(settings_object.SavedSettingsObject):
                 except KeyError, e:
                     s_comm = None
             if s_comm == None:
-                if allow_new_comments == False:
+                if accept_comments == True:
+                    o_comm_copy = copy.copy(o_comm)
+                    o_comm_copy.bug = self
+                    self.comment_root.add_reply(o_comm_copy)
+                elif change_exception == True:
                     raise ValueError, \
                         'Merge would add comment %s (alt: %s) to bug %s' \
                         % (o_comm.uuid, o_comm.alt_id, self.uuid)
-                o_comm_copy = copy.copy(o_comm)
-                o_comm_copy.bug = self
-                self.comment_root.add_reply(o_comm_copy)
             else:
-                s_comm.merge(o_comm, allow_changes=allow_changes)
+                s_comm.merge(o_comm, accept_changes=accept_changes,
+                             accept_extra_strings=accept_extra_strings,
+                             change_exception=change_exception)
 
     def string(self, shortlist=False, show_comments=False):
         if self.bugdir == None:
