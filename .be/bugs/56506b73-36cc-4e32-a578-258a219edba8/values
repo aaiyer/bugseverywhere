@@ -7,7 +7,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: be email-bugs for bug submission from bzr-less users
