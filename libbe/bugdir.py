@@ -115,7 +115,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
     all bugs/comments/etc. that have been loaded into memory.  If
     you've been living in memory and want to move to
     .sync_with_disk==True, but you're not sure if anything has been
-    changed in memory, a call to save() immediately before the
+    changed in memory, a call to .save() immediately before the
     .set_sync_with_disk(True) call is a safe move.
 
     Regardless of .sync_with_disk, a call to .save() will write out
