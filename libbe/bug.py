@@ -20,6 +20,7 @@
 Define the Bug class for representing bugs.
 """
 
+import copy
 import os
 import os.path
 import errno
@@ -227,7 +228,7 @@ class Bug(settings_object.SavedSettingsObject):
     @Property
     @cached_property(generator=_get_comment_root)
     @local_property("comment_root")
-    @doc_property(doc="The trunk of the comment tree")
+    @doc_property(doc="The trunk of the comment tree.  We use a dummy root comment by default, because there can be several comment threads rooted on the same parent bug.  To simplify comment interaction, we condense these threads into a single thread with a Comment dummy root.")
     def comment_root(): return {}
 
     def _get_vcs(self):
@@ -302,7 +303,7 @@ class Bug(settings_object.SavedSettingsObject):
             if v is not None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
         for estr in self.extra_strings:
-            lines.append('  <extra-string>%s</extra-string>\n' % estr)
+            lines.append('  <extra-string>%s</extra-string>' % estr)
         if show_comments == True:
             comout = self.comment_root.xml_thread(indent=indent+2,
                                                   auto_name_map=True,
@@ -324,51 +325,282 @@ class Bug(settings_object.SavedSettingsObject):
         >>> commA = bugA.comment_root.new_reply(body='comment A')
         >>> commB = bugA.comment_root.new_reply(body='comment B')
         >>> commC = commA.new_reply(body='comment C')
-        >>> xml = bugA.xml(shortname="bug-1")
+        >>> xml = bugA.xml(shortname="bug-1", show_comments=True)
         >>> bugB = Bug()
         >>> bugB.from_xml(xml, verbose=True)
-        >>> bugB.xml(shortname="bug-1") == xml
+        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
         False
         >>> bugB.uuid = bugB.alt_id
-        >>> bugB.xml(shortname="bug-1") == xml
+        >>> for comm in bugB.comments():
+        ...     comm.uuid = comm.alt_id
+        ...     comm.alt_id = None
+        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
         True
+        >>> bugB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
+        ['severity', 'status', 'creator', 'created', 'summary']
+        >>> len(list(bugB.comments()))
+        3
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
-        bug = ElementTree.XML(xml_string)
+        if hasattr(xml_string, 'getchildren'): # already an ElementTree Element
+            bug = xml_string
+        else:
+            bug = ElementTree.XML(xml_string)
         if bug.tag != 'bug':
             raise utility.InvalidXML( \
                 'bug', bug, 'root element must be <comment>')
         tags=['uuid','short-name','severity','status','assigned','target',
-              'reporter', 'creator', 'created', 'summary', 'extra-string',
-              'comment']
+              'reporter', 'creator','created','summary','extra-string']
+        self.explicit_attrs = []
         uuid = None
         estrs = []
+        comments = []
         for child in bug.getchildren():
             if child.tag == 'short-name':
                 pass
+            elif child.tag == 'comment':
+                comm = comment.Comment(bug=self)
+                comm.from_xml(child)
+                comments.append(comm)
+                continue
             elif child.tag in tags:
                 if child.text == None or len(child.text) == 0:
                     text = settings_object.EMPTY
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
                     text = text.decode('unicode_escape').strip()
-                if child.tag == "uuid":
+                if child.tag == 'uuid':
                     uuid = text
                     continue # don't set the bug's uuid tag.
-                if child.tag == 'extra-string':
+                elif child.tag == 'extra-string':
                     estrs.append(text)
                     continue # don't set the bug's extra_string yet.
-                else:
-                    attr_name = child.tag.replace('-','_')
+                attr_name = child.tag.replace('-','_')
+                self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
                 print >> sys.stderr, "Ignoring unknown tag %s in %s" \
                     % (child.tag, comment.tag)
-        if uuid not in [None, self.uuid]:
+        if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
+        self.add_comments(comments)
+
+    def add_comment(self, comment, *args, **kwargs):
+        """
+        Add a comment too the current bug, under the parent specified
+        by comment.in_reply_to.
+        Note: If a bug uuid is given, set .alt_id to it's value.
+        >>> bugA = Bug(uuid='0123', summary='Need to test Bug.add_comment()')
+        >>> bugA.creator = 'Jack'
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'commA'
+        >>> commB = comment.Comment(body='comment B')
+        >>> commB.uuid = 'commB'
+        >>> bugA.add_comment(commB)
+        >>> commC = comment.Comment(body='comment C')
+        >>> commC.uuid = 'commC'
+        >>> commC.in_reply_to = commA.uuid
+        >>> bugA.add_comment(commC)
+        >>> print bugA.xml(shortname="bug-1", show_comments=True)  # doctest: +ELLIPSIS
+        <bug>
+          <uuid>0123</uuid>
+          <short-name>bug-1</short-name>
+          <severity>minor</severity>
+          <status>open</status>
+          <creator>Jack</creator>
+          <created>...</created>
+          <summary>Need to test Bug.add_comment()</summary>
+          <comment>
+            <uuid>commA</uuid>
+            <short-name>bug-1:1</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment A</body>
+          </comment>
+          <comment>
+            <uuid>commC</uuid>
+            <short-name>bug-1:2</short-name>
+            <in-reply-to>commA</in-reply-to>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment C</body>
+          </comment>
+          <comment>
+            <uuid>commB</uuid>
+            <short-name>bug-1:3</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment B</body>
+          </comment>
+        </bug>
+        """
+        self.add_comments([comment], **kwargs)
+
+    def add_comments(self, comments, default_parent=None,
+                     ignore_missing_references=False):
+        """
+        Convert a raw list of comments to single root comment.  If a
+        comment does not specify a parent with .in_reply_to, the
+        parent defaults to .comment_root, but you can specify another
+        default parent via default_parent.
+        """
+        uuid_map = {}
+        if default_parent == None:
+            default_parent = self.comment_root
+        for c in list(self.comments()) + comments:
+            assert c.uuid != None
+            assert c.uuid not in uuid_map
+            uuid_map[c.uuid] = c
+            if c.alt_id != None:
+                uuid_map[c.alt_id] = c
+        uuid_map[None] = self.comment_root
+        if default_parent != self.comment_root:
+            assert default_parent.uuid in uuid_map, default_parent
+        for c in comments:
+            if c.in_reply_to == None \
+                    and default_parent.uuid != comment.INVALID_UUID:
+                c.in_reply_to = default_parent.uuid
+            elif c.in_reply_to == comment.INVALID_UUID:
+                c.in_reply_to = None
+            try:
+                parent = uuid_map[c.in_reply_to]
+            except KeyError:
+                if ignore_missing_references == True:
+                    print >> sys.stderr, \
+                        "Ignoring missing reference to %s" % c.in_reply_to
+                    parent = default_parent
+                    if parent.uuid != comment.INVALID_UUID:
+                        c.in_reply_to = parent.uuid
+                else:
+                    raise comment.MissingReference(c)
+            c.bug = self
+            parent.append(c)
+
+    def merge(self, other, accept_changes=True,
+              accept_extra_strings=True, accept_comments=True,
+              change_exception=False):
+        """
+        Merge info from other into this bug.  Overrides any attributes
+        in self that are listed in other.explicit_attrs.
+        >>> bugA = Bug(uuid='0123', summary='Need to test Bug.merge()')
+        >>> bugA.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
+        >>> bugA.creator = 'Frank'
+        >>> bugA.extra_strings += ['TAG: very helpful']
+        >>> bugA.extra_strings += ['TAG: favorite']
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'uuid-commA'
+        >>> bugB = Bug(uuid='3210', summary='More tests for Bug.merge()')
+        >>> bugB.date = 'Fri, 02 Jan 1970 00:00:00 +0000'
+        >>> bugB.creator = 'John'
+        >>> bugB.explicit_attrs = ['creator', 'summary']
+        >>> bugB.extra_strings += ['TAG: very helpful']
+        >>> bugB.extra_strings += ['TAG: useful']
+        >>> commB = bugB.comment_root.new_reply(body='comment B')
+        >>> commB.uuid = 'uuid-commB'
+        >>> bugA.merge(bugB, accept_changes=False, accept_extra_strings=False,
+        ...            accept_comments=False, change_exception=False)
+        >>> print bugA.creator
+        Frank
+        >>> bugA.merge(bugB, accept_changes=False, accept_extra_strings=False,
+        ...            accept_comments=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would change creator "Frank"->"John" for bug 0123
+        >>> print bugA.creator
+        Frank
+        >>> bugA.merge(bugB, accept_changes=True, accept_extra_strings=False,
+        ...            accept_comments=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add extra string "TAG: useful" for bug 0123
+        >>> print bugA.creator
+        John
+        >>> print bugA.extra_strings
+        ['TAG: favorite', 'TAG: very helpful']
+        >>> bugA.merge(bugB, accept_changes=True, accept_extra_strings=True,
+        ...            accept_comments=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add comment uuid-commB (alt: None) to bug 0123
+        >>> print bugA.extra_strings
+        ['TAG: favorite', 'TAG: useful', 'TAG: very helpful']
+        >>> bugA.merge(bugB, accept_changes=True, accept_extra_strings=True,
+        ...            accept_comments=True, change_exception=True)
+        >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
+        <bug>
+          <uuid>0123</uuid>
+          <short-name>0123</short-name>
+          <severity>minor</severity>
+          <status>open</status>
+          <creator>John</creator>
+          <created>...</created>
+          <summary>More tests for Bug.merge()</summary>
+          <extra-string>TAG: favorite</extra-string>
+          <extra-string>TAG: useful</extra-string>
+          <extra-string>TAG: very helpful</extra-string>
+          <comment>
+            <uuid>uuid-commA</uuid>
+            <short-name>0123:1</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment A</body>
+          </comment>
+          <comment>
+            <uuid>uuid-commB</uuid>
+            <short-name>0123:2</short-name>
+            <author></author>
+            <date>...</date>
+            <content-type>text/plain</content-type>
+            <body>comment B</body>
+          </comment>
+        </bug>
+        """
+        for attr in other.explicit_attrs:
+            old = getattr(self, attr)
+            new = getattr(other, attr)
+            if old != new:
+                if accept_changes == True:
+                    setattr(self, attr, new)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would change %s "%s"->"%s" for bug %s' \
+                        % (attr, old, new, self.uuid)
+        for estr in other.extra_strings:
+            if not estr in self.extra_strings:
+                if accept_extra_strings == True:
+                    self.extra_strings.append(estr)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would add extra string "%s" for bug %s' \
+                        % (estr, self.uuid)
+        for o_comm in other.comments():
+            try:
+                s_comm = self.comment_root.comment_from_uuid(o_comm.uuid)
+            except KeyError, e:
+                try:
+                    s_comm = self.comment_root.comment_from_uuid(o_comm.alt_id)
+                except KeyError, e:
+                    s_comm = None
+            if s_comm == None:
+                if accept_comments == True:
+                    o_comm_copy = copy.copy(o_comm)
+                    o_comm_copy.bug = self
+                    self.comment_root.add_reply(o_comm_copy)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would add comment %s (alt: %s) to bug %s' \
+                        % (o_comm.uuid, o_comm.alt_id, self.uuid)
+            else:
+                s_comm.merge(o_comm, accept_changes=accept_changes,
+                             accept_extra_strings=accept_extra_strings,
+                             change_exception=change_exception)
 
     def string(self, shortlist=False, show_comments=False):
         if self.bugdir == None:
@@ -493,8 +725,8 @@ class Bug(settings_object.SavedSettingsObject):
         return self.comment_root.comment_from_shortname(shortname,
                                                         *args, **kwargs)
 
-    def comment_from_uuid(self, uuid):
-        return self.comment_root.comment_from_uuid(uuid)
+    def comment_from_uuid(self, uuid, *args, **kwargs):
+        return self.comment_root.comment_from_uuid(uuid, *args, **kwargs)
 
     def comment_shortnames(self, shortname=None):
         """

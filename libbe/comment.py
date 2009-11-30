@@ -65,53 +65,6 @@ class DiskAccessRequired (Exception):
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def list_to_root(comments, bug, root=None,
-                 ignore_missing_references=False):
-    """
-    Convert a raw list of comments to single root comment.  We use a
-    dummy root comment by default, because there can be several
-    comment threads rooted on the same parent bug.  To simplify
-    comment interaction, we condense these threads into a single
-    thread with a Comment dummy root.  Can also be used to append
-    a list of subcomments to a non-dummy root comment, so long as
-    all the new comments are descendants of the root comment.
-    
-    No Comment method should use the dummy comment.
-    """
-    root_comments = []
-    uuid_map = {}
-    for comment in comments:
-        assert comment.uuid != None
-        uuid_map[comment.uuid] = comment
-    for comment in comments:
-        if comment.alt_id != None and comment.alt_id not in uuid_map:
-            uuid_map[comment.alt_id] = comment
-    if root == None:
-        root = Comment(bug, uuid=INVALID_UUID)
-    else:
-        uuid_map[root.uuid] = root
-    for comm in comments:
-        if comm.in_reply_to == INVALID_UUID:
-            comm.in_reply_to = None
-        rep = comm.in_reply_to
-        if rep == None or rep == bug.uuid:
-            root_comments.append(comm)
-        else:
-            parentUUID = comm.in_reply_to
-            try:
-                parent = uuid_map[parentUUID]
-                parent.add_reply(comm)
-            except KeyError, e:
-                if ignore_missing_references == True:
-                    print >> sys.stderr, \
-                        "Ignoring missing reference to %s" % parentUUID
-                    comm.in_reply_to = None
-                    root_comments.append(comm)
-                else:
-                    raise MissingReference(comm)
-    root.extend(root_comments)
-    return root
-
 def loadComments(bug, load_full=False):
     """
     Set load_full=True when you want to load the comment completely
@@ -132,7 +85,9 @@ def loadComments(bug, load_full=False):
             comm.load_settings()
             dummy = comm.body # force the body to load
         comments.append(comm)
-    return list_to_root(comments, bug)
+    bug.comment_root = Comment(bug, uuid=INVALID_UUID)
+    bug.add_comments(comments)
+    return bug.comment_root
 
 def saveComments(bug):
     if bug.sync_with_disk == False:
@@ -344,7 +299,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             if v != None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
         for estr in self.extra_strings:
-            lines.append('  <extra-string>%s</extra-string>\n' % estr)
+            lines.append('  <extra-string>%s</extra-string>' % estr)
         lines.append('</comment>')
         istring = ' '*indent
         sep = '\n' + istring
@@ -362,6 +317,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> xml = commA.xml(shortname="com-1")
         >>> commB = Comment()
         >>> commB.from_xml(xml, verbose=True)
+        >>> commB.explicit_attrs
+        ['author', 'date', 'content_type', 'body', 'alt_id']
         >>> commB.xml(shortname="com-1") == xml
         False
         >>> commB.uuid = commB.alt_id
@@ -371,12 +328,16 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
-        comment = ElementTree.XML(xml_string)
+        if hasattr(xml_string, 'getchildren'): # already an ElementTree Element
+            comment = xml_string
+        else:
+            comment = ElementTree.XML(xml_string)
         if comment.tag != 'comment':
             raise utility.InvalidXML( \
                 'comment', comment, 'root element must be <comment>')
         tags=['uuid','alt-id','in-reply-to','author','date','content-type',
               'body','extra-string']
+        self.explicit_attrs = []
         uuid = None
         body = None
         estrs = []
@@ -392,19 +353,21 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 if child.tag == 'uuid':
                     uuid = text
                     continue # don't set the comment's uuid tag.
-                if child.tag == 'body':
+                elif child.tag == 'body':
                     body = text
+                    self.explicit_attrs.append(child.tag)
                     continue # don't set the comment's body yet.
-                if child.tag == 'extra-string':
+                elif child.tag == 'extra-string':
                     estrs.append(text)
                     continue # don't set the comment's extra_string yet.
-                else:
-                    attr_name = child.tag.replace('-','_')
+                attr_name = child.tag.replace('-','_')
+                self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
                 print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
                     % (child.tag, comment.tag)
-        if self.alt_id == None and uuid not in [None, self.uuid]:
+        if uuid != self.uuid and self.alt_id == None:
+            self.explicit_attrs.append('alt_id')
             self.alt_id = uuid
         if body != None:
             if self.content_type.startswith('text/'):
@@ -412,6 +375,78 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             else:
                 self.body = base64.decodestring(body)
         self.extra_strings = estrs
+
+    def merge(self, other, accept_changes=True, 
+              accept_extra_strings=True, change_exception=False):
+        """
+        Merge info from other into this comment.  Overrides any
+        attributes in self that are listed in other.explicit_attrs.
+        >>> commA = Comment(bug=None, body='Some insightful remarks')
+        >>> commA.uuid = '0123'
+        >>> commA.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
+        >>> commA.author = 'Frank'
+        >>> commA.extra_strings += ['TAG: very helpful']
+        >>> commA.extra_strings += ['TAG: favorite']
+        >>> commB = Comment(bug=None, body='More insightful remarks')
+        >>> commB.uuid = '3210'
+        >>> commB.date = 'Fri, 02 Jan 1970 00:00:00 +0000'
+        >>> commB.author = 'John'
+        >>> commB.explicit_attrs = ['author', 'body']
+        >>> commB.extra_strings += ['TAG: very helpful']
+        >>> commB.extra_strings += ['TAG: useful']
+        >>> commA.merge(commB, accept_changes=False,
+        ...             accept_extra_strings=False, change_exception=False)
+        >>> commA.merge(commB, accept_changes=False,
+        ...             accept_extra_strings=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would change author "Frank"->"John" for comment 0123
+        >>> commA.merge(commB, accept_changes=True,
+        ...             accept_extra_strings=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add extra string "TAG: useful" to comment 0123
+        >>> print commA.author
+        John
+        >>> print commA.extra_strings
+        ['TAG: favorite', 'TAG: very helpful']
+        >>> commA.merge(commB, accept_changes=True,
+        ...             accept_extra_strings=True, change_exception=True)
+        >>> print commA.extra_strings
+        ['TAG: favorite', 'TAG: useful', 'TAG: very helpful']
+        >>> print commA.xml()
+        <comment>
+          <uuid>0123</uuid>
+          <short-name>0123</short-name>
+          <author>John</author>
+          <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
+          <content-type>text/plain</content-type>
+          <body>More insightful remarks</body>
+          <extra-string>TAG: favorite</extra-string>
+          <extra-string>TAG: useful</extra-string>
+          <extra-string>TAG: very helpful</extra-string>
+        </comment>
+        """
+        for attr in other.explicit_attrs:
+            old = getattr(self, attr)
+            new = getattr(other, attr)
+            if old != new:
+                if accept_changes == True:
+                    setattr(self, attr, new)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would change %s "%s"->"%s" for comment %s' \
+                        % (attr, old, new, self.uuid)
+        if self.alt_id == self.uuid:
+            self.alt_id = None
+        for estr in other.extra_strings:
+            if not estr in self.extra_strings:
+                if accept_extra_strings == True:
+                    self.extra_strings.append(estr)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would add extra string "%s" to comment %s' \
+                        % (estr, self.uuid)
 
     def string(self, indent=0, shortname=None):
         """
@@ -674,7 +709,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         raise InvalidShortname(comment_shortname,
                                list(self.comment_shortnames(*args, **kwargs)))
 
-    def comment_from_uuid(self, uuid):
+    def comment_from_uuid(self, uuid, match_alt_id=True):
         """
         Use a comment shortname to look up a comment.
         >>> a = Comment(bug=None, uuid="a")
@@ -684,12 +719,23 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> c.uuid = "c"
         >>> d = a.new_reply()
         >>> d.uuid = "d"
+        >>> d.alt_id = "d-alt"
         >>> comm = a.comment_from_uuid("d")
         >>> id(comm) == id(d)
         True
+        >>> comm = a.comment_from_uuid("d-alt")
+        >>> id(comm) == id(d)
+        True
+        >>> comm = a.comment_from_uuid(None, match_alt_id=False)
+        Traceback (most recent call last):
+          ...
+        KeyError: None
         """
         for comment in self.traverse():
             if comment.uuid == uuid:
+                return comment
+            if match_alt_id == True and uuid != None \
+                    and comment.alt_id == uuid:
                 return comment
         raise KeyError(uuid)
 

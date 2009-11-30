@@ -96,7 +96,7 @@ class Pipe (object):
     >>> p.statuses
     [1, 0]
     >>> p.stderrs # doctest: +ELLIPSIS
-    ["find: `...': Permission denied\\n...", '']
+    [...find: ...: Permission denied..., '']
     """
     def __init__(self, cmds, stdin=None):
         # spawn processes
