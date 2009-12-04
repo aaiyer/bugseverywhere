@@ -413,8 +413,9 @@ settings easy.  Don't set this attribute.  Set .vcs instead, and
         self._setup_encoding(self.encoding)
         self._setup_severities(self.severities)
         self._setup_status(self.active_status, self.inactive_status)
-        self.vcs = vcs.vcs_by_name(self.vcs_name)
-        self._setup_user_id(self.user_id)
+        if self.vcs_name != self.vcs.name:
+            self.vcs = vcs.vcs_by_name(self.vcs_name)
+            self._setup_user_id(self.user_id)
 
     def save_settings(self):
         settings = self._get_saved_settings()
