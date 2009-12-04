@@ -25,7 +25,10 @@ import codecs
 import locale
 import os.path
 import sys
-import doctest
+
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 
 default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
@@ -87,4 +90,5 @@ def get_val(name, section="DEFAULT", default=None, encoding=None):
     else:
         return default
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

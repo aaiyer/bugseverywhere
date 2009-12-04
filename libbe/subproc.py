@@ -20,9 +20,11 @@ Functions for running external commands in subprocesses.
 
 from subprocess import Popen, PIPE
 import sys
-import doctest
 
+import libbe
 from encoding import get_encoding
+if libbe.TESTING == True:
+    import doctest
 
 _MSWINDOWS = sys.platform == 'win32'
 _POSIX = not _MSWINDOWS
@@ -217,4 +219,5 @@ class Pipe (object):
             stderrs = read_strings
             return (stdout, stderrs)
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

@@ -14,3 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+# To reduce module load time, test suite generation is turned of by
+# default.  If you _do_ want to generate the test suites, set
+# TESTING=True before loading any libbe or becommands submodules.
+TESTING = False

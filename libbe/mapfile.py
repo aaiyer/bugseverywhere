@@ -25,7 +25,10 @@ independent/conflicting changes.
 import errno
 import os.path
 import yaml
-import doctest
+
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 
 class IllegalKey(Exception):
@@ -119,4 +122,5 @@ def map_load(vcs, path, allow_no_vcs=False):
                                      binary=True)
     return parse(contents)
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

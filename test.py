@@ -8,6 +8,8 @@ When called with module name arguments, only run the doctests from
 those modules.
 """
 
+import libbe
+libbe.TESTING = True
 from libbe import plugin, vcs
 import unittest
 import doctest

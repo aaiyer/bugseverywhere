@@ -31,8 +31,8 @@ try: # import core module, Python >= 2.5
 except ImportError: # look for non-core module
     from elementtree import ElementTree
 import xml.sax.saxutils
-import doctest
 
+import libbe
 from beuuid import uuid_gen
 from properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, cached_property, \
@@ -41,6 +41,8 @@ import settings_object
 import mapfile
 import comment
 import utility
+if libbe.TESTING == True:
+    import doctest
 
 
 class DiskAccessRequired (Exception):
@@ -877,4 +879,5 @@ def cmp_last_modified(bug_1, bug_2):
     return -cmp(val_1, val_2)
 
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

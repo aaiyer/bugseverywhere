@@ -25,7 +25,10 @@ submodules (i.e. "plugins").
 import os
 import os.path
 import sys
-import doctest
+
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 def my_import(mod_name):
     module = __import__(mod_name)
@@ -68,4 +71,5 @@ plugin_path = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
 if plugin_path not in sys.path:
     sys.path.append(plugin_path)
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

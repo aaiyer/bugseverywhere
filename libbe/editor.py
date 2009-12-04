@@ -26,7 +26,10 @@ import locale
 import os
 import sys
 import tempfile
-import doctest
+
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 
 default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
@@ -106,4 +109,5 @@ def trimmed_string(instring):
         out.append(line)
     return ''.join(out)
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

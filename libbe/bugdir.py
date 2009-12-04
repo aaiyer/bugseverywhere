@@ -29,9 +29,8 @@ import os
 import os.path
 import sys
 import time
-import unittest
-import doctest
 
+import libbe
 import bug
 import encoding
 from properties import Property, doc_property, local_property, \
@@ -43,6 +42,9 @@ import vcs
 import settings_object
 import upgrade
 import utility
+if libbe.TESTING == True:
+    import unittest
+    import doctest
 
 
 class NoBugDir(Exception):
@@ -689,145 +691,156 @@ class SimpleBugDir (BugDir):
             self._dir_ref.cleanup()
         BugDir.cleanup(self)
 
-class BugDirTestCase(unittest.TestCase):
-    def setUp(self):
-        self.dir = utility.Dir()
-        self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
-                             allow_vcs_init=True)
-        self.vcs = self.bugdir.vcs
-    def tearDown(self):
-        self.bugdir.cleanup()
-        self.dir.cleanup()
-    def fullPath(self, path):
-        return os.path.join(self.dir.path, path)
-    def assertPathExists(self, path):
-        fullpath = self.fullPath(path)
-        self.failUnless(os.path.exists(fullpath)==True,
-                        "path %s does not exist" % fullpath)
-        self.assertRaises(AlreadyInitialized, BugDir,
-                          self.dir.path, assertNewBugDir=True)
-    def versionTest(self):
-        if self.vcs.versioned == False:
-            return
-        original = self.bugdir.vcs.commit("Began versioning")
-        bugA = self.bugdir.bug_from_uuid("a")
-        bugA.status = "fixed"
-        self.bugdir.save()
-        new = self.vcs.commit("Fixed bug a")
-        dupdir = self.bugdir.duplicate_bugdir(original)
-        self.failUnless(dupdir.root != self.bugdir.root,
-                        "%s, %s" % (dupdir.root, self.bugdir.root))
-        bugAorig = dupdir.bug_from_uuid("a")
-        self.failUnless(bugA != bugAorig,
-                        "\n%s\n%s" % (bugA.string(), bugAorig.string()))
-        bugAorig.status = "fixed"
-        self.failUnless(bug.cmp_status(bugA, bugAorig)==0,
-                        "%s, %s" % (bugA.status, bugAorig.status))
-        self.failUnless(bug.cmp_severity(bugA, bugAorig)==0,
-                        "%s, %s" % (bugA.severity, bugAorig.severity))
-        self.failUnless(bug.cmp_assigned(bugA, bugAorig)==0,
-                        "%s, %s" % (bugA.assigned, bugAorig.assigned))
-        self.failUnless(bug.cmp_time(bugA, bugAorig)==0,
-                        "%s, %s" % (bugA.time, bugAorig.time))
-        self.failUnless(bug.cmp_creator(bugA, bugAorig)==0,
-                        "%s, %s" % (bugA.creator, bugAorig.creator))
-        self.failUnless(bugA == bugAorig,
-                        "\n%s\n%s" % (bugA.string(), bugAorig.string()))
-        self.bugdir.remove_duplicate_bugdir()
-        self.failUnless(os.path.exists(dupdir.root)==False, str(dupdir.root))
-    def testRun(self):
-        self.bugdir.new_bug(uuid="a", summary="Ant")
-        self.bugdir.new_bug(uuid="b", summary="Cockroach")
-        self.bugdir.new_bug(uuid="c", summary="Praying mantis")
-        length = len(self.bugdir)
-        self.failUnless(length == 3, "%d != 3 bugs" % length)
-        uuids = list(self.bugdir.uuids())
-        self.failUnless(len(uuids) == 3, "%d != 3 uuids" % len(uuids))
-        self.failUnless(uuids == ["a","b","c"], str(uuids))
-        bugA = self.bugdir.bug_from_uuid("a")
-        bugAprime = self.bugdir.bug_from_shortname("a")
-        self.failUnless(bugA == bugAprime, "%s != %s" % (bugA, bugAprime))
-        self.bugdir.save()
-        self.versionTest()
-    def testComments(self, sync_with_disk=False):
-        if sync_with_disk == True:
-            self.bugdir.set_sync_with_disk(True)
-        self.bugdir.new_bug(uuid="a", summary="Ant")
-        bug = self.bugdir.bug_from_uuid("a")
-        comm = bug.comment_root
-        rep = comm.new_reply("Ants are small.")
-        rep.new_reply("And they have six legs.")
-        if sync_with_disk == False:
+if libbe.TESTING == True:
+    class BugDirTestCase(unittest.TestCase):
+        def setUp(self):
+            self.dir = utility.Dir()
+            self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
+                                 allow_vcs_init=True)
+            self.vcs = self.bugdir.vcs
+        def tearDown(self):
+            self.bugdir.cleanup()
+            self.dir.cleanup()
+        def fullPath(self, path):
+            return os.path.join(self.dir.path, path)
+        def assertPathExists(self, path):
+            fullpath = self.fullPath(path)
+            self.failUnless(os.path.exists(fullpath)==True,
+                            "path %s does not exist" % fullpath)
+            self.assertRaises(AlreadyInitialized, BugDir,
+                              self.dir.path, assertNewBugDir=True)
+        def versionTest(self):
+            if self.vcs.versioned == False:
+                return
+            original = self.bugdir.vcs.commit("Began versioning")
+            bugA = self.bugdir.bug_from_uuid("a")
+            bugA.status = "fixed"
             self.bugdir.save()
-            self.bugdir.set_sync_with_disk(True)
-        self.bugdir._clear_bugs()
-        bug = self.bugdir.bug_from_uuid("a")
-        bug.load_comments()
-        if sync_with_disk == False:
-            self.bugdir.set_sync_with_disk(False)
-        self.failUnless(len(bug.comment_root)==1, len(bug.comment_root))
-        for index,comment in enumerate(bug.comments()):
-            if index == 0:
-                repLoaded = comment
-                self.failUnless(repLoaded.uuid == rep.uuid, repLoaded.uuid)
-                self.failUnless(comment.sync_with_disk == sync_with_disk,
-                                comment.sync_with_disk)
-                self.failUnless(comment.content_type == "text/plain",
-                                comment.content_type)
-                self.failUnless(repLoaded.settings["Content-type"]=="text/plain",
-                                repLoaded.settings)
-                self.failUnless(repLoaded.body == "Ants are small.",
-                                repLoaded.body)
-            elif index == 1:
-                self.failUnless(comment.in_reply_to == repLoaded.uuid,
-                                repLoaded.uuid)
-                self.failUnless(comment.body == "And they have six legs.",
-                                comment.body)
-            else:
-                self.failIf(True, "Invalid comment: %d\n%s" % (index, comment))
-    def testSyncedComments(self):
-        self.testComments(sync_with_disk=True)
-
-class SimpleBugDirTestCase (unittest.TestCase):
-    def setUp(self):
-        # create a pre-existing bugdir in a temporary directory
-        self.dir = utility.Dir()
-        self.original_working_dir = os.getcwd()
-        os.chdir(self.dir.path)
-        self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
-                             allow_vcs_init=True)
-        self.bugdir.new_bug("preexisting", summary="Hopefully not imported")
-        self.bugdir.save()
-    def tearDown(self):
-        os.chdir(self.original_working_dir)
-        self.bugdir.cleanup()
-        self.dir.cleanup()
-    def testOnDiskCleanLoad(self):
-        """SimpleBugDir(sync_with_disk==True) should not import preexisting bugs."""
-        bugdir = SimpleBugDir(sync_with_disk=True)
-        self.failUnless(bugdir.sync_with_disk==True, bugdir.sync_with_disk)
-        uuids = sorted([bug.uuid for bug in bugdir])
-        self.failUnless(uuids == ['a', 'b'], uuids)
-        bugdir._clear_bugs()
-        uuids = sorted([bug.uuid for bug in bugdir])
-        self.failUnless(uuids == [], uuids)
-        bugdir.load_all_bugs()
-        uuids = sorted([bug.uuid for bug in bugdir])
-        self.failUnless(uuids == ['a', 'b'], uuids)
-        bugdir.cleanup()
-    def testInMemoryCleanLoad(self):
-        """SimpleBugDir(sync_with_disk==False) should not import preexisting bugs."""
-        bugdir = SimpleBugDir(sync_with_disk=False)
-        self.failUnless(bugdir.sync_with_disk==False, bugdir.sync_with_disk)
-        uuids = sorted([bug.uuid for bug in bugdir])
-        self.failUnless(uuids == ['a', 'b'], uuids)
-        self.failUnlessRaises(DiskAccessRequired, bugdir.load_all_bugs)
-        uuids = sorted([bug.uuid for bug in bugdir])
-        self.failUnless(uuids == ['a', 'b'], uuids)
-        bugdir._clear_bugs()
-        uuids = sorted([bug.uuid for bug in bugdir])
-        self.failUnless(uuids == [], uuids)
-        bugdir.cleanup()
-
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+            new = self.vcs.commit("Fixed bug a")
+            dupdir = self.bugdir.duplicate_bugdir(original)
+            self.failUnless(dupdir.root != self.bugdir.root,
+                            "%s, %s" % (dupdir.root, self.bugdir.root))
+            bugAorig = dupdir.bug_from_uuid("a")
+            self.failUnless(bugA != bugAorig,
+                            "\n%s\n%s" % (bugA.string(), bugAorig.string()))
+            bugAorig.status = "fixed"
+            self.failUnless(bug.cmp_status(bugA, bugAorig)==0,
+                            "%s, %s" % (bugA.status, bugAorig.status))
+            self.failUnless(bug.cmp_severity(bugA, bugAorig)==0,
+                            "%s, %s" % (bugA.severity, bugAorig.severity))
+            self.failUnless(bug.cmp_assigned(bugA, bugAorig)==0,
+                            "%s, %s" % (bugA.assigned, bugAorig.assigned))
+            self.failUnless(bug.cmp_time(bugA, bugAorig)==0,
+                            "%s, %s" % (bugA.time, bugAorig.time))
+            self.failUnless(bug.cmp_creator(bugA, bugAorig)==0,
+                            "%s, %s" % (bugA.creator, bugAorig.creator))
+            self.failUnless(bugA == bugAorig,
+                            "\n%s\n%s" % (bugA.string(), bugAorig.string()))
+            self.bugdir.remove_duplicate_bugdir()
+            self.failUnless(os.path.exists(dupdir.root)==False,
+                            str(dupdir.root))
+        def testRun(self):
+            self.bugdir.new_bug(uuid="a", summary="Ant")
+            self.bugdir.new_bug(uuid="b", summary="Cockroach")
+            self.bugdir.new_bug(uuid="c", summary="Praying mantis")
+            length = len(self.bugdir)
+            self.failUnless(length == 3, "%d != 3 bugs" % length)
+            uuids = list(self.bugdir.uuids())
+            self.failUnless(len(uuids) == 3, "%d != 3 uuids" % len(uuids))
+            self.failUnless(uuids == ["a","b","c"], str(uuids))
+            bugA = self.bugdir.bug_from_uuid("a")
+            bugAprime = self.bugdir.bug_from_shortname("a")
+            self.failUnless(bugA == bugAprime, "%s != %s" % (bugA, bugAprime))
+            self.bugdir.save()
+            self.versionTest()
+        def testComments(self, sync_with_disk=False):
+            if sync_with_disk == True:
+                self.bugdir.set_sync_with_disk(True)
+            self.bugdir.new_bug(uuid="a", summary="Ant")
+            bug = self.bugdir.bug_from_uuid("a")
+            comm = bug.comment_root
+            rep = comm.new_reply("Ants are small.")
+            rep.new_reply("And they have six legs.")
+            if sync_with_disk == False:
+                self.bugdir.save()
+                self.bugdir.set_sync_with_disk(True)
+            self.bugdir._clear_bugs()
+            bug = self.bugdir.bug_from_uuid("a")
+            bug.load_comments()
+            if sync_with_disk == False:
+                self.bugdir.set_sync_with_disk(False)
+            self.failUnless(len(bug.comment_root)==1, len(bug.comment_root))
+            for index,comment in enumerate(bug.comments()):
+                if index == 0:
+                    repLoaded = comment
+                    self.failUnless(repLoaded.uuid == rep.uuid, repLoaded.uuid)
+                    self.failUnless(comment.sync_with_disk == sync_with_disk,
+                                    comment.sync_with_disk)
+                    self.failUnless(comment.content_type == "text/plain",
+                                    comment.content_type)
+                    self.failUnless(repLoaded.settings["Content-type"] == \
+                                        "text/plain",
+                                    repLoaded.settings)
+                    self.failUnless(repLoaded.body == "Ants are small.",
+                                    repLoaded.body)
+                elif index == 1:
+                    self.failUnless(comment.in_reply_to == repLoaded.uuid,
+                                    repLoaded.uuid)
+                    self.failUnless(comment.body == "And they have six legs.",
+                                    comment.body)
+                else:
+                    self.failIf(True,
+                                "Invalid comment: %d\n%s" % (index, comment))
+        def testSyncedComments(self):
+            self.testComments(sync_with_disk=True)
+    
+    class SimpleBugDirTestCase (unittest.TestCase):
+        def setUp(self):
+            # create a pre-existing bugdir in a temporary directory
+            self.dir = utility.Dir()
+            self.original_working_dir = os.getcwd()
+            os.chdir(self.dir.path)
+            self.bugdir = BugDir(self.dir.path, sink_to_existing_root=False,
+                                 allow_vcs_init=True)
+            self.bugdir.new_bug("preexisting",summary="Hopefully not imported")
+            self.bugdir.save()
+        def tearDown(self):
+            os.chdir(self.original_working_dir)
+            self.bugdir.cleanup()
+            self.dir.cleanup()
+        def testOnDiskCleanLoad(self):
+            """
+            SimpleBugDir(sync_with_disk==True) should not import
+            preexisting bugs.
+            """
+            bugdir = SimpleBugDir(sync_with_disk=True)
+            self.failUnless(bugdir.sync_with_disk==True, bugdir.sync_with_disk)
+            uuids = sorted([bug.uuid for bug in bugdir])
+            self.failUnless(uuids == ['a', 'b'], uuids)
+            bugdir._clear_bugs()
+            uuids = sorted([bug.uuid for bug in bugdir])
+            self.failUnless(uuids == [], uuids)
+            bugdir.load_all_bugs()
+            uuids = sorted([bug.uuid for bug in bugdir])
+            self.failUnless(uuids == ['a', 'b'], uuids)
+            bugdir.cleanup()
+        def testInMemoryCleanLoad(self):
+            """
+            SimpleBugDir(sync_with_disk==False) should not import
+            preexisting bugs.
+            """
+            bugdir = SimpleBugDir(sync_with_disk=False)
+            self.failUnless(bugdir.sync_with_disk==False,
+                            bugdir.sync_with_disk)
+            uuids = sorted([bug.uuid for bug in bugdir])
+            self.failUnless(uuids == ['a', 'b'], uuids)
+            self.failUnlessRaises(DiskAccessRequired, bugdir.load_all_bugs)
+            uuids = sorted([bug.uuid for bug in bugdir])
+            self.failUnless(uuids == ['a', 'b'], uuids)
+            bugdir._clear_bugs()
+            uuids = sorted([bug.uuid for bug in bugdir])
+            self.failUnless(uuids == [], uuids)
+            bugdir.cleanup()
+    
+    unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

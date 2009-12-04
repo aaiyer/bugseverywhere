@@ -23,13 +23,14 @@ property storage useful for BE objects with saved properties
 unittests at the end of the module.
 """
 
-import doctest
-import unittest
-
+import libbe
 from properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, fn_checked_property, \
     cached_property, primed_property, change_hook_property, \
     settings_property
+if libbe.TESTING == True:
+    import doctest
+    import unittest
 
 
 class _Token (object):
@@ -228,186 +229,205 @@ class SavedSettingsObject(object):
                 self.clear_cached_setting(setting)
 
 
-class SavedSettingsObjectTests(unittest.TestCase):
-    def testSimpleProperty(self):
-        """Testing a minimal versioned property"""
-        class Test(SavedSettingsObject):
-            settings_properties = []
-            required_saved_properties = []
-            @versioned_property(name="Content-type",
-                                doc="A test property",
-                                settings_properties=settings_properties,
-                                required_saved_properties=required_saved_properties)
-            def content_type(): return {}
-            def __init__(self):
-                SavedSettingsObject.__init__(self)
-        t = Test()
-        # access missing setting
-        self.failUnless(t._settings_loaded == False, t._settings_loaded)
-        self.failUnless(len(t.settings) == 0, len(t.settings))
-        self.failUnless(t.content_type == None, t.content_type)
-        # accessing t.content_type triggers the priming, which runs
-        # t._setup_saved_settings, which fills out t.settings with
-        # EMPTY data.  t._settings_loaded is still false though, since
-        # the default priming does not do any of the `official' loading
-        # that occurs in t.load_settings.
-        self.failUnless(len(t.settings) == 1, len(t.settings))
-        self.failUnless(t.settings["Content-type"] == EMPTY,
-                        t.settings["Content-type"])
-        self.failUnless(t._settings_loaded == False, t._settings_loaded)
-        # load settings creates an EMPTY value in the settings array
-        t.load_settings()
-        self.failUnless(t._settings_loaded == True, t._settings_loaded)
-        self.failUnless(t.settings["Content-type"] == EMPTY,
-                        t.settings["Content-type"])
-        self.failUnless(t.content_type == None, t.content_type)
-        self.failUnless(len(t.settings) == 1, len(t.settings))
-        self.failUnless(t.settings["Content-type"] == EMPTY,
-                        t.settings["Content-type"])
-        # now we set a value
-        t.content_type = 5
-        self.failUnless(t.settings["Content-type"] == 5,
-                        t.settings["Content-type"])
-        self.failUnless(t.content_type == 5, t.content_type)
-        self.failUnless(t.settings["Content-type"] == 5,
-                        t.settings["Content-type"])
-        # now we set another value
-        t.content_type = "text/plain"
-        self.failUnless(t.content_type == "text/plain", t.content_type)
-        self.failUnless(t.settings["Content-type"] == "text/plain",
-                        t.settings["Content-type"])
-        self.failUnless(t._get_saved_settings()=={"Content-type":"text/plain"},
-                        t._get_saved_settings())
-        # now we clear to the post-primed value
-        t.content_type = EMPTY
-        self.failUnless(t._settings_loaded == True, t._settings_loaded)
-        self.failUnless(t.settings["Content-type"] == EMPTY,
-                        t.settings["Content-type"])
-        self.failUnless(t.content_type == None, t.content_type)
-        self.failUnless(len(t.settings) == 1, len(t.settings))
-        self.failUnless(t.settings["Content-type"] == EMPTY,
-                        t.settings["Content-type"])
-    def testDefaultingProperty(self):
-        """Testing a defaulting versioned property"""
-        class Test(SavedSettingsObject):
-            settings_properties = []
-            required_saved_properties = []
-            @versioned_property(name="Content-type",
-                                doc="A test property",
-                                default="text/plain",
-                                settings_properties=settings_properties,
-                                required_saved_properties=required_saved_properties)
-            def content_type(): return {}
-            def __init__(self):
-                SavedSettingsObject.__init__(self)
-        t = Test()
-        self.failUnless(t._settings_loaded == False, t._settings_loaded)
-        self.failUnless(t.content_type == "text/plain", t.content_type)
-        self.failUnless(t._settings_loaded == False, t._settings_loaded)
-        t.load_settings()
-        self.failUnless(t._settings_loaded == True, t._settings_loaded)
-        self.failUnless(t.content_type == "text/plain", t.content_type)
-        self.failUnless(t.settings["Content-type"] == EMPTY,
-                        t.settings["Content-type"])
-        self.failUnless(t._get_saved_settings() == {}, t._get_saved_settings())
-        t.content_type = "text/html"
-        self.failUnless(t.content_type == "text/html",
-                        t.content_type)
-        self.failUnless(t.settings["Content-type"] == "text/html",
-                        t.settings["Content-type"])
-        self.failUnless(t._get_saved_settings()=={"Content-type":"text/html"},
-                        t._get_saved_settings())
-    def testRequiredDefaultingProperty(self):
-        """Testing a required defaulting versioned property"""
-        class Test(SavedSettingsObject):
-            settings_properties = []
-            required_saved_properties = []
-            @versioned_property(name="Content-type",
-                                doc="A test property",
-                                default="text/plain",
-                                settings_properties=settings_properties,
-                                required_saved_properties=required_saved_properties,
-                                require_save=True)
-            def content_type(): return {}
-            def __init__(self):
-                SavedSettingsObject.__init__(self)
-        t = Test()
-        self.failUnless(t._get_saved_settings()=={"Content-type":"text/plain"},
-                        t._get_saved_settings())
-        t.content_type = "text/html"
-        self.failUnless(t._get_saved_settings()=={"Content-type":"text/html"},
-                        t._get_saved_settings())
-    def testClassVersionedPropertyDefinition(self):
-        """Testing a class-specific _versioned property decorator"""
-        class Test(SavedSettingsObject):
-            settings_properties = []
-            required_saved_properties = []
-            def _versioned_property(settings_properties=settings_properties,
-                                    required_saved_properties=required_saved_properties,
-                                    **kwargs):
-                if "settings_properties" not in kwargs:
-                    kwargs["settings_properties"] = settings_properties
-                if "required_saved_properties" not in kwargs:
-                    kwargs["required_saved_properties"]=required_saved_properties
-                return versioned_property(**kwargs)
-            @_versioned_property(name="Content-type",
-                                doc="A test property",
-                                default="text/plain",
-                                require_save=True)
-            def content_type(): return {}
-            def __init__(self):
-                SavedSettingsObject.__init__(self)
-        t = Test()
-        self.failUnless(t._get_saved_settings()=={"Content-type":"text/plain"},
-                        t._get_saved_settings())
-        t.content_type = "text/html"
-        self.failUnless(t._get_saved_settings()=={"Content-type":"text/html"},
-                        t._get_saved_settings())
-    def testMutableChangeHookedProperty(self):
-        """Testing a mutable change-hooked property"""
-        SAVES = []
-        def prop_log_save_settings(self, old, new, saves=SAVES):
-            saves.append("'%s' -> '%s'" % (str(old), str(new)))
-            prop_save_settings(self, old, new)
-        class Test(SavedSettingsObject):
-            settings_properties = []
-            required_saved_properties = []
-            @versioned_property(name="List-type",
-                                doc="A test property",
-                                mutable=True,
-                                change_hook=prop_log_save_settings,
-                                settings_properties=settings_properties,
-                                required_saved_properties=required_saved_properties)
-            def list_type(): return {}
-            def __init__(self):
-                SavedSettingsObject.__init__(self)
-        t = Test()
-        self.failUnless(t._settings_loaded == False, t._settings_loaded)
-        t.load_settings()
-        self.failUnless(SAVES == [], SAVES)
-        self.failUnless(t._settings_loaded == True, t._settings_loaded)
-        self.failUnless(t.list_type == None, t.list_type)
-        self.failUnless(SAVES == [], SAVES)
-        self.failUnless(t.settings["List-type"]==EMPTY,t.settings["List-type"])
-        t.list_type = []
-        self.failUnless(t.settings["List-type"] == [], t.settings["List-type"])
-        self.failUnless(SAVES == [
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'"
-                ], SAVES)
-        t.list_type.append(5)
-        self.failUnless(SAVES == [
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
-                ], SAVES)
-        self.failUnless(t.settings["List-type"] == [5],t.settings["List-type"])
-        self.failUnless(SAVES == [ # the append(5) has not yet been saved
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
-                ], SAVES)
-        self.failUnless(t.list_type == [5], t.list_type) # <-get triggers saved
+if libbe.TESTING == True:
+    class SavedSettingsObjectTests(unittest.TestCase):
+        def testSimpleProperty(self):
+            """Testing a minimal versioned property"""
+            class Test(SavedSettingsObject):
+                settings_properties = []
+                required_saved_properties = []
+                @versioned_property(name="Content-type",
+                                    doc="A test property",
+                                    settings_properties=settings_properties,
+                                    required_saved_properties= \
+                                        required_saved_properties)
+                def content_type(): return {}
+                def __init__(self):
+                    SavedSettingsObject.__init__(self)
+            t = Test()
+            # access missing setting
+            self.failUnless(t._settings_loaded == False, t._settings_loaded)
+            self.failUnless(len(t.settings) == 0, len(t.settings))
+            self.failUnless(t.content_type == None, t.content_type)
+            # accessing t.content_type triggers the priming, which runs
+            # t._setup_saved_settings, which fills out t.settings with
+            # EMPTY data.  t._settings_loaded is still false though, since
+            # the default priming does not do any of the `official' loading
+            # that occurs in t.load_settings.
+            self.failUnless(len(t.settings) == 1, len(t.settings))
+            self.failUnless(t.settings["Content-type"] == EMPTY,
+                            t.settings["Content-type"])
+            self.failUnless(t._settings_loaded == False, t._settings_loaded)
+            # load settings creates an EMPTY value in the settings array
+            t.load_settings()
+            self.failUnless(t._settings_loaded == True, t._settings_loaded)
+            self.failUnless(t.settings["Content-type"] == EMPTY,
+                            t.settings["Content-type"])
+            self.failUnless(t.content_type == None, t.content_type)
+            self.failUnless(len(t.settings) == 1, len(t.settings))
+            self.failUnless(t.settings["Content-type"] == EMPTY,
+                            t.settings["Content-type"])
+            # now we set a value
+            t.content_type = 5
+            self.failUnless(t.settings["Content-type"] == 5,
+                            t.settings["Content-type"])
+            self.failUnless(t.content_type == 5, t.content_type)
+            self.failUnless(t.settings["Content-type"] == 5,
+                            t.settings["Content-type"])
+            # now we set another value
+            t.content_type = "text/plain"
+            self.failUnless(t.content_type == "text/plain", t.content_type)
+            self.failUnless(t.settings["Content-type"] == "text/plain",
+                            t.settings["Content-type"])
+            self.failUnless(t._get_saved_settings() == \
+                                {"Content-type":"text/plain"},
+                            t._get_saved_settings())
+            # now we clear to the post-primed value
+            t.content_type = EMPTY
+            self.failUnless(t._settings_loaded == True, t._settings_loaded)
+            self.failUnless(t.settings["Content-type"] == EMPTY,
+                            t.settings["Content-type"])
+            self.failUnless(t.content_type == None, t.content_type)
+            self.failUnless(len(t.settings) == 1, len(t.settings))
+            self.failUnless(t.settings["Content-type"] == EMPTY,
+                            t.settings["Content-type"])
+        def testDefaultingProperty(self):
+            """Testing a defaulting versioned property"""
+            class Test(SavedSettingsObject):
+                settings_properties = []
+                required_saved_properties = []
+                @versioned_property(name="Content-type",
+                                    doc="A test property",
+                                    default="text/plain",
+                                    settings_properties=settings_properties,
+                                    required_saved_properties= \
+                                        required_saved_properties)
+                def content_type(): return {}
+                def __init__(self):
+                    SavedSettingsObject.__init__(self)
+            t = Test()
+            self.failUnless(t._settings_loaded == False, t._settings_loaded)
+            self.failUnless(t.content_type == "text/plain", t.content_type)
+            self.failUnless(t._settings_loaded == False, t._settings_loaded)
+            t.load_settings()
+            self.failUnless(t._settings_loaded == True, t._settings_loaded)
+            self.failUnless(t.content_type == "text/plain", t.content_type)
+            self.failUnless(t.settings["Content-type"] == EMPTY,
+                            t.settings["Content-type"])
+            self.failUnless(t._get_saved_settings() == {},
+                            t._get_saved_settings())
+            t.content_type = "text/html"
+            self.failUnless(t.content_type == "text/html",
+                            t.content_type)
+            self.failUnless(t.settings["Content-type"] == "text/html",
+                            t.settings["Content-type"])
+            self.failUnless(t._get_saved_settings() == \
+                                {"Content-type":"text/html"},
+                            t._get_saved_settings())
+        def testRequiredDefaultingProperty(self):
+            """Testing a required defaulting versioned property"""
+            class Test(SavedSettingsObject):
+                settings_properties = []
+                required_saved_properties = []
+                @versioned_property(name="Content-type",
+                                    doc="A test property",
+                                    default="text/plain",
+                                    settings_properties=settings_properties,
+                                    required_saved_properties= \
+                                        required_saved_properties,
+                                    require_save=True)
+                def content_type(): return {}
+                def __init__(self):
+                    SavedSettingsObject.__init__(self)
+            t = Test()
+            self.failUnless(t._get_saved_settings() == \
+                                {"Content-type":"text/plain"},
+                            t._get_saved_settings())
+            t.content_type = "text/html"
+            self.failUnless(t._get_saved_settings() == \
+                                {"Content-type":"text/html"},
+                            t._get_saved_settings())
+        def testClassVersionedPropertyDefinition(self):
+            """Testing a class-specific _versioned property decorator"""
+            class Test(SavedSettingsObject):
+                settings_properties = []
+                required_saved_properties = []
+                def _versioned_property(settings_properties= \
+                                            settings_properties,
+                                        required_saved_properties= \
+                                            required_saved_properties,
+                                        **kwargs):
+                    if "settings_properties" not in kwargs:
+                        kwargs["settings_properties"] = settings_properties
+                    if "required_saved_properties" not in kwargs:
+                        kwargs["required_saved_properties"] = \
+                            required_saved_properties
+                    return versioned_property(**kwargs)
+                @_versioned_property(name="Content-type",
+                                    doc="A test property",
+                                    default="text/plain",
+                                    require_save=True)
+                def content_type(): return {}
+                def __init__(self):
+                    SavedSettingsObject.__init__(self)
+            t = Test()
+            self.failUnless(t._get_saved_settings() == \
+                                {"Content-type":"text/plain"},
+                            t._get_saved_settings())
+            t.content_type = "text/html"
+            self.failUnless(t._get_saved_settings() == \
+                                {"Content-type":"text/html"},
+                            t._get_saved_settings())
+        def testMutableChangeHookedProperty(self):
+            """Testing a mutable change-hooked property"""
+            SAVES = []
+            def prop_log_save_settings(self, old, new, saves=SAVES):
+                saves.append("'%s' -> '%s'" % (str(old), str(new)))
+                prop_save_settings(self, old, new)
+            class Test(SavedSettingsObject):
+                settings_properties = []
+                required_saved_properties = []
+                @versioned_property(name="List-type",
+                                    doc="A test property",
+                                    mutable=True,
+                                    change_hook=prop_log_save_settings,
+                                    settings_properties=settings_properties,
+                                    required_saved_properties= \
+                                        required_saved_properties)
+                def list_type(): return {}
+                def __init__(self):
+                    SavedSettingsObject.__init__(self)
+            t = Test()
+            self.failUnless(t._settings_loaded == False, t._settings_loaded)
+            t.load_settings()
+            self.failUnless(SAVES == [], SAVES)
+            self.failUnless(t._settings_loaded == True, t._settings_loaded)
+            self.failUnless(t.list_type == None, t.list_type)
+            self.failUnless(SAVES == [], SAVES)
+            self.failUnless(t.settings["List-type"]==EMPTY,
+                            t.settings["List-type"])
+            t.list_type = []
+            self.failUnless(t.settings["List-type"] == [],
+                            t.settings["List-type"])
+            self.failUnless(SAVES == [
+                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'"
+                    ], SAVES)
+            t.list_type.append(5)
+            self.failUnless(SAVES == [
+                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                    ], SAVES)
+            self.failUnless(t.settings["List-type"] == [5],
+                            t.settings["List-type"])
+            self.failUnless(SAVES == [ # the append(5) has not yet been saved
+                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                    ], SAVES)
+            self.failUnless(t.list_type == [5], t.list_type)#get triggers saved
 
-        self.failUnless(SAVES == [ # now the append(5) has been saved.
-                "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
-                "'[]' -> '[5]'"
-                ], SAVES)
+            self.failUnless(SAVES == [ # now the append(5) has been saved.
+                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                    "'[]' -> '[5]'"
+                    ], SAVES)
 
-unitsuite=unittest.TestLoader().loadTestsFromTestCase(SavedSettingsObjectTests)
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    unitsuite = unittest.TestLoader().loadTestsFromTestCase( \
+        SavedSettingsObjectTests)
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

@@ -14,6 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Import comments and bugs from XML"""
+import libbe
 from libbe import cmdutil, bugdir, bug, comment, utility
 from becommands.comment import complete
 import copy
@@ -23,8 +24,9 @@ try: # import core module, Python >= 2.5
     from xml.etree import ElementTree
 except ImportError: # look for non-core module
     from elementtree import ElementTree
-import doctest
-import unittest
+if libbe.TESTING == True:
+    import doctest
+    import unittest
 __desc__ = __doc__
 
 def execute(args, manipulate_encodings=True, restrict_file_access=False):
@@ -302,127 +304,129 @@ def help():
     return get_parser().help_str() + longhelp
 
 
-class LonghelpTestCase (unittest.TestCase):
-    """
-    Test import scenarios given in longhelp.
-    """
-    def setUp(self):
-        self.bugdir = bugdir.SimpleBugDir()
-        self.original_working_dir = os.getcwd()
-        os.chdir(self.bugdir.root)
-        bugA = self.bugdir.bug_from_uuid('a')
-        self.bugdir.remove_bug(bugA)
-        self.bugdir.set_sync_with_disk(False)
-        bugB = self.bugdir.bug_from_uuid('b')
-        bugB.creator = 'John'
-        bugB.status = 'open'
-        bugB.extra_strings += ["don't forget your towel"]
-        bugB.extra_strings += ['helps with space travel']
-        comm1 = bugB.comment_root.new_reply(body='Hello\n')
-        comm1.uuid = 'c1'
-        comm1.author = 'Jane'
-        comm2 = bugB.comment_root.new_reply(body='World\n')
-        comm2.uuid = 'c2'
-        comm2.author = 'Jess'
-        bugB.save()
-        self.bugdir.set_sync_with_disk(True)
-        self.xml = """
-        <be-xml>
-          <bug>
-            <uuid>b</uuid>
-            <status>fixed</status>
-            <summary>a test bug</summary>
-            <extra-string>don't forget your towel</extra-string>
-            <extra-string>watch out for flying dolphins</extra-string>
-            <comment>
-              <uuid>c1</uuid>
-              <body>So long</body>
-            </comment>
-            <comment>
-              <uuid>c3</uuid>
-              <author>Jed</author>
-              <body>And thanks</body>
-            </comment>
-          </bug>
-        </be-xml>
+if libbe.TESTING == True:
+    class LonghelpTestCase (unittest.TestCase):
         """
-    def tearDown(self):
-        os.chdir(self.original_working_dir)
-        self.bugdir.cleanup()
-    def _execute(self, *args):
-        import StringIO
-        orig_stdin = sys.stdin
-        sys.stdin = StringIO.StringIO(self.xml)
-        execute(list(args)+["-"], manipulate_encodings=False,
-                restrict_file_access=True)
-        sys.stdin = orig_stdin
-        self.bugdir._clear_bugs()
-    def testCleanBugdir(self):
-        uuids = list(self.bugdir.uuids())
-        self.failUnless(uuids == ['b'], uuids)
-    def testNotAddOnly(self):
-        self._execute()
-        uuids = list(self.bugdir.uuids())
-        self.failUnless(uuids == ['b'], uuids)
-        bugB = self.bugdir.bug_from_uuid('b')
-        self.failUnless(bugB.uuid == 'b', bugB.uuid)
-        self.failUnless(bugB.creator == 'John', bugB.creator)
-        self.failUnless(bugB.status == 'fixed', bugB.status)
-        estrs = ["don't forget your towel",
-                 'helps with space travel',
-                 'watch out for flying dolphins']
-        self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)
-        comments = list(bugB.comments())
-        self.failUnless(len(comments) == 3,
-                        ['%s (%s, %s)' % (c.uuid, c.alt_id, c.body) for c in comments])
-        c1 = bugB.comment_from_uuid('c1')
-        comments.remove(c1)
-        self.failUnless(c1.uuid == 'c1', c1.uuid)
-        self.failUnless(c1.alt_id == None, c1.alt_id)
-        self.failUnless(c1.author == 'Jane', c1.author)
-        self.failUnless(c1.body == 'So long\n', c1.body)
-        c2 = bugB.comment_from_uuid('c2')
-        comments.remove(c2)
-        self.failUnless(c2.uuid == 'c2', c2.uuid)
-        self.failUnless(c2.alt_id == None, c2.alt_id)
-        self.failUnless(c2.author == 'Jess', c2.author)
-        self.failUnless(c2.body == 'World\n', c2.body)
-        c4 = comments[0]
-        self.failUnless(len(c4.uuid) == 36, c4.uuid)
-        self.failUnless(c4.alt_id == 'c3', c4.alt_id)
-        self.failUnless(c4.author == 'Jed', c4.author)
-        self.failUnless(c4.body == 'And thanks\n', c4.body)
-    def testAddOnly(self): 
-        self._execute('--add-only')
-        uuids = list(self.bugdir.uuids())
-        self.failUnless(uuids == ['b'], uuids)
-        bugB = self.bugdir.bug_from_uuid('b')
-        self.failUnless(bugB.uuid == 'b', bugB.uuid)
-        self.failUnless(bugB.creator == 'John', bugB.creator)
-        self.failUnless(bugB.status == 'open', bugB.status)
-        estrs = ["don't forget your towel",
-                 'helps with space travel']
-        self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)
-        comments = list(bugB.comments())
-        self.failUnless(len(comments) == 3,
-                        ['%s (%s)' % (c.uuid, c.alt_id) for c in comments])
-        c1 = bugB.comment_from_uuid('c1')
-        comments.remove(c1)
-        self.failUnless(c1.uuid == 'c1', c1.uuid)
-        self.failUnless(c1.alt_id == None, c1.alt_id)
-        self.failUnless(c1.author == 'Jane', c1.author)
-        self.failUnless(c1.body == 'Hello\n', c1.body)
-        c2 = bugB.comment_from_uuid('c2')
-        comments.remove(c2)
-        self.failUnless(c2.uuid == 'c2', c2.uuid)
-        self.failUnless(c2.alt_id == None, c2.alt_id)
-        self.failUnless(c2.author == 'Jess', c2.author)
-        self.failUnless(c2.body == 'World\n', c2.body)
-        c4 = comments[0]
-        self.failUnless(len(c4.uuid) == 36, c4.uuid)
-        self.failUnless(c4.alt_id == 'c3', c4.alt_id)
-        self.failUnless(c4.author == 'Jed', c4.author)
-        self.failUnless(c4.body == 'And thanks\n', c4.body)
+        Test import scenarios given in longhelp.
+        """
+        def setUp(self):
+            self.bugdir = bugdir.SimpleBugDir()
+            self.original_working_dir = os.getcwd()
+            os.chdir(self.bugdir.root)
+            bugA = self.bugdir.bug_from_uuid('a')
+            self.bugdir.remove_bug(bugA)
+            self.bugdir.set_sync_with_disk(False)
+            bugB = self.bugdir.bug_from_uuid('b')
+            bugB.creator = 'John'
+            bugB.status = 'open'
+            bugB.extra_strings += ["don't forget your towel"]
+            bugB.extra_strings += ['helps with space travel']
+            comm1 = bugB.comment_root.new_reply(body='Hello\n')
+            comm1.uuid = 'c1'
+            comm1.author = 'Jane'
+            comm2 = bugB.comment_root.new_reply(body='World\n')
+            comm2.uuid = 'c2'
+            comm2.author = 'Jess'
+            bugB.save()
+            self.bugdir.set_sync_with_disk(True)
+            self.xml = """
+            <be-xml>
+              <bug>
+                <uuid>b</uuid>
+                <status>fixed</status>
+                <summary>a test bug</summary>
+                <extra-string>don't forget your towel</extra-string>
+                <extra-string>watch out for flying dolphins</extra-string>
+                <comment>
+                  <uuid>c1</uuid>
+                  <body>So long</body>
+                </comment>
+                <comment>
+                  <uuid>c3</uuid>
+                  <author>Jed</author>
+                  <body>And thanks</body>
+                </comment>
+              </bug>
+            </be-xml>
+            """
+        def tearDown(self):
+            os.chdir(self.original_working_dir)
+            self.bugdir.cleanup()
+        def _execute(self, *args):
+            import StringIO
+            orig_stdin = sys.stdin
+            sys.stdin = StringIO.StringIO(self.xml)
+            execute(list(args)+["-"], manipulate_encodings=False,
+                    restrict_file_access=True)
+            sys.stdin = orig_stdin
+            self.bugdir._clear_bugs()
+        def testCleanBugdir(self):
+            uuids = list(self.bugdir.uuids())
+            self.failUnless(uuids == ['b'], uuids)
+        def testNotAddOnly(self):
+            self._execute()
+            uuids = list(self.bugdir.uuids())
+            self.failUnless(uuids == ['b'], uuids)
+            bugB = self.bugdir.bug_from_uuid('b')
+            self.failUnless(bugB.uuid == 'b', bugB.uuid)
+            self.failUnless(bugB.creator == 'John', bugB.creator)
+            self.failUnless(bugB.status == 'fixed', bugB.status)
+            estrs = ["don't forget your towel",
+                     'helps with space travel',
+                     'watch out for flying dolphins']
+            self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)
+            comments = list(bugB.comments())
+            self.failUnless(len(comments) == 3,
+                            ['%s (%s, %s)' % (c.uuid, c.alt_id, c.body)
+                             for c in comments])
+            c1 = bugB.comment_from_uuid('c1')
+            comments.remove(c1)
+            self.failUnless(c1.uuid == 'c1', c1.uuid)
+            self.failUnless(c1.alt_id == None, c1.alt_id)
+            self.failUnless(c1.author == 'Jane', c1.author)
+            self.failUnless(c1.body == 'So long\n', c1.body)
+            c2 = bugB.comment_from_uuid('c2')
+            comments.remove(c2)
+            self.failUnless(c2.uuid == 'c2', c2.uuid)
+            self.failUnless(c2.alt_id == None, c2.alt_id)
+            self.failUnless(c2.author == 'Jess', c2.author)
+            self.failUnless(c2.body == 'World\n', c2.body)
+            c4 = comments[0]
+            self.failUnless(len(c4.uuid) == 36, c4.uuid)
+            self.failUnless(c4.alt_id == 'c3', c4.alt_id)
+            self.failUnless(c4.author == 'Jed', c4.author)
+            self.failUnless(c4.body == 'And thanks\n', c4.body)
+        def testAddOnly(self):
+            self._execute('--add-only')
+            uuids = list(self.bugdir.uuids())
+            self.failUnless(uuids == ['b'], uuids)
+            bugB = self.bugdir.bug_from_uuid('b')
+            self.failUnless(bugB.uuid == 'b', bugB.uuid)
+            self.failUnless(bugB.creator == 'John', bugB.creator)
+            self.failUnless(bugB.status == 'open', bugB.status)
+            estrs = ["don't forget your towel",
+                     'helps with space travel']
+            self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)
+            comments = list(bugB.comments())
+            self.failUnless(len(comments) == 3,
+                            ['%s (%s)' % (c.uuid, c.alt_id) for c in comments])
+            c1 = bugB.comment_from_uuid('c1')
+            comments.remove(c1)
+            self.failUnless(c1.uuid == 'c1', c1.uuid)
+            self.failUnless(c1.alt_id == None, c1.alt_id)
+            self.failUnless(c1.author == 'Jane', c1.author)
+            self.failUnless(c1.body == 'Hello\n', c1.body)
+            c2 = bugB.comment_from_uuid('c2')
+            comments.remove(c2)
+            self.failUnless(c2.uuid == 'c2', c2.uuid)
+            self.failUnless(c2.alt_id == None, c2.alt_id)
+            self.failUnless(c2.author == 'Jess', c2.author)
+            self.failUnless(c2.body == 'World\n', c2.body)
+            c4 = comments[0]
+            self.failUnless(len(c4.uuid) == 36, c4.uuid)
+            self.failUnless(c4.alt_id == 'c3', c4.alt_id)
+            self.failUnless(c4.author == 'Jed', c4.author)
+            self.failUnless(c4.body == 'And thanks\n', c4.body)
 
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

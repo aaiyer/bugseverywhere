@@ -20,11 +20,13 @@ Handle conversion between the various on-disk images.
 
 import os, os.path
 import sys
-import doctest
 
+import libbe
 import encoding
 import mapfile
 import vcs
+if libbe.TESTING == True:
+    import doctest
 
 # a list of all past versions
 BUGDIR_DISK_VERSIONS = ["Bugs Everywhere Tree 1 0",
@@ -184,4 +186,5 @@ def upgrade(path, current_version,
                 break
             i += 1
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

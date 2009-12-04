@@ -27,7 +27,10 @@ import shutil
 import tempfile
 import time
 import types
-import doctest
+
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 class InvalidXML(ValueError):
     """
@@ -144,4 +147,5 @@ def iterable_full_of_strings(value, alternative=None):
             return False
     return True
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

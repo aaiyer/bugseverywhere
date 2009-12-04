@@ -28,10 +28,12 @@ try: # import core module, Python >= 2.5
 except ImportError: # look for non-core module
     from elementtree import ElementTree
 from xml.sax.saxutils import unescape
-import doctest
-import unittest
 
+import libbe
 import vcs
+if libbe.TESTING == True:
+    import doctest
+    import unittest
 
 
 def new():
@@ -183,7 +185,8 @@ class Darcs(vcs.VCS):
         except IndexError:
             return None
     
-vcs.make_vcs_testcase_subclasses(Darcs, sys.modules[__name__])
+if libbe.TESTING == True:
+    vcs.make_vcs_testcase_subclasses(Darcs, sys.modules[__name__])
 
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

@@ -19,10 +19,12 @@
 """Compare two bug trees."""
 
 import difflib
-import doctest
 
+import libbe
 from libbe import bugdir, bug, settings_object, tree
 from libbe.utility import time_to_str
+if libbe.TESTING == True:
+    import doctest
 
 
 class DiffTree (tree.Tree):
@@ -417,4 +419,5 @@ class Diff (object):
         return difflib.unified_diff(old_body, new_body)
 
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

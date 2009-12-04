@@ -24,10 +24,13 @@ Mercurial (hg) backend.
 import os
 import re
 import sys
-import unittest
-import doctest
 
+import libbe
 import vcs
+
+if libbe.TESTING == True:
+    import unittest
+    import doctest
 
 
 def new():
@@ -98,7 +101,8 @@ class Hg(vcs.VCS):
         return None
 
     
-vcs.make_vcs_testcase_subclasses(Hg, sys.modules[__name__])
+if libbe.TESTING == True:
+    vcs.make_vcs_testcase_subclasses(Hg, sys.modules[__name__])
 
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

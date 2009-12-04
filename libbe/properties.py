@@ -30,7 +30,10 @@ for more information on decorators.
 
 import copy
 import types
-import unittest
+
+import libbe
+if libbe.TESTING == True:
+    import unittest
 
 
 class ValueCheckError (ValueError):
@@ -383,257 +386,257 @@ def change_hook_property(hook, mutable=False, default=None):
         return funcs
     return decorator
 
+if libbe.TESTING == True:
+    class DecoratorTests(unittest.TestCase):
+        def testLocalDoc(self):
+            class Test(object):
+                @Property
+                @doc_property("A fancy property")
+                def x():
+                    return {}
+            self.failUnless(Test.x.__doc__ == "A fancy property",
+                            Test.x.__doc__)
+        def testLocalProperty(self):
+            class Test(object):
+                @Property
+                @local_property(name="LOCAL")
+                def x():
+                    return {}
+            t = Test()
+            self.failUnless(t.x == None, str(t.x))
+            t.x = 'z' # the first set initializes ._LOCAL_value
+            self.failUnless(t.x == 'z', str(t.x))
+            self.failUnless("_LOCAL_value" in dir(t), dir(t))
+            self.failUnless(t._LOCAL_value == 'z', t._LOCAL_value)
+        def testSettingsProperty(self):
+            class Test(object):
+                @Property
+                @settings_property(name="attr")
+                def x():
+                    return {}
+                def __init__(self):
+                    self.settings = {}
+            t = Test()
+            self.failUnless(t.x == None, str(t.x))
+            t.x = 'z' # the first set initializes ._LOCAL_value
+            self.failUnless(t.x == 'z', str(t.x))
+            self.failUnless("attr" in t.settings, t.settings)
+            self.failUnless(t.settings["attr"] == 'z', t.settings["attr"])
+        def testDefaultingLocalProperty(self):
+            class Test(object):
+                @Property
+                @defaulting_property(default='y', null='x')
+                @local_property(name="DEFAULT", null=5)
+                def x(): return {}
+            t = Test()
+            self.failUnless(t.x == 5, str(t.x))
+            t.x = 'x'
+            self.failUnless(t.x == 'y', str(t.x))
+            t.x = 'y'
+            self.failUnless(t.x == 'y', str(t.x))
+            t.x = 'z'
+            self.failUnless(t.x == 'z', str(t.x))
+            t.x = 5
+            self.failUnless(t.x == 5, str(t.x))
+        def testCheckedLocalProperty(self):
+            class Test(object):
+                @Property
+                @checked_property(allowed=['x', 'y', 'z'])
+                @local_property(name="CHECKED")
+                def x(): return {}
+                def __init__(self):
+                    self._CHECKED_value = 'x'
+            t = Test()
+            self.failUnless(t.x == 'x', str(t.x))
+            try:
+                t.x = None
+                e = None
+            except ValueCheckError, e:
+                pass
+            self.failUnless(type(e) == ValueCheckError, type(e))
+        def testTwoCheckedLocalProperties(self):
+            class Test(object):
+                @Property
+                @checked_property(allowed=['x', 'y', 'z'])
+                @local_property(name="X")
+                def x(): return {}
 
-class DecoratorTests(unittest.TestCase):
-    def testLocalDoc(self):
-        class Test(object):
-            @Property
-            @doc_property("A fancy property")
-            def x():
-                return {}
-        self.failUnless(Test.x.__doc__ == "A fancy property",
-                        Test.x.__doc__)
-    def testLocalProperty(self):
-        class Test(object):
-            @Property
-            @local_property(name="LOCAL")
-            def x():
-                return {}
-        t = Test()
-        self.failUnless(t.x == None, str(t.x))
-        t.x = 'z' # the first set initializes ._LOCAL_value
-        self.failUnless(t.x == 'z', str(t.x))
-        self.failUnless("_LOCAL_value" in dir(t), dir(t))
-        self.failUnless(t._LOCAL_value == 'z', t._LOCAL_value)
-    def testSettingsProperty(self):
-        class Test(object):
-            @Property
-            @settings_property(name="attr")
-            def x():
-                return {}
-            def __init__(self):
-                self.settings = {}
-        t = Test()
-        self.failUnless(t.x == None, str(t.x))
-        t.x = 'z' # the first set initializes ._LOCAL_value
-        self.failUnless(t.x == 'z', str(t.x))
-        self.failUnless("attr" in t.settings, t.settings)
-        self.failUnless(t.settings["attr"] == 'z', t.settings["attr"])
-    def testDefaultingLocalProperty(self):
-        class Test(object):
-            @Property
-            @defaulting_property(default='y', null='x')
-            @local_property(name="DEFAULT", null=5)
-            def x(): return {}
-        t = Test()
-        self.failUnless(t.x == 5, str(t.x))
-        t.x = 'x'
-        self.failUnless(t.x == 'y', str(t.x))
-        t.x = 'y'
-        self.failUnless(t.x == 'y', str(t.x))
-        t.x = 'z'
-        self.failUnless(t.x == 'z', str(t.x))
-        t.x = 5
-        self.failUnless(t.x == 5, str(t.x))
-    def testCheckedLocalProperty(self):
-        class Test(object):
-            @Property
-            @checked_property(allowed=['x', 'y', 'z'])
-            @local_property(name="CHECKED")
-            def x(): return {}
-            def __init__(self):
-                self._CHECKED_value = 'x'
-        t = Test()
-        self.failUnless(t.x == 'x', str(t.x))
-        try:
+                @Property
+                @checked_property(allowed=['a', 'b', 'c'])
+                @local_property(name="A")
+                def a(): return {}
+                def __init__(self):
+                    self._A_value = 'a'
+                    self._X_value = 'x'
+            t = Test()
+            try:
+                t.x = 'a'
+                e = None
+            except ValueCheckError, e:
+                pass
+            self.failUnless(type(e) == ValueCheckError, type(e))
+            t.x = 'x'
+            t.x = 'y'
+            t.x = 'z'
+            try:
+                t.a = 'x'
+                e = None
+            except ValueCheckError, e:
+                pass
+            self.failUnless(type(e) == ValueCheckError, type(e))
+            t.a = 'a'
+            t.a = 'b'
+            t.a = 'c'
+        def testFnCheckedLocalProperty(self):
+            class Test(object):
+                @Property
+                @fn_checked_property(lambda v : v in ['x', 'y', 'z'])
+                @local_property(name="CHECKED")
+                def x(): return {}
+                def __init__(self):
+                    self._CHECKED_value = 'x'
+            t = Test()
+            self.failUnless(t.x == 'x', str(t.x))
+            try:
+                t.x = None
+                e = None
+            except ValueCheckError, e:
+                pass
+            self.failUnless(type(e) == ValueCheckError, type(e))
+        def testCachedLocalProperty(self):
+            class Gen(object):
+                def __init__(self):
+                    self.i = 0
+                def __call__(self, owner):
+                    self.i += 1
+                    return self.i
+            class Test(object):
+                @Property
+                @cached_property(generator=Gen(), initVal=None)
+                @local_property(name="CACHED")
+                def x(): return {}
+            t = Test()
+            self.failIf("_CACHED_cache" in dir(t),
+                        getattr(t, "_CACHED_cache", None))
+            self.failUnless(t.x == 1, t.x)
+            self.failUnless(t.x == 1, t.x)
+            self.failUnless(t.x == 1, t.x)
+            t.x = 8
+            self.failUnless(t.x == 8, t.x)
+            self.failUnless(t.x == 8, t.x)
+            t._CACHED_cache = False        # Caching is off, but the stored value
+            val = t.x                      # is 8, not the initVal (None), so we
+            self.failUnless(val == 8, val) # get 8.
+            t._CACHED_value = None         # Now we've set the stored value to None
+            val = t.x                      # so future calls to fget (like this)
+            self.failUnless(val == 2, val) # will call the generator every time...
+            val = t.x
+            self.failUnless(val == 3, val)
+            val = t.x
+            self.failUnless(val == 4, val)
+            t._CACHED_cache = True              # We turn caching back on, and get
+            self.failUnless(t.x == 1, str(t.x)) # the original cached value.
+            del t._CACHED_cached_value          # Removing that value forces a
+            self.failUnless(t.x == 5, str(t.x)) # single cache-regenerating call
+            self.failUnless(t.x == 5, str(t.x)) # to the genenerator, after which
+            self.failUnless(t.x == 5, str(t.x)) # we get the new cached value.
+        def testPrimedLocalProperty(self):
+            class Test(object):
+                def prime(self):
+                    self.settings["PRIMED"] = "initialized"
+                @Property
+                @primed_property(primer=prime, initVal=None)
+                @settings_property(name="PRIMED")
+                def x(): return {}
+                def __init__(self):
+                    self.settings={}
+            t = Test()
+            self.failIf("_PRIMED_prime" in dir(t),
+                        getattr(t, "_PRIMED_prime", None))
+            self.failUnless(t.x == "initialized", t.x)
+            t.x = 1
+            self.failUnless(t.x == 1, t.x)
             t.x = None
-            e = None
-        except ValueCheckError, e:
-            pass
-        self.failUnless(type(e) == ValueCheckError, type(e))
-    def testTwoCheckedLocalProperties(self):
-        class Test(object):
-            @Property
-            @checked_property(allowed=['x', 'y', 'z'])
-            @local_property(name="X")
-            def x(): return {}
+            self.failUnless(t.x == "initialized", t.x)
+            t._PRIMED_prime = True
+            t.x = 3
+            self.failUnless(t.x == "initialized", t.x)
+            t._PRIMED_prime = False
+            t.x = 3
+            self.failUnless(t.x == 3, t.x)
+        def testChangeHookLocalProperty(self):
+            class Test(object):
+                def _hook(self, old, new):
+                    self.old = old
+                    self.new = new
 
-            @Property
-            @checked_property(allowed=['a', 'b', 'c'])
-            @local_property(name="A")
-            def a(): return {}
-            def __init__(self):
-                self._A_value = 'a'
-                self._X_value = 'x'
-        t = Test()
-        try:
-            t.x = 'a'
-            e = None
-        except ValueCheckError, e:
-            pass
-        self.failUnless(type(e) == ValueCheckError, type(e))
-        t.x = 'x'
-        t.x = 'y'
-        t.x = 'z'
-        try:
-            t.a = 'x'
-            e = None
-        except ValueCheckError, e:
-            pass
-        self.failUnless(type(e) == ValueCheckError, type(e))
-        t.a = 'a'
-        t.a = 'b'
-        t.a = 'c'
-    def testFnCheckedLocalProperty(self):
-        class Test(object):
-            @Property
-            @fn_checked_property(lambda v : v in ['x', 'y', 'z'])
-            @local_property(name="CHECKED")
-            def x(): return {}
-            def __init__(self):
-                self._CHECKED_value = 'x'
-        t = Test()
-        self.failUnless(t.x == 'x', str(t.x))
-        try:
-            t.x = None
-            e = None
-        except ValueCheckError, e:
-            pass
-        self.failUnless(type(e) == ValueCheckError, type(e))
-    def testCachedLocalProperty(self):
-        class Gen(object):
-            def __init__(self):
-                self.i = 0
-            def __call__(self, owner):
-                self.i += 1
-                return self.i
-        class Test(object):
-            @Property
-            @cached_property(generator=Gen(), initVal=None)
-            @local_property(name="CACHED")
-            def x(): return {}
-        t = Test()
-        self.failIf("_CACHED_cache" in dir(t), getattr(t, "_CACHED_cache", None))
-        self.failUnless(t.x == 1, t.x)
-        self.failUnless(t.x == 1, t.x)
-        self.failUnless(t.x == 1, t.x)
-        t.x = 8
-        self.failUnless(t.x == 8, t.x)
-        self.failUnless(t.x == 8, t.x)
-        t._CACHED_cache = False        # Caching is off, but the stored value
-        val = t.x                      # is 8, not the initVal (None), so we
-        self.failUnless(val == 8, val) # get 8.
-        t._CACHED_value = None         # Now we've set the stored value to None
-        val = t.x                      # so future calls to fget (like this)
-        self.failUnless(val == 2, val) # will call the generator every time...
-        val = t.x
-        self.failUnless(val == 3, val)
-        val = t.x
-        self.failUnless(val == 4, val)
-        t._CACHED_cache = True              # We turn caching back on, and get
-        self.failUnless(t.x == 1, str(t.x)) # the original cached value.
-        del t._CACHED_cached_value          # Removing that value forces a
-        self.failUnless(t.x == 5, str(t.x)) # single cache-regenerating call
-        self.failUnless(t.x == 5, str(t.x)) # to the genenerator, after which
-        self.failUnless(t.x == 5, str(t.x)) # we get the new cached value.
-    def testPrimedLocalProperty(self):
-        class Test(object):
-            def prime(self):
-                self.settings["PRIMED"] = "initialized"
-            @Property
-            @primed_property(primer=prime, initVal=None)
-            @settings_property(name="PRIMED")
-            def x(): return {}
-            def __init__(self):
-                self.settings={}
-        t = Test()
-        self.failIf("_PRIMED_prime" in dir(t), getattr(t, "_PRIMED_prime", None))
-        self.failUnless(t.x == "initialized", t.x)
-        t.x = 1
-        self.failUnless(t.x == 1, t.x)
-        t.x = None
-        self.failUnless(t.x == "initialized", t.x)
-        t._PRIMED_prime = True
-        t.x = 3
-        self.failUnless(t.x == "initialized", t.x)
-        t._PRIMED_prime = False
-        t.x = 3
-        self.failUnless(t.x == 3, t.x)
-    def testChangeHookLocalProperty(self):
-        class Test(object):
-            def _hook(self, old, new):
-                self.old = old
-                self.new = new
+                @Property
+                @change_hook_property(_hook)
+                @local_property(name="HOOKED")
+                def x(): return {}
+            t = Test()
+            t.x = 1
+            self.failUnless(t.old == None, t.old)
+            self.failUnless(t.new == 1, t.new)
+            t.x = 1
+            self.failUnless(t.old == None, t.old)
+            self.failUnless(t.new == 1, t.new)
+            t.x = 2
+            self.failUnless(t.old == 1, t.old)
+            self.failUnless(t.new == 2, t.new)
+        def testChangeHookMutableProperty(self):
+            class Test(object):
+                def _hook(self, old, new):
+                    self.old = old
+                    self.new = new
+                    self.hook_calls += 1
 
-            @Property
-            @change_hook_property(_hook)
-            @local_property(name="HOOKED")
-            def x(): return {}
-        t = Test()
-        t.x = 1
-        self.failUnless(t.old == None, t.old)
-        self.failUnless(t.new == 1, t.new)
-        t.x = 1
-        self.failUnless(t.old == None, t.old)
-        self.failUnless(t.new == 1, t.new)
-        t.x = 2
-        self.failUnless(t.old == 1, t.old)
-        self.failUnless(t.new == 2, t.new)
-    def testChangeHookMutableProperty(self):
-        class Test(object):
-            def _hook(self, old, new):
-                self.old = old
-                self.new = new
-                self.hook_calls += 1
+                @Property
+                @change_hook_property(_hook, mutable=True)
+                @local_property(name="HOOKED")
+                def x(): return {}
+            t = Test()
+            t.hook_calls = 0
+            t.x = []
+            self.failUnless(t.old == None, t.old)
+            self.failUnless(t.new == [], t.new)
+            self.failUnless(t.hook_calls == 1, t.hook_calls)
+            a = t.x
+            a.append(5)
+            t.x = a
+            self.failUnless(t.old == [], t.old)
+            self.failUnless(t.new == [5], t.new)
+            self.failUnless(t.hook_calls == 2, t.hook_calls)
+            t.x = []
+            self.failUnless(t.old == [5], t.old)
+            self.failUnless(t.new == [], t.new)
+            self.failUnless(t.hook_calls == 3, t.hook_calls)
+            # now append without reassigning.  this doesn't trigger the
+            # change, since we don't ever set t.x, only get it and mess
+            # with it.  It does, however, update our t.new, since t.new =
+            # t.x and is not a static copy.
+            t.x.append(5)
+            self.failUnless(t.old == [5], t.old)
+            self.failUnless(t.new == [5], t.new)
+            self.failUnless(t.hook_calls == 3, t.hook_calls)
+            # however, the next t.x get _will_ notice the change...
+            a = t.x
+            self.failUnless(t.old == [], t.old)
+            self.failUnless(t.new == [5], t.new)
+            self.failUnless(t.hook_calls == 4, t.hook_calls)
+            t.x.append(6) # this append(6) is not noticed yet
+            self.failUnless(t.old == [], t.old)
+            self.failUnless(t.new == [5,6], t.new)
+            self.failUnless(t.hook_calls == 4, t.hook_calls)
+            # this append(7) is not noticed, but the t.x get causes the
+            # append(6) to be noticed
+            t.x.append(7)
+            self.failUnless(t.old == [5], t.old)
+            self.failUnless(t.new == [5,6,7], t.new)
+            self.failUnless(t.hook_calls == 5, t.hook_calls)
+            a = t.x # now the append(7) is noticed
+            self.failUnless(t.old == [5,6], t.old)
+            self.failUnless(t.new == [5,6,7], t.new)
+            self.failUnless(t.hook_calls == 6, t.hook_calls)
 
-            @Property
-            @change_hook_property(_hook, mutable=True)
-            @local_property(name="HOOKED")
-            def x(): return {}
-        t = Test()
-        t.hook_calls = 0
-        t.x = []
-        self.failUnless(t.old == None, t.old)
-        self.failUnless(t.new == [], t.new)
-        self.failUnless(t.hook_calls == 1, t.hook_calls)
-        a = t.x
-        a.append(5)
-        t.x = a
-        self.failUnless(t.old == [], t.old)
-        self.failUnless(t.new == [5], t.new)
-        self.failUnless(t.hook_calls == 2, t.hook_calls)
-        t.x = []
-        self.failUnless(t.old == [5], t.old)
-        self.failUnless(t.new == [], t.new)
-        self.failUnless(t.hook_calls == 3, t.hook_calls)
-        # now append without reassigning.  this doesn't trigger the
-        # change, since we don't ever set t.x, only get it and mess
-        # with it.  It does, however, update our t.new, since t.new =
-        # t.x and is not a static copy.
-        t.x.append(5)
-        self.failUnless(t.old == [5], t.old)
-        self.failUnless(t.new == [5], t.new)
-        self.failUnless(t.hook_calls == 3, t.hook_calls)
-        # however, the next t.x get _will_ notice the change...
-        a = t.x
-        self.failUnless(t.old == [], t.old)
-        self.failUnless(t.new == [5], t.new)
-        self.failUnless(t.hook_calls == 4, t.hook_calls)
-        t.x.append(6) # this append(6) is not noticed yet
-        self.failUnless(t.old == [], t.old)
-        self.failUnless(t.new == [5,6], t.new)
-        self.failUnless(t.hook_calls == 4, t.hook_calls)
-        # this append(7) is not noticed, but the t.x get causes the
-        # append(6) to be noticed
-        t.x.append(7)
-        self.failUnless(t.old == [5], t.old)
-        self.failUnless(t.new == [5,6,7], t.new)
-        self.failUnless(t.hook_calls == 5, t.hook_calls)
-        a = t.x # now the append(7) is noticed
-        self.failUnless(t.old == [5,6], t.old)
-        self.failUnless(t.new == [5,6,7], t.new)
-        self.failUnless(t.hook_calls == 6, t.hook_calls)
-
-
-suite = unittest.TestLoader().loadTestsFromTestCase(DecoratorTests)
-
+    suite = unittest.TestLoader().loadTestsFromTestCase(DecoratorTests)

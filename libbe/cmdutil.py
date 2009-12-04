@@ -27,12 +27,15 @@ import os
 from textwrap import TextWrapper
 from StringIO import StringIO
 import sys
-import doctest
 
+import libbe
 import bugdir
 import comment
 import plugin
 import encoding
+if libbe.TESTING == True:
+    import doctest
+
 
 class UserError(Exception):
     def __init__(self, msg):
@@ -293,4 +296,5 @@ def bug_comment_from_id(bdir, id):
             raise UserError(e.message)
     return (bug, comm)
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

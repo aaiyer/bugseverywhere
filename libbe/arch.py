@@ -28,13 +28,14 @@ import re
 import shutil
 import sys
 import time
-import unittest
-import doctest
 
+import libbe
 from beuuid import uuid_gen
 import config
 import vcs
-
+if libbe.TESTING == True:
+    import unittest
+    import doctest
 
 
 DEFAULT_CLIENT = "tla"
@@ -307,7 +308,8 @@ class CantAddFile(Exception):
 
 
 
-vcs.make_vcs_testcase_subclasses(Arch, sys.modules[__name__])
+if libbe.TESTING == True:
+    vcs.make_vcs_testcase_subclasses(Arch, sys.modules[__name__])
 
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

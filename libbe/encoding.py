@@ -23,7 +23,10 @@ Support input/output/filesystem encodings (e.g. UTF-8).
 import codecs
 import locale
 import sys
-import doctest
+
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 
 ENCODING = None # override get_encoding() output by setting this
@@ -59,4 +62,5 @@ def set_IO_stream_encodings(encoding):
     sys.stdout = codecs.getwriter(encoding)(sys.__stdout__)
     sys.stderr = codecs.getwriter(encoding)(sys.__stderr__)
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

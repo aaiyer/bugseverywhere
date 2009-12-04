@@ -20,7 +20,9 @@ Backwards compatibility support for Python 2.4.  Once people give up
 on 2.4 ;), the uuid call should be merged into bugdir.py
 """
 
-import unittest
+import libbe
+if libbe.TESTING == True:
+    import unittest
 
 
 try:
@@ -56,9 +58,10 @@ except ImportError:
             raise Exception, strerror
         return output.rstrip('\n')
 
-class UUIDtestCase(unittest.TestCase):
-    def testUUID_gen(self):
-        id = uuid_gen()
-        self.failUnless(len(id) == 36, "invalid UUID '%s'" % id)
+if libbe.TESTING == True:
+    class UUIDtestCase(unittest.TestCase):
+        def testUUID_gen(self):
+            id = uuid_gen()
+            self.failUnless(len(id) == 36, "invalid UUID '%s'" % id)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(UUIDtestCase)
+    suite = unittest.TestLoader().loadTestsFromTestCase(UUIDtestCase)

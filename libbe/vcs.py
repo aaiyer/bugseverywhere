@@ -33,12 +33,16 @@ from socket import gethostname
 import shutil
 import sys
 import tempfile
-import unittest
-import doctest
 
+import libbe
 from utility import Dir, search_parent_directories
 from subproc import CommandError, invoke
 from plugin import get_plugin
+
+if libbe.TESTING == True:
+    import unittest
+    import doctest
+
 
 # List VCS modules in order of preference.
 # Don't list this module, it is implicitly last.
@@ -627,306 +631,307 @@ class VCS(object):
         return (summary, body)
         
 
-def setup_vcs_test_fixtures(testcase):
-    """Set up test fixtures for VCS test case."""
-    testcase.vcs = testcase.Class()
-    testcase.dir = Dir()
-    testcase.dirname = testcase.dir.path
+if libbe.TESTING == True:
+    def setup_vcs_test_fixtures(testcase):
+        """Set up test fixtures for VCS test case."""
+        testcase.vcs = testcase.Class()
+        testcase.dir = Dir()
+        testcase.dirname = testcase.dir.path
 
-    vcs_not_supporting_uninitialized_user_id = []
-    vcs_not_supporting_set_user_id = ["None", "hg"]
-    testcase.vcs_supports_uninitialized_user_id = (
-        testcase.vcs.name not in vcs_not_supporting_uninitialized_user_id)
-    testcase.vcs_supports_set_user_id = (
-        testcase.vcs.name not in vcs_not_supporting_set_user_id)
+        vcs_not_supporting_uninitialized_user_id = []
+        vcs_not_supporting_set_user_id = ["None", "hg"]
+        testcase.vcs_supports_uninitialized_user_id = (
+            testcase.vcs.name not in vcs_not_supporting_uninitialized_user_id)
+        testcase.vcs_supports_set_user_id = (
+            testcase.vcs.name not in vcs_not_supporting_set_user_id)
 
-    if not testcase.vcs.installed():
-        testcase.fail(
-            "%(name)s VCS not found" % vars(testcase.Class))
+        if not testcase.vcs.installed():
+            testcase.fail(
+                "%(name)s VCS not found" % vars(testcase.Class))
 
-    if testcase.Class.name != "None":
-        testcase.failIf(
-            testcase.vcs.detect(testcase.dirname),
-            "Detected %(name)s VCS before initialising"
-                % vars(testcase.Class))
+        if testcase.Class.name != "None":
+            testcase.failIf(
+                testcase.vcs.detect(testcase.dirname),
+                "Detected %(name)s VCS before initialising"
+                    % vars(testcase.Class))
 
-    testcase.vcs.init(testcase.dirname)
+        testcase.vcs.init(testcase.dirname)
 
+    class VCSTestCase(unittest.TestCase):
+        """Test cases for base VCS class."""
 
-class VCSTestCase(unittest.TestCase):
-    """Test cases for base VCS class."""
+        Class = VCS
 
-    Class = VCS
+        def __init__(self, *args, **kwargs):
+            super(VCSTestCase, self).__init__(*args, **kwargs)
+            self.dirname = None
 
-    def __init__(self, *args, **kwargs):
-        super(VCSTestCase, self).__init__(*args, **kwargs)
-        self.dirname = None
+        def setUp(self):
+            super(VCSTestCase, self).setUp()
+            setup_vcs_test_fixtures(self)
 
-    def setUp(self):
-        super(VCSTestCase, self).setUp()
-        setup_vcs_test_fixtures(self)
+        def tearDown(self):
+            self.vcs.cleanup()
+            self.dir.cleanup()
+            super(VCSTestCase, self).tearDown()
 
-    def tearDown(self):
-        self.vcs.cleanup()
-        self.dir.cleanup()
-        super(VCSTestCase, self).tearDown()
-
-    def full_path(self, rel_path):
-        return os.path.join(self.dirname, rel_path)
-
-
-class VCS_init_TestCase(VCSTestCase):
-    """Test cases for VCS.init method."""
-
-    def test_detect_should_succeed_after_init(self):
-        """Should detect VCS in directory after initialization."""
-        self.failUnless(
-            self.vcs.detect(self.dirname),
-            "Did not detect %(name)s VCS after initialising"
-                % vars(self.Class))
-
-    def test_vcs_rootdir_in_specified_root_path(self):
-        """VCS root directory should be in specified root path."""
-        rp = os.path.realpath(self.vcs.rootdir)
-        dp = os.path.realpath(self.dirname)
-        vcs_name = self.Class.name
-        self.failUnless(
-            dp == rp or rp == None,
-            "%(vcs_name)s VCS root in wrong dir (%(dp)s %(rp)s)" % vars())
+        def full_path(self, rel_path):
+            return os.path.join(self.dirname, rel_path)
 
 
-class VCS_get_user_id_TestCase(VCSTestCase):
-    """Test cases for VCS.get_user_id method."""
+    class VCS_init_TestCase(VCSTestCase):
+        """Test cases for VCS.init method."""
 
-    def test_gets_existing_user_id(self):
-        """Should get the existing user ID."""
-        if not self.vcs_supports_uninitialized_user_id:
-            return
-
-        user_id = self.vcs.get_user_id()
-        self.failUnless(
-            user_id is not None,
-            "unable to get a user id")
-
-
-class VCS_set_user_id_TestCase(VCSTestCase):
-    """Test cases for VCS.set_user_id method."""
-
-    def setUp(self):
-        super(VCS_set_user_id_TestCase, self).setUp()
-
-        if self.vcs_supports_uninitialized_user_id:
-            self.prev_user_id = self.vcs.get_user_id()
-        else:
-            self.prev_user_id = "Uninitialized identity <bogus@example.org>"
-
-        if self.vcs_supports_set_user_id:
-            self.test_new_user_id = "John Doe <jdoe@example.com>"
-            self.vcs.set_user_id(self.test_new_user_id)
-
-    def tearDown(self):
-        if self.vcs_supports_set_user_id:
-            self.vcs.set_user_id(self.prev_user_id)
-        super(VCS_set_user_id_TestCase, self).tearDown()
-
-    def test_raises_error_in_unsupported_vcs(self):
-        """Should raise an error in a VCS that doesn't support it."""
-        if self.vcs_supports_set_user_id:
-            return
-        self.assertRaises(
-            SettingIDnotSupported,
-            self.vcs.set_user_id, "foo")
-
-    def test_updates_user_id_in_supporting_vcs(self):
-        """Should update the user ID in an VCS that supports it."""
-        if not self.vcs_supports_set_user_id:
-            return
-        user_id = self.vcs.get_user_id()
-        self.failUnlessEqual(
-            self.test_new_user_id, user_id,
-            "user id not set correctly (expected %s, got %s)"
-                % (self.test_new_user_id, user_id))
-
-
-def setup_vcs_revision_test_fixtures(testcase):
-    """Set up revision test fixtures for VCS test case."""
-    testcase.test_dirs = ['a', 'a/b', 'c']
-    for path in testcase.test_dirs:
-        testcase.vcs.mkdir(testcase.full_path(path))
-
-    testcase.test_files = ['a/text', 'a/b/text']
-
-    testcase.test_contents = {
-        'rev_1': "Lorem ipsum",
-        'uncommitted': "dolor sit amet",
-        }
-
-
-class VCS_mkdir_TestCase(VCSTestCase):
-    """Test cases for VCS.mkdir method."""
-
-    def setUp(self):
-        super(VCS_mkdir_TestCase, self).setUp()
-        setup_vcs_revision_test_fixtures(self)
-
-    def tearDown(self):
-        for path in reversed(sorted(self.test_dirs)):
-            self.vcs.recursive_remove(self.full_path(path))
-        super(VCS_mkdir_TestCase, self).tearDown()
-
-    def test_mkdir_creates_directory(self):
-        """Should create specified directory in filesystem."""
-        for path in self.test_dirs:
-            full_path = self.full_path(path)
+        def test_detect_should_succeed_after_init(self):
+            """Should detect VCS in directory after initialization."""
             self.failUnless(
-                os.path.exists(full_path),
-                "path %(full_path)s does not exist" % vars())
+                self.vcs.detect(self.dirname),
+                "Did not detect %(name)s VCS after initialising"
+                    % vars(self.Class))
+
+        def test_vcs_rootdir_in_specified_root_path(self):
+            """VCS root directory should be in specified root path."""
+            rp = os.path.realpath(self.vcs.rootdir)
+            dp = os.path.realpath(self.dirname)
+            vcs_name = self.Class.name
+            self.failUnless(
+                dp == rp or rp == None,
+                "%(vcs_name)s VCS root in wrong dir (%(dp)s %(rp)s)" % vars())
 
 
-class VCS_commit_TestCase(VCSTestCase):
-    """Test cases for VCS.commit method."""
+    class VCS_get_user_id_TestCase(VCSTestCase):
+        """Test cases for VCS.get_user_id method."""
 
-    def setUp(self):
-        super(VCS_commit_TestCase, self).setUp()
-        setup_vcs_revision_test_fixtures(self)
+        def test_gets_existing_user_id(self):
+            """Should get the existing user ID."""
+            if not self.vcs_supports_uninitialized_user_id:
+                return
 
-    def tearDown(self):
-        for path in reversed(sorted(self.test_dirs)):
-            self.vcs.recursive_remove(self.full_path(path))
-        super(VCS_commit_TestCase, self).tearDown()
+            user_id = self.vcs.get_user_id()
+            self.failUnless(
+                user_id is not None,
+                "unable to get a user id")
 
-    def test_file_contents_as_specified(self):
-        """Should set file contents as specified."""
-        test_contents = self.test_contents['rev_1']
-        for path in self.test_files:
-            full_path = self.full_path(path)
-            self.vcs.set_file_contents(full_path, test_contents)
-            current_contents = self.vcs.get_file_contents(full_path)
-            self.failUnlessEqual(test_contents, current_contents)
 
-    def test_file_contents_as_committed(self):
-        """Should have file contents as specified after commit."""
-        test_contents = self.test_contents['rev_1']
-        for path in self.test_files:
-            full_path = self.full_path(path)
-            self.vcs.set_file_contents(full_path, test_contents)
-            revision = self.vcs.commit("Initial file contents.")
-            current_contents = self.vcs.get_file_contents(full_path)
-            self.failUnlessEqual(test_contents, current_contents)
+    class VCS_set_user_id_TestCase(VCSTestCase):
+        """Test cases for VCS.set_user_id method."""
 
-    def test_file_contents_as_set_when_uncommitted(self):
-        """Should set file contents as specified after commit."""
-        if not self.vcs.versioned:
-            return
-        for path in self.test_files:
-            full_path = self.full_path(path)
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['rev_1'])
-            revision = self.vcs.commit("Initial file contents.")
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['uncommitted'])
-            current_contents = self.vcs.get_file_contents(full_path)
+        def setUp(self):
+            super(VCS_set_user_id_TestCase, self).setUp()
+
+            if self.vcs_supports_uninitialized_user_id:
+                self.prev_user_id = self.vcs.get_user_id()
+            else:
+                self.prev_user_id = "Uninitialized identity <bogus@example.org>"
+
+            if self.vcs_supports_set_user_id:
+                self.test_new_user_id = "John Doe <jdoe@example.com>"
+                self.vcs.set_user_id(self.test_new_user_id)
+
+        def tearDown(self):
+            if self.vcs_supports_set_user_id:
+                self.vcs.set_user_id(self.prev_user_id)
+            super(VCS_set_user_id_TestCase, self).tearDown()
+
+        def test_raises_error_in_unsupported_vcs(self):
+            """Should raise an error in a VCS that doesn't support it."""
+            if self.vcs_supports_set_user_id:
+                return
+            self.assertRaises(
+                SettingIDnotSupported,
+                self.vcs.set_user_id, "foo")
+
+        def test_updates_user_id_in_supporting_vcs(self):
+            """Should update the user ID in an VCS that supports it."""
+            if not self.vcs_supports_set_user_id:
+                return
+            user_id = self.vcs.get_user_id()
             self.failUnlessEqual(
-                self.test_contents['uncommitted'], current_contents)
-
-    def test_revision_file_contents_as_committed(self):
-        """Should get file contents as committed to specified revision."""
-        if not self.vcs.versioned:
-            return
-        for path in self.test_files:
-            full_path = self.full_path(path)
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['rev_1'])
-            revision = self.vcs.commit("Initial file contents.")
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['uncommitted'])
-            committed_contents = self.vcs.get_file_contents(
-                full_path, revision)
-            self.failUnlessEqual(
-                self.test_contents['rev_1'], committed_contents)
-
-    def test_revision_id_as_committed(self):
-        """Check for compatibility between .commit() and .revision_id()"""
-        if not self.vcs.versioned:
-            self.failUnlessEqual(self.vcs.revision_id(5), None)
-            return
-        committed_revisions = []
-        for path in self.test_files:
-            full_path = self.full_path(path)
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['rev_1'])
-            revision = self.vcs.commit("Initial %s contents." % path)
-            committed_revisions.append(revision)
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['uncommitted'])
-            revision = self.vcs.commit("Altered %s contents." % path)
-            committed_revisions.append(revision)
-        for i,revision in enumerate(committed_revisions):
-            self.failUnlessEqual(self.vcs.revision_id(i), revision)
-            i += -len(committed_revisions) # check negative indices
-            self.failUnlessEqual(self.vcs.revision_id(i), revision)
-        i = len(committed_revisions)
-        self.failUnlessEqual(self.vcs.revision_id(i), None)
-        self.failUnlessEqual(self.vcs.revision_id(-i-1), None)
-
-    def test_revision_id_as_committed(self):
-        """Check revision id before first commit"""
-        if not self.vcs.versioned:
-            self.failUnlessEqual(self.vcs.revision_id(5), None)
-            return
-        committed_revisions = []
-        for path in self.test_files:
-            self.failUnlessEqual(self.vcs.revision_id(0), None)
+                self.test_new_user_id, user_id,
+                "user id not set correctly (expected %s, got %s)"
+                    % (self.test_new_user_id, user_id))
 
 
-class VCS_duplicate_repo_TestCase(VCSTestCase):
-    """Test cases for VCS.duplicate_repo method."""
+    def setup_vcs_revision_test_fixtures(testcase):
+        """Set up revision test fixtures for VCS test case."""
+        testcase.test_dirs = ['a', 'a/b', 'c']
+        for path in testcase.test_dirs:
+            testcase.vcs.mkdir(testcase.full_path(path))
 
-    def setUp(self):
-        super(VCS_duplicate_repo_TestCase, self).setUp()
-        setup_vcs_revision_test_fixtures(self)
+        testcase.test_files = ['a/text', 'a/b/text']
 
-    def tearDown(self):
-        self.vcs.remove_duplicate_repo()
-        for path in reversed(sorted(self.test_dirs)):
-            self.vcs.recursive_remove(self.full_path(path))
-        super(VCS_duplicate_repo_TestCase, self).tearDown()
+        testcase.test_contents = {
+            'rev_1': "Lorem ipsum",
+            'uncommitted': "dolor sit amet",
+            }
 
-    def test_revision_file_contents_as_committed(self):
-        """Should match file contents as committed to specified revision."""
-        if not self.vcs.versioned:
-            return
-        for path in self.test_files:
-            full_path = self.full_path(path)
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['rev_1'])
-            revision = self.vcs.commit("Commit current status")
-            self.vcs.set_file_contents(
-                full_path, self.test_contents['uncommitted'])
-            dup_repo_path = self.vcs.duplicate_repo(revision)
-            dup_file_path = os.path.join(dup_repo_path, path)
-            dup_file_contents = file(dup_file_path, 'rb').read()
-            self.failUnlessEqual(
-                self.test_contents['rev_1'], dup_file_contents)
+
+    class VCS_mkdir_TestCase(VCSTestCase):
+        """Test cases for VCS.mkdir method."""
+
+        def setUp(self):
+            super(VCS_mkdir_TestCase, self).setUp()
+            setup_vcs_revision_test_fixtures(self)
+
+        def tearDown(self):
+            for path in reversed(sorted(self.test_dirs)):
+                self.vcs.recursive_remove(self.full_path(path))
+            super(VCS_mkdir_TestCase, self).tearDown()
+
+        def test_mkdir_creates_directory(self):
+            """Should create specified directory in filesystem."""
+            for path in self.test_dirs:
+                full_path = self.full_path(path)
+                self.failUnless(
+                    os.path.exists(full_path),
+                    "path %(full_path)s does not exist" % vars())
+
+
+    class VCS_commit_TestCase(VCSTestCase):
+        """Test cases for VCS.commit method."""
+
+        def setUp(self):
+            super(VCS_commit_TestCase, self).setUp()
+            setup_vcs_revision_test_fixtures(self)
+
+        def tearDown(self):
+            for path in reversed(sorted(self.test_dirs)):
+                self.vcs.recursive_remove(self.full_path(path))
+            super(VCS_commit_TestCase, self).tearDown()
+
+        def test_file_contents_as_specified(self):
+            """Should set file contents as specified."""
+            test_contents = self.test_contents['rev_1']
+            for path in self.test_files:
+                full_path = self.full_path(path)
+                self.vcs.set_file_contents(full_path, test_contents)
+                current_contents = self.vcs.get_file_contents(full_path)
+                self.failUnlessEqual(test_contents, current_contents)
+
+        def test_file_contents_as_committed(self):
+            """Should have file contents as specified after commit."""
+            test_contents = self.test_contents['rev_1']
+            for path in self.test_files:
+                full_path = self.full_path(path)
+                self.vcs.set_file_contents(full_path, test_contents)
+                revision = self.vcs.commit("Initial file contents.")
+                current_contents = self.vcs.get_file_contents(full_path)
+                self.failUnlessEqual(test_contents, current_contents)
+
+        def test_file_contents_as_set_when_uncommitted(self):
+            """Should set file contents as specified after commit."""
+            if not self.vcs.versioned:
+                return
+            for path in self.test_files:
+                full_path = self.full_path(path)
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['rev_1'])
+                revision = self.vcs.commit("Initial file contents.")
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['uncommitted'])
+                current_contents = self.vcs.get_file_contents(full_path)
+                self.failUnlessEqual(
+                    self.test_contents['uncommitted'], current_contents)
+
+        def test_revision_file_contents_as_committed(self):
+            """Should get file contents as committed to specified revision."""
+            if not self.vcs.versioned:
+                return
+            for path in self.test_files:
+                full_path = self.full_path(path)
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['rev_1'])
+                revision = self.vcs.commit("Initial file contents.")
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['uncommitted'])
+                committed_contents = self.vcs.get_file_contents(
+                    full_path, revision)
+                self.failUnlessEqual(
+                    self.test_contents['rev_1'], committed_contents)
+
+        def test_revision_id_as_committed(self):
+            """Check for compatibility between .commit() and .revision_id()"""
+            if not self.vcs.versioned:
+                self.failUnlessEqual(self.vcs.revision_id(5), None)
+                return
+            committed_revisions = []
+            for path in self.test_files:
+                full_path = self.full_path(path)
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['rev_1'])
+                revision = self.vcs.commit("Initial %s contents." % path)
+                committed_revisions.append(revision)
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['uncommitted'])
+                revision = self.vcs.commit("Altered %s contents." % path)
+                committed_revisions.append(revision)
+            for i,revision in enumerate(committed_revisions):
+                self.failUnlessEqual(self.vcs.revision_id(i), revision)
+                i += -len(committed_revisions) # check negative indices
+                self.failUnlessEqual(self.vcs.revision_id(i), revision)
+            i = len(committed_revisions)
+            self.failUnlessEqual(self.vcs.revision_id(i), None)
+            self.failUnlessEqual(self.vcs.revision_id(-i-1), None)
+
+        def test_revision_id_as_committed(self):
+            """Check revision id before first commit"""
+            if not self.vcs.versioned:
+                self.failUnlessEqual(self.vcs.revision_id(5), None)
+                return
+            committed_revisions = []
+            for path in self.test_files:
+                self.failUnlessEqual(self.vcs.revision_id(0), None)
+
+
+    class VCS_duplicate_repo_TestCase(VCSTestCase):
+        """Test cases for VCS.duplicate_repo method."""
+
+        def setUp(self):
+            super(VCS_duplicate_repo_TestCase, self).setUp()
+            setup_vcs_revision_test_fixtures(self)
+
+        def tearDown(self):
             self.vcs.remove_duplicate_repo()
+            for path in reversed(sorted(self.test_dirs)):
+                self.vcs.recursive_remove(self.full_path(path))
+            super(VCS_duplicate_repo_TestCase, self).tearDown()
+
+        def test_revision_file_contents_as_committed(self):
+            """Should match file contents as committed to specified revision.
+            """
+            if not self.vcs.versioned:
+                return
+            for path in self.test_files:
+                full_path = self.full_path(path)
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['rev_1'])
+                revision = self.vcs.commit("Commit current status")
+                self.vcs.set_file_contents(
+                    full_path, self.test_contents['uncommitted'])
+                dup_repo_path = self.vcs.duplicate_repo(revision)
+                dup_file_path = os.path.join(dup_repo_path, path)
+                dup_file_contents = file(dup_file_path, 'rb').read()
+                self.failUnlessEqual(
+                    self.test_contents['rev_1'], dup_file_contents)
+                self.vcs.remove_duplicate_repo()
 
 
-def make_vcs_testcase_subclasses(vcs_class, namespace):
-    """Make VCSTestCase subclasses for vcs_class in the namespace."""
-    vcs_testcase_classes = [
-        c for c in (
-            ob for ob in globals().values() if isinstance(ob, type))
-        if issubclass(c, VCSTestCase)]
+    def make_vcs_testcase_subclasses(vcs_class, namespace):
+        """Make VCSTestCase subclasses for vcs_class in the namespace."""
+        vcs_testcase_classes = [
+            c for c in (
+                ob for ob in globals().values() if isinstance(ob, type))
+            if issubclass(c, VCSTestCase)]
 
-    for base_class in vcs_testcase_classes:
-        testcase_class_name = vcs_class.__name__ + base_class.__name__
-        testcase_class_bases = (base_class,)
-        testcase_class_dict = dict(base_class.__dict__)
-        testcase_class_dict['Class'] = vcs_class
-        testcase_class = type(
-            testcase_class_name, testcase_class_bases, testcase_class_dict)
-        setattr(namespace, testcase_class_name, testcase_class)
+        for base_class in vcs_testcase_classes:
+            testcase_class_name = vcs_class.__name__ + base_class.__name__
+            testcase_class_bases = (base_class,)
+            testcase_class_dict = dict(base_class.__dict__)
+            testcase_class_dict['Class'] = vcs_class
+            testcase_class = type(
+                testcase_class_name, testcase_class_bases, testcase_class_dict)
+            setattr(namespace, testcase_class_name, testcase_class)
 
 
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

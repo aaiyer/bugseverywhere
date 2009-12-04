@@ -20,7 +20,9 @@
 Define a traversable tree structure.
 """
 
-import doctest
+import libbe
+if libbe.TESTING == True:
+    import doctest
 
 class Tree(list):
     """
@@ -181,4 +183,5 @@ class Tree(list):
                 return True
         return False
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()
