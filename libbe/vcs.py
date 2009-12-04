@@ -127,7 +127,6 @@ class VCS(object):
         self._duplicateBasedir = None
         self._duplicateDirname = None
         self.encoding = encoding
-        self.version = self._get_version()
     def __str__(self):
         return "<%s %s>" % (self.__class__.__name__, id(self))
     def __repr__(self):
@@ -235,6 +234,11 @@ class VCS(object):
         specified revision does not exist.
         """
         return None
+    def version(self):
+        """Cache version string for efficiency."""
+        if not hasattr(self, '_version'):
+            self._version = self._get_version()
+        return self._version
     def _get_version(self):
         try:
             ret = self._vcs_version()
@@ -247,7 +251,7 @@ class VCS(object):
         except CommandError:
             return None
     def installed(self):
-        if self.version != None:
+        if self.version() != None:
             return True
         return False
     def detect(self, path="."):
