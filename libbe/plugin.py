@@ -69,10 +69,3 @@ if plugin_path not in sys.path:
     sys.path.append(plugin_path)
 
 suite = doctest.DocTestSuite()
-
-def _test():
-    import doctest
-    doctest.testmod()
-
-if __name__ == "__main__":
-    _test()

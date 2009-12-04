@@ -293,12 +293,4 @@ def bug_comment_from_id(bdir, id):
             raise UserError(e.message)
     return (bug, comm)
 
-def _test():
-    import doctest
-    import sys
-    doctest.testmod()
-
-if __name__ == "__main__":
-    _test()
-
 suite = doctest.DocTestSuite()
