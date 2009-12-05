@@ -63,42 +63,45 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     if bd.vcs.versioned == False:
-        print "This directory is not revision-controlled."
+        raise cmdutil.UsageError("This directory is not revision-controlled.")
+    if options.dir == None:
+        if revision == None: # get the most recent revision
+            revision = bd.vcs.revision_id(-1)
+        old_bd = bd.duplicate_bugdir(revision)
     else:
-        if options.dir == None:
-            if revision == None: # get the most recent revision
-                revision = bd.vcs.revision_id(-1)
-            old_bd = bd.duplicate_bugdir(revision)
+        cwd = os.getcwd()
+        os.chdir(options.dir)
+        old_bd_current = bugdir.BugDir(from_disk=True,
+                                       manipulate_encodings=False)
+        if revision == None: # use the current working state
+            old_bd = old_bd_current
         else:
-            cwd = os.getcwd()
-            os.chdir(options.dir)
-            old_bd_current = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
-            if revision == None: # use the current working state
-                old_bd = old_bd_current
-            else:
-                old_bd = old_bd_current.duplicate_bugdir(revision)
-            os.chdir(cwd)
-        d = diff.Diff(old_bd, bd)
-        tree = d.report_tree()
+            if old_bd_current.vcs.versioned == False:
+                raise cmdutil.UsageError("%s is not revision-controlled."
+                                         % options.dir)
+            old_bd = old_bd_current.duplicate_bugdir(revision)
+        os.chdir(cwd)
+    d = diff.Diff(old_bd, bd)
+    tree = d.report_tree()
 
-        uuids = []
-        if options.all == True:
-            options.new = options.modified = options.removed = True
-        if options.new == True:
-            uuids.extend([c.name for c in tree.child_by_path("/bugs/new")])
-        if options.modified == True:
-            uuids.extend([c.name for c in tree.child_by_path("/bugs/mod")])
-        if options.removed == True:
-            uuids.extend([c.name for c in tree.child_by_path("/bugs/rem")])
-        if (options.new or options.modified or options.removed) == True:
-            print "\n".join(uuids)
-        else :
-            rep = tree.report_string()
-            if rep != None:
-                print rep
-        bd.remove_duplicate_bugdir()
-        if options.dir != None and revision != None:
-            old_bd_current.remove_duplicate_bugdir()
+    uuids = []
+    if options.all == True:
+        options.new = options.modified = options.removed = True
+    if options.new == True:
+        uuids.extend([c.name for c in tree.child_by_path("/bugs/new")])
+    if options.modified == True:
+        uuids.extend([c.name for c in tree.child_by_path("/bugs/mod")])
+    if options.removed == True:
+        uuids.extend([c.name for c in tree.child_by_path("/bugs/rem")])
+    if (options.new or options.modified or options.removed) == True:
+        print "\n".join(uuids)
+    else :
+        rep = tree.report_string()
+        if rep != None:
+            print rep
+    bd.remove_duplicate_bugdir()
+    if options.dir != None and revision != None:
+        old_bd_current.remove_duplicate_bugdir()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be diff [options] REVISION")
@@ -128,7 +131,7 @@ For Arch your specifier must be a fully-qualified revision name.
 
 Besides the standard summary output, you can use the options to output
 UUIDS for the different categories.  This output can be used as the
-input to 'be show' to get and understanding of the current status.
+input to 'be show' to get an understanding of the current status.
 """
 
 def help():
