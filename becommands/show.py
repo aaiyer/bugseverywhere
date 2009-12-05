@@ -171,7 +171,7 @@ def output(ids, bd, as_xml=True, with_comments=True):
             if as_xml:
                 lines.append(comment.xml(indent=4, shortname=bugname))
             else:
-                lines.append(comment.string(shortname=shortname))
+                lines.append(comment.string(shortname=bugname))
                 if spaces_left > 0:
                     spaces_left -= 1
                     lines.append('') # add a blank line between bugs/comments
