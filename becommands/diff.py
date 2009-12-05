@@ -40,15 +40,18 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         Changed bug settings:
           status: open -> closed
     >>> if bd.vcs.versioned == True:
-    ...     execute(["--modified", original], manipulate_encodings=False)
+    ...     execute(["--subscribe", "DIR:mod", "--uuids", original],
+    ...             manipulate_encodings=False)
     ... else:
     ...     print "a"
     a
     >>> if bd.vcs.versioned == False:
     ...     execute([original], manipulate_encodings=False)
     ... else:
-    ...     print "This directory is not revision-controlled."
-    This directory is not revision-controlled.
+    ...     raise cmdutil.UsageError('This directory is not revision-controlled.')
+    Traceback (most recent call last):
+      ...
+    UsageError: This directory is not revision-controlled.
     >>> bd.cleanup()
     """
     parser = get_parser()
@@ -59,11 +62,22 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) == 1:
         revision = args[0]
     if len(args) > 1:
-        raise cmdutil.UsageError("Too many arguments.")
+        raise cmdutil.UsageError('Too many arguments.')
+    if options.subscribe == None:
+        subscriptions = [diff.Subscription(diff.BUGDIR_ID,
+                                           diff.BUGDIR_TYPE_ALL)]
+    else:
+        subscriptions = []
+        for subscription in options.subscribe.split(','):
+            fields = subscription.split(':')
+            if len(fields) != 2:
+                raise cmdutil.UsageError('Invalid subscription "%s", should be ID:TYPE')
+            id,type = fields
+            subscriptions.append(diff.Subscription(id, type))
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     if bd.vcs.versioned == False:
-        raise cmdutil.UsageError("This directory is not revision-controlled.")
+        raise cmdutil.UsageError('This directory is not revision-controlled.')
     if options.dir == None:
         if revision == None: # get the most recent revision
             revision = bd.vcs.revision_id(-1)
@@ -77,19 +91,19 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
             old_bd = old_bd_current
         else:
             if old_bd_current.vcs.versioned == False:
-                raise cmdutil.UsageError("%s is not revision-controlled."
+                raise cmdutil.UsageError('%s is not revision-controlled.'
                                          % options.dir)
             old_bd = old_bd_current.duplicate_bugdir(revision)
         os.chdir(cwd)
     d = diff.Diff(old_bd, bd)
-    tree = d.report_tree()
+    tree = d.report_tree(subscriptions)
 
     if options.uuids == True:
         uuids = []
-        bugs = tree.child_by_path("/bugs")
+        bugs = tree.child_by_path('/bugs')
         for bug_type in bugs:
             uuids.extend([bug.name for bug in bug_type])
-        print "\n".join(uuids)
+        print '\n'.join(uuids)
     else :
         rep = tree.report_string()
         if rep != None:
@@ -102,6 +116,8 @@ def get_parser():
     parser = cmdutil.CmdOptionParser("be diff [options] REVISION")
     parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
                       help="Compare with repository in DIR instead of the current directory.")
+    parser.add_option("-s", "--subscribe", dest="subscribe", metavar="SUBSCRIPTION",
+                      help="Only print changes matching SUBSCRIPTION, subscription is a comma-separ\ated list of ID:TYPE tuples.  See `be subscribe --help` for descriptions of ID and TYPE.")
     parser.add_option("-u", "--uuids", action="store_true", dest="uuids",
                       help="Only print the bug UUIDS.", default=False)
     return parser
