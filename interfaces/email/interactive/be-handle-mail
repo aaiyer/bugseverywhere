@@ -306,6 +306,8 @@ class DiffTree (libbe.diff.DiffTree):
     """
     def report_or_none(self):
         report = self.report()
+        if report == None:
+            return None
         payload = report.get_payload()
         if payload == None or len(payload) == 0:
             return None
@@ -315,7 +317,7 @@ class DiffTree (libbe.diff.DiffTree):
         if report == None:
             return "No changes"
         else:
-            return send_pgp_mime.flatten(self.report(), to_unicode=True)
+            return send_pgp_mime.flatten(report, to_unicode=True)
     def make_root(self):
         return MIMEMultipart()
     def join(self, root, parent, data_part):
@@ -658,64 +660,29 @@ class Message (object):
 
         bd.load_all_bugs()
         subscribers = subscribe.get_bugdir_subscribers(bd, THIS_SERVER)
-
         if len(subscribers) == 0:
-            return [] 
+            return []
+        for subscriber,subscriptions in subscribers.items():
+            subscribers[subscriber] = []
+            for id,types in subscriptions.items():
+                for type in types:
+                    subscribers[subscriber].append(
+                        libbe.diff.Subscription(id,type))
 
         before_bd, after_bd = self._get_before_and_after_bugdirs(bd, previous_revision)
         diff = Diff(before_bd, after_bd)
-        diff_tree = diff.report_tree(diff_tree=DiffTree)
-        bug_index = {}
-        for child in diff_tree.child_by_path("/bugs/new"):
-            bug_index[child.name] = ("added", child)
-        for child in diff_tree.child_by_path("/bugs/mod"):
-            bug_index[child.name] = ("modified", child)
-        for child in diff_tree.child_by_path("/bugs/rem"):
-            bug_index[child.name] = ("removed", child)
+        diff.full_report(diff_tree=DiffTree)
         header = self._subscriber_header(bd, previous_revision)
 
         emails = []
         for subscriber,subscriptions in subscribers.items():
             header.replace_header("to", subscriber)
-            parts = []
-            if "DIR" in subscriptions: # make sure we check the DIR level first
-                ordered_subscriptions = [("DIR", subscriptions.pop("DIR"))]
-            else:
-                ordered_subscriptions = []
-            ordered_subscriptions.extend(subscriptions.items())
-            for id,types in ordered_subscriptions:
-                if id == "DIR":
-                    if libbe.diff.BUGDIR_TYPE_ALL in types:
-                        parts.append(diff_tree.report_or_none())
-                        break # we've attached everything, so stop checking.
-                    if libbe.diff.BUGDIR_TYPE_NEW in types:
-                        new = diff_tree.child_by_path("/bugs/new")
-                        parts.append(new.report_or_none())
-                    continue # move on to next id
-                # if we get this far, id refers to a bug.
-                assert types == [libbe.diff.BUG_TYPE_ALL], types
-                if id not in bug_index:
-                    continue # no changes here, move on to next id
-                type,bug_root = bug_index[id]
-                if type == "added" \
-                        and "DIR" in subscriptions \
-                        and subscriptions["DIR"] == libbe.diff.BUGDIR_TYPE_NEW:
-                    # this info already attached at the DIR level
-                    continue # move on to next id
-                parts.append(bug_root.report_or_none())
-            parts = [p for p in parts if p != None]
-            if len(parts) == 0:
-                continue # no email to this subscriber
-            elif len(parts) == 1:
-                root = parts[0]
-            else: # join subscription parts into a single body
-                root = MIMEMultipart()
-                root[u"Content-Description"] = u"Multiple subscription trees."
-                for part in parts:
-                    root.attach(part)
-            emails.append(send_pgp_mime.attach_root(header, root))
-            if LOGFILE != None:
-                LOGFILE.write(u"Preparing to notify %s of changes\n" % subscriber)
+            report = diff.report_tree(subscriptions, diff_tree=DiffTree)
+            root = report.report_or_none()
+            if root != None:
+                emails.append(send_pgp_mime.attach_root(header, root))
+                if LOGFILE != None:
+                    LOGFILE.write(u"Preparing to notify %s of changes\n" % subscriber)
         return emails
     def _get_before_and_after_bugdirs(self, bd, previous_revision=None):
         if previous_revision == None:

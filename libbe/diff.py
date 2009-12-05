@@ -38,6 +38,8 @@ class SubscriptionType (tree.Tree):
         self.type = type_name
     def __str__(self):
         return self.type
+    def __cmp__(self, other):
+        return cmp(self.type, other.type)
     def __repr__(self):
         return "<SubscriptionType: %s>" % str(self)
     def string_tree(self, indent=0):
@@ -222,8 +224,8 @@ class DiffTree (tree.Tree):
             self.join(root, parent, data_part)
             if data_part != None:
                 depth += 1
-        for child in self:
-            child.report(root, self, depth)
+            for child in self:
+                root = child.report(root, self, depth)
         return root
     def make_root(self):
         return []
@@ -481,8 +483,11 @@ class Diff (object):
                 node.masked = False
             selected_by_bug = []
         else:
-            node = root.child_by_path('bugdir/settings')
-            node.masked = True
+            try:
+                node = root.child_by_path('bugdir/settings')
+                node.masked = True
+            except KeyError:
+                pass
         for name,type in (('new', BUGDIR_TYPE_NEW),
                           ('mod', BUGDIR_TYPE_MOD),
                           ('rem', BUGDIR_TYPE_REM)):
