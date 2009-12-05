@@ -352,9 +352,14 @@ class Diff (object):
             if bd_type in bugdir_types:
                 old_uuids = list(self.old_bugdir.uuids())
                 break
-        subscribed_bugs = [s.id for s in subscriptions
-                           if BUG_TYPE_ALL.has_descendant( \
-                                     s.type, match_self=True)]
+        subscribed_bugs = []
+        for s in subscriptions:
+            if s.id != BUGDIR_ID:
+                try:
+                    bug = self.new_bugdir.bug_from_shortname(s.id)
+                except bugdir.NoBugMatches:
+                    bug = self.old_bugdir.bug_from_shortname(s.id)
+                subscribed_bugs.append(bug.uuid)
         new_uuids.extend([s for s in subscribed_bugs
                           if self.new_bugdir.has_bug(s)])
         new_uuids = sorted(set(new_uuids))
