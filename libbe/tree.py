@@ -87,6 +87,12 @@ class Tree(list):
     def __cmp__(self, other):
         return cmp(id(self), id(other))
 
+    def __eq__(self, other):
+        return self.__cmp__(other) == 0
+
+    def __ne__(self, other):
+        return self.__cmp__(other) != 0
+
     def branch_len(self):
         """
         Exhaustive search every time == SLOW.
