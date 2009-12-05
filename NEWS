@@ -1,3 +1,13 @@
+December 4, 2009:
+ * new commands:
+   email-bugs
+ * broke `be comment --xml` out and extended into `be import-xml`
+ * new XML format <be-xml>
+ * interfaces/email/interactive:
+   * added support for [be-bug:xml] interface
+   * improved security with restrict_file_access
+ * assorted cleanups, bugfixes, and optimizations
+
 November 17, 2009
  * new becommands:
    commit
