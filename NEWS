@@ -1,3 +1,6 @@
+December 4, 2009
+ * added --dir option to `be diff'
+
 November 17, 2009
  * new becommands:
    commit
