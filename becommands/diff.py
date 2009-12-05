@@ -40,7 +40,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         Changed bug settings:
           status: open -> closed
     >>> if bd.vcs.versioned == True:
-    ...     execute(["--subscribe", "DIR:mod", "--uuids", original],
+    ...     execute(["--subscribe", "%(bugdir_id)s:mod", "--uuids", original],
     ...             manipulate_encodings=False)
     ... else:
     ...     print "a"
@@ -53,7 +53,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
       ...
     UsageError: This directory is not revision-controlled.
     >>> bd.cleanup()
-    """
+    """ % {'bugdir_id':diff.BUGDIR_ID}
     parser = get_parser()
     options, args = parser.parse_args(args)
     cmdutil.default_complete(options, args, parser)

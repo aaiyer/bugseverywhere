@@ -91,7 +91,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     servers = options.servers.split(",")
     types = options.types.split(",")
 
-    if len(args) == 0 or args[0] == "DIR": # directory-wide subscriptions
+    if len(args) == 0 or args[0] == diff.BUGDIR_ID: # directory-wide subscriptions
         type_root = diff.BUGDIR_TYPE_ALL
         entity = bd
         entity_name = "bug directory"
@@ -314,7 +314,7 @@ def get_bugdir_subscribers(bugdir, server):
     Returns a dict of dicts:
       subscribers[user][id] = types
     where id is either a bug.uuid (in the case of a bug subscription)
-    or "DIR" (in the case of a bugdir subscription).
+    or "%(bugdir_id)s" (in the case of a bugdir subscription).
 
     Only checks bugs that are currently in memory, so you might want
     to call bugdir.load_all_bugs() first.
@@ -328,16 +328,16 @@ def get_bugdir_subscribers(bugdir, server):
     >>> a.extra_strings = subscribe(a.extra_strings, "John Doe <j@doe.com>",
     ...                [diff.BUG_TYPE_ALL], ["a.com"], diff.BUG_TYPE_ALL)
     >>> subscribers = get_bugdir_subscribers(bd, "a.com")
-    >>> subscribers["Jane Doe <J@doe.com>"]["DIR"]
+    >>> subscribers["Jane Doe <J@doe.com>"]["%(bugdir_id)s"]
     [<SubscriptionType: new>]
-    >>> subscribers["John Doe <j@doe.com>"]["DIR"]
+    >>> subscribers["John Doe <j@doe.com>"]["%(bugdir_id)s"]
     [<SubscriptionType: all>]
     >>> subscribers["John Doe <j@doe.com>"]["a"]
     [<SubscriptionType: all>]
     >>> get_bugdir_subscribers(bd, "b.net")
-    {'Jane Doe <J@doe.com>': {'DIR': [<SubscriptionType: new>]}}
+    {'Jane Doe <J@doe.com>': {'%(bugdir_id)s': [<SubscriptionType: new>]}}
     >>> bd.cleanup()
-    """
+    """ % {'bugdir_id':diff.BUGDIR_ID}
     subscribers = {}
     for sub in get_subscribers(bugdir.extra_strings, diff.BUGDIR_TYPE_ALL,
                                server, diff.BUGDIR_TYPE_ALL,
