@@ -48,7 +48,10 @@ class SubscriptionType (tree.Tree):
 
 BUGDIR_ID = "DIR"
 BUGDIR_TYPE_NEW = SubscriptionType("new")
-BUGDIR_TYPE_ALL = SubscriptionType("all", [BUGDIR_TYPE_NEW])
+BUGDIR_TYPE_MOD = SubscriptionType("mod")
+BUGDIR_TYPE_REM = SubscriptionType("rem")
+BUGDIR_TYPE_ALL = SubscriptionType("all",
+                      [BUGDIR_TYPE_NEW, BUGDIR_TYPE_MOD, BUGDIR_TYPE_REM])
 
 # same name as BUGDIR_TYPE_ALL for consistency
 BUG_TYPE_ALL = SubscriptionType(str(BUGDIR_TYPE_ALL))
@@ -296,12 +299,16 @@ class Diff (object):
         (old_bug,new_bug) pairs.
         """
         bugdir_types = [s.type for s in subscriptions if s.id == BUGDIR_ID]
-        if BUGDIR_TYPE_ALL in bugdir_types:
-            new_uuids = list(self.new_bugdir.uuids())
-            old_uuids = list(self.old_bugdir.uuids())
-        elif BUGDIR_TYPE_NEW in bugdir_types:
-            new_uuids = list(self.new_bugdir.uuids())
-            old_uuids = []
+        new_uuids = []
+        old_uuids = []
+        for bd_type in [BUGDIR_TYPE_ALL, BUGDIR_TYPE_NEW, BUGDIR_TYPE_MOD]:
+            if bd_type in bugdir_types:
+                new_uuids = list(self.new_bugdir.uuids())
+                break
+        for bd_type in [BUGDIR_TYPE_ALL, BUGDIR_TYPE_REM]:
+            if bd_type in bugdir_types:
+                old_uuids = list(self.old_bugdir.uuids())
+                break
         subscribed_bugs = [s.id for s in subscriptions
                            if BUG_TYPE_ALL.has_descendant( \
                                      s.type, match_self=True)]
@@ -319,9 +326,13 @@ class Diff (object):
             try:
                 old_bug = self.old_bugdir.bug_from_uuid(uuid)
             except KeyError:
-                added.append(new_bug)
+                if BUGDIR_TYPE_ALL in bugdir_types \
+                        or BUGDIR_TYPE_NEW in bugdir_types \
+                        or uuid in subscribed_bugs:
+                    added.append(new_bug)
                 continue
             if BUGDIR_TYPE_ALL in bugdir_types \
+                    or BUGDIR_TYPE_MOD in bugdir_types \
                     or uuid in subscribed_bugs:
                 if old_bug.sync_with_disk == True:
                     old_bug.load_comments()
