@@ -163,7 +163,7 @@ you of changes, although there is no way to guarantee this behavior.
 Available TYPES:
   For bugs:
 %s
-  For DIR :
+  For %s:
 %s
 
 For unsubscription, any listed SERVERS and TYPES are removed from your
@@ -175,7 +175,8 @@ if you're just hacking away on your private repository, you'll known
 what's changed ;).  This command just (un)sets the appropriate
 subscriptions, and leaves it up to each interface to perform the
 notification.
-""" % (diff.BUG_TYPE_ALL.string_tree(6), diff.BUGDIR_TYPE_ALL.string_tree(6),
+""" % (diff.BUG_TYPE_ALL.string_tree(6), diff.BUGDIR_ID,
+       diff.BUGDIR_TYPE_ALL.string_tree(6),
        diff.BUGDIR_TYPE_ALL)
 
 def help():
