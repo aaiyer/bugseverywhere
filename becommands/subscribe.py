@@ -14,46 +14,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """(Un)subscribe to change notification"""
-from libbe import cmdutil, bugdir, tree
+from libbe import cmdutil, bugdir, tree, diff
 import os, copy
 __desc__ = __doc__
 
 TAG="SUBSCRIBE:"
-
-class SubscriptionType (tree.Tree):
-    """
-    Trees of subscription types to allow users to select exactly what
-    notifications they want to subscribe to.
-    """
-    def __init__(self, type_name, *args, **kwargs):
-        tree.Tree.__init__(self, *args, **kwargs)
-        self.type = type_name
-    def __str__(self):
-        return self.type
-    def __repr__(self):
-        return "<SubscriptionType: %s>" % str(self)
-    def string_tree(self, indent=0):
-        lines = []
-        for depth,node in self.thread():
-            lines.append("%s%s" % (" "*(indent+2*depth), node))
-        return "\n".join(lines)
-
-BUGDIR_TYPE_NEW = SubscriptionType("new")
-BUGDIR_TYPE_ALL = SubscriptionType("all", [BUGDIR_TYPE_NEW])
-
-# same name as BUGDIR_TYPE_ALL for consistency
-BUG_TYPE_ALL = SubscriptionType(str(BUGDIR_TYPE_ALL))
-
-INVALID_TYPE = SubscriptionType("INVALID")
-
-class InvalidType (ValueError):
-    def __init__(self, type_name, type_root):
-        msg = "Invalid type %s for tree:\n%s" \
-            % (type_name, type_root.string_tree(4))
-        ValueError.__init__(self, msg)
-        self.type_name = type_name
-        self.type_root = type_root
-
 
 def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
@@ -126,20 +91,20 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     servers = options.servers.split(",")
     types = options.types.split(",")
 
-    if len(args) == 0 or args[0] == "DIR": # directory-wide subscriptions
-        type_root = BUGDIR_TYPE_ALL
+    if len(args) == 0 or args[0] == diff.BUGDIR_ID: # directory-wide subscriptions
+        type_root = diff.BUGDIR_TYPE_ALL
         entity = bd
         entity_name = "bug directory"
     else: # bug-specific subscriptions
-        type_root = BUG_TYPE_ALL
+        type_root = diff.BUG_TYPE_ALL
         bug = bd.bug_from_shortname(args[0])
         entity = bug
         entity_name = bug.uuid
     if options.list_all == True:
         entity_name = "anything in the bug directory"
 
-    types = [type_from_name(name, type_root, default=INVALID_TYPE,
-                            default_ok=options.unsubscribe)
+    types = [diff.type_from_name(name, type_root, default=diff.INVALID_TYPE,
+                                 default_ok=options.unsubscribe)
              for name in types]
     estrs = entity.extra_strings
     if options.list == True or options.list_all == True:
@@ -198,7 +163,7 @@ you of changes, although there is no way to guarantee this behavior.
 Available TYPES:
   For bugs:
 %s
-  For DIR :
+  For %s:
 %s
 
 For unsubscription, any listed SERVERS and TYPES are removed from your
@@ -210,8 +175,9 @@ if you're just hacking away on your private repository, you'll known
 what's changed ;).  This command just (un)sets the appropriate
 subscriptions, and leaves it up to each interface to perform the
 notification.
-""" % (BUG_TYPE_ALL.string_tree(6), BUGDIR_TYPE_ALL.string_tree(6),
-       BUGDIR_TYPE_ALL)
+""" % (diff.BUG_TYPE_ALL.string_tree(6), diff.BUGDIR_ID,
+       diff.BUGDIR_TYPE_ALL.string_tree(6),
+       diff.BUGDIR_TYPE_ALL)
 
 def help():
     return get_parser().help_str() + longhelp
@@ -227,7 +193,7 @@ def _parse_string(string, type_root):
     assert string.startswith(TAG), string
     string = string[len(TAG):]
     subscriber,types,servers = string.split("\t")
-    types = [type_from_name(name, type_root) for name in types.split(",")]
+    types = [diff.type_from_name(name, type_root) for name in types.split(",")]
     return (subscriber,types,servers.split(","))
 
 def _get_subscriber(extra_strings, subscriber, type_root):
@@ -239,16 +205,6 @@ def _get_subscriber(extra_strings, subscriber, type_root):
     return None # no match
 
 # functions exposed to other modules
-
-def type_from_name(name, type_root, default=None, default_ok=False):
-    if name == str(type_root):
-        return type_root
-    for t in type_root.traverse():
-        if name == str(t):
-            return t
-    if default_ok:
-        return default
-    raise InvalidType(name, type_root)
 
 def subscribe(extra_strings, subscriber, types, servers, type_root):
     args = _get_subscriber(extra_strings, subscriber, type_root)
@@ -311,17 +267,22 @@ def get_subscribers(extra_strings, type, server, type_root,
     >>> def sgs(*args, **kwargs):
     ...     return sorted(get_subscribers(*args, **kwargs))
     >>> es = []
-    >>> es = subscribe(es, "John Doe <j@doe.com>", [BUGDIR_TYPE_ALL], ["a.com"], BUGDIR_TYPE_ALL)
-    >>> es = subscribe(es, "Jane Doe <J@doe.com>", [BUGDIR_TYPE_NEW], ["*"], BUGDIR_TYPE_ALL)
-    >>> sgs(es, BUGDIR_TYPE_ALL, "a.com", BUGDIR_TYPE_ALL)
+    >>> es = subscribe(es, "John Doe <j@doe.com>", [diff.BUGDIR_TYPE_ALL],
+    ...                ["a.com"], diff.BUGDIR_TYPE_ALL)
+    >>> es = subscribe(es, "Jane Doe <J@doe.com>", [diff.BUGDIR_TYPE_NEW],
+    ...                ["*"], diff.BUGDIR_TYPE_ALL)
+    >>> sgs(es, diff.BUGDIR_TYPE_ALL, "a.com", diff.BUGDIR_TYPE_ALL)
     ['John Doe <j@doe.com>']
-    >>> sgs(es, BUGDIR_TYPE_ALL, "a.com", BUGDIR_TYPE_ALL, match_descendant_types=True)
+    >>> sgs(es, diff.BUGDIR_TYPE_ALL, "a.com", diff.BUGDIR_TYPE_ALL,
+    ...     match_descendant_types=True)
     ['Jane Doe <J@doe.com>', 'John Doe <j@doe.com>']
-    >>> sgs(es, BUGDIR_TYPE_ALL, "b.net", BUGDIR_TYPE_ALL, match_descendant_types=True)
+    >>> sgs(es, diff.BUGDIR_TYPE_ALL, "b.net", diff.BUGDIR_TYPE_ALL,
+    ...     match_descendant_types=True)
     ['Jane Doe <J@doe.com>']
-    >>> sgs(es, BUGDIR_TYPE_NEW, "a.com", BUGDIR_TYPE_ALL)
+    >>> sgs(es, diff.BUGDIR_TYPE_NEW, "a.com", diff.BUGDIR_TYPE_ALL)
     ['Jane Doe <J@doe.com>']
-    >>> sgs(es, BUGDIR_TYPE_NEW, "a.com", BUGDIR_TYPE_ALL, match_ancestor_types=True)
+    >>> sgs(es, diff.BUGDIR_TYPE_NEW, "a.com", diff.BUGDIR_TYPE_ALL,
+    ... match_ancestor_types=True)
     ['Jane Doe <J@doe.com>', 'John Doe <j@doe.com>']
     """
     for string in extra_strings:
@@ -353,36 +314,43 @@ def get_bugdir_subscribers(bugdir, server):
     Returns a dict of dicts:
       subscribers[user][id] = types
     where id is either a bug.uuid (in the case of a bug subscription)
-    or "DIR" (in the case of a bugdir subscription).
+    or "%(bugdir_id)s" (in the case of a bugdir subscription).
 
     Only checks bugs that are currently in memory, so you might want
     to call bugdir.load_all_bugs() first.
 
     >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
     >>> a = bd.bug_from_shortname("a")
-    >>> bd.extra_strings = subscribe(bd.extra_strings, "John Doe <j@doe.com>", [BUGDIR_TYPE_ALL], ["a.com"], BUGDIR_TYPE_ALL)
-    >>> bd.extra_strings = subscribe(bd.extra_strings, "Jane Doe <J@doe.com>", [BUGDIR_TYPE_NEW], ["*"], BUGDIR_TYPE_ALL)
-    >>> a.extra_strings = subscribe(a.extra_strings, "John Doe <j@doe.com>", [BUG_TYPE_ALL], ["a.com"], BUG_TYPE_ALL)
+    >>> bd.extra_strings = subscribe(bd.extra_strings, "John Doe <j@doe.com>",
+    ...                [diff.BUGDIR_TYPE_ALL], ["a.com"], diff.BUGDIR_TYPE_ALL)
+    >>> bd.extra_strings = subscribe(bd.extra_strings, "Jane Doe <J@doe.com>",
+    ...                [diff.BUGDIR_TYPE_NEW], ["*"], diff.BUGDIR_TYPE_ALL)
+    >>> a.extra_strings = subscribe(a.extra_strings, "John Doe <j@doe.com>",
+    ...                [diff.BUG_TYPE_ALL], ["a.com"], diff.BUG_TYPE_ALL)
     >>> subscribers = get_bugdir_subscribers(bd, "a.com")
-    >>> subscribers["Jane Doe <J@doe.com>"]["DIR"]
+    >>> subscribers["Jane Doe <J@doe.com>"]["%(bugdir_id)s"]
     [<SubscriptionType: new>]
-    >>> subscribers["John Doe <j@doe.com>"]["DIR"]
+    >>> subscribers["John Doe <j@doe.com>"]["%(bugdir_id)s"]
     [<SubscriptionType: all>]
     >>> subscribers["John Doe <j@doe.com>"]["a"]
     [<SubscriptionType: all>]
     >>> get_bugdir_subscribers(bd, "b.net")
-    {'Jane Doe <J@doe.com>': {'DIR': [<SubscriptionType: new>]}}
+    {'Jane Doe <J@doe.com>': {'%(bugdir_id)s': [<SubscriptionType: new>]}}
     >>> bd.cleanup()
-    """
+    """ % {'bugdir_id':diff.BUGDIR_ID}
     subscribers = {}
-    for sub in get_subscribers(bugdir.extra_strings, BUGDIR_TYPE_ALL, server,
-                               BUGDIR_TYPE_ALL, match_descendant_types=True):
-        i,s,ts,srvs = _get_subscriber(bugdir.extra_strings,sub,BUGDIR_TYPE_ALL)
+    for sub in get_subscribers(bugdir.extra_strings, diff.BUGDIR_TYPE_ALL,
+                               server, diff.BUGDIR_TYPE_ALL,
+                               match_descendant_types=True):
+        i,s,ts,srvs = _get_subscriber(bugdir.extra_strings, sub,
+                                      diff.BUGDIR_TYPE_ALL)
         subscribers[sub] = {"DIR":ts}
     for bug in bugdir:
-        for sub in get_subscribers(bug.extra_strings, BUG_TYPE_ALL, server,
-                                   BUG_TYPE_ALL, match_descendant_types=True):
-            i,s,ts,srvs = _get_subscriber(bug.extra_strings,sub,BUG_TYPE_ALL)
+        for sub in get_subscribers(bug.extra_strings, diff.BUG_TYPE_ALL,
+                                   server, diff.BUG_TYPE_ALL,
+                                   match_descendant_types=True):
+            i,s,ts,srvs = _get_subscriber(bug.extra_strings, sub,
+                                          diff.BUG_TYPE_ALL)
             if sub in subscribers:
                 subscribers[sub][bug.uuid] = ts
             else:

@@ -1,3 +1,11 @@
+December 5, 2009
+ * changes to `be diff`
+   * exits with an error if required revision control is not possible.
+     Previously it printed a message, but exitted with status 0.
+   * removed options --new, --removed, --modified, --all
+   * added options --uuids, --subscribe
+ * assorted cleanups and bugfixes
+
 December 4, 2009
  * new commands:
    email-bugs

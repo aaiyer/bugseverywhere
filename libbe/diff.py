@@ -19,6 +19,7 @@
 """Compare two bug trees."""
 
 import difflib
+import types
 
 import libbe
 from libbe import bugdir, bug, settings_object, tree
@@ -26,6 +27,111 @@ from libbe.utility import time_to_str
 if libbe.TESTING == True:
     import doctest
 
+
+class SubscriptionType (tree.Tree):
+    """
+    Trees of subscription types to allow users to select exactly what
+    notifications they want to subscribe to.
+    """
+    def __init__(self, type_name, *args, **kwargs):
+        tree.Tree.__init__(self, *args, **kwargs)
+        self.type = type_name
+    def __str__(self):
+        return self.type
+    def __cmp__(self, other):
+        return cmp(self.type, other.type)
+    def __repr__(self):
+        return "<SubscriptionType: %s>" % str(self)
+    def string_tree(self, indent=0):
+        lines = []
+        for depth,node in self.thread():
+            lines.append("%s%s" % (" "*(indent+2*depth), node))
+        return "\n".join(lines)
+
+BUGDIR_ID = "DIR"
+BUGDIR_TYPE_NEW = SubscriptionType("new")
+BUGDIR_TYPE_MOD = SubscriptionType("mod")
+BUGDIR_TYPE_REM = SubscriptionType("rem")
+BUGDIR_TYPE_ALL = SubscriptionType("all",
+                      [BUGDIR_TYPE_NEW, BUGDIR_TYPE_MOD, BUGDIR_TYPE_REM])
+
+# same name as BUGDIR_TYPE_ALL for consistency
+BUG_TYPE_ALL = SubscriptionType(str(BUGDIR_TYPE_ALL))
+
+INVALID_TYPE = SubscriptionType("INVALID")
+
+class InvalidType (ValueError):
+    def __init__(self, type_name, type_root):
+        msg = "Invalid type %s for tree:\n%s" \
+            % (type_name, type_root.string_tree(4))
+        ValueError.__init__(self, msg)
+        self.type_name = type_name
+        self.type_root = type_root
+
+def type_from_name(name, type_root, default=None, default_ok=False):
+    if name == str(type_root):
+        return type_root
+    for t in type_root.traverse():
+        if name == str(t):
+            return t
+    if default_ok:
+        return default
+    raise InvalidType(name, type_root)
+
+class Subscription (object):
+    """
+    >>> subscriptions = [Subscription('XYZ', 'all'),
+    ...                  Subscription('DIR', 'new'),
+    ...                  Subscription('ABC', BUG_TYPE_ALL),]
+    >>> print sorted(subscriptions)
+    [<Subscription: DIR (new)>, <Subscription: ABC (all)>, <Subscription: XYZ (all)>]
+    """
+    def __init__(self, id, subscription_type, **kwargs):
+        if 'type_root' not in kwargs:
+            if id == BUGDIR_ID:
+                kwargs['type_root'] = BUGDIR_TYPE_ALL 
+            else:
+                kwargs['type_root'] = BUG_TYPE_ALL 
+        if type(subscription_type) in types.StringTypes:
+            subscription_type = type_from_name(subscription_type, **kwargs)
+        self.id = id
+        self.type = subscription_type
+    def __cmp__(self, other):
+        for attr in 'id', 'type':
+            value = cmp(getattr(self, attr), getattr(other, attr))
+            if value != 0:
+                if self.id == BUGDIR_ID:
+                    return -1
+                elif other.id == BUGDIR_ID:
+                    return 1
+                return value
+    def __str__(self):
+        return str(self.type)
+    def __repr__(self):
+        return "<Subscription: %s (%s)>" % (self.id, self.type)
+
+def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
+    """
+    >>> subscriptions_from_string(None)
+    [<Subscription: DIR (all)>]
+    >>> subscriptions_from_string('DIR:new,DIR:rem,ABC:all,XYZ:all')
+    [<Subscription: DIR (new)>, <Subscription: DIR (rem)>, <Subscription: ABC (all)>, <Subscription: XYZ (all)>]
+    >>> subscriptions_from_string('DIR::new')
+    Traceback (most recent call last):
+      ...
+    ValueError: Invalid subscription "DIR::new", should be ID:TYPE
+    """
+    if string == None:
+        return [Subscription(BUGDIR_ID, BUGDIR_TYPE_ALL)]
+    subscriptions = []
+    for subscription in string.split(','):
+        fields = subscription.split(':')
+        if len(fields) != 2:
+            raise ValueError('Invalid subscription "%s", should be ID:TYPE'
+                             % subscription)
+        id,type = fields
+        subscriptions.append(Subscription(id, type))
+    return subscriptions
 
 class DiffTree (tree.Tree):
     """
@@ -104,21 +210,25 @@ class DiffTree (tree.Tree):
             raise KeyError, "%s doesn't match '%s'" % (names, self.name)
         raise KeyError, "%s points to child not in %s" % (names, [c.name for c in self])
     def report_string(self):
-        return "\n".join(self.report())
+        report = self.report()
+        if report == None:
+            return ''
+        return '\n'.join(report)
     def report(self, root=None, parent=None, depth=0):
         if root == None:
             root = self.make_root()
         if self.masked == True:
-            return None
+            return root
         data_part = self.data_part(depth)
-        if self.requires_children == True and len(self) == 0:
+        if self.requires_children == True \
+                and len([c for c in self if c.masked == False]) == 0:
             pass
         else:
             self.join(root, parent, data_part)
             if data_part != None:
                 depth += 1
-        for child in self:
-            child.report(root, self, depth)
+            for child in self:
+                root = child.report(root, self, depth)
         return root
     def make_root(self):
         return []
@@ -187,6 +297,33 @@ class Diff (object):
         New comments:
           from John Doe <j@doe.com> on Thu, 01 Jan 1970 00:00:00 +0000
             I'm closing this bug...
+
+    You can also limit the report generation by providing a list of
+    subscriptions.
+
+    >>> subscriptions = [Subscription('DIR', BUGDIR_TYPE_NEW),
+    ...                  Subscription('b', BUG_TYPE_ALL)]
+    >>> r = d.report_tree(subscriptions)
+    >>> print r.report_string()
+    New bugs:
+      c:om: Bug C
+    Removed bugs:
+      b:cm: Bug B
+
+    While sending subscriptions to report_tree() makes the report
+    generation more efficient (because you may not need to compare
+    _all_ the bugs, etc.), sometimes you will have several sets of
+    subscriptions.  In that case, it's better to run full_report()
+    first, and then use report_tree() to avoid redundant comparisons.
+
+    >>> d.full_report()
+    >>> print d.report_tree([subscriptions[0]]).report_string()
+    New bugs:
+      c:om: Bug C
+    >>> print d.report_tree([subscriptions[1]]).report_string()
+    Removed bugs:
+      b:cm: Bug B
+
     >>> bd.cleanup()
     """
     def __init__(self, old_bugdir, new_bugdir):
@@ -195,7 +332,7 @@ class Diff (object):
 
     # data assembly methods
 
-    def _changed_bugs(self):
+    def _changed_bugs(self, subscriptions):
         """
         Search for differences in all bugs between .old_bugdir and
         .new_bugdir.  Returns
@@ -204,33 +341,56 @@ class Diff (object):
         removed bugs respectively.  modified_bugs is a list of
         (old_bug,new_bug) pairs.
         """
-        if hasattr(self, "__changed_bugs"):
-            return self.__changed_bugs
+        bugdir_types = [s.type for s in subscriptions if s.id == BUGDIR_ID]
+        new_uuids = []
+        old_uuids = []
+        for bd_type in [BUGDIR_TYPE_ALL, BUGDIR_TYPE_NEW, BUGDIR_TYPE_MOD]:
+            if bd_type in bugdir_types:
+                new_uuids = list(self.new_bugdir.uuids())
+                break
+        for bd_type in [BUGDIR_TYPE_ALL, BUGDIR_TYPE_REM]:
+            if bd_type in bugdir_types:
+                old_uuids = list(self.old_bugdir.uuids())
+                break
+        subscribed_bugs = [s.id for s in subscriptions
+                           if BUG_TYPE_ALL.has_descendant( \
+                                     s.type, match_self=True)]
+        new_uuids.extend([s for s in subscribed_bugs
+                          if self.new_bugdir.has_bug(s)])
+        new_uuids = sorted(set(new_uuids))
+        old_uuids.extend([s for s in subscribed_bugs
+                          if self.old_bugdir.has_bug(s)])
+        old_uuids = sorted(set(old_uuids))
         added = []
         removed = []
         modified = []
-        for uuid in self.new_bugdir.uuids():
+        for uuid in new_uuids:
             new_bug = self.new_bugdir.bug_from_uuid(uuid)
             try:
                 old_bug = self.old_bugdir.bug_from_uuid(uuid)
             except KeyError:
-                added.append(new_bug)
-            else:
+                if BUGDIR_TYPE_ALL in bugdir_types \
+                        or BUGDIR_TYPE_NEW in bugdir_types \
+                        or uuid in subscribed_bugs:
+                    added.append(new_bug)
+                continue
+            if BUGDIR_TYPE_ALL in bugdir_types \
+                    or BUGDIR_TYPE_MOD in bugdir_types \
+                    or uuid in subscribed_bugs:
                 if old_bug.sync_with_disk == True:
                     old_bug.load_comments()
                 if new_bug.sync_with_disk == True:
                     new_bug.load_comments()
                 if old_bug != new_bug:
                     modified.append((old_bug, new_bug))
-        for uuid in self.old_bugdir.uuids():
+        for uuid in old_uuids:
             if not self.new_bugdir.has_bug(uuid):
                 old_bug = self.old_bugdir.bug_from_uuid(uuid)
                 removed.append(old_bug)
         added.sort()
         removed.sort()
         modified.sort(self._bug_modified_cmp)
-        self.__changed_bugs = (added, modified, removed)
-        return self.__changed_bugs
+        return (added, modified, removed)
     def _bug_modified_cmp(self, left, right):
         return cmp(left[1], right[1])
     def _changed_comments(self, old, new):
@@ -302,25 +462,81 @@ class Diff (object):
 
     # report generation methods
 
-    def report_tree(self, diff_tree=DiffTree):
+    def full_report(self, diff_tree=DiffTree):
+        """
+        Generate a full report for efficiency if you'll be using
+        .report_tree() with several sets of subscriptions.
+        """
+        self._cached_full_report = self.report_tree(diff_tree=diff_tree,
+                                                    allow_cached=False)
+        self._cached_full_report_diff_tree = diff_tree
+    def _sub_report(self, subscriptions):
+        """
+        Return ._cached_full_report masked for subscriptions.
+        """
+        root = self._cached_full_report
+        bugdir_types = [s.type for s in subscriptions if s.id == BUGDIR_ID]
+        subscribed_bugs = [s.id for s in subscriptions
+                           if BUG_TYPE_ALL.has_descendant( \
+                                     s.type, match_self=True)]
+        selected_by_bug = [node.name
+                           for node in root.child_by_path('bugdir/bugs')]
+        if BUGDIR_TYPE_ALL in bugdir_types:
+            for node in root.traverse():
+                node.masked = False
+            selected_by_bug = []
+        else:
+            try:
+                node = root.child_by_path('bugdir/settings')
+                node.masked = True
+            except KeyError:
+                pass
+        for name,type in (('new', BUGDIR_TYPE_NEW),
+                          ('mod', BUGDIR_TYPE_MOD),
+                          ('rem', BUGDIR_TYPE_REM)):
+            if type in bugdir_types:
+                bugs = root.child_by_path('bugdir/bugs/%s' % name)
+                for bug_node in bugs:
+                    for node in bug_node.traverse():
+                        node.masked = False
+                selected_by_bug.remove(name)
+        for name in selected_by_bug:
+            bugs = root.child_by_path('bugdir/bugs/%s' % name)
+            for bug_node in bugs:
+                if bug_node.name in subscribed_bugs:
+                    for node in bug_node.traverse():
+                        node.masked = False
+                else:
+                    for node in bug_node.traverse():
+                        node.masked = True
+        return root
+    def report_tree(self, subscriptions=None, diff_tree=DiffTree,
+                    allow_cached=True):
         """
         Pretty bare to make it easy to adjust to specific cases.  You
         can pass in a DiffTree subclass via diff_tree to override the
         default report assembly process.
         """
-        if hasattr(self, "__report_tree"):
-            return self.__report_tree
+        if allow_cached == True \
+                and hasattr(self, '_cached_full_report') \
+                and diff_tree == self._cached_full_report_diff_tree:
+            return self._sub_report(subscriptions)
+        if subscriptions == None:
+            subscriptions = [Subscription(BUGDIR_ID, BUGDIR_TYPE_ALL)]
         bugdir_settings = sorted(self.new_bugdir.settings_properties)
         bugdir_settings.remove("vcs_name") # tweaked by bugdir.duplicate_bugdir
         root = diff_tree("bugdir")
-        bugdir_attribute_changes = self._bugdir_attribute_changes()
-        if len(bugdir_attribute_changes) > 0:
-            bugdir = diff_tree("settings", bugdir_attribute_changes,
-                               self.bugdir_attribute_change_string)
-            root.append(bugdir)
+        bugdir_subscriptions = [s.type for s in subscriptions
+                                if s.id == BUGDIR_ID]
+        if BUGDIR_TYPE_ALL in bugdir_subscriptions:
+            bugdir_attribute_changes = self._bugdir_attribute_changes()
+            if len(bugdir_attribute_changes) > 0:
+                bugdir = diff_tree("settings", bugdir_attribute_changes,
+                                   self.bugdir_attribute_change_string)
+                root.append(bugdir)
         bug_root = diff_tree("bugs")
         root.append(bug_root)
-        add,mod,rem = self._changed_bugs()
+        add,mod,rem = self._changed_bugs(subscriptions)
         bnew = diff_tree("new", "New bugs:", requires_children=True)
         bug_root.append(bnew)
         for bug in add:
@@ -370,8 +586,7 @@ class Diff (object):
                                       self.comment_body_change_string)
                     c.append(cbody)
             cr.extend([cnew, crem, cmod])
-        self.__report_tree = root
-        return self.__report_tree
+        return root
 
     # change data -> string methods.
     # Feel free to play with these in subclasses.

@@ -40,17 +40,20 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         Changed bug settings:
           status: open -> closed
     >>> if bd.vcs.versioned == True:
-    ...     execute(["--modified", original], manipulate_encodings=False)
+    ...     execute(["--subscribe", "%(bugdir_id)s:mod", "--uuids", original],
+    ...             manipulate_encodings=False)
     ... else:
     ...     print "a"
     a
     >>> if bd.vcs.versioned == False:
     ...     execute([original], manipulate_encodings=False)
     ... else:
-    ...     print "This directory is not revision-controlled."
-    This directory is not revision-controlled.
+    ...     raise cmdutil.UsageError('This directory is not revision-controlled.')
+    Traceback (most recent call last):
+      ...
+    UsageError: This directory is not revision-controlled.
     >>> bd.cleanup()
-    """
+    """ % {'bugdir_id':diff.BUGDIR_ID}
     parser = get_parser()
     options, args = parser.parse_args(args)
     cmdutil.default_complete(options, args, parser)
@@ -59,63 +62,58 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) == 1:
         revision = args[0]
     if len(args) > 1:
-        raise cmdutil.UsageError("Too many arguments.")
+        raise cmdutil.UsageError('Too many arguments.')
+    try:
+        subscriptions = diff.subscriptions_from_string(
+            options.subscribe)
+    except ValueError, e:
+        raise cmdutil.UsageError(e.msg)
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     if bd.vcs.versioned == False:
-        print "This directory is not revision-controlled."
+        raise cmdutil.UsageError('This directory is not revision-controlled.')
+    if options.dir == None:
+        if revision == None: # get the most recent revision
+            revision = bd.vcs.revision_id(-1)
+        old_bd = bd.duplicate_bugdir(revision)
     else:
-        if options.dir == None:
-            if revision == None: # get the most recent revision
-                revision = bd.vcs.revision_id(-1)
-            old_bd = bd.duplicate_bugdir(revision)
+        cwd = os.getcwd()
+        os.chdir(options.dir)
+        old_bd_current = bugdir.BugDir(from_disk=True,
+                                       manipulate_encodings=False)
+        if revision == None: # use the current working state
+            old_bd = old_bd_current
         else:
-            cwd = os.getcwd()
-            os.chdir(options.dir)
-            old_bd_current = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
-            if revision == None: # use the current working state
-                old_bd = old_bd_current
-            else:
-                old_bd = old_bd_current.duplicate_bugdir(revision)
-            os.chdir(cwd)
-        d = diff.Diff(old_bd, bd)
-        tree = d.report_tree()
+            if old_bd_current.vcs.versioned == False:
+                raise cmdutil.UsageError('%s is not revision-controlled.'
+                                         % options.dir)
+            old_bd = old_bd_current.duplicate_bugdir(revision)
+        os.chdir(cwd)
+    d = diff.Diff(old_bd, bd)
+    tree = d.report_tree(subscriptions)
 
+    if options.uuids == True:
         uuids = []
-        if options.all == True:
-            options.new = options.modified = options.removed = True
-        if options.new == True:
-            uuids.extend([c.name for c in tree.child_by_path("/bugs/new")])
-        if options.modified == True:
-            uuids.extend([c.name for c in tree.child_by_path("/bugs/mod")])
-        if options.removed == True:
-            uuids.extend([c.name for c in tree.child_by_path("/bugs/rem")])
-        if (options.new or options.modified or options.removed) == True:
-            print "\n".join(uuids)
-        else :
-            rep = tree.report_string()
-            if rep != None:
-                print rep
-        bd.remove_duplicate_bugdir()
-        if options.dir != None and revision != None:
-            old_bd_current.remove_duplicate_bugdir()
+        bugs = tree.child_by_path('/bugs')
+        for bug_type in bugs:
+            uuids.extend([bug.name for bug in bug_type])
+        print '\n'.join(uuids)
+    else :
+        rep = tree.report_string()
+        if rep != None:
+            print rep
+    bd.remove_duplicate_bugdir()
+    if options.dir != None and revision != None:
+        old_bd_current.remove_duplicate_bugdir()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be diff [options] REVISION")
-    # boolean options
-    bools = (("n", "new", "Print UUIDS for new bugs"),
-             ("m", "modified", "Print UUIDS for modified bugs"),
-             ("r", "removed", "Print UUIDS for removed bugs"),
-             ("a", "all", "Print UUIDS for all changed bugs"))
-    for s in bools:
-        attr = s[1].replace('-','_')
-        short = "-%c" % s[0]
-        long = "--%s" % s[1]
-        help = s[2]
-        parser.add_option(short, long, action="store_true",
-                          default=False, dest=attr, help=help)
     parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
                       help="Compare with repository in DIR instead of the current directory.")
+    parser.add_option("-s", "--subscribe", dest="subscribe", metavar="SUBSCRIPTION",
+                      help="Only print changes matching SUBSCRIPTION, subscription is a comma-separ\ated list of ID:TYPE tuples.  See `be subscribe --help` for descriptions of ID and TYPE.")
+    parser.add_option("-u", "--uuids", action="store_true", dest="uuids",
+                      help="Only print the bug UUIDS.", default=False)
     return parser
 
 longhelp="""
@@ -128,7 +126,7 @@ For Arch your specifier must be a fully-qualified revision name.
 
 Besides the standard summary output, you can use the options to output
 UUIDS for the different categories.  This output can be used as the
-input to 'be show' to get and understanding of the current status.
+input to 'be show' to get an understanding of the current status.
 """
 
 def help():
