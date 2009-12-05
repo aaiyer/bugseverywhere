@@ -65,9 +65,19 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if bd.vcs.versioned == False:
         print "This directory is not revision-controlled."
     else:
-        if revision == None: # get the most recent revision
-            revision = bd.vcs.revision_id(-1)
-        old_bd = bd.duplicate_bugdir(revision)
+        if options.dir == None:
+            if revision == None: # get the most recent revision
+                revision = bd.vcs.revision_id(-1)
+            old_bd = bd.duplicate_bugdir(revision)
+        else:
+            cwd = os.getcwd()
+            os.chdir(options.dir)
+            old_bd_current = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
+            if revision == None: # use the current working state
+                old_bd = old_bd_current
+            else:
+                old_bd = old_bd_current.duplicate_bugdir(revision)
+            os.chdir(cwd)
         d = diff.Diff(old_bd, bd)
         tree = d.report_tree()
 
@@ -87,6 +97,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
             if rep != None:
                 print rep
         bd.remove_duplicate_bugdir()
+        if options.dir != None and revision != None:
+            old_bd_current.remove_duplicate_bugdir()
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be diff [options] REVISION")
@@ -102,6 +114,8 @@ def get_parser():
         help = s[2]
         parser.add_option(short, long, action="store_true",
                           default=False, dest=attr, help=help)
+    parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
+                      help="Compare with repository in DIR instead of the current directory.")
     return parser
 
 longhelp="""
