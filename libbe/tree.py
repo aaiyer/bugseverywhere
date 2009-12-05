@@ -84,8 +84,8 @@ class Tree(list):
     >>> a.has_descendant(a, match_self=True)
     True
     """
-    def __eq__(self, other):
-        return id(self) == id(other)
+    def __cmp__(self, other):
+        return cmp(id(self), id(other))
 
     def branch_len(self):
         """
