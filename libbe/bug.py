@@ -56,6 +56,7 @@ class DiskAccessRequired (Exception):
 
 # in order of increasing severity.  (name, description) pairs
 severity_def = (
+  ("target", "The issue is a target or milestone, not a bug."),
   ("wishlist","A feature that could improve usefulness, but not a bug."),
   ("minor","The standard bug level."),
   ("serious","A bug that requires workarounds."),
@@ -172,10 +173,6 @@ class Bug(settings_object.SavedSettingsObject):
     @property
     def active(self):
         return self.status in active_status_values
-
-    @_versioned_property(name="target",
-                         doc="The deadline for fixing this bug")
-    def target(): return {}
 
     @_versioned_property(name="creator",
                          doc="The user who entered the bug into the system")
