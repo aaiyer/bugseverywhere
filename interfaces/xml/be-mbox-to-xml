@@ -40,7 +40,10 @@ def normalize_email_address(address):
     """
     Standardize whitespace, etc.
     """
-    return email.utils.formataddr(email.utils.parseaddr(address))
+    addr = email.utils.formataddr(email.utils.parseaddr(address))
+    if len(addr) == 0:
+        return None
+    return addr
 
 def normalize_RFC_2822_date(date):
     """
