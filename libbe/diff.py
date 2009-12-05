@@ -75,13 +75,18 @@ def type_from_name(name, type_root, default=None, default_ok=False):
 
 class Subscription (object):
     """
-    >>> subscriptions = [Subscription('XYZ', 'all', type_root=BUG_TYPE_ALL),
-    ...                  Subscription('DIR', 'new', type_root=BUGDIR_TYPE_ALL),
+    >>> subscriptions = [Subscription('XYZ', 'all'),
+    ...                  Subscription('DIR', 'new'),
     ...                  Subscription('ABC', BUG_TYPE_ALL),]
     >>> print sorted(subscriptions)
     [<Subscription: DIR (new)>, <Subscription: ABC (all)>, <Subscription: XYZ (all)>]
     """
     def __init__(self, id, subscription_type, **kwargs):
+        if 'type_root' not in kwargs:
+            if id == BUGDIR_ID:
+                kwargs['type_root'] = BUGDIR_TYPE_ALL 
+            else:
+                kwargs['type_root'] = BUG_TYPE_ALL 
         if type(subscription_type) in types.StringTypes:
             subscription_type = type_from_name(subscription_type, **kwargs)
         self.id = id
