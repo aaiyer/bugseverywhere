@@ -215,7 +215,8 @@ class DiffTree (tree.Tree):
         if self.masked == True:
             return None
         data_part = self.data_part(depth)
-        if self.requires_children == True and len(self) == 0:
+        if self.requires_children == True \
+                and len([c for c in self if c.masked == False]) == 0:
             pass
         else:
             self.join(root, parent, data_part)
@@ -301,6 +302,20 @@ class Diff (object):
     >>> print r.report_string()
     New bugs:
       c:om: Bug C
+    Removed bugs:
+      b:cm: Bug B
+
+    While sending subscriptions to report_tree() makes the report
+    generation more efficient (because you may not need to compare
+    _all_ the bugs, etc.), sometimes you will have several sets of
+    subscriptions.  In that case, it's better to run full_report()
+    first, and then use report_tree() to avoid redundant comparisons.
+
+    >>> d.full_report()
+    >>> print d.report_tree([subscriptions[0]]).report_string()
+    New bugs:
+      c:om: Bug C
+    >>> print d.report_tree([subscriptions[1]]).report_string()
     Removed bugs:
       b:cm: Bug B
 
@@ -442,12 +457,62 @@ class Diff (object):
 
     # report generation methods
 
-    def report_tree(self, subscriptions=None, diff_tree=DiffTree):
+    def full_report(self, diff_tree=DiffTree):
+        """
+        Generate a full report for efficiency if you'll be using
+        .report_tree() with several sets of subscriptions.
+        """
+        self._cached_full_report = self.report_tree(diff_tree=diff_tree,
+                                                    allow_cached=False)
+        self._cached_full_report_diff_tree = diff_tree
+    def _sub_report(self, subscriptions):
+        """
+        Return ._cached_full_report masked for subscriptions.
+        """
+        root = self._cached_full_report
+        bugdir_types = [s.type for s in subscriptions if s.id == BUGDIR_ID]
+        subscribed_bugs = [s.id for s in subscriptions
+                           if BUG_TYPE_ALL.has_descendant( \
+                                     s.type, match_self=True)]
+        selected_by_bug = [node.name
+                           for node in root.child_by_path('bugdir/bugs')]
+        if BUGDIR_TYPE_ALL in bugdir_types:
+            for node in root.traverse():
+                node.masked = False
+            selected_by_bug = []
+        else:
+            node = root.child_by_path('bugdir/settings')
+            node.masked = True
+        for name,type in (('new', BUGDIR_TYPE_NEW),
+                          ('mod', BUGDIR_TYPE_MOD),
+                          ('rem', BUGDIR_TYPE_REM)):
+            if type in bugdir_types:
+                bugs = root.child_by_path('bugdir/bugs/%s' % name)
+                for bug_node in bugs:
+                    for node in bug_node.traverse():
+                        node.masked = False
+                selected_by_bug.remove(name)
+        for name in selected_by_bug:
+            bugs = root.child_by_path('bugdir/bugs/%s' % name)
+            for bug_node in bugs:
+                if bug_node.name in subscribed_bugs:
+                    for node in bug_node.traverse():
+                        node.masked = False
+                else:
+                    for node in bug_node.traverse():
+                        node.masked = True
+        return root
+    def report_tree(self, subscriptions=None, diff_tree=DiffTree,
+                    allow_cached=True):
         """
         Pretty bare to make it easy to adjust to specific cases.  You
         can pass in a DiffTree subclass via diff_tree to override the
         default report assembly process.
         """
+        if allow_cached == True \
+                and hasattr(self, '_cached_full_report') \
+                and diff_tree == self._cached_full_report_diff_tree:
+            return self._sub_report(subscriptions)
         if subscriptions == None:
             subscriptions = [Subscription(BUGDIR_ID, BUGDIR_TYPE_ALL)]
         bugdir_settings = sorted(self.new_bugdir.settings_properties)
