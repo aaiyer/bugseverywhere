@@ -55,6 +55,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     Traceback (most recent call last):
     UserError: No such directory: /highly-unlikely-to-exist
     >>> os.chdir('/')
+    >>> dir.cleanup()
     """
     parser = get_parser()
     options, args = parser.parse_args(args)
