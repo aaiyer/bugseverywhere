@@ -63,17 +63,11 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         revision = args[0]
     if len(args) > 1:
         raise cmdutil.UsageError('Too many arguments.')
-    if options.subscribe == None:
-        subscriptions = [diff.Subscription(diff.BUGDIR_ID,
-                                           diff.BUGDIR_TYPE_ALL)]
-    else:
-        subscriptions = []
-        for subscription in options.subscribe.split(','):
-            fields = subscription.split(':')
-            if len(fields) != 2:
-                raise cmdutil.UsageError('Invalid subscription "%s", should be ID:TYPE')
-            id,type = fields
-            subscriptions.append(diff.Subscription(id, type))
+    try:
+        subscriptions = diff.subscriptions_from_string(
+            options.subscribe)
+    except ValueError, e:
+        raise cmdutil.UsageError(e.msg)
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     if bd.vcs.versioned == False:

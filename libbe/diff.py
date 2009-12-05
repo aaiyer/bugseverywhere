@@ -108,6 +108,29 @@ class Subscription (object):
     def __repr__(self):
         return "<Subscription: %s (%s)>" % (self.id, self.type)
 
+def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
+    """
+    >>> subscriptions_from_string(None)
+    [<Subscription: DIR (all)>]
+    >>> subscriptions_from_string('DIR:new,DIR:rem,ABC:all,XYZ:all')
+    [<Subscription: DIR (new)>, <Subscription: DIR (rem)>, <Subscription: ABC (all)>, <Subscription: XYZ (all)>]
+    >>> subscriptions_from_string('DIR::new')
+    Traceback (most recent call last):
+      ...
+    ValueError: Invalid subscription "DIR::new", should be ID:TYPE
+    """
+    if string == None:
+        return [Subscription(BUGDIR_ID, BUGDIR_TYPE_ALL)]
+    subscriptions = []
+    for subscription in string.split(','):
+        fields = subscription.split(':')
+        if len(fields) != 2:
+            raise ValueError('Invalid subscription "%s", should be ID:TYPE'
+                             % subscription)
+        id,type = fields
+        subscriptions.append(Subscription(id, type))
+    return subscriptions
+
 class DiffTree (tree.Tree):
     """
     A tree holding difference data for easy report generation.
