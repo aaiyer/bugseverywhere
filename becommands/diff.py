@@ -84,16 +84,11 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     d = diff.Diff(old_bd, bd)
     tree = d.report_tree()
 
-    uuids = []
-    if options.all == True:
-        options.new = options.modified = options.removed = True
-    if options.new == True:
-        uuids.extend([c.name for c in tree.child_by_path("/bugs/new")])
-    if options.modified == True:
-        uuids.extend([c.name for c in tree.child_by_path("/bugs/mod")])
-    if options.removed == True:
-        uuids.extend([c.name for c in tree.child_by_path("/bugs/rem")])
-    if (options.new or options.modified or options.removed) == True:
+    if options.uuids == True:
+        uuids = []
+        bugs = tree.child_by_path("/bugs")
+        for bug_type in bugs:
+            uuids.extend([bug.name for bug in bug_type])
         print "\n".join(uuids)
     else :
         rep = tree.report_string()
@@ -105,20 +100,10 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be diff [options] REVISION")
-    # boolean options
-    bools = (("n", "new", "Print UUIDS for new bugs"),
-             ("m", "modified", "Print UUIDS for modified bugs"),
-             ("r", "removed", "Print UUIDS for removed bugs"),
-             ("a", "all", "Print UUIDS for all changed bugs"))
-    for s in bools:
-        attr = s[1].replace('-','_')
-        short = "-%c" % s[0]
-        long = "--%s" % s[1]
-        help = s[2]
-        parser.add_option(short, long, action="store_true",
-                          default=False, dest=attr, help=help)
     parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
                       help="Compare with repository in DIR instead of the current directory.")
+    parser.add_option("-u", "--uuids", action="store_true", dest="uuids",
+                      help="Only print the bug UUIDS.", default=False)
     return parser
 
 longhelp="""
