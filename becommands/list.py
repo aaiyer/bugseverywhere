@@ -196,7 +196,7 @@ def get_parser():
         long = "--%s" % s[1]
         help = s[2]
         parser.add_option(short, long, action="store_true",
-                          dest=attr, help=help)
+                          dest=attr, help=help, default=False)
     return parser
 
 
