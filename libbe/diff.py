@@ -263,8 +263,8 @@ class Diff (object):
                     modified.append((old_comment, new_comment))
         for uuid in old_comment_ids:
             if uuid not in new_comment_ids:
-                new_comment = new.comment_from_uuid(uuid)
-                removed.append(new_comment)
+                old_comment = old.comment_from_uuid(uuid)
+                removed.append(old_comment)
         self.__changed_comments[new.uuid] = (added, modified, removed)
         return self.__changed_comments[new.uuid]
     def _attribute_changes(self, old, new, attributes):
