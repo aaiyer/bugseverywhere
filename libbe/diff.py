@@ -27,6 +27,52 @@ if libbe.TESTING == True:
     import doctest
 
 
+class SubscriptionType (tree.Tree):
+    """
+    Trees of subscription types to allow users to select exactly what
+    notifications they want to subscribe to.
+    """
+    def __init__(self, type_name, *args, **kwargs):
+        tree.Tree.__init__(self, *args, **kwargs)
+        self.type = type_name
+    def __str__(self):
+        return self.type
+    def __repr__(self):
+        return "<SubscriptionType: %s>" % str(self)
+    def string_tree(self, indent=0):
+        lines = []
+        for depth,node in self.thread():
+            lines.append("%s%s" % (" "*(indent+2*depth), node))
+        return "\n".join(lines)
+
+BUGDIR_TYPE_NEW = SubscriptionType("new")
+BUGDIR_TYPE_ALL = SubscriptionType("all", [BUGDIR_TYPE_NEW])
+
+# same name as BUGDIR_TYPE_ALL for consistency
+BUG_TYPE_ALL = SubscriptionType(str(BUGDIR_TYPE_ALL))
+
+INVALID_TYPE = SubscriptionType("INVALID")
+
+class InvalidType (ValueError):
+    def __init__(self, type_name, type_root):
+        msg = "Invalid type %s for tree:\n%s" \
+            % (type_name, type_root.string_tree(4))
+        ValueError.__init__(self, msg)
+        self.type_name = type_name
+        self.type_root = type_root
+
+def type_from_name(name, type_root, default=None, default_ok=False):
+    if name == str(type_root):
+        return type_root
+    for t in type_root.traverse():
+        if name == str(t):
+            return t
+    if default_ok:
+        return default
+    raise InvalidType(name, type_root)
+
+
+
 class DiffTree (tree.Tree):
     """
     A tree holding difference data for easy report generation.

@@ -685,21 +685,21 @@ class Message (object):
             ordered_subscriptions.extend(subscriptions.items())
             for id,types in ordered_subscriptions:
                 if id == "DIR":
-                    if subscribe.BUGDIR_TYPE_ALL in types:
+                    if libbe.diff.BUGDIR_TYPE_ALL in types:
                         parts.append(diff_tree.report_or_none())
                         break # we've attached everything, so stop checking.
-                    if subscribe.BUGDIR_TYPE_NEW in types:
+                    if libbe.diff.BUGDIR_TYPE_NEW in types:
                         new = diff_tree.child_by_path("/bugs/new")
                         parts.append(new.report_or_none())
                     continue # move on to next id
                 # if we get this far, id refers to a bug.
-                assert types == [subscribe.BUG_TYPE_ALL], types
+                assert types == [libbe.diff.BUG_TYPE_ALL], types
                 if id not in bug_index:
                     continue # no changes here, move on to next id
                 type,bug_root = bug_index[id]
                 if type == "added" \
                         and "DIR" in subscriptions \
-                        and subscriptions["DIR"] == subscribe.BUGDIR_TYPE_NEW:
+                        and subscriptions["DIR"] == libbe.diff.BUGDIR_TYPE_NEW:
                     # this info already attached at the DIR level
                     continue # move on to next id
                 parts.append(bug_root.report_or_none())
