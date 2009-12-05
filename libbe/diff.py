@@ -210,12 +210,15 @@ class DiffTree (tree.Tree):
             raise KeyError, "%s doesn't match '%s'" % (names, self.name)
         raise KeyError, "%s points to child not in %s" % (names, [c.name for c in self])
     def report_string(self):
-        return "\n".join(self.report())
+        report = self.report()
+        if report == None:
+            return ''
+        return '\n'.join(report)
     def report(self, root=None, parent=None, depth=0):
         if root == None:
             root = self.make_root()
         if self.masked == True:
-            return None
+            return root
         data_part = self.data_part(depth)
         if self.requires_children == True \
                 and len([c for c in self if c.masked == False]) == 0:
