@@ -1,7 +1,8 @@
-December 4, 2009:
+December 4, 2009
  * new commands:
    email-bugs
  * broke `be comment --xml` out and extended into `be import-xml`
+ * added --dir option to `be diff'
  * new XML format <be-xml>
  * interfaces/email/interactive:
    * added support for [be-bug:xml] interface
