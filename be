@@ -64,7 +64,7 @@ try:
         raise cmdutil.UsageError, "must supply a command"
     sys.exit(cmdutil.execute(args[0], args[1:]))
 except cmdutil.GetHelp:
-    print cmdutil.help(sys.argv[1])
+    print cmdutil.help(args[0])
     sys.exit(0)
 except cmdutil.GetCompletions, e:
     print '\n'.join(e.completions)
@@ -78,7 +78,7 @@ except cmdutil.UsageError, e:
         print cmdutil.help(parser=parser)
     else:
         print "\nArgs:", args
-        print cmdutil.help(sys.argv[1])
+        print cmdutil.help(args[0])
     sys.exit(1)
 except cmdutil.UserError, e:
     print "ERROR:"
