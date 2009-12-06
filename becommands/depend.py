@@ -94,10 +94,11 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
                              for blockee,blocker in fixed])
         return 0
 
-    allowed_status_values = _allowed_values(options.limit_status,
-                                            bug.status_values)
-    allowed_severity_values = _allowed_values(options.limit_severity,
-                                              bug.severity_values)
+    allowed_status_values = \
+        cmdutil.select_values(options.limit_status, bug.status_values)
+    allowed_severity_values = \
+        cmdutil.select_values(options.limit_severity, bug.severity_values)
+
     bugA = cmdutil.bug_from_id(bd, args[0])
 
     if options.tree_depth != None:
@@ -148,9 +149,9 @@ def get_parser():
     parser.add_option("-s", "--show-status", action="store_true",
                       dest="show_status", default=False,
                       help="Show status of blocking bugs")
-    parser.add_option("--limit-status", dest="limit_status", metavar="STATUS",
+    parser.add_option("--status", dest="limit_status", metavar="STATUS",
                       help="Only show bugs matching the STATUS specifier")
-    parser.add_option("--limit-severity", dest="limit_severity",
+    parser.add_option("--severity", dest="limit_severity",
                       metavar="SEVERITY",
                       help="Only show bugs matching the SEVERITY specifier")
     parser.add_option("-t", "--tree-depth", metavar="DEPTH", default=None,
@@ -168,13 +169,13 @@ If bug B is not specified, just print a list of bugs blocking (A).
 To search for bugs blocked by a particular bug, try
   $ be list --extra-strings BLOCKED-BY:<your-bug-uuid>
 
-The --limit-* options allow you to either blacklist or whitelist
-values, for example
-  $ be list --limit-status open,assigned
+The --status and --severity options allow you to either blacklist or
+whitelist values, for example
+  $ be list --status open,assigned
 will only follow and print dependencies with open or assigned status.
 You select blacklist mode by starting the list with a minus sign, for
 example
-  $ be list --limit-severity -target
+  $ be list --severity -target
 which will only follow and print dependencies with non-target severity.
 
 In repair mode, add the missing direction to any one-way links.
@@ -188,44 +189,6 @@ def help():
     return get_parser().help_str() + longhelp
 
 # internal helper functions
-
-def _allowed_values(limit_string, possible_values, name="unkown"):
-    """
-    >>> _allowed_values(None, ['abc', 'def', 'hij'])
-    ['abc', 'def', 'hij']
-    >>> _allowed_values('-abc,hij', ['abc', 'def', 'hij'])
-    ['def']
-    >>> _allowed_values('abc,hij', ['abc', 'def', 'hij'])
-    ['abc', 'hij']
-    >>> _allowed_values('-xyz,hij', ['abc', 'def', 'hij'], name="value")
-    Traceback (most recent call last):
-      ...
-    UserError: Invalid value xyz
-      ['abc', 'def', 'hij']
-    >>> _allowed_values('xyz,hij', ['abc', 'def', 'hij'], name="value")
-    Traceback (most recent call last):
-      ...
-    UserError: Invalid value xyz
-      ['abc', 'def', 'hij']
-    """
-    possible_values = list(possible_values) # don't alter the original
-    if limit_string == None:
-        pass
-    elif limit_string.startswith('-'):
-        blacklisted_values = set(limit_string[1:].split(','))
-        for value in blacklisted_values:
-            if value not in possible_values:
-                raise cmdutil.UserError('Invalid %s %s\n  %s'
-                                        % (name, value, possible_values))
-            possible_values.remove(value)
-    else:
-        whitelisted_values = limit_string.split(',')
-        for value in whitelisted_values:
-            if value not in possible_values:
-                raise cmdutil.UserError('Invalid %s %s\n  %s'
-                                        % (name, value, possible_values))
-        possible_values = whitelisted_values
-    return possible_values
 
 def _generate_blocks_string(blocked_bug):
     return "%s%s" % (BLOCKS_TAG, blocked_bug.uuid)
