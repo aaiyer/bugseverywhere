@@ -21,7 +21,8 @@ from libbe import cmdutil, bugdir, diff
 import os
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -69,7 +70,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     except ValueError, e:
         raise cmdutil.UsageError(e.msg)
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     if bd.vcs.versioned == False:
         raise cmdutil.UsageError('This directory is not revision-controlled.')
     if options.dir == None:

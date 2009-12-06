@@ -21,7 +21,8 @@
 from libbe import cmdutil, bugdir
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> from libbe import bugdir
     >>> import os
@@ -44,7 +45,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) > 1:
         raise cmdutil.UsageError("Too many arguments.")
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     bug = cmdutil.bug_from_id(bd, args[0])
     bug.status = "closed"
     bd.save()

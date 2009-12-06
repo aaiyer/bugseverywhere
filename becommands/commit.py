@@ -18,7 +18,8 @@ from libbe import cmdutil, bugdir, editor, vcs
 import sys
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> from libbe import bug
@@ -37,7 +38,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) != 1:
         raise cmdutil.UsageError("Please supply a commit message")
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     if args[0] == '-': # read summary from stdin
         assert options.body != "EDITOR", \
           "Cannot spawn and editor when the summary is using stdin."

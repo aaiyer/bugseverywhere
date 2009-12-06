@@ -29,7 +29,8 @@ if libbe.TESTING == True:
     import unittest
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import time
     >>> import StringIO
@@ -64,7 +65,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     filename = args[0]
 
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     if options.comment_root != None:
         croot_bug,croot_comment = \
             cmdutil.bug_comment_from_id(bd, options.comment_root)

@@ -33,7 +33,8 @@ __desc__ = __doc__
 
 sendmail='/usr/sbin/sendmail -t'
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> from libbe import bug
@@ -96,7 +97,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) == 0:
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     xml = show.output(args, bd, as_xml=True, with_comments=True)
     subject = options.subject
     if subject == None:

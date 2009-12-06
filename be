@@ -34,8 +34,8 @@ parser.add_option("--version", action="store_true", dest="version",
                   help="Print version string and exit.")
 parser.add_option("--verbose-version", action="store_true", dest="verbose_version",
                   help="Print verbose version information and exit.")
-parser.add_option("-d", "--dir", dest="dir", metavar="DIR",
-                  help="Run this command from DIR instead of the current directory.")
+parser.add_option("-d", "--dir", dest="dir", metavar="DIR", default=".",
+                  help="Run this command on the repository in DIR instead of the current directory.")
 
 try:
     options,args = parser.parse_args()
@@ -56,13 +56,11 @@ except cmdutil.GetCompletions, e:
 if options.version == True or options.verbose_version == True:
     print version.version(verbose=options.verbose_version)
     sys.exit(0)
-if options.dir != None:
-    os.chdir(options.dir)
 
 try:
     if len(args) == 0:
         raise cmdutil.UsageError, "must supply a command"
-    sys.exit(cmdutil.execute(args[0], args[1:]))
+    sys.exit(cmdutil.execute(args[0], args=args[1:], dir=dir))
 except cmdutil.GetHelp:
     print cmdutil.help(args[0])
     sys.exit(0)

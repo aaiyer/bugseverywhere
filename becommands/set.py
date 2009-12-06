@@ -32,7 +32,8 @@ def _value_string(bd, setting):
             val = None
     return str(val)
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -53,7 +54,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) > 2:
         raise cmdutil.UsageError, "Too many arguments"
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     if len(args) == 0:
         keys = bd.settings_properties
         keys.sort()

@@ -22,7 +22,8 @@ import sys
 from libbe import cmdutil, bugdir, comment, version, _version
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -66,7 +67,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) == 0:
         raise cmdutil.UsageError
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
 
     if options.only_raw_body == True:
         if len(args) != 1:

@@ -35,7 +35,8 @@ class BrokenLink (Exception):
         self.blocking_bug = blocking_bug
 
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> from libbe import utility
     >>> bd = bugdir.SimpleBugDir()
@@ -84,7 +85,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         raise cmdutil.UsageError("Only one bug id used in tree mode.")
 
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     if options.repair == True:
         good,fixed,broken = check_dependencies(bd, repair_broken_links=True)
         assert len(broken) == 0, broken
