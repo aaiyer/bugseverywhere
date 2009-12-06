@@ -33,7 +33,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         Severity : minor
           Status : open
         Assigned : 
-          Target : 
         Reporter : 
          Creator : John Doe <jdoe@example.com>
          Created : ...

@@ -37,8 +37,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     True
     >>> print bug.severity
     minor
-    >>> bug.target == None
-    True
+    >>> print bug.status
+    open
     >>> bd.cleanup()
     """
     parser = get_parser()

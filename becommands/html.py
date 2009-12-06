@@ -177,7 +177,7 @@ class HTMLGen (object):
                          'shortname':self.bd.bug_shortname(bug),
                          'comment_entries':comment_entries,
                          'generation_time':self.generation_time}
-        for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
+        for attr in ['uuid', 'severity', 'status', 'assigned',
                      'reporter', 'creator', 'time_string', 'summary']:
             template_info[attr] = self._escape(getattr(bug, attr))
         self._write_file(self.bug_file % template_info, [fullpath])
@@ -272,7 +272,7 @@ class HTMLGen (object):
             if self.verbose:
                 print "\tCreating bug entry for %s" % self.bd.bug_shortname(bug)
             template_info = {'shortname':self.bd.bug_shortname(bug)}
-            for attr in ['uuid', 'severity', 'status', 'assigned', 'target',
+            for attr in ['uuid', 'severity', 'status', 'assigned',
                          'reporter', 'creator', 'time_string', 'summary']:
                 template_info[attr] = self._escape(getattr(bug, attr))
             bug_entries.append(self.index_bug_entry % template_info)
