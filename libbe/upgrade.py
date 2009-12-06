@@ -22,6 +22,7 @@ import os, os.path
 import sys
 
 import libbe
+import bug
 import encoding
 import mapfile
 import vcs
@@ -31,7 +32,8 @@ if libbe.TESTING == True:
 # a list of all past versions
 BUGDIR_DISK_VERSIONS = ["Bugs Everywhere Tree 1 0",
                         "Bugs Everywhere Directory v1.1",
-                        "Bugs Everywhere Directory v1.2"]
+                        "Bugs Everywhere Directory v1.2",
+                        "Bugs Everywhere Directory v1.3"]
 
 # the current version
 BUGDIR_DISK_VERSION = BUGDIR_DISK_VERSIONS[-1]
@@ -142,9 +144,63 @@ class Upgrade_1_1_to_1_2 (Upgrader):
             settings["vcs_name"] = settings.pop("rcs_name")
             mapfile.map_save(self.vcs, path, settings)
 
+class Upgrade_1_2_to_1_3 (Upgrader):
+    initial_version = "Bugs Everywhere Directory v1.2"
+    final_version = "Bugs Everywhere Directory v1.3"
+    def __init__(self, *args, **kwargs):
+        Upgrader.__init__(self, *args, **kwargs)
+        self._targets = {} # key: target text,value: new target bug
+        path = self.get_path('settings')
+        settings = mapfile.map_load(self.vcs, path)
+        if 'vcs_name' in settings:
+            old_vcs = self.vcs
+            self.vcs = vcs.vcs_by_name(settings['vcs_name'])
+            self.vcs.root(self.root)
+            self.vcs.encoding = old_vcs.encoding
+
+    def _target_bug(self, target_text):
+        if target_text not in self._targets:
+            _bug = bug.Bug(bugdir=self, summary=target_text)
+            # note: we're not a bugdir, but all Bug.save() needs is
+            # .root, .vcs, and .get_path(), which we have.
+            _bug.severity = 'target'
+            self._targets[target_text] = _bug
+        return self._targets[target_text]
+
+    def _upgrade_bugdir_mapfile(self):
+        path = self.get_path('settings')
+        settings = mapfile.map_load(self.vcs, path)
+        if 'target' in settings:
+            settings['target'] = self._target_bug(settings['target']).uuid
+            mapfile.map_save(self.vcs, path, settings)
+
+    def _upgrade_bug_mapfile(self, bug_uuid):
+        import becommands.depend
+        path = self.get_path('bugs', bug_uuid, 'values')
+        settings = mapfile.map_load(self.vcs, path)
+        if 'target' in settings:
+            target_bug = self._target_bug(settings['target'])
+            _bug = bug.Bug(bugdir=self, uuid=bug_uuid, from_disk=True)
+            # note: we're not a bugdir, but all Bug.load_settings()
+            # needs is .root, .vcs, and .get_path(), which we have.
+            becommands.depend.add_block(target_bug, _bug)
+            _bug.settings.pop('target')
+            _bug.save()
+
+    def _upgrade(self):
+        """
+        Bug value field "target" -> target bugs.
+        Bugdir value field "target" -> pointer to current target bug.
+        """
+        for bug_uuid in os.listdir(self.get_path('bugs')):
+            self._upgrade_bug_mapfile(bug_uuid)
+        self._upgrade_bugdir_mapfile()
+        for _bug in self._targets.values():
+            _bug.save()
 
 upgraders = [Upgrade_1_0_to_1_1,
-             Upgrade_1_1_to_1_2]
+             Upgrade_1_1_to_1_2,
+             Upgrade_1_2_to_1_3]
 upgrade_classes = {}
 for upgrader in upgraders:
     upgrade_classes[(upgrader.initial_version,upgrader.final_version)]=upgrader
