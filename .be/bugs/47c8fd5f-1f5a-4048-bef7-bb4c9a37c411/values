@@ -8,7 +8,7 @@ extra_strings:
 severity: target
 
 
-status: open
+status: fixed
 
 
 summary: '0.1'
