@@ -138,6 +138,8 @@ def bug_from_target_summary(bugdir, summary=None):
     return matched[0]
 
 def bug_target(bugdir, bug):
+    if bug.severity == 'target':
+        return bug
     matched = []
     for blocked in depend.get_blocks(bugdir, bug):
         if blocked.severity == 'target':
