@@ -1,6 +1,10 @@
 creator: abentley
 
 
+extra_strings:
+- BLOCKS:4fc71206-4285-417f-8a3c-ed6fb31bbbda
+
+
 severity: minor
 
 
@@ -8,7 +12,4 @@ status: closed
 
 
 summary: Support rcs configuration
-
-
-target: patch-52
 
