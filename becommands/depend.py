@@ -258,7 +258,7 @@ def get_blocks(bugdir, bug):
 
 def get_blocked_by(bugdir, bug):
     """
-    Return a list of bugs blocking the given bug blocks.
+    Return a list of bugs blocking the given bug.
     """
     blocked_by = []
     for uuid in _get_blocked_by(bug):
