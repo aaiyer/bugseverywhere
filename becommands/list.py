@@ -33,8 +33,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     >>> os.chdir(bd.root)
     >>> execute([], manipulate_encodings=False)
     a:om: Bug A
-    >>> execute(["--status", "all"], manipulate_encodings=False)
-    a:om: Bug A
+    >>> execute(["--status", "closed"], manipulate_encodings=False)
     b:cm: Bug B
     >>> bd.cleanup()
     """
@@ -60,7 +59,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         if options.status == "all":
             status = bug.status_values
         else:
-            status = options.status.split(',')
+            status = cmdutil.select_values(options.status, bug.status_values)
     else:
         status = []
         if options.active == True:
@@ -78,7 +77,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         if options.severity == "all":
             severity = bug.severity_values
         else:
-            severity = options.severity.split(',')
+            severity = cmdutil.select_values(options.severity,
+                                             bug.severity_values)
     else:
         severity = []
         if options.wishlist == True:
@@ -93,7 +93,14 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         if options.assigned == "all":
             assigned = "all"
         else:
-            assigned = options.assigned.split(',')
+            possible_assignees = []
+            for _bug in bd:
+                if _bug.assigned != None \
+                        and not _bug.assigned in possible_assignees:
+                    possible_assignees.append(_bug.assigned)
+            assigned = cmdutil.select_values(options.assigned,
+                                             possible_assignees)
+            print 'assigned', assigned
     else:
         assigned = []
         if options.mine == True:
@@ -103,18 +110,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     for i in range(len(assigned)):
         if assigned[i] == '-':
             assigned[i] = bd.user_id
-    # select target
-    if options.target != None:
-        if options.target == "all":
-            target = "all"
-        else:
-            target = options.target.split(',')
-    else:
-        target = []
-        if options.cur_target == True:
-            target.append(bd.target)
-        if target == []: # set the default value
-            target = "all"
     if options.extra_strings != None:
         extra_string_regexps = [re.compile(x) for x in options.extra_strings.split(',')]
 
@@ -124,8 +119,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         if severity != "all" and not bug.severity in severity:
             return False
         if assigned != "all" and not bug.assigned in assigned:
-            return False
-        if target != "all" and not bug.target in target:
             return False
         if options.extra_strings != None:
             if len(bug.extra_strings) == 0 and len(extra_string_regexps) > 0:
@@ -167,29 +160,26 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be list [options]")
-    parser.add_option("-s", "--status", metavar="STATUS", dest="status",
-                      help="List bugs matching STATUS", default=None)
-    parser.add_option("-v", "--severity", metavar="SEVERITY", dest="severity",
-                      help="List bugs matching SEVERITY", default=None)
+    parser.add_option("--status", dest="status", metavar="STATUS",
+                      help="Only show bugs matching the STATUS specifier")
+    parser.add_option("--severity", dest="severity", metavar="SEVERITY",
+                      help="Only show bugs matching the SEVERITY specifier")
     parser.add_option("-a", "--assigned", metavar="ASSIGNED", dest="assigned",
                       help="List bugs matching ASSIGNED", default=None)
-    parser.add_option("-t", "--target", metavar="TARGET", dest="target",
-                      help="List bugs matching TARGET", default=None)
     parser.add_option("-e", "--extra-strings", metavar="STRINGS", dest="extra_strings",
                       help="List bugs matching _all_ extra strings in comma-seperated list STRINGS.  e.g. --extra-strings TAG:working,TAG:xml", default=None)
     parser.add_option("-S", "--sort", metavar="SORT-BY", dest="sort_by",
                       help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
     # boolean options.  All but uuids and xml are special cases of long forms
     bools = (("u", "uuids", "Only print the bug UUIDS"),
+             ("x", "xml", "Dump as XML"),
              ("w", "wishlist", "List bugs with 'wishlist' severity"),
              ("i", "important", "List bugs with >= 'serious' severity"),
              ("A", "active", "List all active bugs"),
              ("U", "unconfirmed", "List unconfirmed bugs"),
              ("o", "open", "List open bugs"),
              ("T", "test", "List bugs in testing"),
-             ("m", "mine", "List bugs assigned to you"),
-             ("c", "cur-target", "List bugs for the current target"),
-             ("x", "xml", "Dump as XML"))
+             ("m", "mine", "List bugs assigned to you"))
     for s in bools:
         attr = s[1].replace('-','_')
         short = "-%c" % s[0]
@@ -216,10 +206,12 @@ There are several criteria that you can filter by:
   * status
   * severity
   * assigned (who the bug is assigned to)
-  * target   (bugfix deadline)
 Allowed values for each criterion may be given in a comma seperated
 list.  The special string "all" may be used with any of these options
-to match all values of the criterion.
+to match all values of the criterion.  As with the --status and
+--severity options for `be depend`, starting the list with a minus
+sign makes your selections a blacklist instead of the default
+whitelist.
 
 status
   %s
@@ -227,8 +219,6 @@ severity
   %s
 assigned
   free form, with the string '-' being a shortcut for yourself.
-target
-  free form
 
 In addition, there are some shortcut options that set boolean flags.
 The boolean options are ignored if the matching string option is used.

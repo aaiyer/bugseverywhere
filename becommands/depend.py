@@ -95,9 +95,9 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         return 0
 
     allowed_status_values = \
-        cmdutil.select_values(options.limit_status, bug.status_values)
+        cmdutil.select_values(options.status, bug.status_values)
     allowed_severity_values = \
-        cmdutil.select_values(options.limit_severity, bug.severity_values)
+        cmdutil.select_values(options.severity, bug.severity_values)
 
     bugA = cmdutil.bug_from_id(bd, args[0])
 
@@ -149,10 +149,9 @@ def get_parser():
     parser.add_option("-s", "--show-status", action="store_true",
                       dest="show_status", default=False,
                       help="Show status of blocking bugs")
-    parser.add_option("--status", dest="limit_status", metavar="STATUS",
+    parser.add_option("--status", dest="status", metavar="STATUS",
                       help="Only show bugs matching the STATUS specifier")
-    parser.add_option("--severity", dest="limit_severity",
-                      metavar="SEVERITY",
+    parser.add_option("--severity", dest="severity", metavar="SEVERITY",
                       help="Only show bugs matching the SEVERITY specifier")
     parser.add_option("-t", "--tree-depth", metavar="DEPTH", default=None,
                       type="int", dest="tree_depth",
