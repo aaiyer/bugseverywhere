@@ -77,9 +77,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
             revision = bd.vcs.revision_id(-1)
         old_bd = bd.duplicate_bugdir(revision)
     else:
-        cwd = os.getcwd()
-        os.chdir(options.dir)
-        old_bd_current = bugdir.BugDir(from_disk=True,
+        old_bd_current = bugdir.BugDir(root=os.path.abspath(options.dir),
+                                       from_disk=True,
                                        manipulate_encodings=False)
         if revision == None: # use the current working state
             old_bd = old_bd_current
@@ -88,7 +87,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
                 raise cmdutil.UsageError('%s is not revision-controlled.'
                                          % options.dir)
             old_bd = old_bd_current.duplicate_bugdir(revision)
-        os.chdir(cwd)
     d = diff.Diff(old_bd, bd)
     tree = d.report_tree(subscriptions)
 
