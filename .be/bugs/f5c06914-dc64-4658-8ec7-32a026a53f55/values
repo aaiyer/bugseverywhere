@@ -1,6 +1,10 @@
 creator: abentley
 
 
+extra_strings:
+- BLOCKS:bd0ebb56-fb46-45bc-af08-1e4a94e8ef3c
+
+
 severity: minor
 
 
@@ -8,7 +12,4 @@ status: fixed
 
 
 summary: Implement bug tree diff
-
-
-target: '0.2'
 

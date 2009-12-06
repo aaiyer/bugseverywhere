@@ -18,13 +18,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Show or change a bug's target for fixing"""
+"""Assorted bug target manipulations and queries"""
 from libbe import cmdutil, bugdir
+from becommands import depend
 __desc__ = __doc__
 
 def execute(args, manipulate_encodings=True, restrict_file_access=False):
     """
-    >>> import os
+    >>> import os, StringIO, sys
     >>> bd = bugdir.SimpleBugDir()
     >>> os.chdir(bd.root)
     >>> execute(["a"], manipulate_encodings=False)
@@ -32,8 +33,19 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     >>> execute(["a", "tomorrow"], manipulate_encodings=False)
     >>> execute(["a"], manipulate_encodings=False)
     tomorrow
-    >>> execute(["--list"], manipulate_encodings=False)
+
+    >>> orig_stdout = sys.stdout
+    >>> tmp_stdout = StringIO.StringIO()
+    >>> sys.stdout = tmp_stdout
+    >>> execute(["--resolve", "tomorrow"], manipulate_encodings=False)
+    >>> sys.stdout = orig_stdout
+    >>> output = tmp_stdout.getvalue().strip()
+    >>> target = bd.bug_from_uuid(output)
+    >>> print target.summary
     tomorrow
+    >>> print target.severity
+    target
+
     >>> execute(["a", "none"], manipulate_encodings=False)
     >>> execute(["a"], manipulate_encodings=False)
     No target assigned.
@@ -44,52 +56,109 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==True})
                              
-    if len(args) not in (1, 2):
-        if not (options.list == True and len(args) == 0):
-            raise cmdutil.UsageError
+    if (options.resolve == False and len(args) not in (1, 2)) \
+            or (options.resolve == True and len(args) not in (0, 1)):
+            raise cmdutil.UsageError('Incorrect number of arguments.')
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
-    if options.list:
-        ts = set([bd.bug_from_uuid(bug).target for bug in bd.uuids()])
-        for target in sorted(ts):
-            if target and isinstance(target,str):
-                print target
+    if options.resolve == True:
+        if len(args) == 0:
+            summary = None
+        else:
+            summary = args[0]
+        bug = bug_from_target_summary(bd, summary)
+        if bug == None:
+            print 'No target assigned.'
+        else:
+            print bug.uuid
         return
     bug = cmdutil.bug_from_id(bd, args[0])
     if len(args) == 1:
-        if bug.target is None:
+        target = bug_target(bd, bug)
+        if target is None:
             print "No target assigned."
         else:
-            print bug.target
+            print target.summary
     else:
-        assert len(args) == 2
         if args[1] == "none":
-            bug.target = None
+            target = remove_target(bd, bug)
         else:
-            bug.target = args[1]
+            target = add_target(bd, bug, args[1])
 
 def get_parser():
-    parser = cmdutil.CmdOptionParser("be target BUG-ID [TARGET]\nor:    be target --list")
-    parser.add_option("-l", "--list", action="store_true", dest="list",
-                      help="List all available targets and exit")
+    parser = cmdutil.CmdOptionParser("be target BUG-ID [TARGET]\nor:    be target --resolve [TARGET]")
+    parser.add_option("-r", "--resolve", action="store_true", dest="resolve",
+                      help="Print the UUID for the target bug whose summary matches TARGET.  If TARGET is not given, print the UUID of the current bugdir target.  If that is not set, don't print anything.",
+                      default=False)
     return parser
 
 longhelp="""
-Show or change a bug's target for fixing.  
+Assorted bug target manipulations and queries.
 
-If no target is specified, the current value is printed.  If a target
-is specified, it will be assigned to the bug.
+If no target is specified, the bug's current target is printed.  If
+TARGET is specified, it will be assigned to the bug, creating a new
+target bug if necessary.
 
-Targets are freeform; any text may be specified.  They will generally be
-milestone names or release numbers.
+Targets are free-form; any text may be specified.  They will generally
+be milestone names or release numbers.  The value "none" can be used
+to unset the target.
 
-The value "none" can be used to unset the target.
+In the alternative `be target --resolve TARGET` form, print the UUID
+of the target-bug with summary TARGET.  If target is not given, return
+use the bugdir's current target (see `be set`).
 
-In the alternative `be target --list` form print a list of all
-currently specified targets.  Note that bug status
-(i.e. opened/closed) is ignored.  If you want to list all bugs
-matching a current target, see `be list --target TARGET'.
+If you want to list all bugs blocking the current target, try
+  $ be depend --status -closed,fixed,wontfix --severity -target \
+    $(be target --resolve)
+
+If you want to set the current bugdir target by summary (rather than
+by UUID), try
+  $ be set target $(be target --resolve SUMMARY)
 """
 
 def help():
     return get_parser().help_str() + longhelp
+
+def bug_from_target_summary(bugdir, summary=None):
+    if summary == None:
+        if bugdir.target == None:
+            return None
+        else:
+            return bugdir.bug_from_uuid(bugdir.target)
+    matched = []
+    for uuid in bugdir.uuids():
+        bug = bugdir.bug_from_uuid(uuid)
+        if bug.severity == 'target' and bug.summary == summary:
+            matched.append(bug)
+    if len(matched) == 0:
+        return None
+    if len(matched) > 1:
+        raise Exception('Several targets with same summary:  %s'
+                        % '\n  '.join([bug.uuid for bug in matched]))
+    return matched[0]
+
+def bug_target(bugdir, bug):
+    matched = []
+    for blocked in depend.get_blocks(bugdir, bug):
+        if blocked.severity == 'target':
+            matched.append(blocked)
+    if len(matched) == 0:
+        return None
+    if len(matched) > 1:
+        raise Exception('This bug (%s) blocks several targets:  %s'
+                        % (bug.uuid,
+                           '\n  '.join([b.uuid for b in matched])))
+    return matched[0]
+
+def remove_target(bugdir, bug):
+    target = bug_target(bugdir, bug)
+    depend.remove_block(target, bug)
+    return target
+
+def add_target(bugdir, bug, summary):
+    target = bug_from_target_summary(bugdir, summary)
+    if target == None:
+        target = bugdir.new_bug(summary=summary)
+        target.severity = 'target'
+    depend.add_block(target, bug)
+    return target

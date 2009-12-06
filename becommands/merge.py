@@ -51,7 +51,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         Severity : minor
           Status : open
         Assigned : 
-          Target : 
         Reporter : 
          Creator : John Doe <jdoe@example.com>
          Created : ...
@@ -96,7 +95,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         Severity : minor
           Status : closed
         Assigned : 
-          Target : 
         Reporter : 
          Creator : Jane Doe <jdoe@example.com>
          Created : ...

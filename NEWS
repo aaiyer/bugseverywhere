@@ -1,9 +1,35 @@
 December 5, 2009
+ * targets are now a special type of bug (severity 'target'), so you
+   can do all the things you do with normal bugs to them as well
+   (e.g. comment on them, link them into dependency trees, etc.)
+ * new command `be due` to get/set bug due dates.
  * changes to `be diff`
    * exits with an error if required revision control is not possible.
      Previously it printed a message, but exitted with status 0.
    * removed options --new, --removed, --modified, --all
    * added options --uuids, --subscribe
+   Replace:
+     '--new' with '--uuids --subscribe DIR:new'
+     '--removed' with '--uuids --subscribe DIR:rem'
+     '--modified' with '--uuids --subscribe DIR:mod'
+     '--all' with '--uuids'
+ * changes to `be depend`
+   * added options --status, --severity
+ * changes to `be list`
+   * added blacklist capability to --status, --severity, --assigned
+   * removed options --target, --cur-target
+   Replace:
+     'be list --target TARGET' with
+     'be depend --status -closed,fixed,wontfix --severity -target \
+        $(be target --resolve TARGET)'
+     'be list --cur-target' with
+     'be depend --status -closed,fixed,wontfix --severity -target \
+        $(be target --resolve)'
+ * changes to `be target`
+   * added option --resolve
+   * removed option --list
+   Replace:
+     'be target --list' with 'be list --status all --severity target'
  * assorted cleanups and bugfixes
 
 December 4, 2009

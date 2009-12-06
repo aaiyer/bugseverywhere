@@ -56,6 +56,7 @@ class DiskAccessRequired (Exception):
 
 # in order of increasing severity.  (name, description) pairs
 severity_def = (
+  ("target", "The issue is a target or milestone, not a bug."),
   ("wishlist","A feature that could improve usefulness, but not a bug."),
   ("minor","The standard bug level."),
   ("serious","A bug that requires workarounds."),
@@ -172,10 +173,6 @@ class Bug(settings_object.SavedSettingsObject):
     @property
     def active(self):
         return self.status in active_status_values
-
-    @_versioned_property(name="target",
-                         doc="The deadline for fixing this bug")
-    def target(): return {}
 
     @_versioned_property(name="creator",
                          doc="The user who entered the bug into the system")
@@ -295,7 +292,6 @@ class Bug(settings_object.SavedSettingsObject):
                 ('severity', self.severity),
                 ('status', self.status),
                 ('assigned', self.assigned),
-                ('target', self.target),
                 ('reporter', self.reporter),
                 ('creator', self.creator),
                 ('created', timestring),
@@ -352,7 +348,7 @@ class Bug(settings_object.SavedSettingsObject):
         if bug.tag != 'bug':
             raise utility.InvalidXML( \
                 'bug', bug, 'root element must be <comment>')
-        tags=['uuid','short-name','severity','status','assigned','target',
+        tags=['uuid','short-name','severity','status','assigned',
               'reporter', 'creator','created','summary','extra-string']
         self.explicit_attrs = []
         uuid = None
@@ -620,7 +616,6 @@ class Bug(settings_object.SavedSettingsObject):
                     ("Severity", self.severity),
                     ("Status", self.status),
                     ("Assigned", self._setting_attr_string("assigned")),
-                    ("Target", self._setting_attr_string("target")),
                     ("Reporter", self._setting_attr_string("reporter")),
                     ("Creator", self._setting_attr_string("creator")),
                     ("Created", timestring)]
@@ -820,7 +815,6 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
 cmp_uuid = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "uuid")
 cmp_creator = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "creator")
 cmp_assigned = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "assigned")
-cmp_target = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "target")
 cmp_reporter = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "reporter")
 cmp_summary = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "summary")
 cmp_extra_strings = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "extra_strings")
@@ -846,8 +840,7 @@ def cmp_comments(bug_1, bug_2):
 
 DEFAULT_CMP_FULL_CMP_LIST = \
     (cmp_status, cmp_severity, cmp_assigned, cmp_time, cmp_creator,
-     cmp_reporter, cmp_target, cmp_comments, cmp_summary, cmp_uuid,
-     cmp_extra_strings)
+     cmp_reporter, cmp_comments, cmp_summary, cmp_uuid, cmp_extra_strings)
 
 class BugCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):

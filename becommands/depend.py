@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Add/remove bug dependencies"""
-from libbe import cmdutil, bugdir, tree
+from libbe import cmdutil, bugdir, bug, tree
 import os, copy
 __desc__ = __doc__
 
@@ -69,8 +69,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     parser = get_parser()
     options, args = parser.parse_args(args)
     cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True,
-                                         1: lambda bug : bug.active==True})
+                             bugid_args={0: lambda _bug : _bug.active==True,
+                                         1: lambda _bug : _bug.active==True})
 
     if options.repair == True:
         if len(args) > 0:
@@ -82,7 +82,6 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         raise cmdutil.UsageError("Too many arguments.")
     elif len(args) == 2 and options.tree_depth != None:
         raise cmdutil.UsageError("Only one bug id used in tree mode.")
-        
 
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
@@ -95,10 +94,17 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
                              for blockee,blocker in fixed])
         return 0
 
+    allowed_status_values = \
+        cmdutil.select_values(options.status, bug.status_values)
+    allowed_severity_values = \
+        cmdutil.select_values(options.severity, bug.severity_values)
+
     bugA = cmdutil.bug_from_id(bd, args[0])
 
     if options.tree_depth != None:
-        dtree = DependencyTree(bd, bugA, options.tree_depth)
+        dtree = DependencyTree(bd, bugA, options.tree_depth,
+                               allowed_status_values,
+                               allowed_severity_values)
         if len(dtree.blocked_by_tree()) > 0:
             print "%s blocked by:" % bugA.uuid
             for depth,node in dtree.blocked_by_tree().thread():
@@ -122,18 +128,18 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(blocked_by) > 0:
         print "%s blocked by:" % bugA.uuid
         if options.show_status == True:
-            print '\n'.join(["%s\t%s" % (bug.uuid, bug.status)
-                             for bug in blocked_by])
+            print '\n'.join(["%s\t%s" % (_bug.uuid, _bug.status)
+                             for _bug in blocked_by])
         else:
-            print '\n'.join([bug.uuid for bug in blocked_by])
+            print '\n'.join([_bug.uuid for _bug in blocked_by])
     blocks = get_blocks(bd, bugA)
     if len(blocks) > 0:
         print "%s blocks:" % bugA.uuid
         if options.show_status == True:
-            print '\n'.join(["%s\t%s" % (bug.uuid, bug.status)
-                             for bug in blocks])
+            print '\n'.join(["%s\t%s" % (_bug.uuid, _bug.status)
+                             for _bug in blocks])
         else:
-            print '\n'.join([bug.uuid for bug in blocks])
+            print '\n'.join([_bug.uuid for _bug in blocks])
 
 def get_parser():
     parser = cmdutil.CmdOptionParser("be depend BUG-ID [BUG-ID]\nor:    be depend --repair")
@@ -143,6 +149,10 @@ def get_parser():
     parser.add_option("-s", "--show-status", action="store_true",
                       dest="show_status", default=False,
                       help="Show status of blocking bugs")
+    parser.add_option("--status", dest="status", metavar="STATUS",
+                      help="Only show bugs matching the STATUS specifier")
+    parser.add_option("--severity", dest="severity", metavar="SEVERITY",
+                      help="Only show bugs matching the SEVERITY specifier")
     parser.add_option("-t", "--tree-depth", metavar="DEPTH", default=None,
                       type="int", dest="tree_depth",
                       help="Print dependency tree rooted at BUG-ID with DEPTH levels of both blockers and blockees.  Set DEPTH <= 0 to disable the depth limit.")
@@ -157,6 +167,15 @@ If bug B is not specified, just print a list of bugs blocking (A).
 
 To search for bugs blocked by a particular bug, try
   $ be list --extra-strings BLOCKED-BY:<your-bug-uuid>
+
+The --status and --severity options allow you to either blacklist or
+whitelist values, for example
+  $ be list --status open,assigned
+will only follow and print dependencies with open or assigned status.
+You select blacklist mode by starting the list with a minus sign, for
+example
+  $ be list --severity -target
+which will only follow and print dependencies with non-target severity.
 
 In repair mode, add the missing direction to any one-way links.
 
@@ -239,7 +258,7 @@ def get_blocks(bugdir, bug):
 
 def get_blocked_by(bugdir, bug):
     """
-    Return a list of bugs blocking the given bug blocks.
+    Return a list of bugs blocking the given bug.
     """
     blocked_by = []
     for uuid in _get_blocked_by(bug):
@@ -310,10 +329,14 @@ class DependencyTree (object):
     """
     Note: should probably be DependencyDiGraph.
     """
-    def __init__(self, bugdir, root_bug, depth_limit=0):
+    def __init__(self, bugdir, root_bug, depth_limit=0,
+                 allowed_status_values=None,
+                 allowed_severity_values=None):
         self.bugdir = bugdir
         self.root_bug = root_bug
         self.depth_limit = depth_limit
+        self.allowed_status_values = allowed_status_values
+        self.allowed_severity_values = allowed_severity_values
     def _build_tree(self, child_fn):
         root = tree.Tree()
         root.bug = self.root_bug
@@ -324,6 +347,12 @@ class DependencyTree (object):
             if self.depth_limit > 0 and node.depth == self.depth_limit:
                 continue
             for bug in child_fn(self.bugdir, node.bug):
+                if self.allowed_status_values != None \
+                        and not bug.status in self.allowed_status_values:
+                    continue
+                if self.allowed_severity_values != None \
+                        and not bug.severity in self.allowed_severity_values:
+                    continue
                 child = tree.Tree()
                 child.bug = bug
                 child.depth = node.depth+1

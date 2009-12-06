@@ -78,7 +78,6 @@ class Bug (LimitedAttrDict):
               u"severity",
               u"status",
               u"assigned",
-              u"target",
               u"reporter",
               u"creator",
               u"created",
