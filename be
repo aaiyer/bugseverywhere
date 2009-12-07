@@ -22,7 +22,7 @@
 import os
 import sys
 
-from libbe import cmdutil, version
+from libbe import cmdutil, version, pager
 
 __doc__ = cmdutil.help()
 
@@ -36,6 +36,13 @@ parser.add_option("--verbose-version", action="store_true", dest="verbose_versio
                   help="Print verbose version information and exit.")
 parser.add_option("-d", "--dir", dest="dir", metavar="DIR", default=".",
                   help="Run this command on the repository in DIR instead of the current directory.")
+parser.add_option("-p", "--paginate", dest="paginate", default=False,
+                  action='store_true',
+                  help="Pipe all output into less (or if set, $PAGER).")
+parser.add_option("--no-pager", dest="no_pager", default=False,
+                  action='store_true',
+                  help="Do not pipe git output into a pager.")
+
 
 try:
     options,args = parser.parse_args()
@@ -57,10 +64,17 @@ if options.version == True or options.verbose_version == True:
     print version.version(verbose=options.verbose_version)
     sys.exit(0)
 
+paginate = 'auto'
+if options.paginate == True:
+    paginate = 'always'
+if options.no_pager== True:
+    paginate = 'never'
+pager.run_pager(paginate)
+
 try:
     if len(args) == 0:
         raise cmdutil.UsageError, "must supply a command"
-    sys.exit(cmdutil.execute(args[0], args=args[1:], dir=dir))
+    sys.exit(cmdutil.execute(args[0], args=args[1:], dir=options.dir))
 except cmdutil.GetHelp:
     print cmdutil.help(args[0])
     sys.exit(0)
