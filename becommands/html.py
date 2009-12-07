@@ -21,7 +21,8 @@ import xml.sax.saxutils, htmlentitydefs
 
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -50,7 +51,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         raise cmdutil.UsageError, 'Too many arguments.'
 
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     bd.load_all_bugs()
 
     html_gen = HTMLGen(bd, template=options.template, verbose=options.verbose,

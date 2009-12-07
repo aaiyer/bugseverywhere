@@ -10,7 +10,8 @@ To fit into the current framework, your extension module should
 provide the following elements:
   __desc__
     A short string describing the purpose of your plugin
-  execute(args, manipulate_encodings=True, restrict_file_access=False)
+  execute(args, manipulate_encodings=True, restrict_file_access=False,
+          dir=".")
     The entry function for your plugin.  args is everything from
     sys.argv after the name of your plugin (e.g. for the command
     `be open abc', args=['abc']).
@@ -22,6 +23,8 @@ provide the following elements:
       cmdutil.restrict_file_access(bugdir, path)
     before attempting to read or write a file.  See the
     restrict_file_access documentation for details.
+
+    dir is a directory inside the repository of interest.
 
     Note: be supports command-completion.  To avoid raising errors you
     need to deal with possible '--complete' options and arguments.

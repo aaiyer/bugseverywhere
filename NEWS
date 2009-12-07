@@ -1,3 +1,8 @@
+December 6, 2009
+ * be --dir DIR COMMAND now roots the bugdir in DIR _without_ changing
+   directories.
+ * `be init --root DIR` should now be `be --dir DIR init`.
+
 December 5, 2009
  * targets are now a special type of bug (severity 'target'), so you
    can do all the things you do with normal bugs to them as well

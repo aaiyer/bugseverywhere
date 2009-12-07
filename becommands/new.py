@@ -20,7 +20,8 @@ from libbe import cmdutil, bugdir
 import sys
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os, time
     >>> from libbe import bug
@@ -47,7 +48,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     if len(args) != 1:
         raise cmdutil.UsageError("Please supply a summary message")
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     if args[0] == '-': # read summary from stdin
         summary = sys.stdin.readline()
     else:

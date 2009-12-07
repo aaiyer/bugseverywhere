@@ -21,7 +21,8 @@ import os
 import sys
 __desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import time
     >>> bd = bugdir.SimpleBugDir()
@@ -69,7 +70,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
     shortname = args[0]
 
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     bug, parent = cmdutil.bug_comment_from_id(bd, shortname)
 
     if len(args) == 1: # try to launch an editor for comment-body entry

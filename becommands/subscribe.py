@@ -20,7 +20,8 @@ __desc__ = __doc__
 
 TAG="SUBSCRIBE:"
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> bd = bugdir.SimpleBugDir()
     >>> bd.set_sync_with_disk(True)
@@ -73,7 +74,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
         raise cmdutil.UsageError("Too many arguments.")
 
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
 
     subscriber = options.subscriber
     if subscriber == None:

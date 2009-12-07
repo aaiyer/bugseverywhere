@@ -26,7 +26,8 @@ __desc__ = __doc__
 AVAILABLE_CMPS = [fn[4:] for fn in dir(bug) if fn[:4] == 'cmp_']
 AVAILABLE_CMPS.remove("attr") # a cmp_* template.
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False):
+def execute(args, manipulate_encodings=True, restrict_file_access=False,
+            dir="."):
     """
     >>> import os
     >>> bd = bugdir.SimpleBugDir()
@@ -52,7 +53,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False):
             cmp_list.append(eval('bug.cmp_%s' % cmp))
     
     bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings)
+                       manipulate_encodings=manipulate_encodings,
+                       root=dir)
     bd.load_all_bugs()
     # select status
     if options.status != None:
