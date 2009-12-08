@@ -116,6 +116,134 @@ class VCS(object):
     
     The methods _u_*() are utility methods available to the _vcs_*()
     methods.
+
+    Sink to existing root
+    ======================
+
+    Consider the following usage case:
+    You have a bug directory rooted in
+      /path/to/source
+    by which I mean the '.be' directory is at
+      /path/to/source/.be
+    However, you're of in some subdirectory like
+      /path/to/source/GUI/testing
+    and you want to comment on a bug.  Setting sink_to_root=True wen
+    you initialize your BugDir will cause it to search for the '.be'
+    file in the ancestors of the path you passed in as 'root'.
+      /path/to/source/GUI/testing/.be     miss
+      /path/to/source/GUI/.be             miss
+      /path/to/source/.be                 hit!
+    So it still roots itself appropriately without much work for you.
+
+    File-system access
+    ==================
+
+    BugDirs live completely in memory when .sync_with_disk is False.
+    This is the default configuration setup by BugDir(from_disk=False).
+    If .sync_with_disk == True (e.g. BugDir(from_disk=True)), then
+    any changes to the BugDir will be immediately written to disk.
+
+    If you want to change .sync_with_disk, we suggest you use
+    .set_sync_with_disk(), which propogates the new setting through to
+    all bugs/comments/etc. that have been loaded into memory.  If
+    you've been living in memory and want to move to
+    .sync_with_disk==True, but you're not sure if anything has been
+    changed in memory, a call to .save() immediately before the
+    .set_sync_with_disk(True) call is a safe move.
+
+    Regardless of .sync_with_disk, a call to .save() will write out
+    all the contents that the BugDir instance has loaded into memory.
+    If sync_with_disk has been True over the course of all interesting
+    changes, this .save() call will be a waste of time.
+
+    The BugDir will only load information from the file system when it
+    loads new settings/bugs/comments that it doesn't already have in
+    memory and .sync_with_disk == True.
+
+    Allow storage initialization
+    ========================
+
+    This one is for testing purposes.  Setting it to True allows the
+    BugDir to search for an installed Storage backend and initialize
+    it in the root directory.  This is a convenience option for
+    supporting tests of versioning functionality
+    (e.g. .duplicate_bugdir).
+
+    Disable encoding manipulation
+    =============================
+
+    This one is for testing purposed.  You might have non-ASCII
+    Unicode in your bugs, comments, files, etc.  BugDir instances try
+    and support your preferred encoding scheme (e.g. "utf-8") when
+    dealing with stream and file input/output.  For stream output,
+    this involves replacing sys.stdout and sys.stderr
+    (libbe.encode.set_IO_stream_encodings).  However this messes up
+    doctest's output catching.  In order to support doctest tests
+    using BugDirs, set manipulate_encodings=False, and stick to ASCII
+    in your tests.
+
+        if root == None:
+            root = os.getcwd()
+        if sink_to_existing_root == True:
+            self.root = self._find_root(root)
+        else:
+            if not os.path.exists(root):
+                self.root = None
+                raise NoRootEntry(root)
+            self.root = root
+        # get a temporary storage until we've loaded settings
+        self.sync_with_disk = False
+        self.storage = self._guess_storage()
+
+            if assert_new_BugDir == True:
+                if os.path.exists(self.get_path()):
+                    raise AlreadyInitialized, self.get_path()
+            if storage == None:
+                storage = self._guess_storage(allow_storage_init)
+            self.storage = storage
+            self._setup_user_id(self.user_id)
+
+
+    # methods for getting the BugDir situated in the filesystem
+
+    def _find_root(self, path):
+        """
+        Search for an existing bug database dir and it's ancestors and
+        return a BugDir rooted there.  Only called by __init__, and
+        then only if sink_to_existing_root == True.
+        """
+        if not os.path.exists(path):
+            self.root = None
+            raise NoRootEntry(path)
+        versionfile=utility.search_parent_directories(path,
+                                                      os.path.join(".be", "version"))
+        if versionfile != None:
+            beroot = os.path.dirname(versionfile)
+            root = os.path.dirname(beroot)
+            return root
+        else:
+            beroot = utility.search_parent_directories(path, ".be")
+            if beroot == None:
+                self.root = None
+                raise NoBugDir(path)
+            return beroot
+
+    def _guess_storage(self, allow_storage_init=False):
+        """
+        Only called by __init__.
+        """
+        deepdir = self.get_path()
+        if not os.path.exists(deepdir):
+            deepdir = os.path.dirname(deepdir)
+        new_storage = storage.detect_storage(deepdir)
+        install = False
+        if new_storage.name == "None":
+            if allow_storage_init == True:
+                new_storage = storage.installed_storage()
+                new_storage.init(self.root)
+        return new_storage
+
+os.listdir(self.get_path("bugs")):
     """
     name = "None"
     client = "" # command-line tool for _u_invoke_client
@@ -633,6 +761,34 @@ class VCS(object):
             body = None
         f.close()
         return (summary, body)
+
+    def check_disk_version(self):
+        version = self.get_version()
+        if version != upgrade.BUGDIR_DISK_VERSION:
+            upgrade.upgrade(self.root, version)
+
+    def disk_version(self, path=None, use_none_vcs=False,
+                     for_duplicate_bugdir=False):
+        """
+        Requires disk access.
+        """
+        if path == None:
+            path = self.get_path("version")
+        allow_no_vcs = not VCS.path_in_root(path)
+        if allow_no_vcs == True:
+            assert for_duplicate_bugdir == True
+        return self.get(path, allow_no_vcs=allow_no_vcs).rstrip("\n")
+
+    def set_disk_version(self):
+        """
+        Requires disk access.
+        """
+        if self.sync_with_disk == False:
+            raise DiskAccessRequired("set version")
+        self.vcs.mkdir(self.get_path())
+        self.vcs.set_file_contents(self.get_path("version"),
+                                   upgrade.BUGDIR_DISK_VERSION+"\n")
+
         
 
 if libbe.TESTING == True:

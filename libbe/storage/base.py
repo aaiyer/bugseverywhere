@@ -33,11 +33,11 @@ class InvalidRevision (KeyError):
 
 class NotWriteable (NotSupported):
     def __init__(self, msg):
-        NotSupported.__init__('write', msg)
+        NotSupported.__init__(self, 'write', msg)
 
 class NotReadable (NotSupported):
     def __init__(self, msg):
-        NotSupported.__init__('read', msg)
+        NotSupported.__init__(self, 'read', msg)
 
 class EmptyCommit(Exception):
     def __init__(self):
@@ -182,7 +182,11 @@ class Storage (object):
         """Add an entry"""
         if self.is_writeable() == False:
             raise NotWriteable('Cannot add entry to unwriteable storage.')
-        self._add(*args, **kwargs)
+        try:  # Maybe we've already added that id?
+            self.get(id)
+            pass # yup, no need to add another
+        except InvalidID:
+            self._add(*args, **kwargs)
 
     def _add(self, id, parent=None):
         if parent == None:
@@ -435,6 +439,15 @@ if TESTING == True:
         def test_initially_empty(self):
             """New repository should be empty."""
             self.failUnless(len(self.s.children()) == 0, self.s.children())
+
+        def test_add_rooted(self):
+            """
+            Adding entries with the same ID should not increase the number of children.
+            """
+            for i in range(10):
+                self.s.add('some id')
+                s = sorted(self.s.children())
+                self.failUnless(s == ['some id'], s)
 
         def test_add_rooted(self):
             """

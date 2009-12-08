@@ -346,7 +346,7 @@ def change_hook_property(hook, mutable=False, default=None):
     mutable value, and checking for changes whenever the property is
     set (obviously) or retrieved (to check for external changes).  So
     long as you're conscientious about accessing the property after
-    making external modifications, mutability woln't be a problem.
+    making external modifications, mutability won't be a problem.
       t.x.append(5) # external modification
       t.x           # dummy access notices change and triggers hook
     See testChangeHookMutableProperty for an example of the expected

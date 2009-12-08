@@ -19,6 +19,8 @@
 Handle ID creation and parsing.
 """
 
+import os.path
+
 import libbe
 
 if libbe.TESTING == True:
@@ -59,6 +61,7 @@ except ImportError:
 
 
 def _assemble(*args):
+    args = list(args)
     for i,arg in enumerate(args):
         if arg == None:
             args[i] = ''
@@ -71,31 +74,41 @@ def _split(id):
             args[i] = None
     return args
 
+def _is_a_uuid(id):
+    if id.startswith('uuid:'):
+        return True
+    return False
+
+def _uuid_to_id(id):
+    return 'uuid:' + id
+
+def _id_to_uuid(id):
+    return id[len('uuid:'):]
 
 def bugdir_id(bugdir, *args):
-    return _assemble(bugdir.uuid, args)
+    return _assemble(_uuid_to_id(bugdir.uuid), *args)
 
 def bug_id(bug, *args):
-    if bug.bug == None:
-        bugdir_id = None
+    if bug.bugdir == None:
+        bdid = None
     else:
-        bugdir_id = bugdir_id(bug.bugdir)
-    return _assemble(bugdir_id, bug.uuid, args)
+        bdid = bugdir_id(bug.bugdir)
+    return _assemble(bdid, _uuid_to_id(bug.uuid), *args)
 
 def comment_id(comment, *args):
     if comment.bug == None:
-        bug_id = None
+        bid = None
     else:
-        bug_id = bug_id(comment.bug)
-    return _assemble(bug_id, comment.uuid, args)
+        bid = bug_id(comment.bug)
+    return _assemble(bid, _uuid_to_id(comment.uuid), *args)
 
 def parse_id(id):
     args = _split(id)    
-    ret = {'bugdir':args.pop(0)}
+    ret = {'bugdir':_id_to_uuid(args.pop(0))}
     type = 'bugdir'
     for child_name in ['bug', 'comment']:
-        if len(args) > 0 and is_a_uuid(args[0]):
-            ret[child_name] = args.pop(0)
+        if len(args) > 0 and _is_a_uuid(args[0]):
+            ret[child_name] = _id_to_uuid(args.pop(0))
             type = child_name
     ret['type'] = type
     ret['remaining'] = os.path.join(args)

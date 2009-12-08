@@ -67,7 +67,7 @@ class DiskAccessRequired (Exception):
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def loadComments(bug, load_full=False):
+def load_comments(bug, load_full=False):
     """
     Set load_full=True when you want to load the comment completely
     from disk *now*, rather than waiting and lazy loading as required.
@@ -88,7 +88,7 @@ def loadComments(bug, load_full=False):
     bug.add_comments(comments)
     return bug.comment_root
 
-def saveComments(bug):
+def save_comments(bug):
     for comment in bug.comment_root.traverse():
         comment.save()
 
@@ -155,10 +155,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                     doc="An integer version of .date")
 
     def _get_comment_body(self):
-        if self.storage != None and self.storage.readable:
+        if self.storage != None and self.storage.is_readable() \
+                and self.uuid != INVALID_UUID:
             return self.storage.get(self.id("body"),
                 decode=self.content_type.startswith("text/"))
     def _set_comment_body(self, old=None, new=None, force=False):
+        assert self.uuid != INVALID_UUID, self
         if (self.storage != None and self.storage.writeable == True) \
                 or force==True:
             assert new != None, "Can't save empty comment"
@@ -195,17 +197,17 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                          mutable=True)
     def extra_strings(): return {}
 
-    def __init__(self, bug=None, uuid=None, from_disk=False,
+    def __init__(self, bug=None, uuid=None, from_storage=False,
                  in_reply_to=None, body=None):
         """
-        Set from_disk=True to load an old comment.
-        Set from_disk=False to create a new comment.
+        Set from_storage=True to load an old comment.
+        Set from_storage=False to create a new comment.
 
-        The uuid option is required when from_disk==True.
+        The uuid option is required when from_storage==True.
         
         The in_reply_to and body options are only used if
-        from_disk==False (the default).  When from_disk==True, they are
-        loaded from the bug database.
+        from_storage==False (the default).  When from_storage==True,
+        they are loaded from the bug database.
         
         in_reply_to should be the uuid string of the parent comment.
         """
@@ -213,14 +215,22 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         settings_object.SavedSettingsObject.__init__(self)
         self.bug = bug
         self.uuid = uuid 
-        if from_disk == False:
+        if from_storage == False:
             if uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
             self.settings = {}
             self._setup_saved_settings()
+            if self.storage != None and self.storage.is_writeable():
+                self.storage.writeable = False
+                set_writeable = True
+            else:
+                set_writeable = False
             self.time = int(time.time()) # only save to second precision
             self.in_reply_to = in_reply_to
             self.body = body
+            if set_writeable == True:
+                self.storage.writeable = True
+                self.save()
 
     def __cmp__(self, other):
         return cmp_full(self, other)
@@ -586,12 +596,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     def id(self, *args):
         assert len(args) <= 1, str(args)
-        assert args[0] in ["values", "body"], str(args)
-        return libbe.util.id.comment_id(self, args)
+        if len(args) == 1:
+            assert args[0] in ["values", "body"], str(args)
+        return libbe.util.id.comment_id(self, *args)
 
-    def load_settings(self):
-        mf = self.storage.get(self.id("values"), default="\n")
-        self.settings = mapfile.parse(mf)
+    def load_settings(self, settings_mapfile=None):
+        if settings_mapfile == None:
+            settings_mapfile = \
+                self.storage.get(self.id("values"), default="\n")
+        self.settings = mapfile.parse(settings_mapfile)
         self._setup_saved_settings()
 
     def save_settings(self):
@@ -607,11 +620,17 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         happen, so calling this method will just waste time (unless
         something else has been messing with your stored files).
         """
+        if self.uuid == INVALID_UUID:
+            return
         assert self.storage != None, "Can't save without storage"
         assert self.body != None, "Can't save blank comment"
-        self.storage.add(self.id())
-        self.storage.add(self.id('values'))
-        self.storage.add(self.id('body'))
+        if self.bug != None:
+            parent = self.bug.id()
+        else:
+            parent = None
+        self.storage.add(self.id(), parent=parent)
+        self.storage.add(self.id('values'), parent=self.id())
+        self.storage.add(self.id('body'), parent=self.id())
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
 

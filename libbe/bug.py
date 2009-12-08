@@ -177,7 +177,7 @@ class Bug(settings_object.SavedSettingsObject):
 
     def _get_user_id(self):
         if self.bugdir != None:
-            return self.bugdir.get_user_id()
+            return self.bugdir._get_user_id()
         return None
 
     @_versioned_property(name="creator",
@@ -227,7 +227,7 @@ class Bug(settings_object.SavedSettingsObject):
 
     def _get_comment_root(self, load_full=False):
         if self.storage != None and self.storage.is_readable():
-            return comment.loadComments(self, load_full=load_full)
+            return comment.load_comments(self, load_full=load_full)
         else:
             return comment.Comment(self, uuid=comment.INVALID_UUID)
 
@@ -247,18 +247,26 @@ class Bug(settings_object.SavedSettingsObject):
     @doc_property(doc="A revision control system instance.")
     def storage(): return {}
 
-    def __init__(self, bugdir=None, uuid=None, from_disk=False,
+    def __init__(self, bugdir=None, uuid=None, from_storage=False,
                  load_comments=False, summary=None):
         settings_object.SavedSettingsObject.__init__(self)
         self.bugdir = bugdir
         self.uuid = uuid
-        if from_disk == False:
+        if from_storage == False:
             if uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
             self.settings = {}
             self._setup_saved_settings()
+            if self.storage != None and self.storage.is_writeable():
+                self.storage.writeable = False
+                set_writeable = True
+            else:
+                set_writeable = False
             self.time = int(time.time()) # only save to second precision
             self.summary = summary
+            if set_writeable == True:
+                self.storage.writeable = True
+                self.save()
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
@@ -462,8 +470,9 @@ class Bug(settings_object.SavedSettingsObject):
             if c.alt_id != None:
                 uuid_map[c.alt_id] = c
         uuid_map[None] = self.comment_root
+        uuid_map[comment.INVALID_UUID] = self.comment_root
         if default_parent != self.comment_root:
-            assert default_parent.uuid in uuid_map, default_parent
+            assert default_parent.uuid in uuid_map, default_parent.uuid
         for c in comments:
             if c.in_reply_to == None \
                     and default_parent.uuid != comment.INVALID_UUID:
@@ -647,12 +656,15 @@ class Bug(settings_object.SavedSettingsObject):
 
     def id(self, *args):
         assert len(args) <= 1, str(args)
-        assert args[0] in ["values"], str(args)
-        return libbe.util.id.comment_id(self, args)
+        if len(args) == 1:
+            assert args[0] in ["values"], str(args)
+        return libbe.util.id.bug_id(self, *args)
 
-    def load_settings(self):
-        mf = self.storage.get(self.id("values"), default="\n")
-        self.settings = mapfile.parse(mf)
+    def load_settings(self, settings_mapfile=None):
+        if settings_mapfile == None:
+            settings_mapfile = \
+                self.storage.get(self.id("values"), default="\n")
+        self.settings = mapfile.parse(settings_mapfile)
         self._setup_saved_settings()
 
     def save_settings(self):
@@ -661,8 +673,8 @@ class Bug(settings_object.SavedSettingsObject):
 
     def save(self):
         """
-        Save any loaded contents to disk.  Because of lazy loading of
-        comments, this is actually not too inefficient.
+        Save any loaded contents to storage.  Because of lazy loading
+        of comments, this is actually not too inefficient.
         
         However, if self.storage.is_writeable() == True, then any
         changes are automatically written to storage as soon as they
@@ -670,11 +682,15 @@ class Bug(settings_object.SavedSettingsObject):
         something else has been messing with your stored files).
         """
         assert self.storage != None, "Can't save without storage"
-        self.storage.add(self.id())
-        self.storage.add(self.id('values'))
+        if self.bugdir != None:
+            parent = self.bugdir.id()
+        else:
+            parent = None
+        self.storage.add(self.id(), parent=parent)
+        self.storage.add(self.id('values'), parent=self.id())
         self.save_settings()
         if len(self.comment_root) > 0:
-            comment.saveComments(self)
+            comment.save_comments(self)
 
     def load_comments(self, load_full=True):
         if load_full == True:
