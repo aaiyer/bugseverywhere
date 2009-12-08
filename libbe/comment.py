@@ -1,4 +1,3 @@
-# Bugs Everywhere, a distributed bugtracker
 # Copyright (C) 2008-2009 Gianluca Montecchi <gian@grys.it>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
@@ -34,14 +33,15 @@ except ImportError: # look for non-core module
 import xml.sax.saxutils
 
 import libbe
-from beuuid import uuid_gen
-from properties import Property, doc_property, local_property, \
+import libbe.util.id
+from libbe.storage.properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
-import settings_object
-import mapfile
-from tree import Tree
-import utility
+import libbe.storage.settings_object as settings_object
+import libbe.storage.util.mapfile as mapfile
+from libbe.util.tree import Tree
+import libbe.util.utility as utility
+
 if libbe.TESTING == True:
     import doctest
 
@@ -72,17 +72,14 @@ def loadComments(bug, load_full=False):
     Set load_full=True when you want to load the comment completely
     from disk *now*, rather than waiting and lazy loading as required.
     """
-    if bug.sync_with_disk == False:
-        raise DiskAccessRequired("load comments")
-    path = bug.get_path("comments")
-    if not os.path.exists(path):
-        return Comment(bug, uuid=INVALID_UUID)
+    uuids = []
+    for id in bug.storage.children():
+        parsed = libbe.util.id.parse_id(id)
+        if parsed['type'] == 'comment':
+            uuids.append(parsed['comment'])
     comments = []
-    for uuid in os.listdir(path):
-        if uuid.startswith('.'):
-            continue
-        comm = Comment(bug, uuid, from_disk=True)
-        comm.set_sync_with_disk(bug.sync_with_disk)
+    for uuid in uuids:
+        comm = Comment(bug, uuid, from_storage=True)
         if load_full == True:
             comm.load_settings()
             dummy = comm.body # force the body to load
@@ -92,8 +89,6 @@ def loadComments(bug, load_full=False):
     return bug.comment_root
 
 def saveComments(bug):
-    if bug.sync_with_disk == False:
-        raise DiskAccessRequired("save comments")
     for comment in bug.comment_root.traverse():
         comment.save()
 
@@ -154,15 +149,14 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                     doc="An integer version of .date")
 
     def _get_comment_body(self):
-        if self.vcs != None and self.sync_with_disk == True:
-            import vcs
-            binary = not self.content_type.startswith("text/")
-            return self.vcs.get_file_contents(self.get_path("body"), binary=binary)
+        if self.storage != None and self.storage.readable:
+            return self.storage.get(self.id("body"),
+                decode=self.content_type.startswith("text/"))
     def _set_comment_body(self, old=None, new=None, force=False):
-        if (self.vcs != None and self.sync_with_disk == True) or force==True:
+        if (self.storage != None and self.storage.writeable == True) \
+                or force==True:
             assert new != None, "Can't save empty comment"
-            binary = not self.content_type.startswith("text/")
-            self.vcs.set_file_contents(self.get_path("body"), new, binary=binary)
+            self.storage.set(self.id("body"), new)
 
     @Property
     @change_hook_property(hook=_set_comment_body)
@@ -171,15 +165,15 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     @doc_property(doc="The meat of the comment")
     def body(): return {}
 
-    def _get_vcs(self):
-        if hasattr(self.bug, "vcs"):
-            return self.bug.vcs
+    def _get_storage(self):
+        if hasattr(self.bug, "storage"):
+            return self.bug.storage
 
     @Property
-    @cached_property(generator=_get_vcs)
-    @local_property("vcs")
+    @cached_property(generator=_get_storage)
+    @local_property("storage")
     @doc_property(doc="A revision control system instance.")
-    def vcs(): return {}
+    def storage(): return {}
 
     def _extra_strings_check_fn(value):
         return utility.iterable_full_of_strings(value, \
@@ -213,15 +207,14 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         settings_object.SavedSettingsObject.__init__(self)
         self.bug = bug
         self.uuid = uuid 
-        if from_disk == True: 
-            self.sync_with_disk = True
-        else:
-            self.sync_with_disk = False
+        if from_disk == False:
             if uuid == None:
-                self.uuid = uuid_gen()
+                self.uuid = libbe.util.id.uuid_gen()
+            self.settings = {}
+            self._setup_saved_settings()
             self.time = int(time.time()) # only save to second precision
-            if self.vcs != None:
-                self.author = self.vcs.get_user_id()
+            if self.bug != None:
+                self.author = self.bug.get_user_id()
             self.in_reply_to = in_reply_to
             self.body = body
 
@@ -587,53 +580,42 @@ class Comment(Tree, settings_object.SavedSettingsObject):
 
     # methods for saving/loading/acessing settings and properties.
 
-    def get_path(self, *args):
-        dir = os.path.join(self.bug.get_path("comments"), self.uuid)
-        if len(args) == 0:
-            return dir
+    def id(self, *args):
+        assert len(args) <= 1, str(args)
         assert args[0] in ["values", "body"], str(args)
-        return os.path.join(dir, *args)
-
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
+        return libbe.util.id.comment_id(self, args)
 
     def load_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("load settings")
-        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
+        mf = self.storage.get(self.id("values"), default="\n")
+        self.settings = mapfile.parse(mf)
         self._setup_saved_settings()
 
     def save_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("save settings")
-        self.vcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.vcs, path, self._get_saved_settings())
+        mf = mapfile.generate(self._get_saved_settings())
+        self.storage.set(self.id("values"), mf)
 
     def save(self):
         """
-        Save any loaded contents to disk.
+        Save any loaded contents to storage.
         
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
+        However, if self.storage.writeable = True, then any changes
+        are automatically written to storage as soon as they happen,
+        so calling this method will just waste time (unless something
+        else has been messing with your stored files).
         """
-        sync_with_disk = self.sync_with_disk
-        if sync_with_disk == False:
-            self.set_sync_with_disk(True)
+        assert self.storage != None, "Can't save without storage"
         assert self.body != None, "Can't save blank comment"
+        self.storage.add(self.id())
+        self.storage.add(self.id('values'))
+        self.storage.add(self.id('body'))
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
-        if sync_with_disk == False:
-            self.set_sync_with_disk(False)
 
     def remove(self):
-        if self.sync_with_disk == False and self.uuid != INVALID_UUID:
-            raise DiskAccessRequired("remove")
-        for comment in self.traverse():
-            path = comment.get_path()
-            self.vcs.recursive_remove(path)
+        for comment in self:
+            comment.remove()
+        if self.uuid != INVALID_UUID:
+            self.storage.recursive_remove(self.id())
 
     def add_reply(self, reply, allow_time_inversion=False):
         if self.uuid != INVALID_UUID:
@@ -651,9 +633,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         reply = Comment(self.bug, body=body)
         if content_type != None: # set before saving body to decide binary format
             reply.content_type = content_type
-        if self.bug != None:
-            reply.set_sync_with_disk(self.bug.sync_with_disk)
-        if reply.sync_with_disk == True:
+        if reply.storage != None and reply.storage.is_writeable():
             reply.save()
         self.add_reply(reply)
         return reply
