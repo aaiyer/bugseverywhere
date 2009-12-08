@@ -64,12 +64,13 @@ if options.version == True or options.verbose_version == True:
     print version.version(verbose=options.verbose_version)
     sys.exit(0)
 
-paginate = 'auto'
-if options.paginate == True:
-    paginate = 'always'
-if options.no_pager== True:
-    paginate = 'never'
-pager.run_pager(paginate)
+if len(args) > 0 and args[0] not in ['comment', 'commit']:
+    paginate = 'auto'
+    if options.paginate == True:
+        paginate = 'always'
+    if options.no_pager== True:
+        paginate = 'never'
+    pager.run_pager(paginate)
 
 try:
     if len(args) == 0:
