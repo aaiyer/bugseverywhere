@@ -33,14 +33,15 @@ except ImportError: # look for non-core module
 import xml.sax.saxutils
 
 import libbe
-from beuuid import uuid_gen
-from properties import Property, doc_property, local_property, \
+import libbe.util.id
+from libbe.storage.properties import Property, doc_property, local_property, \
     defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
-import settings_object
-import mapfile
-import comment
-import utility
+import libbe.storage.settings_object as settings_object
+import libbe.storage.util.mapfile as mapfile
+import libbe.comment as comment
+import libbe.util.utility as utility
+
 if libbe.TESTING == True:
     import doctest
 
@@ -174,8 +175,14 @@ class Bug(settings_object.SavedSettingsObject):
     def active(self):
         return self.status in active_status_values
 
+    def _get_user_id(self):
+        if self.bugdir != None:
+            return self.bugdir.get_user_id()
+        return None
+
     @_versioned_property(name="creator",
-                         doc="The user who entered the bug into the system")
+                         doc="The user who entered the bug into the system",
+                         generator=_get_user_id)
     def creator(): return {}
 
     @_versioned_property(name="reporter",
@@ -219,7 +226,7 @@ class Bug(settings_object.SavedSettingsObject):
     def summary(): return {}
 
     def _get_comment_root(self, load_full=False):
-        if self.sync_with_disk:
+        if self.storage != None and self.storage.is_readable():
             return comment.loadComments(self, load_full=load_full)
         else:
             return comment.Comment(self, uuid=comment.INVALID_UUID)
@@ -230,30 +237,27 @@ class Bug(settings_object.SavedSettingsObject):
     @doc_property(doc="The trunk of the comment tree.  We use a dummy root comment by default, because there can be several comment threads rooted on the same parent bug.  To simplify comment interaction, we condense these threads into a single thread with a Comment dummy root.")
     def comment_root(): return {}
 
-    def _get_vcs(self):
-        if hasattr(self.bugdir, "vcs"):
-            return self.bugdir.vcs
+    def _get_storage(self):
+        if hasattr(self.bugdir, "storage"):
+            return self.bugdir.storage
 
     @Property
-    @cached_property(generator=_get_vcs)
-    @local_property("vcs")
+    @cached_property(generator=_get_storage)
+    @local_property("storage")
     @doc_property(doc="A revision control system instance.")
-    def vcs(): return {}
+    def storage(): return {}
 
     def __init__(self, bugdir=None, uuid=None, from_disk=False,
                  load_comments=False, summary=None):
         settings_object.SavedSettingsObject.__init__(self)
         self.bugdir = bugdir
         self.uuid = uuid
-        if from_disk == True:
-            self.sync_with_disk = True
-        else:
-            self.sync_with_disk = False
+        if from_disk == False:
             if uuid == None:
-                self.uuid = uuid_gen()
+                self.uuid = libbe.util.id.uuid_gen()
+            self.settings = {}
+            self._setup_saved_settings()
             self.time = int(time.time()) # only save to second precision
-            if self.vcs != None:
-                self.creator = self.vcs.get_user_id()
             self.summary = summary
 
     def __repr__(self):
@@ -641,72 +645,53 @@ class Bug(settings_object.SavedSettingsObject):
 
     # methods for saving/loading/acessing settings and properties.
 
-    def get_path(self, *args):
-        dir = os.path.join(self.bugdir.get_path("bugs"), self.uuid)
-        if len(args) == 0:
-            return dir
-        assert args[0] in ["values", "comments"], str(args)
-        return os.path.join(dir, *args)
-
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
-        for comment in self.comments():
-            comment.set_sync_with_disk(value)
+    def id(self, *args):
+        assert len(args) <= 1, str(args)
+        assert args[0] in ["values"], str(args)
+        return libbe.util.id.comment_id(self, args)
 
     def load_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("load settings")
-        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
+        mf = self.storage.get(self.id("values"), default="\n")
+        self.settings = mapfile.parse(mf)
         self._setup_saved_settings()
 
     def save_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("save settings")
-        assert self.summary != None, "Can't save blank bug"
-        self.vcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.vcs, path, self._get_saved_settings())
+        mf = mapfile.generate(self._get_saved_settings())
+        self.storage.set(self.id("values"), mf)
 
     def save(self):
         """
         Save any loaded contents to disk.  Because of lazy loading of
         comments, this is actually not too inefficient.
         
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
+        However, if self.storage.is_writeable() == True, then any
+        changes are automatically written to storage as soon as they
+        happen, so calling this method will just waste time (unless
+        something else has been messing with your stored files).
         """
-        sync_with_disk = self.sync_with_disk
-        if sync_with_disk == False:
-            self.set_sync_with_disk(True)
+        assert self.storage != None, "Can't save without storage"
+        self.storage.add(self.id())
+        self.storage.add(self.id('values'))
         self.save_settings()
         if len(self.comment_root) > 0:
             comment.saveComments(self)
-        if sync_with_disk == False:
-            self.set_sync_with_disk(False)
 
     def load_comments(self, load_full=True):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("load comments")
         if load_full == True:
             # Force a complete load of the whole comment tree
             self.comment_root = self._get_comment_root(load_full=True)
         else:
             # Setup for fresh lazy-loading.  Clear _comment_root, so
-            # _get_comment_root returns a fresh version.  Turn of
-            # syncing temporarily so we don't write our blank comment
+            # next _get_comment_root returns a fresh version.  Turn of
+            # writing temporarily so we don't write our blank comment
             # tree to disk.
-            self.sync_with_disk = False
+            w = self.storage.writeable 
+            self.storage.writeable = False
             self.comment_root = None
-            self.sync_with_disk = True
+            self.storage.writeable = w
 
     def remove(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("remove")
-        self.comment_root.remove()
-        path = self.get_path()
-        self.vcs.recursive_remove(path)
+        self.storage.recursive_remove(self.id())
     
     # methods for managing comments
 

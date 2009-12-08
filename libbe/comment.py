@@ -120,8 +120,14 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                          doc="Alternate ID for linking imported comments.  Internally comments are linked (via In-reply-to) to the parent's UUID.  However, these UUIDs are generated internally, so Alt-id is provided as a user-controlled linking target.")
     def alt_id(): return {}
 
+    def _get_user_id(self):
+        if self.bug != None:
+            return self.bug._get_user_id()
+        return None
+
     @_versioned_property(name="Author",
-                         doc="The author of the comment")
+                         doc="The author of the comment",
+                         generator=_get_user_id)
     def author(): return {}
 
     @_versioned_property(name="In-reply-to",
@@ -213,8 +219,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             self.settings = {}
             self._setup_saved_settings()
             self.time = int(time.time()) # only save to second precision
-            if self.bug != None:
-                self.author = self.bug.get_user_id()
             self.in_reply_to = in_reply_to
             self.body = body
 
@@ -598,10 +602,10 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         Save any loaded contents to storage.
         
-        However, if self.storage.writeable = True, then any changes
-        are automatically written to storage as soon as they happen,
-        so calling this method will just waste time (unless something
-        else has been messing with your stored files).
+        However, if self.storage.is_writeable() == True, then any
+        changes are automatically written to storage as soon as they
+        happen, so calling this method will just waste time (unless
+        something else has been messing with your stored files).
         """
         assert self.storage != None, "Can't save without storage"
         assert self.body != None, "Can't save blank comment"
