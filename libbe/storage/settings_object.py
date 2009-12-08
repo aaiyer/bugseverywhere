@@ -32,7 +32,6 @@ if libbe.TESTING == True:
     import doctest
     import unittest
 
-
 class _Token (object):
     """
     `Control' value class for properties.  We want values that only
@@ -56,14 +55,15 @@ def prop_save_settings(self, old, new):
     """
     The default action undertaken when a property changes.
     """
-    if self.sync_with_disk==True:
+    if self.storage != None and self.storage.is_writeable():
         self.save_settings()
 
 def prop_load_settings(self):
     """
     The default action undertaken when an UNPRIMED property is accessed.
     """
-    if self.sync_with_disk==True and self._settings_loaded==False:
+    if self.storage != None and self.storage.is_readable() \
+            and self._settings_loaded==False:
         self.load_settings()
     else:
         self._setup_saved_settings(flag_as_loaded=False)
@@ -182,7 +182,7 @@ class SavedSettingsObject(object):
 
     def __init__(self):
         self._settings_loaded = False
-        self.sync_with_disk = False
+        self.storage = None
         self.settings = {}
 
     def load_settings(self):
@@ -410,21 +410,21 @@ if libbe.TESTING == True:
             self.failUnless(t.settings["List-type"] == [],
                             t.settings["List-type"])
             self.failUnless(SAVES == [
-                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'"
+                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'"
                     ], SAVES)
             t.list_type.append(5)
             self.failUnless(SAVES == [
-                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'",
                     ], SAVES)
             self.failUnless(t.settings["List-type"] == [5],
                             t.settings["List-type"])
             self.failUnless(SAVES == [ # the append(5) has not yet been saved
-                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'",
                     ], SAVES)
             self.failUnless(t.list_type == [5], t.list_type)#get triggers saved
 
             self.failUnless(SAVES == [ # now the append(5) has been saved.
-                    "'<class 'libbe.settings_object.EMPTY'>' -> '[]'",
+                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'",
                     "'[]' -> '[5]'"
                     ], SAVES)
 
