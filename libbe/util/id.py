@@ -16,14 +16,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
-Backwards compatibility support for Python 2.4.  Once people give up
-on 2.4 ;), the uuid call should be merged into bugdir.py
+Handle ID creation and parsing.
 """
 
 import libbe
+
 if libbe.TESTING == True:
     import unittest
-
 
 try:
     from uuid import uuid4 # Python >= 2.5
@@ -57,6 +56,50 @@ except ImportError:
             strerror = "%s\nwhile executing %s" % (status, args)
             raise Exception, strerror
         return output.rstrip('\n')
+
+
+def _assemble(*args):
+    for i,arg in enumerate(args):
+        if arg == None:
+            args[i] = ''
+    return '/'.join(args)
+
+def _split(id):
+    args = id.split('/')
+    for i,arg in enumerate(args):
+        if arg == '':
+            args[i] = None
+    return args
+
+
+def bugdir_id(bugdir, *args):
+    return _assemble(bugdir.uuid, args)
+
+def bug_id(bug, *args):
+    if bug.bug == None:
+        bugdir_id = None
+    else:
+        bugdir_id = bugdir_id(bug.bugdir)
+    return _assemble(bugdir_id, bug.uuid, args)
+
+def comment_id(comment, *args):
+    if comment.bug == None:
+        bug_id = None
+    else:
+        bug_id = bug_id(comment.bug)
+    return _assemble(bug_id, comment.uuid, args)
+
+def parse_id(id):
+    args = _split(id)    
+    ret = {'bugdir':args.pop(0)}
+    type = 'bugdir'
+    for child_name in ['bug', 'comment']:
+        if len(args) > 0 and is_a_uuid(args[0]):
+            ret[child_name] = args.pop(0)
+            type = child_name
+    ret['type'] = type
+    ret['remaining'] = os.path.join(args)
+    return ret
 
 if libbe.TESTING == True:
     class UUIDtestCase(unittest.TestCase):
