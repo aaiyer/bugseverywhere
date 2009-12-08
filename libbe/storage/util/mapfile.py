@@ -112,15 +112,5 @@ def parse(contents):
     """
     return yaml.load(contents) or {}
 
-def map_save(vcs, path, map, allow_no_vcs=False):
-    """Save the map as a mapfile to the specified path"""
-    contents = generate(map)
-    vcs.set_file_contents(path, contents, allow_no_vcs, binary=True)
-
-def map_load(vcs, path, allow_no_vcs=False):
-    contents = vcs.get_file_contents(path, allow_no_vcs=allow_no_vcs,
-                                     binary=True)
-    return parse(contents)
-
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()
