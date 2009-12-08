@@ -34,8 +34,8 @@ import xml.sax.saxutils
 
 import libbe
 import libbe.util.id
-from libbe.storage.properties import Property, doc_property, local_property, \
-    defaulting_property, checked_property, cached_property, \
+from libbe.storage.util.properties import Property, doc_property,
+    local_property, defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
 import libbe.storage.settings_object as settings_object
 import libbe.storage.util.mapfile as mapfile
