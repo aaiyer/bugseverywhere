@@ -30,7 +30,7 @@ import libbe
 if libbe.TESTING == True:
     import doctest
 
-def my_import(mod_name):
+def import_by_name(mod_name):
     module = __import__(mod_name)
     components = mod_name.split('.')
     for comp in components[1:]:

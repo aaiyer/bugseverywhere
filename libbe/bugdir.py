@@ -32,7 +32,7 @@ import time
 import libbe
 import libbe.util.encoding as encoding
 import libbe.storage as storage
-from libbe.storage.util.properties import Property, doc_property,
+from libbe.storage.util.properties import Property, doc_property, \
     local_property, defaulting_property, checked_property, \
     fn_checked_property, cached_property, primed_property, \
     change_hook_property, settings_property
