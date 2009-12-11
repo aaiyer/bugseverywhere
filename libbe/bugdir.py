@@ -173,6 +173,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
         list.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)
         self.storage = storage
+        self.id = libbe.util.id.ID(self, 'bugdir')
         if from_storage == True:
             self.load_settings()
         else:
@@ -185,16 +186,10 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     # methods for saving/loading/accessing settings and properties.
 
-    def id(self, *args):
-        assert len(args) <= 1, str(args)
-        if len(args) == 1:
-            assert args[0] in ['settings'], str(args)
-        return libbe.util.id.bugdir_id(self, *args)
-
     def load_settings(self, settings_mapfile=None):
         if settings_mapfile == None:
             settings_mapfile = \
-                self.storage.get(self.id('settings'), default='\n')
+                self.storage.get(self.id.storage('settings'), default='\n')
         self.settings = mapfile.parse(settings_mapfile)
         self._setup_saved_settings()
         self._setup_user_id(self.user_id)
@@ -204,7 +199,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     def save_settings(self):
         mf = mapfile.generate(self._get_saved_settings())
-        self.storage.set(self.id('settings'), mf)
+        self.storage.set(self.id.storage('settings'), mf)
 
     def load_all_bugs(self):
         """
@@ -224,9 +219,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
         happen, so calling this method will just waste time (unless
         something else has been messing with your stored files).
         """
-        self.uuid = 'BD'
-        self.storage.add(self.id())
-        self.storage.add(self.id('settings'), parent=self.id())
+        self.storage.add(self.id.storage())
+        self.storage.add(self.id.storage('settings'), parent=self.id.storage())
         self.save_settings()
         for bug in self:
             bug.save()
@@ -241,10 +235,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
             yield bug.uuid
         if self.storage != None and self.storage.is_readable():
             # and the ones that are still just in storage
-            for id in self.storage.children(self.id()):
-                parsed = libbe.util.id.parse_id(id)
-                if parsed['type'] == 'bug' and parsed['bug'] not in uuids:
-                    yield parsed['bug']
+            child_uuids = libbe.util.id.child_uuids(
+                self.storage.children(self.id.storage()))
+            for id in child_uuids:
+                if id not in uuids:
+                    yield id
 
     def _clear_bugs(self):
         while len(self) > 0:
@@ -258,7 +253,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
         return bg
 
     def new_bug(self, summary=None, _uuid=None):
-        bg = bug.Bug(bugdir=self, uuid=_uuid, summary=summary)
+        bg = bug.Bug(bugdir=self, uuid=_uuid, summary=summary,
+                     from_storage=False)
         self.append(bg)
         self._bug_map_gen()
         return bg
@@ -267,45 +263,6 @@ class BugDir (list, settings_object.SavedSettingsObject):
         self.remove(bug)
         if self.storage.is_writeable():
             bug.remove()
-
-    def bug_shortname(self, bug):
-        """
-        Generate short names from uuids.  Picks the minimum number of
-        characters (>=3) from the beginning of the uuid such that the
-        short names are unique.
-
-        Obviously, as the number of bugs in the database grows, these
-        short names will cease to be unique.  The complete uuid should be
-        used for long term reference.
-        """
-        chars = 3
-        for uuid in self._bug_map.keys():
-            if bug.uuid == uuid:
-                continue
-            while (bug.uuid[:chars] == uuid[:chars]):
-                chars+=1
-        return bug.uuid[:chars]
-
-    def bug_from_shortname(self, shortname):
-        """
-        >>> bd = SimpleBugDir(memory=True)
-        >>> bug_a = bd.bug_from_shortname('a')
-        >>> print type(bug_a)
-        <class 'libbe.bug.Bug'>
-        >>> print bug_a
-        a:om: Bug A
-        >>> bd.cleanup()
-        """
-        matches = []
-        self._bug_map_gen()
-        for uuid in self._bug_map.keys():
-            if uuid.startswith(shortname):
-                matches.append(uuid)
-        if len(matches) > 1:
-            raise MultipleBugMatches(shortname, matches)
-        if len(matches) == 1:
-            return self.bug_from_uuid(matches[0])
-        raise NoBugMatches(shortname)
 
     def bug_from_uuid(self, uuid):
         if not self.has_bug(uuid):
@@ -321,6 +278,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
             if bug_uuid not in self._bug_map:
                 return False
         return True
+
+    # methods for id generation
+
+    def sibling_uuids(self):
+        return []
 
     # methods for managing duplicate BugDirs
 
@@ -344,7 +306,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
             if parsed['type'] == 'bugdir':
                 assert parsed['remaining'] == ['settings'], parsed['remaining']
                 dbd._settings = copy.copy(self._settings)
-                mf = self.storage.get(self.id('settings'), default='\n',
+                mf = self.storage.get(self.id.storage('settings'), default='\n',
                                       revision=revision)
                 dbd.load_settings(mf)
             else:
@@ -357,7 +319,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                     dbd._bug_map[parsed['bug']] = bug
                 if parsed['type'] == 'bug':
                     assert parsed['remaining'] == ['values'], parsed['remaining']
-                    mf = self.storage.get(self.id('values'), default='\n',
+                    mf = self.storage.get(self.id.storage('values'), default='\n',
                                           revision=revision)
                     bug.load_settings(mf)
                 elif parsed['type'] == 'comment':
@@ -366,11 +328,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
                     bug.comment_root = copy.deepcopy(bug.comment_root)
                     comment = bug.comment_from_uuid(parsed['comment'])
                     if parsed['remaining'] == ['values']:
-                        mf = self.storage.get(self.id('values'), default='\n',
+                        mf = self.storage.get(self.id.storage('values'), default='\n',
                                               revision=revision)
                         comment.load_settings(mf)
                     else:
-                        body = self.storage.get(self.id('body'), default='\n',
+                        body = self.storage.get(self.id.storage('body'), default='\n',
                                                 revision=revision)
                         comment.body = body                        
                 else:
@@ -552,6 +514,8 @@ if libbe.TESTING == True:
             self.storage.disconnect() # flush
             self.storage.connect()
             bugdir._clear_bugs()
+            uuids = sorted(bugdir.uuids())
+            self.failUnless(uuids == ['a', 'b'], uuids)
             uuids = sorted([bug.uuid for bug in bugdir])
             self.failUnless(uuids == [], uuids)
             bugdir.load_all_bugs()
@@ -570,6 +534,8 @@ if libbe.TESTING == True:
             uuids = sorted([bug.uuid for bug in bugdir])
             self.failUnless(uuids == ['a', 'b'], uuids)
             bugdir._clear_bugs()
+            uuids = sorted(bugdir.uuids())
+            self.failUnless(uuids == [], uuids)
             uuids = sorted([bug.uuid for bug in bugdir])
             self.failUnless(uuids == [], uuids)
             bugdir.cleanup()

@@ -237,35 +237,25 @@ class Bug(settings_object.SavedSettingsObject):
     @doc_property(doc="The trunk of the comment tree.  We use a dummy root comment by default, because there can be several comment threads rooted on the same parent bug.  To simplify comment interaction, we condense these threads into a single thread with a Comment dummy root.")
     def comment_root(): return {}
 
-    def _get_storage(self):
-        if hasattr(self.bugdir, "storage"):
-            return self.bugdir.storage
-
-    @Property
-    @cached_property(generator=_get_storage)
-    @local_property("storage")
-    @doc_property(doc="A revision control system instance.")
-    def storage(): return {}
-
     def __init__(self, bugdir=None, uuid=None, from_storage=False,
                  load_comments=False, summary=None):
         settings_object.SavedSettingsObject.__init__(self)
         self.bugdir = bugdir
+        self.storage = None
         self.uuid = uuid
+        self.id = libbe.util.id.ID(self, 'bug')
         if from_storage == False:
             if uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
             self.settings = {}
             self._setup_saved_settings()
-            if self.storage != None and self.storage.is_writeable():
-                self.storage.writeable = False
-                set_writeable = True
-            else:
-                set_writeable = False
             self.time = int(time.time()) # only save to second precision
             self.summary = summary
-            if set_writeable == True:
-                self.storage.writeable = True
+            dummy = self.comment_root
+        if self.bugdir != None:
+            self.storage = self.bugdir.storage
+        if from_storage == False:
+            if self.storage != None and self.storage.is_writeable():            
                 self.save()
 
     def __repr__(self):
@@ -287,20 +277,47 @@ class Bug(settings_object.SavedSettingsObject):
             return str(value)
         return value
 
-    def xml(self, indent=0, shortname=None, show_comments=False):
-        if shortname == None:
-            if self.bugdir == None:
-                shortname = self.uuid
+    def string(self, shortlist=False, show_comments=False):
+        if shortlist == False:
+            if self.time == None:
+                timestring = ""
             else:
-                shortname = self.bugdir.bug_shortname(self)
+                htime = utility.handy_time(self.time)
+                timestring = "%s (%s)" % (htime, self.time_string)
+            info = [("ID", self.uuid),
+                    ("Short name", self.id.user()),
+                    ("Severity", self.severity),
+                    ("Status", self.status),
+                    ("Assigned", self._setting_attr_string("assigned")),
+                    ("Reporter", self._setting_attr_string("reporter")),
+                    ("Creator", self._setting_attr_string("creator")),
+                    ("Created", timestring)]
+            longest_key_len = max([len(k) for k,v in info])
+            infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
+            bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
+        else:
+            statuschar = self.status[0]
+            severitychar = self.severity[0]
+            chars = "%c%c" % (statuschar, severitychar)
+            bugout = "%s:%s: %s" % (self.id.user(),chars,self.summary.rstrip('\n'))
+        
+        if show_comments == True:
+            # take advantage of the string_thread(auto_name_map=True)
+            # SIDE-EFFECT of sorting by comment time.
+            comout = self.comment_root.string_thread(flatten=False)
+            output = bugout + '\n' + comout.rstrip('\n')
+        else :
+            output = bugout
+        return output
 
+    def xml(self, indent=0, show_comments=False):
         if self.time == None:
             timestring = ""
         else:
             timestring = utility.time_to_str(self.time)
 
         info = [('uuid', self.uuid),
-                ('short-name', shortname),
+                ('short-name', self.id.user()),
                 ('severity', self.severity),
                 ('status', self.status),
                 ('assigned', self.assigned),
@@ -315,9 +332,7 @@ class Bug(settings_object.SavedSettingsObject):
         for estr in self.extra_strings:
             lines.append('  <extra-string>%s</extra-string>' % estr)
         if show_comments == True:
-            comout = self.comment_root.xml_thread(indent=indent+2,
-                                                  auto_name_map=True,
-                                                  bug_shortname=shortname)
+            comout = self.comment_root.xml_thread(indent=indent+2)
             if len(comout) > 0:
                 lines.append(comout)
         lines.append('</bug>')
@@ -335,16 +350,16 @@ class Bug(settings_object.SavedSettingsObject):
         >>> commA = bugA.comment_root.new_reply(body='comment A')
         >>> commB = bugA.comment_root.new_reply(body='comment B')
         >>> commC = commA.new_reply(body='comment C')
-        >>> xml = bugA.xml(shortname="bug-1", show_comments=True)
+        >>> xml = bugA.xml(show_comments=True)
         >>> bugB = Bug()
         >>> bugB.from_xml(xml, verbose=True)
-        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
+        >>> bugB.xml(show_comments=True) == xml
         False
         >>> bugB.uuid = bugB.alt_id
         >>> for comm in bugB.comments():
         ...     comm.uuid = comm.alt_id
         ...     comm.alt_id = None
-        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
+        >>> bugB.xml(show_comments=True) == xml
         True
         >>> bugB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
         ['severity', 'status', 'creator', 'created', 'summary']
@@ -414,10 +429,10 @@ class Bug(settings_object.SavedSettingsObject):
         >>> commC.uuid = 'commC'
         >>> commC.in_reply_to = commA.uuid
         >>> bugA.add_comment(commC)
-        >>> print bugA.xml(shortname="bug-1", show_comments=True)  # doctest: +ELLIPSIS
+        >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
         <bug>
           <uuid>0123</uuid>
-          <short-name>bug-1</short-name>
+          <short-name>/012</short-name>
           <severity>minor</severity>
           <status>open</status>
           <creator>Jack</creator>
@@ -425,7 +440,7 @@ class Bug(settings_object.SavedSettingsObject):
           <summary>Need to test Bug.add_comment()</summary>
           <comment>
             <uuid>commA</uuid>
-            <short-name>bug-1:1</short-name>
+            <short-name>/012/commA</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -433,7 +448,7 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
           <comment>
             <uuid>commC</uuid>
-            <short-name>bug-1:2</short-name>
+            <short-name>/012/commC</short-name>
             <in-reply-to>commA</in-reply-to>
             <author></author>
             <date>...</date>
@@ -442,7 +457,7 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
           <comment>
             <uuid>commB</uuid>
-            <short-name>bug-1:3</short-name>
+            <short-name>/012/commB</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -546,7 +561,7 @@ class Bug(settings_object.SavedSettingsObject):
         >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
         <bug>
           <uuid>0123</uuid>
-          <short-name>0123</short-name>
+          <short-name>/012</short-name>
           <severity>minor</severity>
           <status>open</status>
           <creator>John</creator>
@@ -557,7 +572,7 @@ class Bug(settings_object.SavedSettingsObject):
           <extra-string>TAG: very helpful</extra-string>
           <comment>
             <uuid>uuid-commA</uuid>
-            <short-name>0123:1</short-name>
+            <short-name>/012/uuid-commA</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -565,7 +580,7 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
           <comment>
             <uuid>uuid-commB</uuid>
-            <short-name>0123:2</short-name>
+            <short-name>/012/uuid-commB</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -603,6 +618,7 @@ class Bug(settings_object.SavedSettingsObject):
                 if accept_comments == True:
                     o_comm_copy = copy.copy(o_comm)
                     o_comm_copy.bug = self
+                    o_comm_copy.id = libbe.util.id.ID(o_comm_copy, 'comment')
                     self.comment_root.add_reply(o_comm_copy)
                 elif change_exception == True:
                     raise ValueError, \
@@ -613,63 +629,18 @@ class Bug(settings_object.SavedSettingsObject):
                              accept_extra_strings=accept_extra_strings,
                              change_exception=change_exception)
 
-    def string(self, shortlist=False, show_comments=False):
-        if self.bugdir == None:
-            shortname = self.uuid
-        else:
-            shortname = self.bugdir.bug_shortname(self)
-        if shortlist == False:
-            if self.time == None:
-                timestring = ""
-            else:
-                htime = utility.handy_time(self.time)
-                timestring = "%s (%s)" % (htime, self.time_string)
-            info = [("ID", self.uuid),
-                    ("Short name", shortname),
-                    ("Severity", self.severity),
-                    ("Status", self.status),
-                    ("Assigned", self._setting_attr_string("assigned")),
-                    ("Reporter", self._setting_attr_string("reporter")),
-                    ("Creator", self._setting_attr_string("creator")),
-                    ("Created", timestring)]
-            longest_key_len = max([len(k) for k,v in info])
-            infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
-            bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
-        else:
-            statuschar = self.status[0]
-            severitychar = self.severity[0]
-            chars = "%c%c" % (statuschar, severitychar)
-            bugout = "%s:%s: %s" % (shortname,chars,self.summary.rstrip('\n'))
-        
-        if show_comments == True:
-            # take advantage of the string_thread(auto_name_map=True)
-            # SIDE-EFFECT of sorting by comment time.
-            comout = self.comment_root.string_thread(flatten=False,
-                                                     auto_name_map=True,
-                                                     bug_shortname=shortname)
-            output = bugout + '\n' + comout.rstrip('\n')
-        else :
-            output = bugout
-        return output
-
     # methods for saving/loading/acessing settings and properties.
-
-    def id(self, *args):
-        assert len(args) <= 1, str(args)
-        if len(args) == 1:
-            assert args[0] in ["values"], str(args)
-        return libbe.util.id.bug_id(self, *args)
 
     def load_settings(self, settings_mapfile=None):
         if settings_mapfile == None:
             settings_mapfile = \
-                self.storage.get(self.id("values"), default="\n")
+                self.storage.get(self.id.storage("values"), default="\n")
         self.settings = mapfile.parse(settings_mapfile)
         self._setup_saved_settings()
 
     def save_settings(self):
         mf = mapfile.generate(self._get_saved_settings())
-        self.storage.set(self.id("values"), mf)
+        self.storage.set(self.id.storage("values"), mf)
 
     def save(self):
         """
@@ -683,11 +654,11 @@ class Bug(settings_object.SavedSettingsObject):
         """
         assert self.storage != None, "Can't save without storage"
         if self.bugdir != None:
-            parent = self.bugdir.id()
+            parent = self.bugdir.id.storage()
         else:
             parent = None
-        self.storage.add(self.id(), parent=parent)
-        self.storage.add(self.id('values'), parent=self.id())
+        self.storage.add(self.id.storage(), parent=parent)
+        self.storage.add(self.id.storage('values'), parent=self.id.storage())
         self.save_settings()
         if len(self.comment_root) > 0:
             comment.save_comments(self)
@@ -707,9 +678,13 @@ class Bug(settings_object.SavedSettingsObject):
             self.storage.writeable = w
 
     def remove(self):
-        self.storage.recursive_remove(self.id())
+        self.storage.recursive_remove(self.id.storage())
     
     # methods for managing comments
+
+    def uuids(self):
+        for comment in self.comments():
+            yield comment.uuid
 
     def comments(self):
         for comment in self.comment_root.traverse():
@@ -719,20 +694,15 @@ class Bug(settings_object.SavedSettingsObject):
         comm = self.comment_root.new_reply(body=body)
         return comm
 
-    def comment_from_shortname(self, shortname, *args, **kwargs):
-        return self.comment_root.comment_from_shortname(shortname,
-                                                        *args, **kwargs)
-
     def comment_from_uuid(self, uuid, *args, **kwargs):
         return self.comment_root.comment_from_uuid(uuid, *args, **kwargs)
 
-    def comment_shortnames(self, shortname=None):
-        """
-        SIDE-EFFECT : Comment.comment_shortnames will sort the comment
-        tree by comment.time
-        """
-        for id, comment in self.comment_root.comment_shortnames(shortname):
-            yield (id, comment)
+    # methods for id generation
+
+    def sibling_uuids(self):
+        if self.bugdir != None:
+            return self.bugdir.uuids()
+        return []
 
 
 # The general rule for bug sorting is that "more important" bugs are
