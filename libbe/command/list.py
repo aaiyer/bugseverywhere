@@ -21,10 +21,9 @@ import os
 import re
 
 import libbe
-import libbe.command
 import libbe.bug
-import libbe.util.utility
-import libbe.ui.util
+import libbe.command
+import libbe.command.util
 
 # get a list of * for cmp_*() comparing two bugs. 
 AVAILABLE_CMPS = [fn[4:] for fn in dir(libbe.bug) if fn[:4] == 'cmp_']
@@ -78,30 +77,30 @@ class List (libbe.command.Command):
                     help='Only show bugs matching the STATUS specifier',
                     arg=libbe.command.Argument(
                         name='status', metavar='STATUS', default='active',
-                        completion_callback=libbe.ui.util.complete_status)),
+                        completion_callback=libbe.command.util.complete_status)),
                 libbe.command.Option(name='severity',
                     help='Only show bugs matching the SEVERITY specifier',
                     arg=libbe.command.Argument(
                         name='severity', metavar='SEVERITY', default='all',
-                        completion_callback=libbe.ui.util.complete_severity)),
+                        completion_callback=libbe.command.util.complete_severity)),
                 libbe.command.Option(name='assigned', short_name='a',
                     help='Only show bugs matching ASSIGNED',
                     arg=libbe.command.Argument(
                         name='assigned', metavar='ASSIGNED', default='all',
-                        completion_callback=libbe.ui.util.complete_assigned)),
+                        completion_callback=libbe.command.util.complete_assigned)),
                 libbe.command.Option(name='extra-strings', short_name='e',
                     help='Only show bugs matching STRINGS, e.g. --extra-strings'
                          ' TAG:working,TAG:xml',
                     arg=libbe.command.Argument(
                         name='extra-strings', metavar='STRINGS', default=None,
-                        completion_callback=libbe.ui.util.complete_extra_strings)),
+                        completion_callback=libbe.command.util.complete_extra_strings)),
                 libbe.command.Option(name='sort', short_name='S',
                     help='Adjust bug-sort criteria with comma-separated list '
                          'SORT.  e.g. "--sort creator,time".  '
                          'Available criteria: %s' % ','.join(AVAILABLE_CMPS),
                     arg=libbe.command.Argument(
                         name='sort', metavar='SORT', default=None,
-                        completion_callback=libbe.ui.util.Completer(AVAILABLE_CMPS))),
+                        completion_callback=libbe.command.util.Completer(AVAILABLE_CMPS))),
                 libbe.command.Option(name='uuids', short_name='u',
                     help='Only print the bug UUIDS'),
                 libbe.command.Option(name='xml', short_name='x',
@@ -165,7 +164,7 @@ class List (libbe.command.Command):
         elif params['status'] == 'inactive':
             status = list(libbe.bug.inactive_status_values)
         else:
-            status = libbe.ui.util.select_values(
+            status = libbe.command.util.select_values(
                 params['status'], libbe.bug.status_values)
         # select severity
         if params['severity'] == 'all':
@@ -174,7 +173,7 @@ class List (libbe.command.Command):
             serious = libbe.bug.severity_values.index('serious')
             severity.append(list(libbe.bug.severity_values[serious:]))
         else:
-            severity = libbe.ui.util.select_values(
+            severity = libbe.command.util.select_values(
                 params['severity'], bug.severity_values)
         # select assigned
         if params['assigned'] == "all":
@@ -185,7 +184,7 @@ class List (libbe.command.Command):
                 if bug.assigned != None \
                         and not bug.assigned in possible_assignees:
                     possible_assignees.append(bug.assigned)
-            assigned = libbe.ui.util.select_values(
+            assigned = libbe.command.util.select_values(
                 params['assigned'], possible_assignees)
         for i in range(len(assigned)):
             if assigned[i] == '-':

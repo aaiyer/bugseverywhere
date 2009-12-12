@@ -5,7 +5,6 @@ import sys
 
 import libbe
 import libbe.util.plugin
-import libbe.ui.util.repo
 
 class UserError(Exception):
     pass
