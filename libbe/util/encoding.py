@@ -43,6 +43,15 @@ def get_encoding():
         # Python 2.3 on windows doesn't know about 'XYZ' alias for 'cpXYZ'
     return encoding
 
+def get_input_encoding():
+    return get_encoding()
+
+def get_output_encoding():
+    return get_encoding():
+
+def get_filesystem_encoding():
+    return get_encoding()
+
 def known_encoding(encoding):
     """
     >>> known_encoding("highly-unlikely-encoding")
@@ -55,33 +64,6 @@ def known_encoding(encoding):
         return True
     except LookupError:
         return False
-
-def set_IO_stream_encodings(encoding):
-    sys.stdin = codecs.getreader(encoding)(sys.__stdin__)
-    sys.stdout = codecs.getwriter(encoding)(sys.__stdout__)
-    sys.stderr = codecs.getwriter(encoding)(sys.__stderr__)
-
-
-    def _guess_encoding(self):
-        return encoding.get_encoding()
-    def _check_encoding(value):
-        if value != None:
-            return encoding.known_encoding(value)
-    def _setup_encoding(self, new_encoding):
-        # change hook called before generator.
-        if new_encoding not in [None, settings_object.EMPTY]:
-            if self._manipulate_encodings == True:
-                encoding.set_IO_stream_encodings(new_encoding)
-    def _set_encoding(self, old_encoding, new_encoding):
-        self._setup_encoding(new_encoding)
-        self._prop_save_settings(old_encoding, new_encoding)
-
-    @_versioned_property(name="encoding",
-                         doc="""The default input/output encoding to use (e.g. "utf-8").""",
-                         change_hook=_set_encoding,
-                         generator=_guess_encoding,
-                         check_fn=_check_encoding)
-    def encoding(): return {}
 
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()

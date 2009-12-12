@@ -207,11 +207,11 @@ class VCS(object):
     # methods for getting the BugDir situated in the filesystem
 
     def _find_root(self, path):
-        """
+        '''
         Search for an existing bug database dir and it's ancestors and
         return a BugDir rooted there.  Only called by __init__, and
         then only if sink_to_existing_root == True.
-        """
+        '''
         if not os.path.exists(path):
             self.root = None
             raise NoRootEntry(path)
@@ -229,9 +229,9 @@ class VCS(object):
             return beroot
 
     def _guess_storage(self, allow_storage_init=False):
-        """
+        '''
         Only called by __init__.
-        """
+        '''
         deepdir = self.get_path()
         if not os.path.exists(deepdir):
             deepdir = os.path.dirname(deepdir)

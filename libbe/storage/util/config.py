@@ -22,16 +22,15 @@ Create, save, and load the per-user config file at path().
 
 import ConfigParser
 import codecs
-import locale
 import os.path
-import sys
 
 import libbe
+import libbe.util.encoding
 if libbe.TESTING == True:
     import doctest
 
 
-default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
+default_encoding = libbe.util.encoding.get_filesystem_encoding()
 
 def path():
     """Return the path to the per-user config file"""
