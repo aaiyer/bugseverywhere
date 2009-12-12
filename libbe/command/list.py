@@ -16,184 +16,208 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""List bugs"""
-from libbe import cmdutil, bugdir, bug
+
 import os
 import re
-__desc__ = __doc__
+
+import libbe
+import libbe.command
+import libbe.bug
+import libbe.util.utility
+import libbe.ui.util
 
 # get a list of * for cmp_*() comparing two bugs. 
-AVAILABLE_CMPS = [fn[4:] for fn in dir(bug) if fn[:4] == 'cmp_']
-AVAILABLE_CMPS.remove("attr") # a cmp_* template.
+AVAILABLE_CMPS = [fn[4:] for fn in dir(libbe.bug) if fn[:4] == 'cmp_']
+AVAILABLE_CMPS.remove('attr') # a cmp_* template.
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> execute([], manipulate_encodings=False)
-    a:om: Bug A
-    >>> execute(["--status", "closed"], manipulate_encodings=False)
-    b:cm: Bug B
-    >>> bd.cleanup()
-    """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    complete(options, args, parser)    
-    if len(args) > 0:
-        raise cmdutil.UsageError("Too many arguments.")
-    cmp_list = []
-    if options.sort_by != None:
-        for cmp in options.sort_by.split(','):
-            if cmp not in AVAILABLE_CMPS:
-                raise cmdutil.UserError(
-                    "Invalid sort on '%s'.\nValid sorts:\n  %s"
-                    % (cmp, '\n  '.join(AVAILABLE_CMPS)))
-            cmp_list.append(eval('bug.cmp_%s' % cmp))
-    
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bd.load_all_bugs()
-    # select status
-    if options.status != None:
-        if options.status == "all":
-            status = bug.status_values
-        else:
-            status = cmdutil.select_values(options.status, bug.status_values)
-    else:
-        status = []
-        if options.active == True:
-            status.extend(list(bug.active_status_values))
-        if options.unconfirmed == True:
-            status.append("unconfirmed")
-        if options.open == True:
-            status.append("opened")
-        if options.test == True:
-            status.append("test")
-        if status == []: # set the default value
-            status = bug.active_status_values
-    # select severity
-    if options.severity != None:
-        if options.severity == "all":
-            severity = bug.severity_values
-        else:
-            severity = cmdutil.select_values(options.severity,
-                                             bug.severity_values)
-    else:
-        severity = []
-        if options.wishlist == True:
-            severity.extend("wishlist")
-        if options.important == True:
-            serious = bug.severity_values.index("serious")
-            severity.append(list(bug.severity_values[serious:]))
-        if severity == []: # set the default value
-            severity = bug.severity_values
-    # select assigned
-    if options.assigned != None:
-        if options.assigned == "all":
-            assigned = "all"
-        else:
-            possible_assignees = []
-            for _bug in bd:
-                if _bug.assigned != None \
-                        and not _bug.assigned in possible_assignees:
-                    possible_assignees.append(_bug.assigned)
-            assigned = cmdutil.select_values(options.assigned,
-                                             possible_assignees)
-            print 'assigned', assigned
-    else:
-        assigned = []
-        if options.mine == True:
-            assigned.extend('-')
-        if assigned == []: # set the default value
-            assigned = "all"
-    for i in range(len(assigned)):
-        if assigned[i] == '-':
-            assigned[i] = bd.user_id
-    if options.extra_strings != None:
-        extra_string_regexps = [re.compile(x) for x in options.extra_strings.split(',')]
+class Filter (object):
+    def __init__(self, status, severity, assigned, extra_strings_regexps):
+        self.status = status
+        self.severity = severity
+        self.assigned = assigned
+        self.extra_strings_regexps = extra_strings_regexps
 
-    def filter(bug):
-        if status != "all" and not bug.status in status:
+    def __call__(self, bug):
+        if self.status != "all" and not bug.status in self.status:
             return False
-        if severity != "all" and not bug.severity in severity:
+        if self.severity != "all" and not bug.severity in self.severity:
             return False
-        if assigned != "all" and not bug.assigned in assigned:
+        if self.assigned != "all" and not bug.assigned in self.assigned:
             return False
-        if options.extra_strings != None:
-            if len(bug.extra_strings) == 0 and len(extra_string_regexps) > 0:
+        if len(bug.extra_strings) == 0:
+            if len(self.extra_strings_regexps) > 0:
                 return False
+        else:
             for string in bug.extra_strings:
-                for regexp in extra_string_regexps:
+                for regexp in self.extra_strings_regexps:
                     if not regexp.match(string):
                         return False
         return True
 
-    bugs = [b for b in bd if filter(b) ]
-    if len(bugs) == 0 and options.xml == False:
-        print "No matching bugs found"
+class List (libbe.command.Command):
+    """List bugs
+
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir()
+    >>> bd.uuid = '1234abcd'
+    >>> cmd = List()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.run(bd)
+    123/a:om: Bug A
+    >>> cmd.run(bd, {'status':'closed'})
+    123/b:cm: Bug B
+    >>> bd.cleanup()
+    """
+
+    name = 'list'
+
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.options.extend([
+                libbe.command.Option(name='status',
+                    help='Only show bugs matching the STATUS specifier',
+                    arg=libbe.command.Argument(
+                        name='status', metavar='STATUS', default='active',
+                        completion_callback=libbe.ui.util.complete_status)),
+                libbe.command.Option(name='severity',
+                    help='Only show bugs matching the SEVERITY specifier',
+                    arg=libbe.command.Argument(
+                        name='severity', metavar='SEVERITY', default='all',
+                        completion_callback=libbe.ui.util.complete_severity)),
+                libbe.command.Option(name='assigned', short_name='a',
+                    help='Only show bugs matching ASSIGNED',
+                    arg=libbe.command.Argument(
+                        name='assigned', metavar='ASSIGNED', default='all',
+                        completion_callback=libbe.ui.util.complete_assigned)),
+                libbe.command.Option(name='extra-strings', short_name='e',
+                    help='Only show bugs matching STRINGS, e.g. --extra-strings'
+                         ' TAG:working,TAG:xml',
+                    arg=libbe.command.Argument(
+                        name='extra-strings', metavar='STRINGS', default=None,
+                        completion_callback=libbe.ui.util.complete_extra_strings)),
+                libbe.command.Option(name='sort', short_name='S',
+                    help='Adjust bug-sort criteria with comma-separated list '
+                         'SORT.  e.g. "--sort creator,time".  '
+                         'Available criteria: %s' % ','.join(AVAILABLE_CMPS),
+                    arg=libbe.command.Argument(
+                        name='sort', metavar='SORT', default=None,
+                        completion_callback=libbe.ui.util.Completer(AVAILABLE_CMPS))),
+                libbe.command.Option(name='uuids', short_name='u',
+                    help='Only print the bug UUIDS'),
+                libbe.command.Option(name='xml', short_name='x',
+                    help='Dump output in XML format'),
+                ])
+#    parser.add_option("-S", "--sort", metavar="SORT-BY", dest="sort_by",
+#                      help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
+#    # boolean options.  All but uuids and xml are special cases of long forms
+#             ("w", "wishlist", "List bugs with 'wishlist' severity"),
+#             ("i", "important", "List bugs with >= 'serious' severity"),
+#             ("A", "active", "List all active bugs"),
+#             ("U", "unconfirmed", "List unconfirmed bugs"),
+#             ("o", "open", "List open bugs"),
+#             ("T", "test", "List bugs in testing"),
+#             ("m", "mine", "List bugs assigned to you"))
+#    for s in bools:
+#        attr = s[1].replace('-','_')
+#        short = "-%c" % s[0]
+#        long = "--%s" % s[1]
+#        help = s[2]
+#        parser.add_option(short, long, action="store_true",
+#                          dest=attr, help=help, default=False)
+#    return parser
+#                
+#                ])
+
+    def _run(self, bugdir, **params):
+        cmp_list, status, severity, assigned, extra_strings_regexps = \
+            self._parse_params(params)
+        filter = Filter(status, severity, assigned, extra_strings_regexps)
+        bugs = [bugdir.bug_from_uuid(uuid) for uuid in bugdir.uuids()]
+        bugs = [b for b in bugs if filter(b) == True]
+        self.result = bugs
+        if len(bugs) == 0 and params['xml'] == False:
+            print "No matching bugs found"
     
-    def list_bugs(cur_bugs, title=None, just_uuids=False, xml=False):
+        # sort bugs
+        bugs = self._sort_bugs(bugs, cmp_list)
+
+        # print list of bugs
+        if params['uuids'] == True:
+            for bug in bugs:
+                print bug.uuid
+        else:
+            self._list_bugs(bugs, xml=params['xml'])
+
+    def _parse_params(self, params):
+        cmp_list = []
+        if params['sort'] != None:
+            for cmp in params['sort'].sort_by.split(','):
+                if cmp not in AVAILABLE_CMPS:
+                    raise libbe.command.UserError(
+                        "Invalid sort on '%s'.\nValid sorts:\n  %s"
+                    % (cmp, '\n  '.join(AVAILABLE_CMPS)))
+            cmp_list.append(eval('libbe.bug.cmp_%s' % cmp))
+        # select status
+        if params['status'] == 'all':
+            status = libbe.bug.status_values
+        elif params['status'] == 'active':
+            status = list(libbe.bug.active_status_values)
+        elif params['status'] == 'inactive':
+            status = list(libbe.bug.inactive_status_values)
+        else:
+            status = libbe.ui.util.select_values(
+                params['status'], libbe.bug.status_values)
+        # select severity
+        if params['severity'] == 'all':
+            severity = libbe.bug.severity_values
+        elif params['important'] == True:
+            serious = libbe.bug.severity_values.index('serious')
+            severity.append(list(libbe.bug.severity_values[serious:]))
+        else:
+            severity = libbe.ui.util.select_values(
+                params['severity'], bug.severity_values)
+        # select assigned
+        if params['assigned'] == "all":
+            assigned = "all"
+        else:
+            possible_assignees = []
+            for bug in self.bugdir:
+                if bug.assigned != None \
+                        and not bug.assigned in possible_assignees:
+                    possible_assignees.append(bug.assigned)
+            assigned = libbe.ui.util.select_values(
+                params['assigned'], possible_assignees)
+        for i in range(len(assigned)):
+            if assigned[i] == '-':
+                assigned[i] = params['user-id']
+        if params['extra-strings'] == None:
+            extra_strings_regexps = []
+        else:
+            extra_strings_regexps = [re.compile(x)
+                                     for x in params['extra-strings'].split(',')]
+        return (cmp_list, status, severity, assigned, extra_strings_regexps)
+
+    def _sort_bugs(self, bugs, cmp_list=[]):
+        cmp_list.extend(libbe.bug.DEFAULT_CMP_FULL_CMP_LIST)
+        cmp_fn = libbe.bug.BugCompoundComparator(cmp_list=cmp_list)
+        bugs.sort(cmp_fn)
+        return bugs
+
+    def _list_bugs(self, bugs, xml=False):
         if xml == True:
-            print '<?xml version="1.0" encoding="%s" ?>' % bd.encoding
+            print '<?xml version="1.0" encoding="%s" ?>' % self.stdout.encoding
             print "<bugs>"
-        if len(cur_bugs) > 0:
-            if title != None and xml == False:
-                print cmdutil.underlined(title)
-            for bg in cur_bugs:
+        if len(bugs) > 0:
+            for bug in bugs:
                 if xml == True:
-                    print bg.xml(show_comments=True)
-                elif just_uuids:
-                    print bg.uuid
+                    print bug.xml(show_comments=True)
                 else:
-                    print bg.string(shortlist=True)
+                    print bug.string(shortlist=True)
         if xml == True:
             print "</bugs>"
 
-    # sort bugs
-    cmp_list.extend(bug.DEFAULT_CMP_FULL_CMP_LIST)
-    cmp_fn = bug.BugCompoundComparator(cmp_list=cmp_list)
-    bugs.sort(cmp_fn)
-
-    # print list of bugs
-    list_bugs(bugs, just_uuids=options.uuids, xml=options.xml)
-
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be list [options]")
-    parser.add_option("--status", dest="status", metavar="STATUS",
-                      help="Only show bugs matching the STATUS specifier")
-    parser.add_option("--severity", dest="severity", metavar="SEVERITY",
-                      help="Only show bugs matching the SEVERITY specifier")
-    parser.add_option("-a", "--assigned", metavar="ASSIGNED", dest="assigned",
-                      help="List bugs matching ASSIGNED", default=None)
-    parser.add_option("-e", "--extra-strings", metavar="STRINGS", dest="extra_strings",
-                      help="List bugs matching _all_ extra strings in comma-seperated list STRINGS.  e.g. --extra-strings TAG:working,TAG:xml", default=None)
-    parser.add_option("-S", "--sort", metavar="SORT-BY", dest="sort_by",
-                      help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
-    # boolean options.  All but uuids and xml are special cases of long forms
-    bools = (("u", "uuids", "Only print the bug UUIDS"),
-             ("x", "xml", "Dump as XML"),
-             ("w", "wishlist", "List bugs with 'wishlist' severity"),
-             ("i", "important", "List bugs with >= 'serious' severity"),
-             ("A", "active", "List all active bugs"),
-             ("U", "unconfirmed", "List unconfirmed bugs"),
-             ("o", "open", "List open bugs"),
-             ("T", "test", "List bugs in testing"),
-             ("m", "mine", "List bugs assigned to you"))
-    for s in bools:
-        attr = s[1].replace('-','_')
-        short = "-%c" % s[0]
-        long = "--%s" % s[1]
-        help = s[2]
-        parser.add_option(short, long, action="store_true",
-                          dest=attr, help=help, default=False)
-    return parser
-
-
-def help():
-    longhelp="""
+    def _long_help(self):
+        return """
 This command lists bugs.  Normally it prints a short string like
   576:om: Allow attachments
 Where
@@ -224,9 +248,7 @@ assigned
 
 In addition, there are some shortcut options that set boolean flags.
 The boolean options are ignored if the matching string option is used.
-""" % (','.join(bug.status_values),
-       ','.join(bug.severity_values))
-    return get_parser().help_str() + longhelp
+""" % (','.join(bug.status_values), ','.join(bug.severity_values))
 
 def complete(options, args, parser):
     for option, value in cmdutil.option_value_pairs(options, parser):

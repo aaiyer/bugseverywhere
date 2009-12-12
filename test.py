@@ -1,3 +1,5 @@
+# Copyright
+
 """Usage: python test.py [module(s) ...]
 
 When called without optional module names, run the test suites for
@@ -49,14 +51,14 @@ def python_tree(root_path='libbe', root_modname='libbe'):
             f.parent.append(f)
     return tree
 
-def add_module_tests(suite, module_name):
-    mod = import_by_name(module_name)
-    if mod == None:
-        raise KeyError, 'module "%s" not found' % module_name
+def add_module_tests(suite, modname):
+    mod = import_by_name(modname)
     if hasattr(mod, 'suite'):
         s = mod.suite
     else:
         s = unittest.TestLoader().loadTestsFromModule(mod)
+        sdoc = doctest.DocTestSuite(mod)
+        suite.addTest(sdoc)
     suite.addTest(s)
 
 suite = unittest.TestSuite()

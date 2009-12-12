@@ -37,47 +37,10 @@ if libbe.TESTING == True:
     import doctest
 
 
-class UserError(Exception):
-    def __init__(self, msg):
-        Exception.__init__(self, msg)
-
-class UnknownCommand(UserError):
-    def __init__(self, cmd):
-        Exception.__init__(self, "Unknown command '%s'" % cmd)
-        self.cmd = cmd
-
-class UsageError(Exception):
-    pass
-
-class GetHelp(Exception):
-    pass
-
-class GetCompletions(Exception):
-    def __init__(self, completions=[]):
-        msg = "Get allowed completions"
-        Exception.__init__(self, msg)
-        self.completions = completions
 
 def iter_commands():
     for name, module in plugin.iter_plugins("becommands"):
         yield name.replace("_", "-"), module
-
-def get_command(command_name):
-    """Retrieves the module for a user command
-
-    >>> try:
-    ...     get_command("asdf")
-    ... except UnknownCommand, e:
-    ...     print e
-    Unknown command 'asdf'
-    >>> repr(get_command("list")).startswith("<module 'becommands.list' from ")
-    True
-    """
-    cmd = plugin.get_plugin("becommands", command_name.replace("-", "_"))
-    if cmd is None:
-        raise UnknownCommand(command_name)
-    return cmd
-
 
 def execute(cmd, args,
             manipulate_encodings=True, restrict_file_access=False,
@@ -92,37 +55,20 @@ def execute(cmd, args,
         ret = 0
     return ret
 
-def help(cmd=None, parser=None):
-    if cmd != None:
-        return get_command(cmd).help()
-    else:
-        cmdlist = []
-        for name, module in iter_commands():
-            cmdlist.append((name, module.__desc__))
-        longest_cmd_len = max([len(name) for name,desc in cmdlist])
-        ret = ["Bugs Everywhere - Distributed bug tracking",
-               "", "Supported commands"]
-        for name, desc in cmdlist:
-            numExtraSpaces = longest_cmd_len-len(name)
-            ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
-        ret.extend(["", "Run", "  be help [command]", "for more information."])
-        longhelp = "\n".join(ret)
-        if parser == None:
-            return longhelp
-        return parser.help_str() + "\n" + longhelp
+class GetHelp(Exception):
+    pass
 
-def completions(cmd):
-    parser = get_command(cmd).get_parser()
-    longopts = []
-    for opt in parser.option_list:
-        longopts.append(opt.get_opt_string())
-    return longopts
+
+class GetCompletions(Exception):
+    def __init__(self, completions=[]):
+        msg = "Get allowed completions"
+        Exception.__init__(self, msg)
+        self.completions = completions
 
 def raise_get_help(option, opt, value, parser):
     raise GetHelp
 
 def raise_get_completions(option, opt, value, parser):
-    print "got completion arg"
     if hasattr(parser, "command") and parser.command == "be":
         comps = []
         for command, module in iter_commands():
@@ -131,6 +77,14 @@ def raise_get_completions(option, opt, value, parser):
             comps.append(opt.get_opt_string())
         raise GetCompletions(comps)
     raise GetCompletions(completions(sys.argv[1]))
+
+def completions(cmd):
+    parser = get_command(cmd).get_parser()
+    longopts = []
+    for opt in parser.option_list:
+        longopts.append(opt.get_opt_string())
+    return longopts
+
 
 class CmdOptionParser(optparse.OptionParser):
     def __init__(self, usage):
@@ -211,67 +165,6 @@ def complete_path(path):
         comps.extend(glob.glob(comps[0]+"/*"))
     return comps
 
-def underlined(instring):
-    """Produces a version of a string that is underlined with '='
-
-    >>> underlined("Underlined String")
-    'Underlined String\\n================='
-    """
-    
-    return "%s\n%s" % (instring, "="*len(instring))
-
-def select_values(string, possible_values, name="unkown"):
-    """
-    This function allows the user to select values from a list of
-    possible values.  The default is to select all the values:
-
-    >>> select_values(None, ['abc', 'def', 'hij'])
-    ['abc', 'def', 'hij']
-
-    The user selects values with a comma-separated limit_string.
-    Prepending a minus sign to such a list denotes blacklist mode:
-
-    >>> select_values('-abc,hij', ['abc', 'def', 'hij'])
-    ['def']
-
-    Without the leading -, the selection is in whitelist mode:
-
-    >>> select_values('abc,hij', ['abc', 'def', 'hij'])
-    ['abc', 'hij']
-
-    In either case, appropriate errors are raised if on of the
-    user-values is not in the list of possible values.  The name
-    parameter lets you make the error message more clear:
-
-    >>> select_values('-xyz,hij', ['abc', 'def', 'hij'], name="foobar")
-    Traceback (most recent call last):
-      ...
-    UserError: Invalid foobar xyz
-      ['abc', 'def', 'hij']
-    >>> select_values('xyz,hij', ['abc', 'def', 'hij'], name="foobar")
-    Traceback (most recent call last):
-      ...
-    UserError: Invalid foobar xyz
-      ['abc', 'def', 'hij']
-    """
-    possible_values = list(possible_values) # don't alter the original
-    if string == None:
-        pass
-    elif string.startswith('-'):
-        blacklisted_values = set(string[1:].split(','))
-        for value in blacklisted_values:
-            if value not in possible_values:
-                raise UserError('Invalid %s %s\n  %s'
-                                % (name, value, possible_values))
-            possible_values.remove(value)
-    else:
-        whitelisted_values = string.split(',')
-        for value in whitelisted_values:
-            if value not in possible_values:
-                raise UserError('Invalid %s %s\n  %s'
-                                % (name, value, possible_values))
-        possible_values = whitelisted_values
-    return possible_values
 
 def restrict_file_access(bugdir, path):
     """
@@ -351,6 +244,8 @@ def bug_comment_from_id(bdir, id):
         except comment.InvalidShortname, e:
             raise UserError(e.message)
     return (bug, comm)
+
+
 
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()

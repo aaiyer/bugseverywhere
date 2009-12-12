@@ -14,3 +14,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+import base
+
+UserError = base.UserError
+UnkownCommand = base.UnknownCommand
+get_command = base.get_command
+commands = base.commands
+Option = base.Option
+Argument = base.Argument
+Command = base.Command
+
+__all__ = [UserError, UnkownCommand, get_command, commands,
+           Option, Argument, Command]

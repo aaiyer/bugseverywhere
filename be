@@ -43,6 +43,11 @@ parser.add_option("--no-pager", dest="no_pager", default=False,
                   action='store_true',
                   help="Do not pipe git output into a pager.")
 
+#            Option(name='repo', short_name='r',
+#                help='Select BE repository (see `be help repo`) rather than'
+#                'the current directory.',
+#                arg=Argument(name='repo', metavar='REPO', default='.',
+#                             completion_callback=libbe.ui.util.repo.complete)),
 
 try:
     options,args = parser.parse_args()

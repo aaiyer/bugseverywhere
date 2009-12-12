@@ -26,50 +26,42 @@ import os
 import os.path
 import sys
 
-import libbe
-if libbe.TESTING == True:
-    import doctest
 
-def import_by_name(mod_name):
-    module = __import__(mod_name)
-    components = mod_name.split('.')
+_PLUGIN_PATH = os.path.realpath(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(__file__))))
+if _PLUGIN_PATH not in sys.path:
+    sys.path.append(_PLUGIN_PATH)
+
+def import_by_name(modname):
+    """
+    >>> mod = import_by_name('libbe.bugdir')
+    >>> 'BugDir' in dir(mod)
+    True
+    >>> import_by_name('libbe.highly_unlikely')
+    Traceback (most recent call last):
+      ...
+    ImportError: No module named highly_unlikely
+    """
+    module = __import__(modname)
+    components = modname.split('.')
     for comp in components[1:]:
         module = getattr(module, comp)
     return module
 
-def iter_plugins(prefix):
+def modnames(prefix):
     """
-    >>> "list" in [n for n,m in iter_plugins("becommands")]
+    >>> 'list' in [n for n in modnames('libbe.command')]
     True
-    >>> "plugin" in [n for n,m in iter_plugins("libbe")]
+    >>> 'plugin' in [n for n in modnames('libbe.util')]
     True
     """
-    modfiles = os.listdir(os.path.join(plugin_path, prefix))
+    components = prefix.split('.')    
+    modfiles = os.listdir(os.path.join(_PLUGIN_PATH, *components))
     modfiles.sort()
     for modfile in modfiles:
         if modfile.startswith('.'):
             continue # the occasional emacs temporary file
-        if modfile.endswith(".py") and modfile != "__init__.py":
-            yield modfile[:-3], my_import(prefix+"."+modfile[:-3])
-
-
-def get_plugin(prefix, name):
-    """
-    >>> get_plugin("becommands", "asdf") is None
-    True
-    >>> q = repr(get_plugin("becommands", "list"))
-    >>> q.startswith("<module 'becommands.list' from ")
-    True
-    """
-    dirprefix = os.path.join(*prefix.split('.'))
-    command_path = os.path.join(plugin_path, dirprefix, name+".py")
-    if os.path.isfile(command_path):
-        return my_import(prefix + "." + name)
-    return None
-
-plugin_path = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
-if plugin_path not in sys.path:
-    sys.path.append(plugin_path)
-
-if libbe.TESTING == True:
-    suite = doctest.DocTestSuite()
+        if modfile.endswith('.py') and modfile != '__init__.py':
+            yield modfile[:-3]

@@ -147,5 +147,14 @@ def iterable_full_of_strings(value, alternative=None):
             return False
     return True
 
+def underlined(instring):
+    """Produces a version of a string that is underlined with '='
+
+    >>> underlined("Underlined String")
+    'Underlined String\\n================='
+    """
+    
+    return "%s\n%s" % (instring, "="*len(instring))
+
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()
