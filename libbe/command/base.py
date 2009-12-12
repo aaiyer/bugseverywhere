@@ -4,6 +4,7 @@ import optparse
 import sys
 
 import libbe
+import libbe.util.encoding
 import libbe.util.plugin
 
 class UserError(Exception):
@@ -170,9 +171,9 @@ class Command (object):
 
     def _setup_io(self, input_encoding=None, output_encoding=None):
         if input_encoding == None:
-            input_encoding = get_terminal_encoding()
+            input_encoding = libbe.util.get_input_encoding()
         if output_encoding == None:
-            output_encoding = get_terminal_encoding()
+            output_encoding = libbe.util.get_output_encoding()
         self.stdin = codecs.getwriter(input_encoding)(sys.stdin)
         self.stdin.encoding = input_encoding
         self.stdout = codecs.getwriter(output_encoding)(sys.stdout)
