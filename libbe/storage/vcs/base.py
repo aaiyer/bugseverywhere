@@ -755,6 +755,11 @@ os.listdir(self.get_path("bugs")):
     def revision_id(self, index=None):
         if index == None:
             return None
+        try:
+            if int(index) != index:
+                raise InvalidRevision(index)
+        except ValueError:
+            raise InvalidRevision(index)
         revid = self._vcs_revision_id(index)
         if revid == None:
             raise libbe.storage.base.InvalidRevision(index)

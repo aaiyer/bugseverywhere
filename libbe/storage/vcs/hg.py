@@ -100,10 +100,6 @@ class Hg(base.VCS):
         return self._vcs_revision_id(-1)
 
     def _vcs_revision_id(self, index, style='id'):
-        try:
-            index = str(int(index))
-        except ValueError:
-            return None
         args = ['identify', '--rev', str(int(index)), '--%s' % style]
         kwargs = {'expect': (0,255)}
         status,output,error = self._u_invoke_client(*args, **kwargs)
