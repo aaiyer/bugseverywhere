@@ -25,14 +25,15 @@ import os
 import os.path
 import re
 import shutil
-import sys
 import unittest
 
 import libbe
 import libbe.ui.util.user
 import base
+
 if libbe.TESTING == True:
     import doctest
+    import sys
 
 
 def new():
@@ -150,7 +151,12 @@ class Git(base.VCS):
             raise base.CommandError(args, status, stderr=error)
         commits = output.splitlines()
         try:
-            return commits[index]
+            if index > 0:
+                return commits[index-1]
+            elif index < 0:
+                return commits[index]
+            else:
+                return None
         except IndexError:
             return None
 

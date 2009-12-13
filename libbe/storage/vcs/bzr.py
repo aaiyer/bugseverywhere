@@ -26,13 +26,14 @@ import os
 import os.path
 import re
 import shutil
-import sys
-import unittest
 
 import libbe
 import base
+
 if libbe.TESTING == True:
     import doctest
+    import sys
+    import unittest
 
 
 def new():
