@@ -52,27 +52,28 @@ class CmdOptionParser(optparse.OptionParser):
     def _add_option(self, option):
         option.validate()
         self._option_by_name[option.name] = option
-        opt_strings = ['--'+option.name]
-        dest = option.name.replace('-', '_')
+        long_opt = '--%s' % option.name
+        if option.short_name != None:
+            short_opt = '-%s' % option.short_name
         assert '_' not in option.name, \
             'Non-reconstructable option name %s' % option.name
-        if option.short_name != None:
-            opt_strings.append('-'+option.short_name)
+        kwargs = {'dest':option.name.replace('-', '_'),
+                  'help':option.help}
         if option.arg == None: # a callback option
-            opt = optparse.Option(
-                *opt_strings, action='callback', dest=dest,
-                callback=self.callback, help=option.help)
+            kwargs['action'] = 'callback'
+            kwargs['callback'] = self.callback
         else:
-            kwargs = {}
             if option.arg.type == 'bool':
-                action = 'store_true'
+                kwargs['action'] = 'store_true'
             else:
                 kwargs['type'] = option.arg.type
-                action = 'store'
-            opt = optparse.Option(
-                *opt_strings, metavar=option.arg.metavar,
-                 default=option.arg.default, action=action,
-                 dest=dest, help=option.help, **kwargs)
+                kwargs['action'] = 'store'
+            kwargs['metavar'] = option.arg.metavar
+            kwargs['default'] = option.arg.default
+        if option.short_name != None:
+            opt = optparse.Option(short_opt, long_opt, **kwargs)
+        else:
+            opt = optparse.Option(long_opt, **kwargs)
         opt._option = option
         self.add_option(opt)
 
