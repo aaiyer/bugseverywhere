@@ -149,7 +149,7 @@ class Storage (object):
         return self._init()
 
     def _init(self):
-        f = open(self.repo, 'wb')
+        f = open(os.path.join(self.repo, 'repo.pkl'), 'wb')
         root = Entry(id='__ROOT__', directory=True)
         d = {root.id:root}
         pickle.dump(dict((k,v._objects_to_ids()) for k,v in d.items()), f, -1)
@@ -162,7 +162,7 @@ class Storage (object):
         return self._destroy()
 
     def _destroy(self):
-        os.remove(self.repo)
+        os.remove(os.path.join(self.repo, 'repo.pkl'))
 
     def connect(self):
         """Open a connection to the repository."""
@@ -172,7 +172,7 @@ class Storage (object):
 
     def _connect(self):
         try:
-            f = open(self.repo, 'rb')
+            f = open(os.path.join(self.repo, 'repo.pkl'), 'rb')
         except IOError:
             raise ConnectionError(self)
         d = pickle.load(f)
@@ -183,7 +183,7 @@ class Storage (object):
         """Close the connection to the repository."""
         if self.is_writeable() == False:
             return
-        f = open(self.repo, 'wb')
+        f = open(os.path.join(self.repo, 'repo.pkl'), 'wb')
         pickle.dump(dict((k,v._objects_to_ids())
                          for k,v in self._data.items()), f, -1)
         f.close()
@@ -299,7 +299,7 @@ class VersionedStorage (Storage):
         self.versioned = True
 
     def _init(self):
-        f = open(self.repo, 'wb')
+        f = open(os.path.join(self.repo, 'repo.pkl'), 'wb')
         root = Entry(id='__ROOT__', directory=True)
         summary = Entry(id='__COMMIT__SUMMARY__', value='Initial commit')
         body = Entry(id='__COMMIT__BODY__')
@@ -310,7 +310,7 @@ class VersionedStorage (Storage):
 
     def _connect(self):
         try:
-            f = open(self.repo, 'rb')
+            f = open(os.path.join(self.repo, 'repo.pkl'), 'rb')
         except IOError:
             raise ConnectionError(self)
         d = pickle.load(f)
@@ -322,7 +322,7 @@ class VersionedStorage (Storage):
         """Close the connection to the repository."""
         if self.is_writeable() == False:
             return
-        f = open(self.repo, 'wb')
+        f = open(os.path.join(self.repo, 'repo.pkl'), 'wb')
         pickle.dump([dict((k,v._objects_to_ids())
                           for k,v in t.items()) for t in self._data], f, -1)
         f.close()
@@ -426,7 +426,7 @@ if TESTING == True:
             super(StorageTestCase, self).setUp()
             self.dir = Dir()
             self.dirname = self.dir.path
-            self.s = self.Class(repo=os.path.join(self.dirname, 'repo.pkl'))
+            self.s = self.Class(repo=self.dirname)
             self.assert_failed_connect()
             self.s.init()
             self.s.connect()

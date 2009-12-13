@@ -83,10 +83,17 @@ def installed_vcs():
     return _get_matching_vcs(lambda vcs: vcs.installed())
 
 
-class VCSnotRooted (libbe.storage.base.ConnectionError):
-    def __init__(self):
+class VCSNotRooted (libbe.storage.base.ConnectionError):
+    def __init__(self, vcs):
         msg = 'VCS not rooted'
         libbe.storage.base.ConnectionError.__init__(self, msg)
+        self.vcs = vcs
+
+class VCSUnableToRoot (libbe.storage.base.ConnectionError):
+    def __init__(self, vcs):
+        msg = 'VCS unable to root'
+        libbe.storage.base.ConnectionError.__init__(self, msg)
+        self.vcs = vcs
 
 class InvalidPath (libbe.storage.base.InvalidID):
     def __init__(self, path, root, msg=None):
@@ -589,7 +596,10 @@ os.listdir(self.get_path("bugs")):
         Set the root directory to the path's VCS root.  This is the
         default working directory for future invocations.
         """
-        self.repo = os.path.abspath(self._vcs_root(self.repo))
+        root = self._vcs_root(self.repo)
+        if root == None:
+            raise VCSUnableToRoot(self)
+        self.repo = os.path.abspath(root)
         if os.path.isdir(self.repo) == False:
             self.repo = os.path.dirname(self.repo)
         self.be_dir = os.path.join(
@@ -601,8 +611,8 @@ os.listdir(self.get_path("bugs")):
         Begin versioning the tree based at self.repo.
         Also roots the vcs at path.
         """
+        self._vcs_init(self.repo)
         self.root()
-        self._vcs_init()
         os.mkdir(self.be_dir)
         self._vcs_add(self._u_rel_path(self.be_dir))
         self._cached_path_id.init()
@@ -798,7 +808,7 @@ os.listdir(self.get_path("bugs")):
                 exception = InvalidPath(path, self.repo)
         else:
             use_vcs = False
-            exception = VCSnotRooted
+            exception = VCSNotRooted(self)
         if use_vcs == False and allow_no_vcs==False:
             raise exception
         return use_vcs
@@ -814,7 +824,7 @@ os.listdir(self.get_path("bugs")):
         """
         if root == None:
             if self.repo == None:
-                raise VCSnotRooted
+                raise VCSNotRooted(self)
             root = self.repo
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
@@ -832,7 +842,7 @@ os.listdir(self.get_path("bugs")):
         """
         if root == None:
             if self.repo == None:
-                raise VCSnotRooted
+                raise VCSNotRooted(self)
             root = self.repo
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
@@ -929,6 +939,7 @@ if libbe.TESTING == True:
                 self.s.destroy()
             self.dir.cleanup()
 
+    class VCS_installed_TestCase (VCSTestCase):
         def test_installed(self):
             """
             See if the VCS is installed.
@@ -976,21 +987,23 @@ if libbe.TESTING == True:
 
         def test_gets_existing_user_id(self):
             """Should get the existing user ID."""
-            user_id = self.s.get_user_id()
-            if user_id == None:
-                return
-            name,email = libbe.ui.util.user.parse_user_id(user_id)
-            if email != None:
-                self.failUnless('@' in email, email)
+            if self.s.installed():
+                user_id = self.s.get_user_id()
+                if user_id == None:
+                    return
+                name,email = libbe.ui.util.user.parse_user_id(user_id)
+                if email != None:
+                    self.failUnless('@' in email, email)
 
-    def make_vcs_testcase_subclasses(storage_class, namespace):
-        c = storage_class()
-        if c.versioned == True:
-            libbe.storage.base.make_versioned_storage_testcase_subclasses(
-                storage_class, namespace)
-        else:
-            libbe.storage.base.make_storage_testcase_subclasses(
-                storage_class, namespace)
+    def make_vcs_testcase_subclasses(vcs_class, namespace):
+        c = vcs_class()
+        if c.installed():
+            if c.versioned == True:
+                libbe.storage.base.make_versioned_storage_testcase_subclasses(
+                    vcs_class, namespace)
+            else:
+                libbe.storage.base.make_storage_testcase_subclasses(
+                    vcs_class, namespace)
 
         if namespace != sys.modules[__name__]:
             # Make VCSTestCase subclasses for vcs_class in the namespace.
