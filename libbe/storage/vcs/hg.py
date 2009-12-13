@@ -62,12 +62,7 @@ class Hg(base.VCS):
         return False
 
     def _vcs_root(self, path):
-        status,output,error = self._u_invoke_client(
-            'root', expect=(0,255), cwd=path)
-        if status == 255:
-            # "abort: There is no Mercurial repository here
-            #  (.hg not found)!"
-            return None
+        status,output,error = self._u_invoke_client('root', cwd=path)
         return output.rstrip('\n')
 
     def _vcs_init(self, path):

@@ -447,6 +447,7 @@ os.listdir(self.get_path("bugs")):
         self.versioned = False
         self.verbose_invoke = False
         self._cached_path_id = CachedPathID()
+        self._rooted = False
 
     def _vcs_version(self):
         """
@@ -597,15 +598,16 @@ os.listdir(self.get_path("bugs")):
         Set the root directory to the path's VCS root.  This is the
         default working directory for future invocations.
         """
-        root = self._vcs_root(self.repo)
-        if root == None:
+        if self._detect(self.repo) == False:
             raise VCSUnableToRoot(self)
+        root = self._vcs_root(self.repo)
         self.repo = os.path.abspath(root)
         if os.path.isdir(self.repo) == False:
             self.repo = os.path.dirname(self.repo)
         self.be_dir = os.path.join(
             self.repo, self._cached_path_id._spacer_dirs[0])
         self._cached_path_id.root(self.repo)
+        self._rooted == True
 
     def _init(self):
         """
@@ -625,7 +627,8 @@ os.listdir(self.get_path("bugs")):
             shutil.rmtree(self.be_dir)
 
     def _connect(self):
-        self.root()
+        if self._rooted == False:
+            self.root()
         self._cached_path_id.connect()
         self.check_disk_version()
 
@@ -796,45 +799,6 @@ os.listdir(self.get_path("bugs")):
         """
         return search_parent_directories(path, filename)
 
-    def _use_vcs(self, path, allow_no_vcs):
-        """
-        Try and decide if _vcs_add/update/mkdir/etc calls will
-        succeed.  Returns True is we think the vcs_call would
-        succeeed, and False otherwise.
-        """
-        use_vcs = True
-        exception = None
-        if self.repo != None:
-            if self.path_in_root(path) == False:
-                use_vcs = False
-                exception = InvalidPath(path, self.repo)
-        else:
-            use_vcs = False
-            exception = VCSNotRooted(self)
-        if use_vcs == False and allow_no_vcs==False:
-            raise exception
-        return use_vcs
-
-    def path_in_root(self, path, root=None):
-        """
-        Return the relative path to path from root.
-        >>> vcs = new()
-        >>> vcs.path_in_root("/a.b/c/.be", "/a.b/c")
-        True
-        >>> vcs.path_in_root("/a.b/.be", "/a.b/c")
-        False
-        """
-        if root == None:
-            if self.repo == None:
-                raise VCSNotRooted(self)
-            root = self.repo
-        path = os.path.abspath(path)
-        absRoot = os.path.abspath(root)
-        absRootSlashedDir = os.path.join(absRoot,"")
-        if not path.startswith(absRootSlashedDir):
-            return False
-        return True
-
     def _u_rel_path(self, path, root=None):
         """
         Return the relative path to path from root.
@@ -887,24 +851,20 @@ os.listdir(self.get_path("bugs")):
         #if version != upgrade.BUGDIR_DISK_VERSION:
         #    upgrade.upgrade(self.repo, version)
 
-    def disk_version(self, path=None, use_none_vcs=False,
-                     for_duplicate_bugdir=False):
+    def disk_version(self, path=None):
         """
         Requires disk access.
         """
         if path == None:
-            path = self.get_path("version")
-        allow_no_vcs = not VCS.path_in_root(path)
-        if allow_no_vcs == True:
-            assert for_duplicate_bugdir == True
-        return self.get(path, allow_no_vcs=allow_no_vcs).rstrip("\n")
+            path = self.get_path('version')
+        return self.get(path).rstrip('\n')
 
     def set_disk_version(self):
         """
         Requires disk access.
         """
         if self.sync_with_disk == False:
-            raise DiskAccessRequired("set version")
+            raise DiskAccessRequired('set version')
         self.vcs.mkdir(self.get_path())
         #self.vcs.set_file_contents(self.get_path("version"),
         #                           upgrade.BUGDIR_DISK_VERSION+"\n")
