@@ -202,7 +202,8 @@ class CachedPathID (object):
         self.disconnect()
 
     def destroy(self):
-        os.remove(self._cache_path)
+        if os.path.exists(self._cache_path):
+            os.remove(self._cache_path)
 
     def connect(self):
         if not os.path.exists(self._cache_path):
@@ -969,7 +970,7 @@ if libbe.TESTING == True:
                 self.s.destroy()
                 self.failUnless(self.s._detect(self.dirname) == False,
                     'Detected %(name)s VCS before initialising'
-                    % self.Class)
+                    % vars(self.Class))
                 self.s.init()
                 self.s.connect()
 
