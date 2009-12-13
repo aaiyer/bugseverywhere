@@ -72,6 +72,7 @@ class List (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='status',
                     help='Only show bugs matching the STATUS specifier',

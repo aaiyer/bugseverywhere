@@ -37,7 +37,7 @@ import libbe.util.id
 from libbe.storage.util.properties import Property, doc_property, \
     local_property, defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
-import libbe.storage.settings_object as settings_object
+import libbe.storage.util.settings_object as settings_object
 import libbe.storage.util.mapfile as mapfile
 from libbe.util.tree import Tree
 import libbe.util.utility as utility

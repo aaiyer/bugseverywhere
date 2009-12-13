@@ -410,21 +410,21 @@ if libbe.TESTING == True:
             self.failUnless(t.settings["List-type"] == [],
                             t.settings["List-type"])
             self.failUnless(SAVES == [
-                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'"
+                    "'<class 'libbe.storage.util.settings_object.EMPTY'>' -> '[]'"
                     ], SAVES)
             t.list_type.append(5)
             self.failUnless(SAVES == [
-                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'",
+                    "'<class 'libbe.storage.util.settings_object.EMPTY'>' -> '[]'",
                     ], SAVES)
             self.failUnless(t.settings["List-type"] == [5],
                             t.settings["List-type"])
             self.failUnless(SAVES == [ # the append(5) has not yet been saved
-                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'",
+                    "'<class 'libbe.storage.util.settings_object.EMPTY'>' -> '[]'",
                     ], SAVES)
             self.failUnless(t.list_type == [5], t.list_type)#get triggers saved
 
             self.failUnless(SAVES == [ # now the append(5) has been saved.
-                    "'<class 'libbe.storage.settings_object.EMPTY'>' -> '[]'",
+                    "'<class 'libbe.storage.util.settings_object.EMPTY'>' -> '[]'",
                     "'[]' -> '[5]'"
                     ], SAVES)
 

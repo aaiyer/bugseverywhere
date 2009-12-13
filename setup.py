@@ -9,9 +9,9 @@ rev_date = rev_id.split("-")[1]
 setup(
     name='Bugs Everywhere',
     version=rev_date,
-    description='Bugtracker built on distributed revision control',
+    description='Bugtracker supporting distributed revision control',
     url='http://bugseverywhere.org/',
-    packages=['becommands', 'libbe'],
+    packages=['libbe'],
     scripts=['be'],
     data_files=[
         ('share/man/man1', ['doc/be.1']),

@@ -36,7 +36,7 @@ def get_command(command_name):
 
 def commands():
     for modname in libbe.util.plugin.modnames('libbe.command'):
-        if modname != 'base':
+        if modname not in ['base', 'util']:
             yield modname
 
 class CommandInput (object):
@@ -44,28 +44,48 @@ class CommandInput (object):
         self.name = name
         self.help = help
 
-class Option (CommandInput):
-    def __init__(self, option_callback=None, short_name=None, arg=None,
-                 type=None, *args, **kwargs):
-        CommandInput.__init__(self, *args, **kwargs)
-        self.option_callback = option_callback
-        self.short_name = short_name
-        self.arg = arg
-        self.type = type
-        if self.arg != None:
-            assert self.arg.name == self.name, \
-                'Name missmatch: %s != %s' % (self.arg.name, self.name)
-
 class Argument (CommandInput):
-    def __init__(self, metavar=None, default=None, 
+    def __init__(self, metavar=None, default=None, type='string',
                  optional=False, repeatable=False,
                  completion_callback=None, *args, **kwargs):
         CommandInput.__init__(self, *args, **kwargs)
         self.metavar = metavar
         self.default = default
+        self.type = type
         self.optional = optional
         self.repeatable = repeatable
         self.completion_callback = completion_callback
+        if self.metavar == None:
+            self.metavar = self.name.upper()
+
+class Option (CommandInput):
+    def __init__(self, callback=None, short_name=None, arg=None,
+                 *args, **kwargs):
+        CommandInput.__init__(self, *args, **kwargs)
+        self.callback = callback
+        self.short_name = short_name
+        self.arg = arg
+        if self.arg == None and self.callback == None:
+            # use an implicit boolean argument
+            self.arg = Argument(name=self.name, help=self.help,
+                                default=False, type='bool')
+        self.validate()
+
+    def validate(self):
+        if self.arg == None:
+            assert self.callback != None
+            return
+        assert self.callback == None, self.callback
+        assert self.arg.name == self.name, \
+            'Name missmatch: %s != %s' % (self.arg.name, self.name)
+        assert self.arg.optional == False
+        assert self.arg.repeatable == False
+
+    def __str__(self):
+        return '--%s' % self.name
+
+    def __repr__(self):
+        return '<Option %s>' % self.__str__()
 
 class _DummyParser (object):
     def __init__(self, options):
@@ -102,20 +122,18 @@ class OptionFormatter (optparse.IndentedHelpFormatter):
         return ''.join(ret[:-1])
 
 class Command (object):
-    """
+    """One-line command description.
+
     >>> c = Command()
     >>> print c.help()
     usage: be command [options]
     <BLANKLINE>
     Options:
-      -h HELP, --help=HELP  Print a help message
+      -h HELP, --help=HELP  Print a help message.
     <BLANKLINE>
-      --complete=STRING     Print a list of possible completions
+      --complete=STRING     Print a list of possible completions.
     <BLANKLINE>
-      -r REPO, --repo=REPO  Select BE repository (see `be help repo`) rather
-                            thanthe current directory.
-    <BLANKLINE>
-    A detailed help message.
+     A detailed help message.
     """
 
     name = 'command'
@@ -123,15 +141,16 @@ class Command (object):
     def __init__(self, input_encoding=None, output_encoding=None):
         self.status = None
         self.result = None
+        self.requires_bugdir = False
         self.input_encoding = None
         self.output_encoding = None
         self.options = [
             Option(name='help', short_name='h',
-                help='Print a help message',
-                option_callback=self.help),
-            Option(name='complete', type='string',
-                help='Print a list of possible completions',
-                arg=Argument(name='complete', metavar='STRING', optional=True)),
+                help='Print a help message.',
+                callback=self.help),
+            Option(name='complete',
+                help='Print a list of possible completions.',
+                callback=self.complete),
                 ]
         self.args = []
 
@@ -179,28 +198,10 @@ class Command (object):
         self.stdout = codecs.getwriter(output_encoding)(sys.stdout)
         self.stdout.encoding = output_encoding
 
-    def help(self, *args):        
+    def help(self, *args):       
         return '\n\n'.join([self._usage(),
                             self._option_help(),
                             self._long_help()])
-#        if cmd != None:
-#            return get_command(cmd).help()
-#        cmdlist = []
-#        for name in commands():
-#            module = get_command(name)
-#            cmdlist.append((name, module.__desc__))
-#        cmdlist.sort()
-#        longest_cmd_len = max([len(name) for name,desc in cmdlist])
-#        ret = ["Bugs Everywhere - Distributed bug tracking",
-#               "", "Supported commands"]
-#        for name, desc in cmdlist:
-#            numExtraSpaces = longest_cmd_len-len(name)
-#            ret.append("be %s%*s    %s" % (name, numExtraSpaces, "", desc))
-#        ret.extend(["", "Run", "  be help [command]", "for more information."])
-#        longhelp = "\n".join(ret)
-#        if parser == None:
-#            return longhelp
-#        return parser.help_str() + "\n" + longhelp
 
     def _usage(self):
         usage = 'usage: be %s [options]' % self.name
@@ -222,3 +223,14 @@ class Command (object):
 
     def _long_help(self):
         return "A detailed help message."
+
+    def complete(self, argument=None, fragment=None):
+        if argument == None:
+            ret = ['--%s' % o.name for o in self.options]
+            if len(self.args) > 0 and self.args[0].completion_callback != None:
+                ret.extend(self.args[0].completion_callback(self, argument))
+            return ret
+        elif argument.completion_callback != None:
+            # finish a particular argument
+            return argument.completion_callback(self, argument, fragment)
+        return [] # the particular argument doesn't supply completion info

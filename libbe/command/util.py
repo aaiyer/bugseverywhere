@@ -1,18 +1,45 @@
 # Copyright
 
+import glob
+import os.path
+
+import libbe
+import libbe.command
+
 class Completer (object):
     def __init__(self, options):
         self.options = options
     def __call__(self, bugdir, fragment=None):
         return [fragment]
 
-def complete_status(bugdir, fragment=None):
+def complete_command(command, argument, fragment=None):
+    """
+    List possible command completions for fragment.
+
+    command argument is not used.
+    """
+    return list(libbe.command.commands())
+
+def complete_path(command, argument, fragment=None):
+    """
+    List possible path completions for fragment.
+
+    command argument is not used.
+    """
+    if fragment == None:
+        fragment = '.'
+    comps = glob.glob(fragment+'*') + glob.glob(fragment+'/*')
+    if len(comps) == 1 and os.path.isdir(comps[0]):
+        comps.extend(glob.glob(comps[0]+'/*'))
+    return comps
+    
+def complete_status(command, argument, fragment=None):
     return [fragment]
-def complete_severity(bugdir, fragment=None):
+def complete_severity(command, argument, fragment=None):
     return [fragment]
-def complete_assigned(bugdir, fragment=None):
+def complete_assigned(command, argument, fragment=None):
     return [fragment]
-def complete_extra_strings(bugdir, fragment=None):
+def complete_extra_strings(command, argument, fragment=None):
     return [fragment]
 
 def select_values(string, possible_values, name="unkown"):

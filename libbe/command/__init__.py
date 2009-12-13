@@ -18,12 +18,12 @@
 import base
 
 UserError = base.UserError
-UnkownCommand = base.UnknownCommand
+UnknownCommand = base.UnknownCommand
 get_command = base.get_command
 commands = base.commands
 Option = base.Option
 Argument = base.Argument
 Command = base.Command
 
-__all__ = [UserError, UnkownCommand, get_command, commands,
+__all__ = [UserError, UnknownCommand, get_command, commands,
            Option, Argument, Command]
