@@ -130,15 +130,9 @@ class Git(base.VCS):
                        'nothing added to commit']
             if self._u_any_in_string(strings, output) == True:
                 raise base.EmptyCommit()
-        revision = None
-        revline = re.compile('(.*) (.*)[:\]] (.*)')
-        match = revline.search(output)
-        assert match != None, output+error
-        assert len(match.groups()) == 3
-        revision = match.groups()[1]
         full_revision = self._vcs_revision_id(-1)
-        assert full_revision.startswith(revision), \
-            'Mismatched revisions:\n%s\n%s' % (revision, full_revision)
+        assert full_revision[:7] in output, \
+            'Mismatched revisions:\n%s\n%s' % (full_revision, output)
         return full_revision
 
     def _vcs_revision_id(self, index):
