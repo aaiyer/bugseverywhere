@@ -57,8 +57,11 @@ def add_module_tests(suite, modname):
         s = mod.suite
     else:
         s = unittest.TestLoader().loadTestsFromModule(mod)
-        sdoc = doctest.DocTestSuite(mod)
-        suite.addTest(sdoc)
+        try:
+            sdoc = doctest.DocTestSuite(mod)
+            suite.addTest(sdoc)
+        except ValueError:
+            pass
     suite.addTest(s)
 
 suite = unittest.TestSuite()

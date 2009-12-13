@@ -594,9 +594,11 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             parent = self.bug.id.storage()
         else:
             parent = None
-        self.storage.add(self.id.storage(), parent=parent)
-        self.storage.add(self.id.storage('values'), parent=self.id.storage())
-        self.storage.add(self.id.storage('body'), parent=self.id.storage())
+        self.storage.add(self.id.storage(), parent=parent, directory=True)
+        self.storage.add(self.id.storage('values'), parent=self.id.storage(),
+                         directory=False)
+        self.storage.add(self.id.storage('body'), parent=self.id.storage(),
+                         directory=False)
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
 

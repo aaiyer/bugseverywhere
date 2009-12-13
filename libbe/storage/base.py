@@ -31,6 +31,12 @@ class InvalidID (KeyError):
 class InvalidRevision (KeyError):
     pass
 
+class InvalidDirectory (Exception):
+    pass
+
+class DirectoryNotEmpty (InvalidDirectory):
+    pass
+
 class NotWriteable (NotSupported):
     def __init__(self, msg):
         NotSupported.__init__(self, 'write', msg)
@@ -44,7 +50,8 @@ class EmptyCommit(Exception):
         Exception.__init__(self, 'No changes to commit')
 
 class Entry (Tree):
-    def __init__(self, id, value=None, parent=None, children=None):
+    def __init__(self, id, value=None, parent=None, directory=False,
+                 children=None):
         if children == None:
             Tree.__init__(self)
         else:
@@ -53,7 +60,11 @@ class Entry (Tree):
         self.value = value
         self.parent = parent
         if self.parent != None:
+            if self.parent.directory == False:
+                raise InvalidDirectory(
+                    'Non-directory %s cannot have children' % self.parent)
             parent.append(self)
+        self.directory = directory
 
     def __str__(self):
         return '<Entry %s: %s>' % (self.id, self.value)
@@ -101,7 +112,7 @@ class Storage (object):
     """
     name = 'Storage'
 
-    def __init__(self, repo, encoding='utf-8', options=None):
+    def __init__(self, repo='/', encoding='utf-8', options=None):
         self.repo = repo
         self.encoding = encoding
         self.options = options
@@ -113,7 +124,7 @@ class Storage (object):
         self.can_init = True
 
     def __str__(self):
-        return '<%s %s>' % (self.__class__.__name__, id(self))
+        return '<%s %s %s>' % (self.__class__.__name__, id(self), self.repo)
 
     def __repr__(self):
         return str(self)
@@ -139,7 +150,7 @@ class Storage (object):
 
     def _init(self):
         f = open(self.repo, 'wb')
-        root = Entry(id='__ROOT__')
+        root = Entry(id='__ROOT__', directory=True)
         d = {root.id:root}
         pickle.dump(dict((k,v._objects_to_ids()) for k,v in d.items()), f, -1)
         f.close()
@@ -178,7 +189,7 @@ class Storage (object):
         f.close()
         self._data = None
 
-    def add(self, *args, **kwargs):
+    def add(self, id, *args, **kwargs):
         """Add an entry"""
         if self.is_writeable() == False:
             raise NotWriteable('Cannot add entry to unwriteable storage.')
@@ -186,13 +197,13 @@ class Storage (object):
             self.get(id)
             pass # yup, no need to add another
         except InvalidID:
-            self._add(*args, **kwargs)
+            self._add(id, *args, **kwargs)
 
-    def _add(self, id, parent=None):
+    def _add(self, id, parent=None, directory=False):
         if parent == None:
             parent = '__ROOT__'
         p = self._data[parent]
-        self._data[id] = Entry(id, parent=p)
+        self._data[id] = Entry(id, parent=p, directory=directory)
 
     def remove(self, *args, **kwargs):
         """Remove an entry."""
@@ -202,6 +213,9 @@ class Storage (object):
         self._remove(*args, **kwargs)
 
     def _remove(self, id):
+        if self._data[id].directory == True \
+                and len(self.children(id)) > 0:
+            raise DirectoryNotEmpty(id)
         e = self._data.pop(id)
         e.parent.remove(e)
 
@@ -213,7 +227,7 @@ class Storage (object):
         self._recursive_remove(*args, **kwargs)
 
     def _recursive_remove(self, id):
-        for entry in self._data[id].traverse():
+        for entry in reversed(list(self._data[id].traverse())):
             self._remove(entry.id)
 
     def children(self, *args, **kwargs):
@@ -266,6 +280,9 @@ class Storage (object):
     def _set(self, id, value):
         if id not in self._data:
             raise InvalidID(id)
+        if self._data[id].directory == True:
+            raise InvalidDirectory(
+                'Directory %s cannot have data' % self.parent)
         self._data[id].value = value
 
 class VersionedStorage (Storage):
@@ -283,7 +300,7 @@ class VersionedStorage (Storage):
 
     def _init(self):
         f = open(self.repo, 'wb')
-        root = Entry(id='__ROOT__')
+        root = Entry(id='__ROOT__', directory=True)
         summary = Entry(id='__COMMIT__SUMMARY__', value='Initial commit')
         body = Entry(id='__COMMIT__BODY__')
         initial_commit = {root.id:root, summary.id:summary, body.id:body}
@@ -311,18 +328,21 @@ class VersionedStorage (Storage):
         f.close()
         self._data = None
 
-    def _add(self, id, parent=None):
+    def _add(self, id, parent=None, directory=False):
         if parent == None:
             parent = '__ROOT__'
         p = self._data[-1][parent]
-        self._data[-1][id] = Entry(id, parent=p)
+        self._data[-1][id] = Entry(id, parent=p, directory=directory)
 
     def _remove(self, id):
+        if self._data[-1][id].directory == True \
+                and len(self.children(id)) > 0:
+            raise DirectoryNotEmpty(id)
         e = self._data[-1].pop(id)
         e.parent.remove(e)
 
     def _recursive_remove(self, id):
-        for entry in self._data[-1][id].traverse():
+        for entry in reversed(list(self._data[-1][id].traverse())):
             self._remove(entry.id)
 
     def _children(self, id=None, revision=None):
@@ -416,6 +436,7 @@ if TESTING == True:
             self.s.disconnect()
             self.s.destroy()
             self.assert_failed_connect()
+            self.dir.cleanup()
 
         def assert_failed_connect(self):
             try:
@@ -440,12 +461,12 @@ if TESTING == True:
             """New repository should be empty."""
             self.failUnless(len(self.s.children()) == 0, self.s.children())
 
-        def test_add_rooted(self):
+        def test_add_identical_rooted(self):
             """
             Adding entries with the same ID should not increase the number of children.
             """
             for i in range(10):
-                self.s.add('some id')
+                self.s.add('some id', directory=False)
                 s = sorted(self.s.children())
                 self.failUnless(s == ['some id'], s)
 
@@ -456,7 +477,7 @@ if TESTING == True:
             ids = []
             for i in range(10):
                 ids.append(str(i))
-                self.s.add(ids[-1])
+                self.s.add(ids[-1], directory=False)
                 s = sorted(self.s.children())
                 self.failUnless(s == ids, '\n  %s\n  !=\n  %s' % (s, ids))
 
@@ -464,16 +485,50 @@ if TESTING == True:
             """
             Adding entries should increase the number of children (nonrooted).
             """
-            self.s.add('parent')
+            self.s.add('parent', directory=True)
             ids = []
             for i in range(10):
                 ids.append(str(i))
-                self.s.add(ids[-1], 'parent')
+                self.s.add(ids[-1], 'parent', directory=True)
                 s = sorted(self.s.children('parent'))
                 self.failUnless(s == ids, '\n  %s\n  !=\n  %s' % (s, ids))
                 s = self.s.children()
                 self.failUnless(s == ['parent'], s)
-                
+
+        def test_children(self):
+            """
+            Non-UUID ids should be returned as such.
+            """
+            self.s.add('parent', directory=True)
+            ids = []
+            for i in range(10):
+                ids.append('parent/%s' % str(i))
+                self.s.add(ids[-1], 'parent', directory=True)
+                s = sorted(self.s.children('parent'))
+                self.failUnless(s == ids, '\n  %s\n  !=\n  %s' % (s, ids))
+
+        def test_add_invalid_directory(self):
+            """
+            Should not be able to add children to non-directories.
+            """
+            self.s.add('parent', directory=False)
+            try:
+                self.s.add('child', 'parent', directory=False)
+                self.fail(
+                    '%s.add() succeeded instead of raising InvalidDirectory'
+                    % (vars(self.Class)['name']))
+            except InvalidDirectory:
+                pass
+            try:
+                self.s.add('child', 'parent', directory=True)
+                self.fail(
+                    '%s.add() succeeded instead of raising InvalidDirectory'
+                    % (vars(self.Class)['name']))
+            except InvalidDirectory:
+                pass
+            self.failUnless(len(self.s.children('parent')) == 0,
+                            self.s.children('parent'))
+
         def test_remove_rooted(self):
             """
             Removing entries should decrease the number of children (rooted).
@@ -481,7 +536,7 @@ if TESTING == True:
             ids = []
             for i in range(10):
                 ids.append(str(i))
-                self.s.add(ids[-1])
+                self.s.add(ids[-1], directory=True)
             for i in range(10):
                 self.s.remove(ids.pop())
                 s = sorted(self.s.children())
@@ -491,11 +546,11 @@ if TESTING == True:
             """
             Removing entries should decrease the number of children (nonrooted).
             """
-            self.s.add('parent')
+            self.s.add('parent', directory=True)
             ids = []
             for i in range(10):
                 ids.append(str(i))
-                self.s.add(ids[-1], 'parent')
+                self.s.add(ids[-1], 'parent', directory=False)
             for i in range(10):
                 self.s.remove(ids.pop())
                 s = sorted(self.s.children('parent'))
@@ -503,17 +558,35 @@ if TESTING == True:
                 s = self.s.children()
                 self.failUnless(s == ['parent'], s)
 
+        def test_remove_directory_not_empty(self):
+            """
+            Removing a non-empty directory entry should raise exception.
+            """
+            self.s.add('parent', directory=True)
+            ids = []
+            for i in range(10):
+                ids.append(str(i))
+                self.s.add(ids[-1], 'parent', directory=True)
+            self.s.remove(ids.pop()) # empty directory removal succeeds
+            try:
+                self.s.remove('parent') # empty directory removal succeeds
+                self.fail(
+                    "%s.remove() didn't raise DirectoryNotEmpty"
+                    % (vars(self.Class)['name']))
+            except DirectoryNotEmpty:
+                pass
+
         def test_recursive_remove(self):
             """
             Recursive remove should empty the tree.
             """
-            self.s.add('parent')
+            self.s.add('parent', directory=True)
             ids = []
             for i in range(10):
                 ids.append(str(i))
-                self.s.add(ids[-1], 'parent')
+                self.s.add(ids[-1], 'parent', directory=True)
                 for j in range(10): # add some grandkids
-                    self.s.add(str(20*i+j), ids[-i])
+                    self.s.add(str(20*(i+1)+j), ids[-1], directory=False)
             self.s.recursive_remove('parent')
             s = sorted(self.s.children())
             self.failUnless(s == [], s)
@@ -549,7 +622,7 @@ if TESTING == True:
             """
             Data value should be None before any value has been set.
             """
-            self.s.add(self.id)
+            self.s.add(self.id, directory=False)
             ret = self.s.get(self.id)
             self.failUnless(ret == None,
                     "%s.get() returned %s not None"
@@ -571,7 +644,7 @@ if TESTING == True:
             """
             Set should define the value returned by get.
             """
-            self.s.add(self.id)
+            self.s.add(self.id, directory=False)
             self.s.set(self.id, self.val)
             ret = self.s.get(self.id)
             self.failUnless(ret == self.val,
@@ -583,7 +656,7 @@ if TESTING == True:
             Set should define the value returned by get.
             """
             val = u'Fran\xe7ois'
-            self.s.add(self.id)
+            self.s.add(self.id, directory=False)
             self.s.set(self.id, val)
             ret = self.s.get(self.id, decode=True)
             self.failUnless(type(ret) == types.UnicodeType,
@@ -612,7 +685,7 @@ if TESTING == True:
             """
             Set should define the value returned by get after reconnect.
             """
-            self.s.add(self.id)
+            self.s.add(self.id, directory=False)
             self.s.set(self.id, self.val)
             self.s.disconnect()
             self.s.connect()
@@ -625,11 +698,11 @@ if TESTING == True:
             """
             Adding entries should increase the number of children after reconnect.
             """
-            self.s.add('parent')
+            self.s.add('parent', directory=True)
             ids = []
             for i in range(10):
                 ids.append(str(i))
-                self.s.add(ids[-1], 'parent')
+                self.s.add(ids[-1], 'parent', directory=False)
             self.s.disconnect()
             self.s.connect()
             s = sorted(self.s.children('parent'))
@@ -707,7 +780,7 @@ if TESTING == True:
             """
             def val(i):
                 return '%s:%d' % (self.val, i+1)
-            self.s.add(self.id)
+            self.s.add(self.id, directory=False)
             revs = []
             for i in range(10):
                 self.s.set(self.id, val(i))
@@ -716,7 +789,7 @@ if TESTING == True:
             for i in range(10):
                 ret = self.s.get(self.id, revision=revs[i])
                 self.failUnless(ret == val(i),
-                                "%s.get() returned %s not %s for revision %d"
+                                "%s.get() returned %s not %s for revision %s"
                                 % (vars(self.Class)['name'], ret, val(i), revs[i]))
         
     def make_storage_testcase_subclasses(storage_class, namespace):

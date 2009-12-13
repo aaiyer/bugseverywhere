@@ -15,17 +15,18 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
-Handle conversion between the various on-disk images.
+Handle conversion between the various BE storage formats.
 """
 
+import codecs
 import os, os.path
 import sys
 
 import libbe
-import bug
-import encoding
-import mapfile
-import vcs
+import libbe.bug as bug
+import libbe.util.encoding as encoding
+import libbe.storage.util.mapfile as mapfile
+
 if libbe.TESTING == True:
     import doctest
 
@@ -39,30 +40,25 @@ BUGDIR_DISK_VERSIONS = ["Bugs Everywhere Tree 1 0",
 BUGDIR_DISK_VERSION = BUGDIR_DISK_VERSIONS[-1]
 
 class Upgrader (object):
-    "Class for converting "
+    "Class for converting between different on-disk BE storage formats."
     initial_version = None
     final_version = None
     def __init__(self, root):
         self.root = root
-        # use the "None" VCS to ensure proper encoding/decoding and
-        # simplify path construction.
-        self.vcs = vcs.vcs_by_name("None")
-        self.vcs.root(self.root)
-        self.vcs.encoding = encoding.get_encoding()
 
     def get_path(self, *args):
         """
         Return a path relative to .root.
         """
-        dir = os.path.join(self.root, ".be")
+        dir = os.path.join(self.root, '.be')
         if len(args) == 0:
             return dir
-        assert args[0] in ["version", "settings", "bugs"], str(args)
+        assert args[0] in ['version', 'settings', 'bugs'], str(args)
         return os.path.join(dir, *args)
 
     def check_initial_version(self):
-        path = self.get_path("version")
-        version = self.vcs.get_file_contents(path).rstrip("\n")
+        path = self.get_path('version')
+        version = self.vcs.get_file_contents(path).rstrip('\n')
         assert version == self.initial_version, version
 
     def set_version(self):

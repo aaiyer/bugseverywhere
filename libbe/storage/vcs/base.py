@@ -29,20 +29,23 @@ import codecs
 import os
 import os.path
 import re
-from socket import gethostname
 import shutil
 import sys
 import tempfile
 
 import libbe
-from utility import Dir, search_parent_directories
-from subproc import CommandError, invoke
-from plugin import get_plugin
+import libbe.storage.base
+import libbe.util.encoding
+from libbe.util.utility import Dir, search_parent_directories
+from libbe.util.subproc import CommandError, invoke
+from libbe.util.plugin import import_by_name
+#import libbe.storage.util.upgrade as upgrade
 
 if libbe.TESTING == True:
     import unittest
     import doctest
 
+    import libbe.ui.util.user
 
 # List VCS modules in order of preference.
 # Don't list this module, it is implicitly last.
@@ -58,62 +61,243 @@ def set_preferred_vcs(name):
 def _get_matching_vcs(matchfn):
     """Return the first module for which matchfn(VCS_instance) is true"""
     for submodname in VCS_ORDER:
-        module = get_plugin('libbe', submodname)
+        module = import_by_name('libbe.storage.vcs.%s' % submodname)
         vcs = module.new()
         if matchfn(vcs) == True:
             return vcs
         vcs.cleanup()
     return VCS()
-    
+
 def vcs_by_name(vcs_name):
     """Return the module for the VCS with the given name"""
+    if vcs_name == VCS.name:
+        return new()
     return _get_matching_vcs(lambda vcs: vcs.name == vcs_name)
 
 def detect_vcs(dir):
     """Return an VCS instance for the vcs being used in this directory"""
-    return _get_matching_vcs(lambda vcs: vcs.detect(dir))
+    return _get_matching_vcs(lambda vcs: vcs._detect(dir))
 
 def installed_vcs():
     """Return an instance of an installed VCS"""
     return _get_matching_vcs(lambda vcs: vcs.installed())
 
 
-
-class SettingIDnotSupported(NotImplementedError):
-    pass
-
-class VCSnotRooted(Exception):
+class VCSnotRooted (libbe.storage.base.ConnectionError):
     def __init__(self):
-        msg = "VCS not rooted"
-        Exception.__init__(self, msg)
+        msg = 'VCS not rooted'
+        libbe.storage.base.ConnectionError.__init__(self, msg)
 
-class PathNotInRoot(Exception):
-    def __init__(self, path, root):
-        msg = "Path '%s' not in root '%s'" % (path, root)
-        Exception.__init__(self, msg)
+class InvalidPath (libbe.storage.base.InvalidID):
+    def __init__(self, path, root, msg=None):
+        if msg == None:
+            msg = 'Path "%s" not in root "%s"' % (path, root)
+        libbe.storage.base.InvalidID.__init__(self, msg)
         self.path = path
         self.root = root
 
-class NoSuchFile(Exception):
-    def __init__(self, pathname, root="."):
-        path = os.path.abspath(os.path.join(root, pathname))
-        Exception.__init__(self, "No such file: %s" % path)
+class SpacerCollision (InvalidPath):
+    def __init__(self, path, spacer):
+        msg = 'Path "%s" collides with spacer directory "%s"' % (path, spacer)
+        InvalidPath.__init__(self, path, root=None, msg=msg)
+        self.spacer = spacer
 
-class EmptyCommit(Exception):
-    def __init__(self):
-        Exception.__init__(self, "No changes to commit")
+class NoSuchFile (libbe.storage.base.InvalidID):
+    def __init__(self, pathname, root='.'):
+        path = os.path.abspath(os.path.join(root, pathname))
+        libbe.storage.base.InvalidID.__init__(self, 'No such file: %s' % path)
+
+
+class CachedPathID (object):
+    """
+    Storage ID <-> path policy.
+      .../.be/BUGDIR/bugs/BUG/comments/COMMENT
+        ^-- root path
+
+    >>> dir = Dir()
+    >>> os.mkdir(os.path.join(dir.path, '.be'))
+    >>> os.mkdir(os.path.join(dir.path, '.be', 'abc'))
+    >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs'))
+    >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '123'))
+    >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments'))
+    >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments', 'def'))
+    >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '456'))
+    >>> file(os.path.join(dir.path, '.be', 'abc', 'values'),
+    ...      'w').close()
+    >>> file(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'values'),
+    ...      'w').close()
+    >>> file(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments', 'def', 'values'),
+    ...      'w').close()
+    >>> c = CachedPathID()
+    >>> c.root(dir.path)
+    >>> c.id(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments', 'def', 'values'))
+    'def/values'
+    >>> c.init()
+    >>> sorted(os.listdir(os.path.join(c._root, '.be')))
+    ['abc', 'id-cache']
+    >>> c.connect()
+    >>> c.path('123/values') # doctest: +ELLIPSIS
+    u'.../.be/abc/bugs/123/values'
+    >>> c.disconnect()
+    >>> c.destroy()
+    >>> sorted(os.listdir(os.path.join(c._root, '.be')))
+    ['abc']
+    >>> c.connect() # demonstrate auto init
+    >>> sorted(os.listdir(os.path.join(c._root, '.be')))
+    ['abc', 'id-cache']
+    >>> c.add_id(u'xyz', parent=None) # doctest: +ELLIPSIS
+    u'.../.be/xyz'
+    >>> c.add_id('xyz/def', parent='xyz') # doctest: +ELLIPSIS
+    u'.../.be/xyz/def'
+    >>> c.add_id('qrs', parent='123') # doctest: +ELLIPSIS
+    u'.../.be/abc/bugs/123/comments/qrs'
+    >>> c.disconnect()
+    >>> c.connect()
+    >>> c.path('qrs') # doctest: +ELLIPSIS
+    u'.../.be/abc/bugs/123/comments/qrs'
+    >>> c.remove_id('qrs')
+    >>> c.path('qrs')
+    Traceback (most recent call last):
+      ...
+    InvalidID: 'qrs'
+    >>> c.disconnect()
+    >>> c.destroy()
+    >>> dir.cleanup()
+    """
+    def __init__(self, encoding=None):
+        self.encoding = libbe.util.encoding.get_filesystem_encoding()
+        self._spacer_dirs = ['.be', 'bugs', 'comments']
+
+    def root(self, path):
+        self._root = os.path.abspath(path).rstrip(os.path.sep)
+        self._cache_path = os.path.join(
+            self._root, self._spacer_dirs[0], 'id-cache')
+
+    def init(self):
+        """
+        Create cache file for an existing .be directory.
+        File if multiple lines of the form:
+          UUID\tPATH
+        """
+        self._cache = {}
+        spaced_root = os.path.join(self._root, self._spacer_dirs[0])
+        for dirpath, dirnames, filenames in os.walk(spaced_root):
+            if dirpath == spaced_root:
+                continue
+            try:
+                id = self.id(dirpath)
+                relpath = dirpath[len(self._root)+1:]
+                if id.count('/') == 0:
+                    self._cache[id] = relpath
+            except InvalidPath:
+                pass
+        self._changed = True
+        self.disconnect()
+
+    def destroy(self):
+        os.remove(self._cache_path)
+
+    def connect(self):
+        if not os.path.exists(self._cache_path):
+            try:
+                self.init()
+            except IOError:
+                raise libbe.storage.base.ConnectionError
+        self._cache = {} # key: uuid, value: path
+        self._changed = False
+        f = codecs.open(self._cache_path, 'r', self.encoding)
+        for line in f:
+            fields = line.rstrip('\n').split('\t')
+            self._cache[fields[0]] = fields[1]
+        f.close()
+
+    def disconnect(self):
+        if self._changed == True:
+            f = codecs.open(self._cache_path, 'w', self.encoding)
+            for uuid,path in self._cache.items():
+                f.write('%s\t%s\n' % (uuid, path))
+            f.close()
+        self._cache = {}
+
+    def path(self, id, relpath=False):
+        fields = id.split('/', 1)
+        uuid = fields[0]
+        if len(fields) == 1:
+            extra = []
+        else:
+            extra = fields[1:]
+        if uuid not in self._cache:
+            raise libbe.storage.base.InvalidID(uuid)
+        if relpath == True:
+            return os.path.join(self._cache[uuid], *extra)
+        return os.path.join(self._root, self._cache[uuid], *extra)
+
+    def add_id(self, id, parent=None):
+        if id.count('/') > 0:
+            # not a UUID-level path
+            assert id.startswith(parent), \
+                'Strange ID: "%s" should start with "%s"' % (id, parent)
+            path = self.path(id)
+        elif id in self._cache:
+            # already added
+            path = self.path(id)
+        else:
+            if parent == None:
+                parent_path = ''
+                spacer = self._spacer_dirs[0]
+            else:
+                assert parent.count('/') == 0, \
+                    'Strange parent ID: "%s" should be UUID' % parent
+                parent_path = self.path(parent, relpath=True)
+                parent_spacer = parent_path.split(os.path.sep)[-2]
+                i = self._spacer_dirs.index(parent_spacer)
+                spacer = self._spacer_dirs[i+1]
+            path = os.path.join(parent_path, spacer, id)
+            self._cache[id] = path
+            self._changed = True
+            path = os.path.join(self._root, path)
+        return path
+
+    def remove_id(self, id):
+        if id.count('/') > 0:
+            return # not a UUID-level path
+        self._cache.pop(id)
+        self._changed = True
+
+    def id(self, path):
+        path = os.path.abspath(path)
+        if not path.startswith(self._root + os.path.sep):
+            raise InvalidPath('Path %s not in root %s' % (path, self._root))
+        path = path[len(self._root)+1:]
+        orig_path = path
+        if not path.startswith(self._spacer_dirs[0] + os.path.sep):
+            raise InvalidPath(path, self._spacer_dirs[0])
+        for spacer in self._spacer_dirs:
+            if not path.startswith(spacer + os.path.sep):
+                break
+            id = path[len(spacer)+1:]
+            fields = path[len(spacer)+1:].split(os.path.sep,1)
+            if len(fields) == 1:
+                break
+            path = fields[1]
+        for spacer in self._spacer_dirs:
+            if id.endswith(os.path.sep + spacer):
+                raise SpacerCollision(orig_path, spacer)
+        if os.path.sep != '/':
+            id = id.replace(os.path.sep, '/')
+        return id
 
 
 def new():
     return VCS()
 
-class VCS(object):
+class VCS (libbe.storage.base.VersionedStorage):
     """
     This class implements a 'no-vcs' interface.
 
     Support for other VCSs can be added by subclassing this class, and
     overriding methods _vcs_*() with code appropriate for your VCS.
-    
+
     The methods _u_*() are utility methods available to the _vcs_*()
     methods.
 
@@ -127,7 +311,7 @@ class VCS(object):
       /path/to/source/.be
     However, you're of in some subdirectory like
       /path/to/source/GUI/testing
-    and you want to comment on a bug.  Setting sink_to_root=True wen
+    and you want to comment on a bug.  Setting sink_to_root=True when
     you initialize your BugDir will cause it to search for the '.be'
     file in the ancestors of the path you passed in as 'root'.
       /path/to/source/GUI/testing/.be     miss
@@ -245,113 +429,110 @@ class VCS(object):
 
 os.listdir(self.get_path("bugs")):
     """
-    name = "None"
-    client = "" # command-line tool for _u_invoke_client
-    versioned = False
-    def __init__(self, paranoid=False, encoding=sys.getdefaultencoding()):
-        self.paranoid = paranoid
-        self.verboseInvoke = False
-        self.rootdir = None
-        self._duplicateBasedir = None
-        self._duplicateDirname = None
-        self.encoding = encoding
-    def __str__(self):
-        return "<%s %s>" % (self.__class__.__name__, id(self))
-    def __repr__(self):
-        return str(self)
+    name = 'None'
+    client = 'false' # command-line tool for _u_invoke_client
+
+    def __init__(self, *args, **kwargs):
+        if 'encoding' not in kwargs:
+            kwargs['encoding'] = libbe.util.encoding.get_filesystem_encoding()
+        libbe.storage.base.VersionedStorage.__init__(self, *args, **kwargs)
+        self.versioned = False
+        self.verbose_invoke = False
+        self._cached_path_id = CachedPathID()
+
     def _vcs_version(self):
         """
         Return the VCS version string.
         """
-        return "0.0"
-    def _vcs_detect(self, path=None):
-        """
-        Detect whether a directory is revision controlled with this VCS.
-        """
-        return True
-    def _vcs_root(self, path):
-        """
-        Get the VCS root.  This is the default working directory for
-        future invocations.  You would normally set this to the root
-        directory for your VCS.
-        """
-        if os.path.isdir(path)==False:
-            path = os.path.dirname(path)
-            if path == "":
-                path = os.path.abspath(".")
-        return path
-    def _vcs_init(self, path):
-        """
-        Begin versioning the tree based at path.
-        """
-        pass
-    def _vcs_cleanup(self):
-        """
-        Remove any cruft that _vcs_init() created outside of the
-        versioned tree.
-        """
-        pass
+        return '0'
+
     def _vcs_get_user_id(self):
         """
         Get the VCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
         If the VCS has not been configured with a username, return None.
         """
         return None
-    def _vcs_set_user_id(self, value):
+
+    def _vcs_detect(self, path=None):
         """
-        Set the VCS's suggested user id (e.g "John Doe <jdoe@example.com>").
-        This is run if the VCS has not been configured with a usename, so
-        that commits will have a reasonable FROM value.
+        Detect whether a directory is revision controlled with this VCS.
         """
-        raise SettingIDnotSupported
+        return True
+
+    def _vcs_root(self, path):
+        """
+        Get the VCS root.  This is the default working directory for
+        future invocations.  You would normally set this to the root
+        directory for your VCS.
+        """
+        if os.path.isdir(path) == False:
+            path = os.path.dirname(path)
+            if path == '':
+                path = os.path.abspath('.')
+        return path
+
+    def _vcs_init(self):
+        """
+        Begin versioning the tree based at self.repo.
+        """
+        pass
+
+    def _vcs_destroy(self):
+        """
+        Remove any files used in versioning (e.g. whatever _vcs_init()
+        created).
+        """
+        pass
+
     def _vcs_add(self, path):
         """
         Add the already created file at path to version control.
         """
         pass
+
     def _vcs_remove(self, path):
         """
         Remove the file at path from version control.  Optionally
         remove the file from the filesystem as well.
         """
         pass
+
     def _vcs_update(self, path):
         """
         Notify the versioning system of changes to the versioned file
         at path.
         """
         pass
-    def _vcs_get_file_contents(self, path, revision=None, binary=False):
+
+    def _vcs_get_file_contents(self, path, revision=None):
         """
         Get the file contents as they were in a given revision.
         Revision==None specifies the current revision.
         """
-        assert revision == None, \
-            "The %s VCS does not support revision specifiers" % self.name
-        if binary == False:
-            f = codecs.open(os.path.join(self.rootdir, path), "r", self.encoding)
-        else:
-            f = open(os.path.join(self.rootdir, path), "rb")
+        if revision != None:
+            raise libbe.storage.base.InvalidRevision(
+                'The %s VCS does not support revision specifiers' % self.name)
+        path = os.path.join(self.repo, path)
+        if not os.path.exists(path):
+            return libbe.util.InvalidObject
+        if os.path.isdir(path):
+            return libbe.storage.base.InvalidDirectory
+        f = open(path, 'rb')
         contents = f.read()
         f.close()
         return contents
-    def _vcs_duplicate_repo(self, directory, revision=None):
-        """
-        Get the repository as it was in a given revision.
-        revision==None specifies the current revision.
-        dir specifies a directory to create the duplicate in.
-        """
-        shutil.copytree(self.rootdir, directory, True)
+
     def _vcs_commit(self, commitfile, allow_empty=False):
         """
         Commit the current working directory, using the contents of
         commitfile as the comment.  Return the name of the old
         revision (or None if commits are not supported).
-        
+
         If allow_empty == False, raise EmptyCommit if there are no
         changes to commit.
         """
         return None
+
     def _vcs_revision_id(self, index):
         """
         Return the name of the <index>th revision.  Index will be an
@@ -362,11 +543,13 @@ os.listdir(self.get_path("bugs")):
         specified revision does not exist.
         """
         return None
+
     def version(self):
-        """Cache version string for efficiency."""
+        # Cache version string for efficiency.
         if not hasattr(self, '_version'):
             self._version = self._get_version()
         return self._version
+
     def _get_version(self):
         try:
             ret = self._vcs_version()
@@ -378,183 +561,166 @@ os.listdir(self.get_path("bugs")):
                 raise OSError, e
         except CommandError:
             return None
+
     def installed(self):
         if self.version() != None:
             return True
         return False
-    def detect(self, path="."):
+
+    def get_user_id(self):
+        """
+        Get the VCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
+        If the VCS has not been configured with a username, return None.
+        You can override the automatic lookup procedure by setting the
+        VCS.user_id attribute to a string of your choice.
+        """
+        if not hasattr(self, 'user_id'):
+            self.user_id = self._vcs_get_user_id()
+        return self.user_id
+
+    def _detect(self, path='.'):
         """
         Detect whether a directory is revision controlled with this VCS.
         """
         return self._vcs_detect(path)
-    def root(self, path):
+
+    def root(self):
         """
         Set the root directory to the path's VCS root.  This is the
         default working directory for future invocations.
         """
-        self.rootdir = self._vcs_root(path)
-    def init(self, path):
+        self.repo = os.path.abspath(self._vcs_root(self.repo))
+        if os.path.isdir(self.repo) == False:
+            self.repo = os.path.dirname(self.repo)
+        self.be_dir = os.path.join(
+            self.repo, self._cached_path_id._spacer_dirs[0])
+        self._cached_path_id.root(self.repo)
+
+    def _init(self):
         """
-        Begin versioning the tree based at path.
+        Begin versioning the tree based at self.repo.
         Also roots the vcs at path.
         """
-        if os.path.isdir(path)==False:
-            path = os.path.dirname(path)
-        self._vcs_init(path)
-        self.root(path)
-    def cleanup(self):
-        self._vcs_cleanup()
-    def get_user_id(self):
-        """
-        Get the VCS's suggested user id (e.g. "John Doe <jdoe@example.com>").
-        If the VCS has not been configured with a username, return the user's
-        id.  You can override the automatic lookup procedure by setting the
-        VCS.user_id attribute to a string of your choice.
-        """
-        if hasattr(self, "user_id"):
-            if self.user_id != None:
-                return self.user_id
-        id = self._vcs_get_user_id()
-        if id == None:
-            name = self._u_get_fallback_username()
-            email = self._u_get_fallback_email()
-            id = self._u_create_id(name, email)
-            print >> sys.stderr, "Guessing id '%s'" % id
-            try:
-                self.set_user_id(id)
-            except SettingIDnotSupported:
-                pass
-        return id
-    def set_user_id(self, value):
-        """
-        Set the VCS's suggested user id (e.g "John Doe <jdoe@example.com>").
-        This is run if the VCS has not been configured with a usename, so
-        that commits will have a reasonable FROM value.
-        """
-        self._vcs_set_user_id(value)
-    def add(self, path):
-        """
-        Add the already created file at path to version control.
-        """
-        self._vcs_add(self._u_rel_path(path))
-    def remove(self, path):
-        """
-        Remove a file from both version control and the filesystem.
-        """
-        self._vcs_remove(self._u_rel_path(path))
+        self.root()
+        self._vcs_init()
+        os.mkdir(self.be_dir)
+        self._vcs_add(self._u_rel_path(self.be_dir))
+        self._cached_path_id.init()
+
+    def _destroy(self):
+        self._vcs_destroy()
+        self._cached_path_id.destroy()
+        shutil.rmtree(self.be_dir)
+
+    def _connect(self):
+        self.root()
+        self._cached_path_id.connect()
+        self.check_disk_version()
+
+    def disconnect(self):
+        self._cached_path_id.disconnect()
+
+    def _add(self, id, parent=None, directory=False):
+        path = self._cached_path_id.add_id(id, parent)
+        relpath = self._u_rel_path(path)
+        reldirs = relpath.split(os.path.sep)
+        if directory == False:
+            reldirs = reldirs[:-1]
+        dir = self.repo
+        for reldir in reldirs:
+            dir = os.path.join(dir, reldir)
+            if not os.path.exists(dir):
+                os.mkdir(dir)
+                self._vcs_add(self._u_rel_path(dir))
+            elif not os.path.isdir(dir):
+                raise libbe.storage.base.InvalidDirectory
+        if directory == False:
+            if not os.path.exists(path):
+                open(path, 'w').close()
+            self._vcs_add(self._u_rel_path(path))
+
+    def _remove(self, id):
+        path = self._cached_path_id.path(id)
         if os.path.exists(path):
-            os.remove(path)
-    def recursive_remove(self, dirname):
-        """
-        Remove a file/directory and all its decendents from both
-        version control and the filesystem.
-        """
-        if not os.path.exists(dirname):
-            raise NoSuchFile(dirname)
-        for dirpath,dirnames,filenames in os.walk(dirname, topdown=False):
+            if os.path.isdir(path) and len(self.children(id)) > 0:
+                raise libbe.storage.base.DirectoryNotEmpty(id)
+            self._vcs_remove(self._u_rel_path(path))
+            if os.path.exists(path):
+                if os.path.isdir(path):
+                    os.rmdir(path)
+                else:
+                    os.remove(path)
+        self._cached_path_id.remove_id(id)
+
+    def _recursive_remove(self, id):
+        path = self._cached_path_id.path(id)
+        for dirpath,dirnames,filenames in os.walk(path, topdown=False):
             filenames.extend(dirnames)
-            for path in filenames:
-                fullpath = os.path.join(dirpath, path)
+            for f in filenames:
+                fullpath = os.path.join(dirpath, f)
                 if os.path.exists(fullpath) == False:
                     continue
                 self._vcs_remove(self._u_rel_path(fullpath))
-        if os.path.exists(dirname):
-            shutil.rmtree(dirname)
-    def update(self, path):
-        """
-        Notify the versioning system of changes to the versioned file
-        at path.
-        """
-        self._vcs_update(self._u_rel_path(path))
-    def get_file_contents(self, path, revision=None, allow_no_vcs=False, binary=False):
-        """
-        Get the file as it was in a given revision.
-        Revision==None specifies the current revision.
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        path = self._cached_path_id.path(id, relpath=True)
+        for id,p in self._cached_path_id._cache.items():
+            if p.startswith(path):
+                self._cached_path_id.remove_id(id)
 
-        allow_no_vcs==True allows direct access to files through
-        codecs.open() or open() if the vcs decides it can't handle the
-        given path.
-        """
-        if not os.path.exists(path):
-            raise NoSuchFile(path)
-        if self._use_vcs(path, allow_no_vcs):
-            relpath = self._u_rel_path(path)
-            contents = self._vcs_get_file_contents(relpath,revision,binary=binary)
+    def _children(self, id=None, revision=None):
+        if id==None:
+            path = self.be_dir
         else:
-            if binary == True:
-                f = codecs.open(path, "r", self.encoding)
-            else:
-                f = open(path, "rb")
-            contents = f.read()
-            f.close()
+            path = self._cached_path_id.path(id)
+        if os.path.isdir(path) == False:
+            return []
+        children = os.listdir(path)
+        for i,c in enumerate(children):
+            if c in self._cached_path_id._spacer_dirs:
+                children[i] = None
+                children.extend([os.path.join(c, c2) for c2 in
+                                 os.listdir(os.path.join(path, c))])
+            elif c == 'id-cache':
+                children[i] = None
+        for i,c in enumerate(children):
+            if c == None: continue
+            cpath = os.path.join(path, c)
+            children[i] = self._cached_path_id.id(cpath)
+        return [c for c in children if c != None]
+
+    def _get(self, id, default=libbe.util.InvalidObject, revision=None):
+        try:
+            path = self._cached_path_id.path(id)
+        except libbe.storage.base.InvalidID, e:
+            if default == libbe.util.InvalidObject:
+                raise e
+            return default
+        relpath = self._u_rel_path(path)
+        contents = self._vcs_get_file_contents(relpath,revision)
+        if contents == libbe.storage.base.InvalidDirectory:
+            raise libbe.storage.base.InvalidDirectory(id)
+        elif contents == libbe.util.InvalidObject:
+            raise libbe.storage.base.InvalidID(id)
+        elif len(contents) == 0:
+            return None
         return contents
-    def set_file_contents(self, path, contents, allow_no_vcs=False, binary=False):
-        """
-        Set the file contents under version control.
-        """
-        add = not os.path.exists(path)
-        if binary == False:
-            f = codecs.open(path, "w", self.encoding)
-        else:
-            f = open(path, "wb")
-        f.write(contents)
-        f.close()
-        
-        if self._use_vcs(path, allow_no_vcs):
-            if add:
-                self.add(path)
-            else:
-                self.update(path)
-    def mkdir(self, path, allow_no_vcs=False, check_parents=True):
-        """
-        Create (if neccessary) a directory at path under version
-        control.
-        """
-        if check_parents == True:
-            parent = os.path.dirname(path)
-            if not os.path.exists(parent): # recurse through parents
-                self.mkdir(parent, allow_no_vcs, check_parents)
+
+    def _set(self, id, value):
+        try:
+            path = self._cached_path_id.path(id)
+        except libbe.storage.base.InvalidID, e:
+            raise e
         if not os.path.exists(path):
-            os.mkdir(path)
-            if self._use_vcs(path, allow_no_vcs):
-                self.add(path)
-        else:
-            assert os.path.isdir(path)
-            if self._use_vcs(path, allow_no_vcs):
-                #self.update(path)# Don't update directories.  Changing files
-                pass              # underneath them should be sufficient.
-                
-    def duplicate_repo(self, revision=None):
-        """
-        Get the repository as it was in a given revision.
-        revision==None specifies the current revision.
-        Return the path to the arbitrary directory at the base of the new repo.
-        """
-        # Dirname in Basedir to protect against simlink attacks.
-        if self._duplicateBasedir == None:
-            self._duplicateBasedir = tempfile.mkdtemp(prefix='BEvcs')
-            self._duplicateDirname = \
-                os.path.join(self._duplicateBasedir, "duplicate")
-            self._vcs_duplicate_repo(directory=self._duplicateDirname,
-                                     revision=revision)
-        return self._duplicateDirname
-    def remove_duplicate_repo(self):
-        """
-        Clean up a duplicate repo created with duplicate_repo().
-        """
-        if self._duplicateBasedir != None:
-            shutil.rmtree(self._duplicateBasedir)
-            self._duplicateBasedir = None
-            self._duplicateDirname = None
-    def commit(self, summary, body=None, allow_empty=False):
-        """
-        Commit the current working directory, with a commit message
-        string summary and body.  Return the name of the old revision
-        (or None if versioning is not supported).
-        
-        If allow_empty == False (the default), raise EmptyCommit if
-        there are no changes to commit.
-        """
+            raise libbe.storage.base.InvalidID(id)
+        if os.path.isdir(path):
+            raise libbe.storage.base.InvalidDirectory(id)
+        f = open(path, "wb")
+        f.write(value)
+        f.close()
+        self._vcs_update(self._u_rel_path(path))
+
+    def _commit(self, summary, body=None, allow_empty=False):
         summary = summary.strip()+'\n'
         if body is not None:
             summary += '\n' + body.strip() + '\n'
@@ -564,35 +730,20 @@ os.listdir(self.get_path("bugs")):
             temp_file = os.fdopen(descriptor, 'wb')
             temp_file.write(summary)
             temp_file.flush()
-            self.precommit()
             revision = self._vcs_commit(filename, allow_empty=allow_empty)
             temp_file.close()
-            self.postcommit()
         finally:
             os.remove(filename)
         return revision
-    def precommit(self):
-        """
-        Executed before all attempted commits.
-        """
-        pass
-    def postcommit(self):
-        """
-        Only executed after successful commits.
-        """
-        pass
-    def revision_id(self, index=None):
-        """
-        Return the name of the <index>th revision.  The choice of
-        which branch to follow when crossing branches/merges is not
-        defined.
 
-        Return None if index==None, revision IDs are not supported, or
-        if the specified revision does not exist.
-        """
+    def revision_id(self, index=None):
         if index == None:
             return None
-        return self._vcs_revision_id(index)
+        revid = self._vcs_revision_id(index)
+        if revid == None:
+            raise libbe.storage.base.InvalidRevision(index)
+        return revid
+
     def _u_any_in_string(self, list, string):
         """
         Return True if any of the strings in list are in string.
@@ -602,23 +753,26 @@ os.listdir(self.get_path("bugs")):
             if list_string in string:
                 return True
         return False
+
     def _u_invoke(self, *args, **kwargs):
         if 'cwd' not in kwargs:
-            kwargs['cwd'] = self.rootdir
+            kwargs['cwd'] = self.repo
         if 'verbose' not in kwargs:
-            kwargs['verbose'] = self.verboseInvoke
+            kwargs['verbose'] = self.verbose_invoke
         if 'encoding' not in kwargs:
             kwargs['encoding'] = self.encoding
         return invoke(*args, **kwargs)
+
     def _u_invoke_client(self, *args, **kwargs):
         cl_args = [self.client]
         cl_args.extend(args)
         return self._u_invoke(cl_args, **kwargs)
+
     def _u_search_parent_directories(self, path, filename):
         """
         Find the file (or directory) named filename in path or in any
         of path's parents.
-        
+
         e.g.
           search_parent_directories("/a/b/c", ".be")
         will return the path to the first existing file from
@@ -629,6 +783,7 @@ os.listdir(self.get_path("bugs")):
         or None if none of those files exist.
         """
         return search_parent_directories(path, filename)
+
     def _use_vcs(self, path, allow_no_vcs):
         """
         Try and decide if _vcs_add/update/mkdir/etc calls will
@@ -637,16 +792,17 @@ os.listdir(self.get_path("bugs")):
         """
         use_vcs = True
         exception = None
-        if self.rootdir != None:
+        if self.repo != None:
             if self.path_in_root(path) == False:
                 use_vcs = False
-                exception = PathNotInRoot(path, self.rootdir)
+                exception = InvalidPath(path, self.repo)
         else:
             use_vcs = False
             exception = VCSnotRooted
         if use_vcs == False and allow_no_vcs==False:
             raise exception
         return use_vcs
+
     def path_in_root(self, path, root=None):
         """
         Return the relative path to path from root.
@@ -657,15 +813,16 @@ os.listdir(self.get_path("bugs")):
         False
         """
         if root == None:
-            if self.rootdir == None:
+            if self.repo == None:
                 raise VCSnotRooted
-            root = self.rootdir
+            root = self.repo
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
         absRootSlashedDir = os.path.join(absRoot,"")
         if not path.startswith(absRootSlashedDir):
             return False
         return True
+
     def _u_rel_path(self, path, root=None):
         """
         Return the relative path to path from root.
@@ -674,18 +831,19 @@ os.listdir(self.get_path("bugs")):
         '.be'
         """
         if root == None:
-            if self.rootdir == None:
+            if self.repo == None:
                 raise VCSnotRooted
-            root = self.rootdir
+            root = self.repo
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
         absRootSlashedDir = os.path.join(absRoot,"")
         if not path.startswith(absRootSlashedDir):
-            raise PathNotInRoot(path, absRootSlashedDir)
+            raise InvalidPath(path, absRootSlashedDir)
         assert path != absRootSlashedDir, \
             "file %s == root directory %s" % (path, absRootSlashedDir)
         relpath = path[len(absRootSlashedDir):]
         return relpath
+
     def _u_abspath(self, path, root=None):
         """
         Return the absolute path from a path realtive to root.
@@ -694,60 +852,10 @@ os.listdir(self.get_path("bugs")):
         '/a.b/c/.be'
         """
         if root == None:
-            assert self.rootdir != None, "VCS not rooted"
-            root = self.rootdir
+            assert self.repo != None, "VCS not rooted"
+            root = self.repo
         return os.path.abspath(os.path.join(root, path))
-    def _u_create_id(self, name, email=None):
-        """
-        >>> vcs = new()
-        >>> vcs._u_create_id("John Doe", "jdoe@example.com")
-        'John Doe <jdoe@example.com>'
-        >>> vcs._u_create_id("John Doe")
-        'John Doe'
-        """
-        assert len(name) > 0
-        if email == None or len(email) == 0:
-            return name
-        else:
-            return "%s <%s>" % (name, email)
-    def _u_parse_id(self, value):
-        """
-        >>> vcs = new()
-        >>> vcs._u_parse_id("John Doe <jdoe@example.com>")
-        ('John Doe', 'jdoe@example.com')
-        >>> vcs._u_parse_id("John Doe")
-        ('John Doe', None)
-        >>> try:
-        ...     vcs._u_parse_id("John Doe <jdoe@example.com><what?>")
-        ... except AssertionError:
-        ...     print "Invalid match"
-        Invalid match
-        """
-        emailexp = re.compile("(.*) <([^>]*)>(.*)")
-        match = emailexp.search(value)
-        if match == None:
-            email = None
-            name = value
-        else:
-            assert len(match.groups()) == 3
-            assert match.groups()[2] == "", match.groups()
-            email = match.groups()[1]
-            name = match.groups()[0]
-        assert name != None
-        assert len(name) > 0
-        return (name, email)
-    def _u_get_fallback_username(self):
-        name = None
-        for envariable in ["LOGNAME", "USERNAME"]:
-            if os.environ.has_key(envariable):
-                name = os.environ[envariable]
-                break
-        assert name != None
-        return name
-    def _u_get_fallback_email(self):
-        hostname = gethostname()
-        name = self._u_get_fallback_username()
-        return "%s@%s" % (name, hostname)
+
     def _u_parse_commitfile(self, commitfile):
         """
         Split the commitfile created in self.commit() back into
@@ -763,9 +871,9 @@ os.listdir(self.get_path("bugs")):
         return (summary, body)
 
     def check_disk_version(self):
-        version = self.get_version()
-        if version != upgrade.BUGDIR_DISK_VERSION:
-            upgrade.upgrade(self.root, version)
+        version = self.version()
+        #if version != upgrade.BUGDIR_DISK_VERSION:
+        #    upgrade.upgrade(self.repo, version)
 
     def disk_version(self, path=None, use_none_vcs=False,
                      for_duplicate_bugdir=False):
@@ -786,39 +894,17 @@ os.listdir(self.get_path("bugs")):
         if self.sync_with_disk == False:
             raise DiskAccessRequired("set version")
         self.vcs.mkdir(self.get_path())
-        self.vcs.set_file_contents(self.get_path("version"),
-                                   upgrade.BUGDIR_DISK_VERSION+"\n")
+        #self.vcs.set_file_contents(self.get_path("version"),
+        #                           upgrade.BUGDIR_DISK_VERSION+"\n")
 
-        
+
 
 if libbe.TESTING == True:
-    def setup_vcs_test_fixtures(testcase):
-        """Set up test fixtures for VCS test case."""
-        testcase.vcs = testcase.Class()
-        testcase.dir = Dir()
-        testcase.dirname = testcase.dir.path
-
-        vcs_not_supporting_uninitialized_user_id = []
-        vcs_not_supporting_set_user_id = ["None", "hg"]
-        testcase.vcs_supports_uninitialized_user_id = (
-            testcase.vcs.name not in vcs_not_supporting_uninitialized_user_id)
-        testcase.vcs_supports_set_user_id = (
-            testcase.vcs.name not in vcs_not_supporting_set_user_id)
-
-        if not testcase.vcs.installed():
-            testcase.fail(
-                "%(name)s VCS not found" % vars(testcase.Class))
-
-        if testcase.Class.name != "None":
-            testcase.failIf(
-                testcase.vcs.detect(testcase.dirname),
-                "Detected %(name)s VCS before initialising"
-                    % vars(testcase.Class))
-
-        testcase.vcs.init(testcase.dirname)
-
-    class VCSTestCase(unittest.TestCase):
-        """Test cases for base VCS class."""
+    class VCSTestCase (unittest.TestCase):
+        """
+        Test cases for base VCS class (in addition to the Storage test
+        cases).
+        """
 
         Class = VCS
 
@@ -827,271 +913,102 @@ if libbe.TESTING == True:
             self.dirname = None
 
         def setUp(self):
+            """Set up test fixtures for Storage test case."""
             super(VCSTestCase, self).setUp()
-            setup_vcs_test_fixtures(self)
+            self.dir = Dir()
+            self.dirname = self.dir.path
+            self.s = self.Class(repo=self.dirname)
+            if self.s.installed() == True:
+                self.s.init()
+                self.s.connect()
 
         def tearDown(self):
-            self.vcs.cleanup()
-            self.dir.cleanup()
             super(VCSTestCase, self).tearDown()
+            if self.s.installed() == True:
+                self.s.disconnect()
+                self.s.destroy()
+            self.dir.cleanup()
 
-        def full_path(self, rel_path):
-            return os.path.join(self.dirname, rel_path)
+        def test_installed(self):
+            """
+            See if the VCS is installed.
+            """
+            self.failUnless(self.s.installed() == True,
+                            '%(name)s VCS not found' % vars(self.Class))
 
 
-    class VCS_init_TestCase(VCSTestCase):
-        """Test cases for VCS.init method."""
-
-        def test_detect_should_succeed_after_init(self):
-            """Should detect VCS in directory after initialization."""
-            self.failUnless(
-                self.vcs.detect(self.dirname),
-                "Did not detect %(name)s VCS after initialising"
+    class VCS_detection_TestCase (VCSTestCase):
+        def test_detection(self):
+            """
+            See if the VCS detects its installed repository
+            """
+            if self.s.installed():
+                self.s.disconnect()
+                self.failUnless(self.s._detect(self.dirname) == True,
+                    'Did not detected %(name)s VCS after initialising'
                     % vars(self.Class))
+                self.s.connect()
 
-        def test_vcs_rootdir_in_specified_root_path(self):
+        def test_no_detection(self):
+            """
+            See if the VCS detects its installed repository
+            """
+            if self.s.installed() and self.Class.name != 'None':
+                self.s.disconnect()
+                self.s.destroy()
+                self.failUnless(self.s._detect(self.dirname) == False,
+                    'Detected %(name)s VCS before initialising'
+                    % self.Class)
+                self.s.init()
+                self.s.connect()
+
+        def test_vcs_repo_in_specified_root_path(self):
             """VCS root directory should be in specified root path."""
-            rp = os.path.realpath(self.vcs.rootdir)
+            rp = os.path.realpath(self.s.repo)
             dp = os.path.realpath(self.dirname)
             vcs_name = self.Class.name
             self.failUnless(
                 dp == rp or rp == None,
                 "%(vcs_name)s VCS root in wrong dir (%(dp)s %(rp)s)" % vars())
 
-
     class VCS_get_user_id_TestCase(VCSTestCase):
         """Test cases for VCS.get_user_id method."""
 
         def test_gets_existing_user_id(self):
             """Should get the existing user ID."""
-            if not self.vcs_supports_uninitialized_user_id:
+            user_id = self.s.get_user_id()
+            if user_id == None:
                 return
+            name,email = libbe.ui.util.user.parse_user_id(user_id)
+            if email != None:
+                self.failUnless('@' in email, email)
 
-            user_id = self.vcs.get_user_id()
-            self.failUnless(
-                user_id is not None,
-                "unable to get a user id")
+    def make_vcs_testcase_subclasses(storage_class, namespace):
+        c = storage_class()
+        if c.versioned == True:
+            libbe.storage.base.make_versioned_storage_testcase_subclasses(
+                storage_class, namespace)
+        else:
+            libbe.storage.base.make_storage_testcase_subclasses(
+                storage_class, namespace)
 
+        if namespace != sys.modules[__name__]:
+            # Make VCSTestCase subclasses for vcs_class in the namespace.
+            vcs_testcase_classes = [
+                c for c in (
+                    ob for ob in globals().values() if isinstance(ob, type))
+                if issubclass(c, VCSTestCase)]
 
-    class VCS_set_user_id_TestCase(VCSTestCase):
-        """Test cases for VCS.set_user_id method."""
+            for base_class in vcs_testcase_classes:
+                testcase_class_name = vcs_class.__name__ + base_class.__name__
+                testcase_class_bases = (base_class,)
+                testcase_class_dict = dict(base_class.__dict__)
+                testcase_class_dict['Class'] = vcs_class
+                testcase_class = type(
+                    testcase_class_name, testcase_class_bases, testcase_class_dict)
+                setattr(namespace, testcase_class_name, testcase_class)
 
-        def setUp(self):
-            super(VCS_set_user_id_TestCase, self).setUp()
-
-            if self.vcs_supports_uninitialized_user_id:
-                self.prev_user_id = self.vcs.get_user_id()
-            else:
-                self.prev_user_id = "Uninitialized identity <bogus@example.org>"
-
-            if self.vcs_supports_set_user_id:
-                self.test_new_user_id = "John Doe <jdoe@example.com>"
-                self.vcs.set_user_id(self.test_new_user_id)
-
-        def tearDown(self):
-            if self.vcs_supports_set_user_id:
-                self.vcs.set_user_id(self.prev_user_id)
-            super(VCS_set_user_id_TestCase, self).tearDown()
-
-        def test_raises_error_in_unsupported_vcs(self):
-            """Should raise an error in a VCS that doesn't support it."""
-            if self.vcs_supports_set_user_id:
-                return
-            self.assertRaises(
-                SettingIDnotSupported,
-                self.vcs.set_user_id, "foo")
-
-        def test_updates_user_id_in_supporting_vcs(self):
-            """Should update the user ID in an VCS that supports it."""
-            if not self.vcs_supports_set_user_id:
-                return
-            user_id = self.vcs.get_user_id()
-            self.failUnlessEqual(
-                self.test_new_user_id, user_id,
-                "user id not set correctly (expected %s, got %s)"
-                    % (self.test_new_user_id, user_id))
-
-
-    def setup_vcs_revision_test_fixtures(testcase):
-        """Set up revision test fixtures for VCS test case."""
-        testcase.test_dirs = ['a', 'a/b', 'c']
-        for path in testcase.test_dirs:
-            testcase.vcs.mkdir(testcase.full_path(path))
-
-        testcase.test_files = ['a/text', 'a/b/text']
-
-        testcase.test_contents = {
-            'rev_1': "Lorem ipsum",
-            'uncommitted': "dolor sit amet",
-            }
-
-
-    class VCS_mkdir_TestCase(VCSTestCase):
-        """Test cases for VCS.mkdir method."""
-
-        def setUp(self):
-            super(VCS_mkdir_TestCase, self).setUp()
-            setup_vcs_revision_test_fixtures(self)
-
-        def tearDown(self):
-            for path in reversed(sorted(self.test_dirs)):
-                self.vcs.recursive_remove(self.full_path(path))
-            super(VCS_mkdir_TestCase, self).tearDown()
-
-        def test_mkdir_creates_directory(self):
-            """Should create specified directory in filesystem."""
-            for path in self.test_dirs:
-                full_path = self.full_path(path)
-                self.failUnless(
-                    os.path.exists(full_path),
-                    "path %(full_path)s does not exist" % vars())
-
-
-    class VCS_commit_TestCase(VCSTestCase):
-        """Test cases for VCS.commit method."""
-
-        def setUp(self):
-            super(VCS_commit_TestCase, self).setUp()
-            setup_vcs_revision_test_fixtures(self)
-
-        def tearDown(self):
-            for path in reversed(sorted(self.test_dirs)):
-                self.vcs.recursive_remove(self.full_path(path))
-            super(VCS_commit_TestCase, self).tearDown()
-
-        def test_file_contents_as_specified(self):
-            """Should set file contents as specified."""
-            test_contents = self.test_contents['rev_1']
-            for path in self.test_files:
-                full_path = self.full_path(path)
-                self.vcs.set_file_contents(full_path, test_contents)
-                current_contents = self.vcs.get_file_contents(full_path)
-                self.failUnlessEqual(test_contents, current_contents)
-
-        def test_file_contents_as_committed(self):
-            """Should have file contents as specified after commit."""
-            test_contents = self.test_contents['rev_1']
-            for path in self.test_files:
-                full_path = self.full_path(path)
-                self.vcs.set_file_contents(full_path, test_contents)
-                revision = self.vcs.commit("Initial file contents.")
-                current_contents = self.vcs.get_file_contents(full_path)
-                self.failUnlessEqual(test_contents, current_contents)
-
-        def test_file_contents_as_set_when_uncommitted(self):
-            """Should set file contents as specified after commit."""
-            if not self.vcs.versioned:
-                return
-            for path in self.test_files:
-                full_path = self.full_path(path)
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['rev_1'])
-                revision = self.vcs.commit("Initial file contents.")
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['uncommitted'])
-                current_contents = self.vcs.get_file_contents(full_path)
-                self.failUnlessEqual(
-                    self.test_contents['uncommitted'], current_contents)
-
-        def test_revision_file_contents_as_committed(self):
-            """Should get file contents as committed to specified revision."""
-            if not self.vcs.versioned:
-                return
-            for path in self.test_files:
-                full_path = self.full_path(path)
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['rev_1'])
-                revision = self.vcs.commit("Initial file contents.")
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['uncommitted'])
-                committed_contents = self.vcs.get_file_contents(
-                    full_path, revision)
-                self.failUnlessEqual(
-                    self.test_contents['rev_1'], committed_contents)
-
-        def test_revision_id_as_committed(self):
-            """Check for compatibility between .commit() and .revision_id()"""
-            if not self.vcs.versioned:
-                self.failUnlessEqual(self.vcs.revision_id(5), None)
-                return
-            committed_revisions = []
-            for path in self.test_files:
-                full_path = self.full_path(path)
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['rev_1'])
-                revision = self.vcs.commit("Initial %s contents." % path)
-                committed_revisions.append(revision)
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['uncommitted'])
-                revision = self.vcs.commit("Altered %s contents." % path)
-                committed_revisions.append(revision)
-            for i,revision in enumerate(committed_revisions):
-                self.failUnlessEqual(self.vcs.revision_id(i), revision)
-                i += -len(committed_revisions) # check negative indices
-                self.failUnlessEqual(self.vcs.revision_id(i), revision)
-            i = len(committed_revisions)
-            self.failUnlessEqual(self.vcs.revision_id(i), None)
-            self.failUnlessEqual(self.vcs.revision_id(-i-1), None)
-
-        def test_revision_id_as_committed(self):
-            """Check revision id before first commit"""
-            if not self.vcs.versioned:
-                self.failUnlessEqual(self.vcs.revision_id(5), None)
-                return
-            committed_revisions = []
-            for path in self.test_files:
-                self.failUnlessEqual(self.vcs.revision_id(0), None)
-
-
-    class VCS_duplicate_repo_TestCase(VCSTestCase):
-        """Test cases for VCS.duplicate_repo method."""
-
-        def setUp(self):
-            super(VCS_duplicate_repo_TestCase, self).setUp()
-            setup_vcs_revision_test_fixtures(self)
-
-        def tearDown(self):
-            self.vcs.remove_duplicate_repo()
-            for path in reversed(sorted(self.test_dirs)):
-                self.vcs.recursive_remove(self.full_path(path))
-            super(VCS_duplicate_repo_TestCase, self).tearDown()
-
-        def test_revision_file_contents_as_committed(self):
-            """Should match file contents as committed to specified revision.
-            """
-            if not self.vcs.versioned:
-                return
-            for path in self.test_files:
-                full_path = self.full_path(path)
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['rev_1'])
-                revision = self.vcs.commit("Commit current status")
-                self.vcs.set_file_contents(
-                    full_path, self.test_contents['uncommitted'])
-                dup_repo_path = self.vcs.duplicate_repo(revision)
-                dup_file_path = os.path.join(dup_repo_path, path)
-                dup_file_contents = file(dup_file_path, 'rb').read()
-                self.failUnlessEqual(
-                    self.test_contents['rev_1'], dup_file_contents)
-                self.vcs.remove_duplicate_repo()
-
-
-    def make_vcs_testcase_subclasses(vcs_class, namespace):
-        """Make VCSTestCase subclasses for vcs_class in the namespace."""
-        vcs_testcase_classes = [
-            c for c in (
-                ob for ob in globals().values() if isinstance(ob, type))
-            if issubclass(c, VCSTestCase)]
-
-        for base_class in vcs_testcase_classes:
-            testcase_class_name = vcs_class.__name__ + base_class.__name__
-            testcase_class_bases = (base_class,)
-            testcase_class_dict = dict(base_class.__dict__)
-            testcase_class_dict['Class'] = vcs_class
-            testcase_class = type(
-                testcase_class_name, testcase_class_bases, testcase_class_dict)
-            setattr(namespace, testcase_class_name, testcase_class)
-
+    make_vcs_testcase_subclasses(VCS, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

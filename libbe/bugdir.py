@@ -30,7 +30,6 @@ import os.path
 import time
 
 import libbe
-import libbe.util.encoding as encoding
 import libbe.storage as storage
 from libbe.storage.util.properties import Property, doc_property, \
     local_property, defaulting_property, checked_property, \
@@ -175,6 +174,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
         self.storage = storage
         self.id = libbe.util.id.ID(self, 'bugdir')
         if from_storage == True:
+            self.uuid = [c for c in self.storage.children()
+                         if c != 'version'][0]
             self.load_settings()
         else:
             if uuid == None:
@@ -192,8 +193,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                 self.storage.get(self.id.storage('settings'), default='\n')
         self.settings = mapfile.parse(settings_mapfile)
         self._setup_saved_settings()
-        self._setup_user_id(self.user_id)
-        self._setup_encoding(self.encoding)
+        #self._setup_user_id(self.user_id)
         self._setup_severities(self.severities)
         self._setup_status(self.active_status, self.inactive_status)
 
@@ -219,8 +219,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
         happen, so calling this method will just waste time (unless
         something else has been messing with your stored files).
         """
-        self.storage.add(self.id.storage())
-        self.storage.add(self.id.storage('settings'), parent=self.id.storage())
+        self.storage.add(self.id.storage(), directory=True)
+        self.storage.add(self.id.storage('settings'), parent=self.id.storage(),
+                         directory=False)
         self.save_settings()
         for bug in self:
             bug.save()
@@ -297,7 +298,6 @@ class BugDir (list, settings_object.SavedSettingsObject):
         dbd.storage.writeable = False
         added,changed,removed = self.storage.changed_since(revision)
         for id in added:
-            
             pass
         for id in removed:
             pass

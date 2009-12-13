@@ -7,6 +7,10 @@ example,
 Note that the Arch VCS backend *enforces* ids with this format.
 """
 
+import re
+from socket import gethostname
+
+import libbe
 import libbe.storage.util.config
 
 def _get_fallback_username(self):
@@ -23,11 +27,11 @@ def _get_fallback_email(self):
     name = _get_fallback_username()
     return "%s@%s" % (name, hostname)
 
-def create_user_id(self, name, email=None):
+def create_user_id(name, email=None):
     """
-    >>> create_id("John Doe", "jdoe@example.com")
+    >>> create_user_id("John Doe", "jdoe@example.com")
     'John Doe <jdoe@example.com>'
-    >>> create_id("John Doe")
+    >>> create_user_id("John Doe")
     'John Doe'
     """
     assert len(name) > 0
@@ -36,14 +40,14 @@ def create_user_id(self, name, email=None):
     else:
         return "%s <%s>" % (name, email)
 
-def parse_user_id(self, value):
+def parse_user_id(value):
     """
-    >>> parse_id("John Doe <jdoe@example.com>")
+    >>> parse_user_id("John Doe <jdoe@example.com>")
     ('John Doe', 'jdoe@example.com')
-    >>> parse_id("John Doe")
+    >>> parse_user_id("John Doe")
     ('John Doe', None)
     >>> try:
-    ...     parse_id("John Doe <jdoe@example.com><what?>")
+    ...     parse_user_id("John Doe <jdoe@example.com><what?>")
     ... except AssertionError:
     ...     print "Invalid match"
     Invalid match

@@ -657,8 +657,9 @@ class Bug(settings_object.SavedSettingsObject):
             parent = self.bugdir.id.storage()
         else:
             parent = None
-        self.storage.add(self.id.storage(), parent=parent)
-        self.storage.add(self.id.storage('values'), parent=self.id.storage())
+        self.storage.add(self.id.storage(), parent=parent, directory=True)
+        self.storage.add(self.id.storage('values'), parent=self.id.storage(),
+                         directory=False)
         self.save_settings()
         if len(self.comment_root) > 0:
             comment.save_comments(self)

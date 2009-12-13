@@ -206,7 +206,7 @@ def child_uuids(child_storage_ids):
     ['123abc', '123def']
     """
     for id in child_storage_ids:
-        fields = libbe.util.id._split(id)
+        fields = _split(id)
         if len(fields) == 1:
             yield fields[0]
 

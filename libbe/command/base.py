@@ -1,5 +1,6 @@
 # Copyright
 
+import codecs
 import optparse
 import sys
 
@@ -168,7 +169,7 @@ class Command (object):
             else: # non-arg options are flags, set to default flag value
                 params[option.name] = False
         if len(options) > 0:
-            raise UserError, 'Invalid options passed to command %s:\n  %s' \
+            raise UserError, 'Invalid option passed to command %s:\n  %s' \
                 % (self.name, '\n  '.join(['%s: %s' % (k,v)
                                            for k,v in options.items()]))
         for arg in self.args:
@@ -190,9 +191,9 @@ class Command (object):
 
     def _setup_io(self, input_encoding=None, output_encoding=None):
         if input_encoding == None:
-            input_encoding = libbe.util.get_input_encoding()
+            input_encoding = libbe.util.encoding.get_input_encoding()
         if output_encoding == None:
-            output_encoding = libbe.util.get_output_encoding()
+            output_encoding = libbe.util.encoding.get_output_encoding()
         self.stdin = codecs.getwriter(input_encoding)(sys.stdin)
         self.stdin.encoding = input_encoding
         self.stdout = codecs.getwriter(output_encoding)(sys.stdout)

@@ -27,6 +27,7 @@ import os
 import sys
 
 import libbe
+import libbe.bugdir
 import libbe.command
 import libbe.command.util
 import libbe.version
@@ -52,11 +53,14 @@ class CmdOptionParser(optparse.OptionParser):
         option.validate()
         self._option_by_name[option.name] = option
         opt_strings = ['--'+option.name]
+        dest = option.name.replace('-', '_')
+        assert '_' not in option.name, \
+            'Non-reconstructable option name %s' % option.name
         if option.short_name != None:
             opt_strings.append('-'+option.short_name)
         if option.arg == None: # a callback option
             opt = optparse.Option(
-                *opt_strings, action='callback',
+                *opt_strings, action='callback', dest=dest,
                 callback=self.callback, help=option.help)
         else:
             kwargs = {}
@@ -68,7 +72,7 @@ class CmdOptionParser(optparse.OptionParser):
             opt = optparse.Option(
                 *opt_strings, metavar=option.arg.metavar,
                  default=option.arg.default, action=action,
-                 help=option.help, **kwargs)
+                 dest=dest, help=option.help, **kwargs)
         opt._option = option
         self.add_option(opt)
 
@@ -76,7 +80,11 @@ class CmdOptionParser(optparse.OptionParser):
         args = self._get_args(args)
         options,parsed_args = optparse.OptionParser.parse_args(
             self, args=args, values=values)
-        for name,value in options.__dict__.items():
+        options = options.__dict__
+        for name,value in options.items():
+            if '_' in name: # reconstruct original option name
+                options[name.replace('_', '-')] = options.pop(name)
+        for name,value in options.items():
             if value == '--complete':
                 argument = None
                 option = self._option_by_name[name]
@@ -231,9 +239,9 @@ def main():
         return 1
 
     paginate = 'auto'
-    if options.paginate == True:
+    if options['paginate'] == True:
         paginate = 'always'
-    if options.no_pager== True:
+    if options['no-pager'] == True:
         paginate = 'never'
     libbe.ui.util.pager.run_pager(paginate)
     
@@ -249,7 +257,7 @@ def main():
     if command.requires_bugdir == True:
         storage = libbe.storage.get_storage(options['repo'])
         storage.connect()
-        bugdir = BugDir(storage)
+        bugdir = libbe.bugdir.BugDir(storage, from_storage=True)
     else:
         storage = None
         bugdir = None

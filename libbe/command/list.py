@@ -129,6 +129,7 @@ class List (libbe.command.Command):
 #                ])
 
     def _run(self, bugdir, **params):
+        bugdir.storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \
             self._parse_params(params)
         filter = Filter(status, severity, assigned, extra_strings_regexps)
@@ -136,7 +137,7 @@ class List (libbe.command.Command):
         bugs = [b for b in bugs if filter(b) == True]
         self.result = bugs
         if len(bugs) == 0 and params['xml'] == False:
-            print "No matching bugs found"
+            print >> self.stdout, "No matching bugs found"
     
         # sort bugs
         bugs = self._sort_bugs(bugs, cmp_list)
@@ -144,7 +145,7 @@ class List (libbe.command.Command):
         # print list of bugs
         if params['uuids'] == True:
             for bug in bugs:
-                print bug.uuid
+                print >> self.stdout, bug.uuid
         else:
             self._list_bugs(bugs, xml=params['xml'])
 
@@ -205,16 +206,17 @@ class List (libbe.command.Command):
 
     def _list_bugs(self, bugs, xml=False):
         if xml == True:
-            print '<?xml version="1.0" encoding="%s" ?>' % self.stdout.encoding
-            print "<bugs>"
+            print >> self.stdout, \
+                '<?xml version="1.0" encoding="%s" ?>' % self.stdout.encoding
+            print >> self.stdout, '<bugs>'
         if len(bugs) > 0:
             for bug in bugs:
                 if xml == True:
-                    print bug.xml(show_comments=True)
+                    print >> self.stdout, bug.xml(show_comments=True)
                 else:
-                    print bug.string(shortlist=True)
+                    print >> self.stdout, bug.string(shortlist=True)
         if xml == True:
-            print "</bugs>"
+            print >> self.stdout, '</bugs>'
 
     def _long_help(self):
         return """
