@@ -27,7 +27,8 @@ import sys
 import unittest
 
 import libbe
-import vcs
+import libbe.ui.util.user
+import base
 if libbe.TESTING == True:
     import doctest
 
@@ -35,108 +36,113 @@ if libbe.TESTING == True:
 def new():
     return Git()
 
-class Git(vcs.VCS):
-    name="git"
-    client="git"
+class Git(base.VCS):
+    name='git'
+    client='git'
     versioned=True
+
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client("--version")
+        status,output,error = self._u_invoke_client('--version')
         return output
+
+    def _vcs_get_user_id(self):
+        status,output,error = \
+            self._u_invoke_client('config', 'user.name', expect=(0,1))
+        if status == 0:
+            name = output.rstrip('\n')
+        else:
+            name = ''
+        status,output,error = \
+            self._u_invoke_client('config', 'user.email', expect=(0,1))
+        if status == 0:
+            email = output.rstrip('\n')
+        else:
+            email = ''
+        if name != '' or email != '': # got something!
+            # guess missing info, if necessary
+            if name == '':
+                name = libbe.ui.util.user.get_fallback_username()
+            if email == '':
+                email = libe.ui.util.user.get_fallback_email()
+            return libbe.ui.util.user.create_user_id(name, email)
+        return None # Git has no infomation
+
     def _vcs_detect(self, path):
-        if self._u_search_parent_directories(path, ".git") != None :
+        if self._u_search_parent_directories(path, '.git') != None :
             return True
         return False 
+
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
         # Assume that nothing funny is going on; in particular, that we aren't
         # dealing with a bare repo.
         if os.path.isdir(path) != True:
             path = os.path.dirname(path)
-        status,output,error = self._u_invoke_client("rev-parse", "--git-dir",
+        status,output,error = self._u_invoke_client('rev-parse', '--git-dir',
                                                     cwd=path)
         gitdir = os.path.join(path, output.rstrip('\n'))
         dirname = os.path.abspath(os.path.dirname(gitdir))
         return dirname
+
     def _vcs_init(self, path):
-        self._u_invoke_client("init", cwd=path)
-    def _vcs_get_user_id(self):
-        status,output,error = \
-            self._u_invoke_client("config", "user.name", expect=(0,1))
-        if status == 0:
-            name = output.rstrip('\n')
-        else:
-            name = ""
-        status,output,error = \
-            self._u_invoke_client("config", "user.email", expect=(0,1))
-        if status == 0:
-            email = output.rstrip('\n')
-        else:
-            email = ""
-        if name != "" or email != "": # got something!
-            # guess missing info, if necessary
-            if name == "":
-                name = self._u_get_fallback_username()
-            if email == "":
-                email = self._u_get_fallback_email()
-            return self._u_create_id(name, email)
-        return None # Git has no infomation
-    def _vcs_set_user_id(self, value):
-        name,email = self._u_parse_id(value)
-        if email != None:
-            self._u_invoke_client("config", "user.email", email)
-        self._u_invoke_client("config", "user.name", name)
+        self._u_invoke_client('init', cwd=path)
+
+    def _vcs_destroy(self):
+        vcs_dir = os.path.join(self.repo, '.git')
+        if os.path.exists(vcs_dir):
+            shutil.rmtree(vcs_dir)
+
     def _vcs_add(self, path):
         if os.path.isdir(path):
             return
-        self._u_invoke_client("add", path)
+        self._u_invoke_client('add', path)
+
     def _vcs_remove(self, path):
         if not os.path.isdir(self._u_abspath(path)):
-            self._u_invoke_client("rm", "-f", path)
+            self._u_invoke_client('rm', '-f', path)
+
     def _vcs_update(self, path):
         self._vcs_add(path)
-    def _vcs_get_file_contents(self, path, revision=None, binary=False):
+
+    def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return vcs.VCS._vcs_get_file_contents(self, path, revision, binary=binary)
+            return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
-            arg = "%s:%s" % (revision,path)
-            status,output,error = self._u_invoke_client("show", arg)
+            arg = '%s:%s' % (revision,path)
+            status,output,error = self._u_invoke_client('show', arg)
             return output
-    def _vcs_duplicate_repo(self, directory, revision=None):
-        if revision==None:
-            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
-        else:
-            self._u_invoke_client("clone", "--no-checkout", ".", directory)
-            self._u_invoke_client("checkout", revision, cwd=directory)
+
     def _vcs_commit(self, commitfile, allow_empty=False):
         args = ['commit', '--all', '--file', commitfile]
         if allow_empty == True:
-            args.append("--allow-empty")
+            args.append('--allow-empty')
             status,output,error = self._u_invoke_client(*args)
         else:
-            kwargs = {"expect":(0,1)}
+            kwargs = {'expect':(0,1)}
             status,output,error = self._u_invoke_client(*args, **kwargs)
-            strings = ["nothing to commit",
-                       "nothing added to commit"]
+            strings = ['nothing to commit',
+                       'nothing added to commit']
             if self._u_any_in_string(strings, output) == True:
-                raise vcs.EmptyCommit()
+                raise base.EmptyCommit()
         revision = None
-        revline = re.compile("(.*) (.*)[:\]] (.*)")
+        revline = re.compile('(.*) (.*)[:\]] (.*)')
         match = revline.search(output)
         assert match != None, output+error
         assert len(match.groups()) == 3
         revision = match.groups()[1]
         full_revision = self._vcs_revision_id(-1)
         assert full_revision.startswith(revision), \
-            "Mismatched revisions:\n%s\n%s" % (revision, full_revision)
+            'Mismatched revisions:\n%s\n%s' % (revision, full_revision)
         return full_revision
+
     def _vcs_revision_id(self, index):
-        args = ["rev-list", "--first-parent", "--reverse", "HEAD"]
-        kwargs = {"expect":(0,128)}
+        args = ['rev-list', '--first-parent', '--reverse', 'HEAD']
+        kwargs = {'expect':(0,128)}
         status,output,error = self._u_invoke_client(*args, **kwargs)
         if status == 128:
             if error.startswith("fatal: ambiguous argument 'HEAD': unknown "):
                 return None
-            raise vcs.CommandError(args, status, stderr=error)
+            raise base.CommandError(args, status, stderr=error)
         commits = output.splitlines()
         try:
             return commits[index]
@@ -145,7 +151,7 @@ class Git(vcs.VCS):
 
     
 if libbe.TESTING == True:
-    vcs.make_vcs_testcase_subclasses(Git, sys.modules[__name__])
+    base.make_vcs_testcase_subclasses(Git, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])

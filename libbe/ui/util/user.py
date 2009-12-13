@@ -13,7 +13,7 @@ from socket import gethostname
 import libbe
 import libbe.storage.util.config
 
-def _get_fallback_username(self):
+def get_fallback_username(self):
     name = None
     for env in ["LOGNAME", "USERNAME"]:
         if os.environ.has_key(env):
@@ -22,9 +22,9 @@ def _get_fallback_username(self):
     assert name != None
     return name
 
-def _get_fallback_email(self):
+def get_fallback_email(self):
     hostname = gethostname()
-    name = _get_fallback_username()
+    name = get_fallback_username()
     return "%s@%s" % (name, hostname)
 
 def create_user_id(name, email=None):
@@ -77,9 +77,9 @@ def get_user_id(self, storage=None):
         user = vcs.get_user_id()
         if user != None:
             return user
-    name = _get_fallback_username()
-    email = _get_fallback_email()
-    user = _create_user_id(name, email)
+    name = get_fallback_username()
+    email = get_fallback_email()
+    user = create_user_id(name, email)
     return user
 
 def set_user_id(self, user_id):

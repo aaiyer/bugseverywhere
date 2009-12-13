@@ -621,7 +621,8 @@ os.listdir(self.get_path("bugs")):
     def _destroy(self):
         self._vcs_destroy()
         self._cached_path_id.destroy()
-        shutil.rmtree(self.be_dir)
+        if os.path.exists(self.be_dir):
+            shutil.rmtree(self.be_dir)
 
     def _connect(self):
         self.root()

@@ -22,7 +22,9 @@ Mercurial (hg) backend.
 """
 
 import os
+import os.path
 import re
+import shutil
 import sys
 
 import libbe
@@ -67,6 +69,11 @@ class Hg(base.VCS):
 
     def _vcs_init(self, path):
         self._u_invoke_client('init', cwd=path)
+
+    def _vcs_destroy(self):
+        vcs_dir = os.path.join(self.repo, '.hg')
+        if os.path.exists(vcs_dir):
+            shutil.rmtree(vcs_dir)
 
     def _vcs_add(self, path):
         self._u_invoke_client('add', path)
