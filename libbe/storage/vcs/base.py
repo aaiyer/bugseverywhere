@@ -36,6 +36,7 @@ import tempfile
 import libbe
 import libbe.storage.base
 import libbe.util.encoding
+from libbe.storage.base import EmptyCommit, InvalidRevision
 from libbe.util.utility import Dir, search_parent_directories
 from libbe.util.subproc import CommandError, invoke
 from libbe.util.plugin import import_by_name
