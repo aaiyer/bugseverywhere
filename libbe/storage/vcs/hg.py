@@ -41,7 +41,10 @@ def new():
 class Hg(base.VCS):
     name='hg'
     client='hg'
-    versioned=True
+
+    def __init__(self, *args, **kwargs):
+        base.VCS.__init__(self, *args, **kwargs)
+        self.versioned = True
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')

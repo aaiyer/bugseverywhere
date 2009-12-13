@@ -22,7 +22,9 @@ Git backend.
 """
 
 import os
+import os.path
 import re
+import shutil
 import sys
 import unittest
 
@@ -39,7 +41,10 @@ def new():
 class Git(base.VCS):
     name='git'
     client='git'
-    versioned=True
+
+    def __init__(self, *args, **kwargs):
+        base.VCS.__init__(self, *args, **kwargs)
+        self.versioned = True
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')

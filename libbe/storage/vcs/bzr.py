@@ -23,12 +23,14 @@ Bazaar (bzr) backend.
 """
 
 import os
+import os.path
 import re
+import shutil
 import sys
 import unittest
 
 import libbe
-import vcs
+import base
 if libbe.TESTING == True:
     import doctest
 
@@ -36,72 +38,83 @@ if libbe.TESTING == True:
 def new():
     return Bzr()
 
-class Bzr(vcs.VCS):
-    name = "bzr"
-    client = "bzr"
-    versioned = True
+class Bzr(base.VCS):
+    name = 'bzr'
+    client = 'bzr'
+
+    def __init__(self, *args, **kwargs):
+        base.VCS.__init__(self, *args, **kwargs)
+        self.versioned = True
+
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client("--version")
+        status,output,error = self._u_invoke_client('--version')
         return output        
+
+    def _vcs_get_user_id(self):
+        status,output,error = self._u_invoke_client('whoami')
+        return output.rstrip('\n')
+
     def _vcs_detect(self, path):
-        if self._u_search_parent_directories(path, ".bzr") != None :
+        if self._u_search_parent_directories(path, '.bzr') != None :
             return True
         return False
+
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
-        status,output,error = self._u_invoke_client("root", path)
+        status,output,error = self._u_invoke_client('root', path)
         return output.rstrip('\n')
+
     def _vcs_init(self, path):
-        self._u_invoke_client("init", cwd=path)
-    def _vcs_get_user_id(self):
-        status,output,error = self._u_invoke_client("whoami")
-        return output.rstrip('\n')
-    def _vcs_set_user_id(self, value):
-        self._u_invoke_client("whoami", value)
+        self._u_invoke_client('init', cwd=path)
+
+    def _vcs_destroy(self):
+        vcs_dir = os.path.join(self.repo, '.bzr')
+        if os.path.exists(vcs_dir):
+            shutil.rmtree(vcs_dir)
+
     def _vcs_add(self, path):
-        self._u_invoke_client("add", path)
+        self._u_invoke_client('add', path)
+
     def _vcs_remove(self, path):
         # --force to also remove unversioned files.
-        self._u_invoke_client("remove", "--force", path)
+        self._u_invoke_client('remove', '--force', path)
+
     def _vcs_update(self, path):
         pass
-    def _vcs_get_file_contents(self, path, revision=None, binary=False):
+
+    def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return vcs.VCS._vcs_get_file_contents(self, path, revision, binary=binary)
+            return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
-                self._u_invoke_client("cat","-r",revision,path)
+                self._u_invoke_client('cat', '-r', revision,path)
             return output
-    def _vcs_duplicate_repo(self, directory, revision=None):
-        if revision == None:
-            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
-        else:
-            self._u_invoke_client("branch", "--revision", revision,
-                                  ".", directory)
+
     def _vcs_commit(self, commitfile, allow_empty=False):
-        args = ["commit", "--file", commitfile]
+        args = ['commit', '--file', commitfile]
         if allow_empty == True:
-            args.append("--unchanged")
+            args.append('--unchanged')
             status,output,error = self._u_invoke_client(*args)
         else:
-            kwargs = {"expect":(0,3)}
+            kwargs = {'expect':(0,3)}
             status,output,error = self._u_invoke_client(*args, **kwargs)
             if status != 0:
-                strings = ["ERROR: no changes to commit.", # bzr 1.3.1
-                           "ERROR: No changes to commit."] # bzr 1.15.1
+                strings = ['ERROR: no changes to commit.', # bzr 1.3.1
+                           'ERROR: No changes to commit.'] # bzr 1.15.1
                 if self._u_any_in_string(strings, error) == True:
-                    raise vcs.EmptyCommit()
+                    raise base.EmptyCommit()
                 else:
-                    raise vcs.CommandError(args, status, stderr=error)
+                    raise base.CommandError(args, status, stderr=error)
         revision = None
-        revline = re.compile("Committed revision (.*)[.]")
+        revline = re.compile('Committed revision (.*)[.]')
         match = revline.search(error)
         assert match != None, output+error
         assert len(match.groups()) == 1
         revision = match.groups()[0]
         return revision
+
     def _vcs_revision_id(self, index):
-        status,output,error = self._u_invoke_client("revno")
+        status,output,error = self._u_invoke_client('revno')
         current_revision = int(output)
         if index >= current_revision or index < -current_revision:
             return None
@@ -111,7 +124,7 @@ class Bzr(vcs.VCS):
 
     
 if libbe.TESTING == True:
-    vcs.make_vcs_testcase_subclasses(Bzr, sys.modules[__name__])
+    base.make_vcs_testcase_subclasses(Bzr, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
