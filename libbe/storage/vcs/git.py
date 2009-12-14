@@ -143,12 +143,12 @@ class Git(base.VCS):
             if error.startswith("fatal: ambiguous argument 'HEAD': unknown "):
                 return None
             raise base.CommandError(args, status, stderr=error)
-        commits = output.splitlines()
+        revisions = output.splitlines()
         try:
             if index > 0:
-                return commits[index-1]
+                return revisions[index-1]
             elif index < 0:
-                return commits[index]
+                return revisions[index]
             else:
                 return None
         except IndexError:

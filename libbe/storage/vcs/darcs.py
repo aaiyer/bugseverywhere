@@ -22,7 +22,9 @@ Darcs backend.
 import codecs
 import os
 import re
+import shutil
 import sys
+import time # work around http://mercurial.selenic.com/bts/issue618
 try: # import core module, Python >= 2.5
     from xml.etree import ElementTree
 except ImportError: # look for non-core module
@@ -30,7 +32,8 @@ except ImportError: # look for non-core module
 from xml.sax.saxutils import unescape
 
 import libbe
-import vcs
+import base
+
 if libbe.TESTING == True:
     import doctest
     import unittest
@@ -39,124 +42,136 @@ if libbe.TESTING == True:
 def new():
     return Darcs()
 
-class Darcs(vcs.VCS):
-    name="darcs"
-    client="darcs"
-    versioned=True
+class Darcs(base.VCS):
+    name='darcs'
+    client='darcs'
+
+    def __init__(self, *args, **kwargs):
+        base.VCS.__init__(self, *args, **kwargs)
+        self.versioned = True
+        self.__updated = [] # work around http://mercurial.selenic.com/bts/issue618
+
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client("--version")
-        num_part = output.split(" ")[0]
-        self.parsed_version = [int(i) for i in num_part.split(".")]
+        status,output,error = self._u_invoke_client('--version')
+        num_part = output.split(' ')[0]
+        self.parsed_version = [int(i) for i in num_part.split('.')]
         return output
+
+    def _vcs_get_user_id(self):
+        # following http://darcs.net/manual/node4.html#SECTION00410030000000000000
+        # as of June 29th, 2009
+        if self.repo == None:
+            return None
+        darcs_dir = os.path.join(self.repo, '_darcs')
+        if darcs_dir != None:
+            for pref_file in ['author', 'email']:
+                pref_path = os.path.join(darcs_dir, 'prefs', pref_file)
+                if os.path.exists(pref_path):
+                    return self.get_file_contents(pref_path)
+        for env_variable in ['DARCS_EMAIL', 'EMAIL']:
+            if env_variable in os.environ:
+                return os.environ[env_variable]
+        return None
+
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, "_darcs") != None :
             return True
         return False 
+
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
         # Assume that nothing funny is going on; in particular, that we aren't
         # dealing with a bare repo.
         if os.path.isdir(path) != True:
             path = os.path.dirname(path)
-        darcs_dir = self._u_search_parent_directories(path, "_darcs")
+        darcs_dir = self._u_search_parent_directories(path, '_darcs')
         if darcs_dir == None:
             return None
         return os.path.dirname(darcs_dir)
+
     def _vcs_init(self, path):
-        self._u_invoke_client("init", cwd=path)
-    def _vcs_get_user_id(self):
-        # following http://darcs.net/manual/node4.html#SECTION00410030000000000000
-        # as of June 29th, 2009
-        if self.rootdir == None:
-            return None
-        darcs_dir = os.path.join(self.rootdir, "_darcs")
-        if darcs_dir != None:
-            for pref_file in ["author", "email"]:
-                pref_path = os.path.join(darcs_dir, "prefs", pref_file)
-                if os.path.exists(pref_path):
-                    return self.get_file_contents(pref_path)
-        for env_variable in ["DARCS_EMAIL", "EMAIL"]:
-            if env_variable in os.environ:
-                return os.environ[env_variable]
-        return None
-    def _vcs_set_user_id(self, value):
-        if self.rootdir == None:
-            self.root(".")
-            if self.rootdir == None:
-                raise vcs.SettingIDnotSupported
-        author_path = os.path.join(self.rootdir, "_darcs", "prefs", "author")
-        f = codecs.open(author_path, "w", self.encoding)
-        f.write(value)
-        f.close()
+        self._u_invoke_client('init', cwd=path)
+
+    def _vcs_destroy(self):
+        vcs_dir = os.path.join(self.repo, '_darcs')
+        if os.path.exists(vcs_dir):
+            shutil.rmtree(vcs_dir)
+
     def _vcs_add(self, path):
         if os.path.isdir(path):
             return
-        self._u_invoke_client("add", path)
+        self._u_invoke_client('add', path)
+
     def _vcs_remove(self, path):
         if not os.path.isdir(self._u_abspath(path)):
-            os.remove(os.path.join(self.rootdir, path)) # darcs notices removal
+            os.remove(os.path.join(self.repo, path)) # darcs notices removal
+
     def _vcs_update(self, path):
+        self.__updated.append(path) # work around http://mercurial.selenic.com/bts/issue618
         pass # darcs notices changes
-    def _vcs_get_file_contents(self, path, revision=None, binary=False):
+
+    def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return vcs.VCS._vcs_get_file_contents(self, path, revision,
-                                                  binary=binary)
+            return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
             if self.parsed_version[0] >= 2:
                 status,output,error = self._u_invoke_client( \
-                    "show", "contents", "--patch", revision, path)
+                    'show', 'contents', '--patch', revision, path)
                 return output
             else:
-                # Darcs versions < 2.0.0pre2 lack the "show contents" command
+                # Darcs versions < 2.0.0pre2 lack the 'show contents' command
 
                 status,output,error = self._u_invoke_client( \
-                    "diff", "--unified", "--from-patch", revision, path,
+                    'diff', '--unified', '--from-patch', revision, path,
                     unicode_output=False)
                 major_patch = output
                 status,output,error = self._u_invoke_client( \
-                    "diff", "--unified", "--patch", revision, path,
+                    'diff', '--unified', '--patch', revision, path,
                     unicode_output=False)
                 target_patch = output
                 
-                # "--output -" to be supported in GNU patch > 2.5.9
+                # '--output -' to be supported in GNU patch > 2.5.9
                 # but that hasn't been released as of June 30th, 2009.
 
                 # Rewrite path to status before the patch we want
-                args=["patch", "--reverse", path]
+                args=['patch', '--reverse', path]
                 status,output,error = self._u_invoke(args, stdin=major_patch)
                 # Now apply the patch we want
-                args=["patch", path]
+                args=['patch', path]
                 status,output,error = self._u_invoke(args, stdin=target_patch)
 
-                if os.path.exists(os.path.join(self.rootdir, path)) == True:
-                    contents = vcs.VCS._vcs_get_file_contents(self, path,
-                                                          binary=binary)
+                if os.path.exists(os.path.join(self.repo, path)) == True:
+                    contents = base.VCS._vcs_get_file_contents(self, path)
                 else:
-                    contents = ""
+                    contents = ''
 
                 # Now restore path to it's current incarnation
-                args=["patch", "--reverse", path]
+                args=['patch', '--reverse', path]
                 status,output,error = self._u_invoke(args, stdin=target_patch)
-                args=["patch", path]
+                args=['patch', path]
                 status,output,error = self._u_invoke(args, stdin=major_patch)
-                current_contents = vcs.VCS._vcs_get_file_contents(self, path,
-                                                              binary=binary)
+                current_contents = base.VCS._vcs_get_file_contents(self, path)
                 return contents
-    def _vcs_duplicate_repo(self, directory, revision=None):
-        if revision==None:
-            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
-        else:
-            self._u_invoke_client("put", "--to-patch", revision, directory)
+
     def _vcs_commit(self, commitfile, allow_empty=False):
         id = self.get_user_id()
-        if '@' not in id:
-            id = "%s <%s@invalid.com>" % (id, id)
+        if id == None or '@' not in id:
+            id = '%s <%s@invalid.com>' % (id, id)
         args = ['record', '--all', '--author', id, '--logfile', commitfile]
         status,output,error = self._u_invoke_client(*args)
-        empty_strings = ["No changes!"]
+        empty_strings = ['No changes!']
+        # work around http://mercurial.selenic.com/bts/issue618
+        if self._u_any_in_string(empty_strings, output) == True \
+                and len(self.__updated) > 0:
+            time.sleep(1)
+            for path in self.__updated:
+                os.utime(os.path.join(self.repo, path), None)
+            status,output,error = self._u_invoke_client(*args)
+        self.__updated = []
+        # end work around
         if self._u_any_in_string(empty_strings, output) == True:
             if allow_empty == False:
-                raise vcs.EmptyCommit()
+                raise base.EmptyCommit()
             # note that darcs does _not_ make an empty revision.
             # this returns the last non-empty revision id...
             revision = self._vcs_revision_id(-1)
@@ -167,26 +182,33 @@ class Darcs(vcs.VCS):
             assert len(match.groups()) == 1
             revision = match.groups()[0]
         return revision
+
     def _vcs_revision_id(self, index):
-        status,output,error = self._u_invoke_client("changes", "--xml")
+        status,output,error = self._u_invoke_client('changes', '--xml')
         revisions = []
-        xml_str = output.encode("unicode_escape").replace(r"\n", "\n")
+        xml_str = output.encode('unicode_escape').replace(r'\n', '\n')
         element = ElementTree.XML(xml_str)
-        assert element.tag == "changelog", element.tag
+        assert element.tag == 'changelog', element.tag
         for patch in element.getchildren():
-            assert patch.tag == "patch", patch.tag
+            assert patch.tag == 'patch', patch.tag
             for child in patch.getchildren():
-                if child.tag == "name":
-                    text = unescape(unicode(child.text).decode("unicode_escape").strip())
+                if child.tag == 'name':
+                    text = unescape(unicode(child.text).decode('unicode_escape').strip())
                     revisions.append(text)
         revisions.reverse()
         try:
-            return revisions[index]
+            if index > 0:
+                return revisions[index-1]
+            elif index < 0:
+                return revisions[index]
+            else:
+                return None
         except IndexError:
             return None
+
     
 if libbe.TESTING == True:
-    vcs.make_vcs_testcase_subclasses(Darcs, sys.modules[__name__])
+    base.make_vcs_testcase_subclasses(Darcs, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
