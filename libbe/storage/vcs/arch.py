@@ -30,62 +30,80 @@ import sys
 import time
 
 import libbe
-from beuuid import uuid_gen
-import config
-import vcs
+import libbe.ui.util.user
+import libbe.storage.util.config
+from libbe.util.id import uuid_gen
+import base
+
 if libbe.TESTING == True:
     import unittest
     import doctest
 
 
-DEFAULT_CLIENT = "tla"
+class CantAddFile(Exception):
+    def __init__(self, file):
+        self.file = file
+        Exception.__init__(self, "Can't automatically add file %s" % file)
 
-client = config.get_val("arch_client", default=DEFAULT_CLIENT)
+DEFAULT_CLIENT = 'tla'
+
+client = libbe.storage.util.config.get_val(
+    'arch_client', default=DEFAULT_CLIENT)
 
 def new():
     return Arch()
 
-class Arch(vcs.VCS):
-    name = "arch"
+class Arch(base.VCS):
+    name = 'arch'
     client = client
-    versioned = True
     _archive_name = None
     _archive_dir = None
     _tmp_archive = False
     _project_name = None
     _tmp_project = False
-    _arch_paramdir = os.path.expanduser("~/.arch-params")
+    _arch_paramdir = os.path.expanduser('~/.arch-params')
+
+    def __init__(self, *args, **kwargs):
+        base.VCS.__init__(self, *args, **kwargs)
+        self.versioned = True
+        self.interspersed_vcs_files = True
+        self.paranoid = False
+
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client("--version")
+        status,output,error = self._u_invoke_client('--version')
         return output
+
     def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
-        if self._u_search_parent_directories(path, "{arch}") != None :
-            config.set_val("arch_client", client)
+        if self._u_search_parent_directories(path, '{arch}') != None :
+            libbe.storage.util.config.set_val('arch_client', client)
             return True
         return False
+
     def _vcs_init(self, path):
         self._create_archive(path)
         self._create_project(path)
         self._add_project_code(path)
+
     def _create_archive(self, path):
         """
         Create a temporary Arch archive in the directory PATH.  This
         archive will be removed by
-          cleanup->_vcs_cleanup->_remove_archive
+          destroy->_vcs_destroy->_remove_archive
         """
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
         id = self.get_user_id()
-        name, email = self._u_parse_id(id)
+        name, email = libbe.ui.util.user.parse_user_id(id)
         if email == None:
-            email = "%s@example.com" % name
-        trailer = "%s-%s" % ("bugs-everywhere-auto", uuid_gen()[0:8])
-        self._archive_name = "%s--%s" % (email, trailer)
-        self._archive_dir = "/tmp/%s" % trailer
+            email = '%s@example.com' % name
+        trailer = '%s-%s' % ('bugs-everywhere-auto', uuid_gen()[0:8])
+        self._archive_name = '%s--%s' % (email, trailer)
+        self._archive_dir = '/tmp/%s' % trailer
         self._tmp_archive = True
-        self._u_invoke_client("make-archive", self._archive_name,
+        self._u_invoke_client('make-archive', self._archive_name,
                               self._archive_dir, cwd=path)
+
     def _invoke_client(self, *args, **kwargs):
         """
         Invoke the client on our archive.
@@ -96,35 +114,38 @@ class Arch(vcs.VCS):
             tailargs = args[1:]
         else:
             tailargs = []
-        arglist = [command, "-A", self._archive_name]
+        arglist = [command, '-A', self._archive_name]
         arglist.extend(tailargs)
         args = tuple(arglist)
         return self._u_invoke_client(*args, **kwargs)
+
     def _remove_archive(self):
         assert self._tmp_archive == True
         assert self._archive_dir != None
         assert self._archive_name != None
         os.remove(os.path.join(self._arch_paramdir,
-                               "=locations", self._archive_name))
+                               '=locations', self._archive_name))
         shutil.rmtree(self._archive_dir)
         self._tmp_archive = False
         self._archive_dir = False
         self._archive_name = False
+
     def _create_project(self, path):
         """
         Create a temporary Arch project in the directory PATH.  This
         project will be removed by
-          cleanup->_vcs_cleanup->_remove_project
+          destroy->_vcs_destroy->_remove_project
         """
         # http://mwolson.org/projects/GettingStartedWithArch.html
         # http://regexps.srparish.net/tutorial-tla/new-project.html#Starting_a_New_Project
-        category = "bugs-everywhere"
-        branch = "mainline"
-        version = "0.1"
-        self._project_name = "%s--%s--%s" % (category, branch, version)
-        self._invoke_client("archive-setup", self._project_name,
+        category = 'bugs-everywhere'
+        branch = 'mainline'
+        version = '0.1'
+        self._project_name = '%s--%s--%s' % (category, branch, version)
+        self._invoke_client('archive-setup', self._project_name,
                             cwd=path)
         self._tmp_project = True
+
     def _remove_project(self):
         assert self._tmp_project == True
         assert self._project_name != None
@@ -132,10 +153,12 @@ class Arch(vcs.VCS):
         shutil.rmtree(os.path.join(self._archive_dir, self._project_name))
         self._tmp_project = False
         self._project_name = False
+
     def _archive_project_name(self):
         assert self._archive_name != None
         assert self._project_name != None
-        return "%s/%s" % (self._archive_name, self._project_name)
+        return '%s/%s' % (self._archive_name, self._project_name)
+
     def _adjust_naming_conventions(self, path):
         """
         By default, Arch restricts source code filenames to
@@ -148,47 +171,53 @@ class Arch(vcs.VCS):
         The conventions are specified in
           project-root/{arch}/=tagging-method
         """
-        tagpath = os.path.join(path, "{arch}", "=tagging-method")
+        tagpath = os.path.join(path, '{arch}', '=tagging-method')
         lines_out = []
-        f = codecs.open(tagpath, "r", self.encoding)
+        f = codecs.open(tagpath, 'r', self.encoding)
         for line in f:
-            if line.startswith("source "):
-                lines_out.append("source ^[._=a-zA-X0-9].*$\n")
+            if line.startswith('source '):
+                lines_out.append('source ^[._=a-zA-X0-9].*$\n')
             else:
                 lines_out.append(line)
         f.close()
-        f = codecs.open(tagpath, "w", self.encoding)
-        f.write("".join(lines_out))
+        f = codecs.open(tagpath, 'w', self.encoding)
+        f.write(''.join(lines_out))
         f.close()
 
     def _add_project_code(self, path):
         # http://mwolson.org/projects/GettingStartedWithArch.html
         # http://regexps.srparish.net/tutorial-tla/new-source.html
         # http://regexps.srparish.net/tutorial-tla/importing-first.html
-        self._invoke_client("init-tree", self._project_name,
+        self._invoke_client('init-tree', self._project_name,
                             cwd=path)
         self._adjust_naming_conventions(path)
-        self._invoke_client("import", "--summary", "Began versioning",
+        self._invoke_client('import', '--summary', 'Began versioning',
                             cwd=path)
-    def _vcs_cleanup(self):
+
+    def _vcs_destroy(self):
         if self._tmp_project == True:
             self._remove_project()
         if self._tmp_archive == True:
             self._remove_archive()
+        vcs_dir = os.path.join(self.repo, '{arch}')
+        if os.path.exists(vcs_dir):
+            shutil.rmtree(vcs_dir)
+        self._archive_name = None
 
     def _vcs_root(self, path):
         if not os.path.isdir(path):
             dirname = os.path.dirname(path)
         else:
             dirname = path
-        status,output,error = self._u_invoke_client("tree-root", dirname)
+        status,output,error = self._u_invoke_client('tree-root', dirname)
         root = output.rstrip('\n')
         
         self._get_archive_project_name(root)
 
         return root
+
     def _get_archive_name(self, root):
-        status,output,error = self._u_invoke_client("archives")
+        status,output,error = self._u_invoke_client('archives')
         lines = output.split('\n')
         # e.g. output:
         # jdoe@example.com--bugs-everywhere-auto-2008.22.24.52
@@ -198,14 +227,16 @@ class Arch(vcs.VCS):
             if os.path.realpath(location) == os.path.realpath(root):
                 self._archive_name = archive
         assert self._archive_name != None
+
     def _get_archive_project_name(self, root):
         # get project names
-        status,output,error = self._u_invoke_client("tree-version", cwd=root)
+        status,output,error = self._u_invoke_client('tree-version', cwd=root)
         # e.g output
         # jdoe@example.com--bugs-everywhere-auto-2008.22.24.52/be--mainline--0.1
         archive_name,project_name = output.rstrip('\n').split('/')
         self._archive_name = archive_name
         self._project_name = project_name
+
     def _vcs_get_user_id(self):
         try:
             status,output,error = self._u_invoke_client('my-id')
@@ -215,25 +246,26 @@ class Arch(vcs.VCS):
                 return None
             else:
                 raise
-    def _vcs_set_user_id(self, value):
-        self._u_invoke_client('my-id', value)
+
     def _vcs_add(self, path):
-        self._u_invoke_client("add-id", path)
+        self._u_invoke_client('add-id', path)
         realpath = os.path.realpath(self._u_abspath(path))
-        pathAdded = realpath in self._list_added(self.rootdir)
+        pathAdded = realpath in self._list_added(self.repo)
         if self.paranoid and not pathAdded:
             self._force_source(path)
+
     def _list_added(self, root):
         assert os.path.exists(root)
         assert os.access(root, os.X_OK)
         root = os.path.realpath(root)
-        status,output,error = self._u_invoke_client("inventory", "--source",
-                                                    "--both", "--all", root)
+        status,output,error = self._u_invoke_client('inventory', '--source',
+                                                    '--both', '--all', root)
         inv_str = output.rstrip('\n')
         return [os.path.join(root, p) for p in inv_str.split('\n')]
+
     def _add_dir_rule(self, rule, dirname, root):
         inv_path = os.path.join(dirname, '.arch-inventory')
-        f = codecs.open(inv_path, "a", self.encoding)
+        f = codecs.open(inv_path, 'a', self.encoding)
         f.write(rule)
         f.close()
         if os.path.realpath(inv_path) not in self._list_added(root):
@@ -241,47 +273,50 @@ class Arch(vcs.VCS):
             self.paranoid = False
             self.add(inv_path)
             self.paranoid = paranoid
+
     def _force_source(self, path):
-        rule = "source %s\n" % self._u_rel_path(path)
-        self._add_dir_rule(rule, os.path.dirname(path), self.rootdir)
-        if os.path.realpath(path) not in self._list_added(self.rootdir):
+        rule = 'source %s\n' % self._u_rel_path(path)
+        self._add_dir_rule(rule, os.path.dirname(path), self.repo)
+        if os.path.realpath(path) not in self._list_added(self.repo):
             raise CantAddFile(path)
+
     def _vcs_remove(self, path):
-        if not '.arch-ids' in path:
-            self._u_invoke_client("delete-id", path)
+        if self._vcs_is_versioned(path):
+            self._u_invoke_client('delete-id', path)
+        arch_ids = os.path.join(self.repo, path, '.arch-ids')
+        if os.path.exists(arch_ids):
+            shutil.rmtree(arch_ids)
+
     def _vcs_update(self, path):
         pass
-    def _vcs_get_file_contents(self, path, revision=None, binary=False):
+
+    def _vcs_is_versioned(self, path):
+        if '.arch-ids' in path:
+            return False
+        return True
+
+    def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
-            return vcs.VCS._vcs_get_file_contents(self, path, revision, binary=binary)
+            return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
-                self._invoke_client("file-find", path, revision)
+                self._invoke_client('file-find', path, revision)
             relpath = output.rstrip('\n')
-            abspath = os.path.join(self.rootdir, relpath)
-            f = codecs.open(abspath, "r", self.encoding)
-            contents = f.read()
-            f.close()
-            return contents
-    def _vcs_duplicate_repo(self, directory, revision=None):
-        if revision == None:
-            vcs.VCS._vcs_duplicate_repo(self, directory, revision)
-        else:
-            status,output,error = \
-                self._u_invoke_client("get", revision, directory)
+            return base.VCS._vcs_get_file_contents(self, relpath)
+
     def _vcs_commit(self, commitfile, allow_empty=False):
         if allow_empty == False:
             # arch applies empty commits without complaining, so check first
-            status,output,error = self._u_invoke_client("changes",expect=(0,1))
+            status,output,error = self._u_invoke_client('changes',expect=(0,1))
             if status == 0:
-                raise vcs.EmptyCommit()
+                raise base.EmptyCommit()
         summary,body = self._u_parse_commitfile(commitfile)
-        args = ["commit", "--summary", summary]
+        args = ['commit', '--summary', summary]
         if body != None:
-            args.extend(["--log-message",body])
+            args.extend(['--log-message',body])
         status,output,error = self._u_invoke_client(*args)
         revision = None
-        revline = re.compile("[*] committed (.*)")
+        revline = re.compile('[*] committed (.*)')
         match = revline.search(output)
         assert match != None, output+error
         assert len(match.groups()) == 1
@@ -290,26 +325,26 @@ class Arch(vcs.VCS):
         assert revpath.startswith(self._archive_project_name()+'--')
         revision = revpath[len(self._archive_project_name()+'--'):]
         return revpath
+
     def _vcs_revision_id(self, index):
-        status,output,error = self._u_invoke_client("logs")
+        status,output,error = self._u_invoke_client('logs')
         logs = output.splitlines()
         first_log = logs.pop(0)
-        assert first_log == "base-0", first_log
+        assert first_log == 'base-0', first_log
         try:
-            log = logs[index]
+            if index > 0:
+                log = logs[index-1]
+            elif index < 0:
+                log = logs[index]
+            else:
+                return None
         except IndexError:
             return None
-        return "%s--%s" % (self._archive_project_name(), log)
-
-class CantAddFile(Exception):
-    def __init__(self, file):
-        self.file = file
-        Exception.__init__(self, "Can't automatically add file %s" % file)
-
+        return '%s--%s' % (self._archive_project_name(), log)
 
 
 if libbe.TESTING == True:
-    vcs.make_vcs_testcase_subclasses(Arch, sys.modules[__name__])
+    base.make_vcs_testcase_subclasses(Arch, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
