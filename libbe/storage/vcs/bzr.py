@@ -120,7 +120,7 @@ class Bzr(base.VCS):
         if index >= current_revision or index < -current_revision:
             return None
         if index >= 0:
-            return str(index+1) # bzr commit 0 is the empty tree.
+            return str(index) # bzr commit 0 is the empty tree.
         return str(current_revision+index+1)
 
     
