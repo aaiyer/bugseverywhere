@@ -34,19 +34,19 @@ class Assign (libbe.command.Command):
 
     >>> bd.bug_from_uuid('a').assigned is None
     True
-    >>> cmd.run(bd, {'user-id':u'Fran\xe7ois'}, ['-', 'a'])
+    >>> cmd.run(bd, {'user-id':u'Fran\xe7ois'}, ['-', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     u'Fran\\xe7ois'
 
-    >>> cmd.run(bd, args=['someone', 'a', 'b'])
+    >>> cmd.run(bd, args=['someone', '/a', '/b'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     'someone'
     >>> bd.bug_from_uuid('b').assigned
     'someone'
 
-    >>> cmd.run(bd, args=['none', 'a'])
+    >>> cmd.run(bd, args=['none', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned is None
     True
@@ -75,7 +75,15 @@ class Assign (libbe.command.Command):
         elif assignee == '-':
             assignee = params['user-id']
         for bug_id in params['bug-id']:
-            bug = bugdir.bug_from_uuid(bug_id)
+            p = libbe.util.id.parse_user(bugdir, bug_id)
+            if p['type'] != 'bug':
+                raise libbe.command.UserError(
+                    '%s is a %s id, not a bug id' % (bug_id, p['type']))
+            if p['bugdir'] != bugdir.uuid:
+                raise libbe.command.UserError(
+                    "%s doesn't belong to this bugdir (%s)"
+                    % (bug_id, bugdir.uuid))
+            bug = bugdir.bug_from_uuid(p['bug'])
             if bug.assigned != assignee:
                 bug.assigned = assignee
 

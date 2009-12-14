@@ -107,6 +107,7 @@ def _truncate(uuid, other_uuids, min_length=3):
 
 def _expand(truncated_id, other_ids):
     matches = []
+    other_ids = list(other_ids)
     for id in other_ids:
         if id.startswith(truncated_id):
             matches.append(id)
@@ -209,28 +210,7 @@ def child_uuids(child_storage_ids):
         fields = _split(id)
         if len(fields) == 1:
             yield fields[0]
-
-
-def parse_user(id):
-    """
-    >>> parse_user('ABC/DEF/GHI') == \\
-    ...     {'bugdir':'ABC', 'bug':'DEF', 'comment':'GHI', 'type':'comment'}
-    True
-    >>> parse_user('ABC/DEF') == \\
-    ...     {'bugdir':'ABC', 'bug':'DEF', 'type':'bug'}
-    True
-    >>> parse_user('ABC') == \\
-    ...     {'bugdir':'ABC', 'type':'bugdir'}
-    True
-    """
-    ret = {}
-    args = _split(id)
-    assert len(args) > 0 and len(args) < 4, 'Invalid id "%s"' % id
-    for type,arg in zip(HIERARCHY, args):
-        assert len(arg) > 0, 'Invalid part "%s" of id "%s"' % (arg, id)
-        ret['type'] = type
-        ret[type] = arg
-    return ret
+    
 
 REGEXP = '#([-a-f0-9]*)(/[-a-g0-9]*)?(/[-a-g0-9]*)?#'
 
@@ -275,8 +255,36 @@ class IDreplacer (object):
 
 def short_to_long_user(bugdirs, text):
     return re.sub(REGEXP, IDreplacer(bugdirs, 'short_to_long'), text)
+
 def long_to_short_user(bugdirs, text):
     return re.sub(REGEXP, IDreplacer(bugdirs, 'long_to_short'), text)
+
+
+def _parse_user(id):
+    """
+    >>> _parse_user('ABC/DEF/GHI') == \\
+    ...     {'bugdir':'ABC', 'bug':'DEF', 'comment':'GHI', 'type':'comment'}
+    True
+    >>> _parse_user('ABC/DEF') == \\
+    ...     {'bugdir':'ABC', 'bug':'DEF', 'type':'bug'}
+    True
+    >>> _parse_user('ABC') == \\
+    ...     {'bugdir':'ABC', 'type':'bugdir'}
+    True
+    """
+    ret = {}
+    args = _split(id)
+    assert len(args) > 0 and len(args) < 4, 'Invalid id "%s"' % id
+    for type,arg in zip(HIERARCHY, args):
+        assert len(arg) > 0, 'Invalid part "%s" of id "%s"' % (arg, id)
+        ret['type'] = type
+        ret[type] = arg
+    return ret
+
+def parse_user(bugdir, id):
+    long_id = short_to_long_user([bugdir], '#%s#' % id).strip('#')
+    return _parse_user(long_id)
+
 
 if libbe.TESTING == True:
     class UUIDtestCase(unittest.TestCase):
@@ -328,7 +336,7 @@ if libbe.TESTING == True:
             self.failUnless(self.c_id.user() == '123/abc/12345',
                             self.c_id.user())
 
-    class IDtestCase(unittest.TestCase):
+    class ShortLongParseTestCase(unittest.TestCase):
         def setUp(self):
             self.bugdir = DummyObject('1234abcd')
             self.bug = DummyObject('abcdef', ['a1234', 'ab9876'])
@@ -344,12 +352,17 @@ if libbe.TESTING == True:
             self.c_id = ID(self.comment, 'comment')
             self.short = 'bla bla #123/abc# bla bla #123/abc/12345# bla bla'
             self.long = 'bla bla #1234abcd/abcdef# bla bla #1234abcd/abcdef/12345678# bla bla'
+            self.short_id = '123/abc'
         def test_short_to_long(self):
             self.failUnless(short_to_long_user([self.bugdir], self.short) == self.long,
                             '\n' + self.short + '\n' + short_to_long_user([self.bugdir], self.short) + '\n' + self.long)
         def test_long_to_short(self):
             self.failUnless(long_to_short_user([self.bugdir], self.long) == self.short,
                             '\n' + long_to_short_user([self.bugdir], self.long) + '\n' + self.short)
+        def test_parse_user(self):
+            self.failUnless(parse_user(self.bugdir, self.short_id) == \
+                                {'bugdir':'1234abcd', 'bug':'abcdef', 'type':'bug'},
+                            parse_user(self.bugdir, self.short_id))
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
