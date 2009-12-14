@@ -13,70 +13,90 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Commit the currently pending changes to the repository"""
-from libbe import cmdutil, bugdir, editor, vcs
+
 import sys
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> from libbe import bug
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> full_path = "testfile"
-    >>> test_contents = "A test file"
-    >>> bd.vcs.set_file_contents(full_path, test_contents)
-    >>> execute(["Added %s." % (full_path)], manipulate_encodings=False) # doctest: +ELLIPSIS
+import libbe
+import libbe.bugdir
+import libbe.command
+import libbe.command.util
+import libbe.storage
+import libbe.ui.util.editor
+
+
+class Commit (libbe.command.Command):
+    """Commit the currently pending changes to the repository
+
+    >>> import os, sys
+    >>> import libbe.storage.vcs
+    >>> import libbe.storage.vcs.base
+    >>> import libbe.util.utility
+    >>> cmd = Commit()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> dir = libbe.util.utility.Dir()
+    >>> vcs = libbe.storage.vcs.installed_vcs()
+    >>> vcs.repo = dir.path
+    >>> vcs.init()
+    >>> vcs.connect()
+    >>> if vcs.name in libbe.storage.vcs.base.VCS_ORDER:
+    ...     bd = libbe.bugdir.BugDir(vcs, from_storage=False)
+    ...     bd.extra_strings = ['hi there']
+    ...     cmd.run(vcs, None, {'user-id':'Joe'},
+    ...             ['Making a commit']) # doctest: +ELLIPSIS
+    ... else:
+    ...     print 'Committed ...'
     Committed ...
-    >>> bd.cleanup()
+    >>> vcs.disconnect()
+    >>> vcs.destroy()
+    >>> dir.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser)
-    if len(args) != 1:
-        raise cmdutil.UsageError("Please supply a commit message")
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    if args[0] == '-': # read summary from stdin
-        assert options.body != "EDITOR", \
-          "Cannot spawn and editor when the summary is using stdin."
-        summary = sys.stdin.readline()
-    else:
-        summary = args[0]
-    if options.body == None:
-        body = None
-    elif options.body == "EDITOR":
-        body = editor.editor_string("Please enter your commit message above")
-    else:
-        if restrict_file_access == True:
-            cmdutil.restrict_file_access(bd, options.body)
-        body = bd.vcs.get_file_contents(options.body, allow_no_vcs=True)
-    try:
-        revision = bd.vcs.commit(summary, body=body,
-                                 allow_empty=options.allow_empty)
-    except vcs.EmptyCommit, e:
-        print e
-        return 1
-    else:
-        print "Committed %s" % revision
+    name = 'commit'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be commit COMMENT")
-    parser.add_option("-b", "--body", metavar="FILE", dest="body",
-                      help='Provide a detailed body for the commit message.  In the special case that FILE == "EDITOR", spawn an editor to enter the body text (in which case you cannot use stdin for the summary)', default=None)
-    parser.add_option("-a", "--allow-empty", dest="allow_empty",
-                      help="Allow empty commits",
-                      default=False, action="store_true")
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_storage = True
+        self.options.extend([
+                libbe.command.Option(name='body', short_name='b',
+                    help='Provide the detailed body for the commit message.  In the special case that FILE == "EDITOR", spawn an editor to enter the body text (in which case you cannot use stdin for the summary)',
+                    arg=libbe.command.Argument(name='body', metavar='FILE',
+                        completion_callback=libbe.command.util.complete_path)),
+                libbe.command.Option(name='allow-empty', short_name='a',
+                                     help='Allow empty commits'),
+                 ])
+        self.args.extend([
+                libbe.command.Argument(
+                    name='comment', metavar='COMMENT', default=None),
+                ])
 
-longhelp="""
+    def _run(self, storage, bugdir=None, **params):
+        if params['comment'] == '-': # read summary from stdin
+            assert params['body'] != 'EDITOR', \
+                'Cannot spawn and editor when the summary is using stdin.'
+            summary = sys.stdin.readline()
+        else:
+            summary = params['comment']
+        if params['body'] == None:
+            body = None
+        elif params['body'] == 'EDITOR':
+            body = libbe.ui.util.editor.editor_string(
+                'Please enter your commit message above')
+        else:
+            self.check_restricted_access(storage, params['body'])
+            body = libbe.util.encoding.get_file_contents(
+                params['body'], decode=True)
+        try:
+            revision = storage.commit(summary, body=body,
+                                      allow_empty=params['allow-empty'])
+            print >> self.stdout, 'Committed %s' % revision
+        except libbe.storage.EmptyCommit, e:
+            print >> self.stdout, e
+            return 1
+
+    def _long_help(self):
+        return """
 Commit the current repository status.  The summary specified on the
 commandline is a string (only one line) that describes the commit
 briefly or "-", in which case the string will be read from stdin.
 """
-
-def help():
-    return get_parser().help_str() + longhelp

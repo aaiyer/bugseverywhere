@@ -620,7 +620,7 @@ os.listdir(self.get_path("bugs")):
         self.be_dir = os.path.join(
             self.repo, self._cached_path_id._spacer_dirs[0])
         self._cached_path_id.root(self.repo)
-        self._rooted == True
+        self._rooted = True
 
     def _init(self):
         """
@@ -631,7 +631,8 @@ os.listdir(self.get_path("bugs")):
             raise VCSUnableToRoot(self)
         if self._vcs_detect(self.repo) == False:
             self._vcs_init(self.repo)
-        self.root()
+        if self._rooted == False:
+            self.root()
         os.mkdir(self.be_dir)
         self._vcs_add(self._u_rel_path(self.be_dir))
         self._cached_path_id.init()
@@ -863,7 +864,7 @@ os.listdir(self.get_path("bugs")):
         Split the commitfile created in self.commit() back into
         summary and header lines.
         """
-        f = codecs.open(commitfile, "r", self.encoding)
+        f = codecs.open(commitfile, 'r', self.encoding)
         summary = f.readline()
         body = f.read()
         body.lstrip('\n')

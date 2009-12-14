@@ -22,6 +22,7 @@ Support input/output/filesystem encodings (e.g. UTF-8).
 import codecs
 import locale
 import sys
+import types
 
 import libbe
 if libbe.TESTING == True:
@@ -64,6 +65,27 @@ def known_encoding(encoding):
         return True
     except LookupError:
         return False
+
+def get_file_contents(path, mode='r', encoding=None, decode=False):
+    if decode == True:
+        if encoding == None:
+            encoding = get_filesystem_encoding()
+        f = codecs.open(path, mode, encoding)
+    else:
+        f = open(path, mode) 
+    contents = f.read()
+    f.close()
+    return contents
+
+def set_file_contents(path, contents, mode='w', encoding=None):
+    if type(value) == types.UnicodeType:
+        if encoding == None:
+            encoding = get_filesystem_encoding()
+        f = codecs.open(path, mode, encoding)
+    else:
+        f = open(path, mode)
+    f.write(contents)
+    f.close()
 
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()

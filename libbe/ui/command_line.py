@@ -43,8 +43,8 @@ class CmdOptionParser(optparse.OptionParser):
     def __init__(self, command):
         self.command = command
         optparse.OptionParser.__init__(self)
-        self.disable_interspersed_args()
         self.remove_option('-h')
+        self.disable_interspersed_args()
         self._option_by_name = {}
         for option in self.command.options:
             self._add_option(option)
@@ -62,12 +62,13 @@ class CmdOptionParser(optparse.OptionParser):
         if option.arg == None: # a callback option
             kwargs['action'] = 'callback'
             kwargs['callback'] = self.callback
+        elif option.arg.type == 'bool':
+            kwargs['action'] = 'store_true'
+            kwargs['metavar'] = None
+            kwargs['default'] = False
         else:
-            if option.arg.type == 'bool':
-                kwargs['action'] = 'store_true'
-            else:
-                kwargs['type'] = option.arg.type
-                kwargs['action'] = 'store'
+            kwargs['type'] = option.arg.type
+            kwargs['action'] = 'store'
             kwargs['metavar'] = option.arg.metavar
             kwargs['default'] = option.arg.default
         if option.short_name != None:
@@ -143,7 +144,6 @@ class CmdOptionParser(optparse.OptionParser):
         raise CallbackExit
 
     def complete(self, argument=None, fragment=None):
-        print argument, fragment
         comps = self.command.complete(argument, fragment)
         if fragment != None:
             comps = [c for c in comps if c.startswith(fragment)]
@@ -166,13 +166,24 @@ class BE (libbe.command.Command):
     usage: be [options] [COMMAND [command-options] [COMMAND-ARGS ...]]
     <BLANKLINE>
     Options:
-      -h HELP, --help=HELP  Print a help message.
+      -h, --help         Print a help message.
     <BLANKLINE>
-      --complete=STRING     Print a list of possible completions.
+      --complete         Print a list of possible completions.
     <BLANKLINE>
-      --version=VERSION     Print version string.
+      --version          Print version string.
     ...
-    >>> options,args = p.parse_args(['--complete']) # doctest: +ELLIPSIS
+    >>> try:
+    ...     options,args = p.parse_args(['--complete']) # doctest: +ELLIPSIS
+    ... except CallbackExit:
+    ...     print '  got callback'
+    --help
+    --complete
+    --version
+    ...
+    subscribe
+    tag
+    target
+      got callback
     """
     name = 'be'
 
@@ -262,8 +273,11 @@ def main():
         storage = libbe.storage.get_storage(options['repo'])
         storage.connect()
         bugdir = libbe.bugdir.BugDir(storage, from_storage=True)
-    elif: command.requires_unconnected_storage == True:
+    elif command.requires_storage == True \
+            or command.requires_unconnected_storage == True:
         storage = libbe.storage.get_storage(options['repo'])
+        if command.requires_unconnected_storage == False:
+            storage.connect()
     try:
         options,args = parser.parse_args(args[1:])
         command.run(storage, bugdir, options, args)

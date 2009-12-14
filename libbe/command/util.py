@@ -43,6 +43,8 @@ def complete_extra_strings(command, argument, fragment=None):
     return [fragment]
 def complete_bug_id(command, argument, fragment=None):
     return [fragment]
+def complete_bug_comment_id(command, argument, fragment=None):
+    return [fragment]
 
 def select_values(string, possible_values, name="unkown"):
     """
@@ -96,3 +98,19 @@ def select_values(string, possible_values, name="unkown"):
                                 % (name, value, possible_values))
         possible_values = whitelisted_values
     return possible_values
+
+def bug_comment_from_user_id(bugdir, id):
+    p = libbe.util.id.parse_user(bugdir, id)
+    if not p['type'] in ['bug', 'comment']:
+        raise libbe.command.UserError(
+            '%s is a %s id, not a bug or comment id' % (id, p['type']))
+    if p['bugdir'] != bugdir.uuid:
+        raise libbe.command.UserError(
+            "%s doesn't belong to this bugdir (%s)"
+            % (id, bugdir.uuid))
+    bug = bugdir.bug_from_uuid(p['bug'])
+    if 'comment' in p:
+        comment = bug.comment_from_uuid(p['comment'])
+    else:
+        comment = bug.comment_root
+    return (bug, comment)

@@ -2,13 +2,13 @@
 
 import codecs
 import optparse
+import os.path
 import sys
 
 import libbe
 import libbe.ui.util.user
 import libbe.util.encoding
 import libbe.util.plugin
-
 
 class UserError(Exception):
     pass
@@ -90,34 +90,55 @@ class Option (CommandInput):
     def __repr__(self):
         return '<Option %s>' % self.__str__()
 
-class _DummyParser (object):
-    def __init__(self, options):
-        self.option_list = options
-        self.option_groups = []
-        for option in self.option_list: # add required methods and attributes
-            option.dest = option.name
-            option._short_opts = []
-            if option.short_name != None:
-                option._short_opts.append('-' + option.short_name)
-            option._long_opts = ['--' + option.name]
-            option.takes_value = lambda : option.arg != None
-            if option.takes_value():
-                option.metavar = option.arg.metavar
-            else:
-                option.metavar = None
+class _DummyParser (optparse.OptionParser):
+    def __init__(self, command):
+        optparse.OptionParser.__init__(self)
+        self.remove_option('-h')
+        self.command = command
+        self._command_opts = []
+        for option in self.command.options:
+            self._add_option(option)
+
+    def _add_option(self, option):
+        # from libbe.ui.command_line.CmdOptionParser._add_option
+        option.validate()
+        long_opt = '--%s' % option.name
+        if option.short_name != None:
+            short_opt = '-%s' % option.short_name
+        assert '_' not in option.name, \
+            'Non-reconstructable option name %s' % option.name
+        kwargs = {'dest':option.name.replace('-', '_'),
+                  'help':option.help}
+        if option.arg == None or option.arg.type == 'bool':
+            kwargs['action'] = 'store_true'
+            kwargs['metavar'] = None
+            kwargs['default'] = False
+        else:
+            kwargs['type'] = option.arg.type
+            kwargs['action'] = 'store'
+            kwargs['metavar'] = option.arg.metavar
+            kwargs['default'] = option.arg.default
+        if option.short_name != None:
+            opt = optparse.Option(short_opt, long_opt, **kwargs)
+        else:
+            opt = optparse.Option(long_opt, **kwargs)
+        #option.takes_value = lambda : option.arg != None
+        opt._option = option
+        self._command_opts.append(opt)
+        self.add_option(opt)
 
 class OptionFormatter (optparse.IndentedHelpFormatter):
-    def __init__(self, options):
+    def __init__(self, command):
         optparse.IndentedHelpFormatter.__init__(self)
-        self.options = options
+        self.command = command
     def option_help(self):
         # based on optparse.OptionParser.format_option_help()
-        parser = _DummyParser(self.options)
+        parser = _DummyParser(self.command)
         self.store_option_strings(parser)
         ret = []
         ret.append(self.format_heading('Options'))
         self.indent()
-        for option in self.options:
+        for option in parser._command_opts:
             ret.append(self.format_option(option))
             ret.append('\n')
         self.dedent()
@@ -132,11 +153,11 @@ class Command (object):
     usage: be command [options]
     <BLANKLINE>
     Options:
-      -h HELP, --help=HELP  Print a help message.
+      -h, --help  Print a help message.
     <BLANKLINE>
-      --complete=STRING     Print a list of possible completions.
+      --complete  Print a list of possible completions.
     <BLANKLINE>
-     A detailed help message.
+    A detailed help message.
     """
 
     name = 'command'
@@ -145,7 +166,9 @@ class Command (object):
         self.status = None
         self.result = None
         self.requires_bugdir = False
+        self.requires_storage = False
         self.requires_unconnected_storage = False
+        self.restrict_file_access = True
         self.input_encoding = None
         self.output_encoding = None
         self.options = [
@@ -250,7 +273,7 @@ class Command (object):
         return usage
 
     def _option_help(self):
-        o = OptionFormatter(self.options)
+        o = OptionFormatter(self)
         return o.option_help().strip('\n')
 
     def _long_help(self):
@@ -266,3 +289,37 @@ class Command (object):
             # finish a particular argument
             return argument.completion_callback(self, argument, fragment)
         return [] # the particular argument doesn't supply completion info
+
+    def check_restricted_access(self, storage, path):
+        """
+        Check that the file at path is inside bugdir.root.  This is
+        important if you allow other users to execute becommands with
+        your username (e.g. if you're running be-handle-mail through
+        your ~/.procmailrc).  If this check wasn't made, a user could
+        e.g.  run
+          be commit -b ~/.ssh/id_rsa "Hack to expose ssh key"
+        which would expose your ssh key to anyone who could read the
+        VCS log.
+
+        >>> class DummyStorage (object): pass
+        >>> s = DummyStorage()
+        >>> s.repo = os.path.expanduser('~/x/')
+        >>> c = Command()
+        >>> try:
+        ...     c.check_restricted_access(s, os.path.expanduser('~/.ssh/id_rsa'))
+        ... except UserError, e:
+        ...     assert str(e).startswith('file access restricted!'), str(e)
+        ...     print 'we got the expected error'
+        we got the expected error
+        >>> c.check_restricted_access(s, os.path.expanduser('~/x'))
+        >>> c.check_restricted_access(s, os.path.expanduser('~/x/y'))
+        >>> c.restrict_file_access = False
+        >>> c.check_restricted_access(s, os.path.expanduser('~/.ssh/id_rsa'))
+        """
+        if self.restrict_file_access == True:
+            path = os.path.abspath(path)
+            repo = os.path.abspath(storage.repo).rstrip(os.path.sep)
+            if path == repo or path.startswith(repo+os.path.sep):
+                return
+            raise UserError('file access restricted!\n  %s not in %s'
+                            % (path, repo))

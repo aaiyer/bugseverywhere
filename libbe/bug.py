@@ -175,14 +175,8 @@ class Bug(settings_object.SavedSettingsObject):
     def active(self):
         return self.status in active_status_values
 
-    def _get_user_id(self):
-        if self.bugdir != None:
-            return self.bugdir._get_user_id()
-        return None
-
     @_versioned_property(name="creator",
-                         doc="The user who entered the bug into the system",
-                         generator=_get_user_id)
+                         doc="The user who entered the bug into the system")
     def creator(): return {}
 
     @_versioned_property(name="reporter",

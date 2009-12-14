@@ -15,43 +15,56 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Add a comment to a bug"""
-from libbe import cmdutil, bugdir, comment, editor
+
 import os
 import sys
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
+import libbe
+import libbe.command
+import libbe.command.util
+import libbe.comment
+import libbe.ui.util.editor
+import libbe.util.id
+
+
+class Comment (libbe.command.Command):
+    """Add a comment to a bug
+
     >>> import time
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> execute(["a", "This is a comment about a"], manipulate_encodings=False)
-    >>> bd._clear_bugs()
-    >>> bug = cmdutil.bug_from_id(bd, "a")
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Comment()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> cmd.run(bd.storage, bd, {'user-id':u'Fran\\xe7ois'},
+    ...         ['/a', 'This is a comment about a'])
+    >>> bd.flush_reload()
+    >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
     >>> comment = bug.comment_root[0]
+    >>> comment.id.storage() == comment.uuid
+    True
     >>> print comment.body
     This is a comment about a
     <BLANKLINE>
-    >>> comment.author == bd.user_id
-    True
+    >>> comment.author
+    u'Fran\\xe7ois'
     >>> comment.time <= int(time.time())
     True
     >>> comment.in_reply_to is None
     True
 
     >>> if 'EDITOR' in os.environ:
-    ...     del os.environ["EDITOR"]
-    >>> execute(["b"], manipulate_encodings=False)
+    ...     del os.environ['EDITOR']
+    >>> cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
 
-    >>> os.environ["EDITOR"] = "echo 'I like cheese' > "
-    >>> execute(["b"], manipulate_encodings=False)
-    >>> bd._clear_bugs()
-    >>> bug = cmdutil.bug_from_id(bd, "b")
+    >>> os.environ['EDITOR'] = "echo 'I like cheese' > "
+    >>> cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
+    >>> bd.flush_reload()
+    >>> bug = bd.bug_from_uuid('b')
     >>> bug.load_comments(load_full=False)
     >>> comment = bug.comment_root[0]
     >>> print comment.body
@@ -59,65 +72,75 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
     <BLANKLINE>
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    complete(options, args, parser)
-    if len(args) == 0:
-        raise cmdutil.UsageError("Please specify a bug or comment id.")
-    if len(args) > 2:
-        raise cmdutil.UsageError("Too many arguments.")
+    name = 'comment'
 
-    shortname = args[0]
-
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bug, parent = cmdutil.bug_comment_from_id(bd, shortname)
-
-    if len(args) == 1: # try to launch an editor for comment-body entry
-        try:
-            if parent == bug.comment_root:
-                parent_body = bug.summary+"\n"
-            else:
-                parent_body = parent.body
-            estr = "Please enter your comment above\n\n> %s\n" \
-                % ("\n> ".join(parent_body.splitlines()))
-            body = editor.editor_string(estr)
-        except editor.CantFindEditor, e:
-            raise cmdutil.UserError, "No comment supplied, and EDITOR not specified."
-        if body is None:
-            raise cmdutil.UserError("No comment entered.")
-    elif args[1] == '-': # read body from stdin
-        binary = not (options.content_type == None
-                      or options.content_type.startswith("text/"))
-        if not binary:
-            body = sys.stdin.read()
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
+        self.options.extend([
+                libbe.command.Option(name='author', short_name='a',
+                    help='Set the comment author',
+                    arg=libbe.command.Argument(
+                        name='author', metavar='AUTHOR')),
+                libbe.command.Option(name='alt-id',
+                    help='Set an alternate comment ID',
+                    arg=libbe.command.Argument(
+                        name='alt-id', metavar='ID')),
+                libbe.command.Option(name='content-type', short_name='c',
+                    help='Set comment content-type (e.g. text/plain)',
+                    arg=libbe.command.Argument(name='content-type',
+                        metavar='MIME')),
+                ])
+        self.args.extend([
+                libbe.command.Argument(
+                    name='id', metavar='ID', default=None,
+                    completion_callback=libbe.command.util.complete_bug_comment_id),
+                libbe.command.Argument(
+                    name='comment', metavar='COMMENT', default=None,
+                    optional=True,
+                    completion_callback=libbe.command.util.complete_assigned),
+                ])
+    def _run(self, storage, bugdir, **params):
+        bug,parent = \
+            libbe.command.util.bug_comment_from_user_id(bugdir, params['id'])
+        if params['comment'] == None:
+            # try to launch an editor for comment-body entry
+            try:
+                if parent == bug.comment_root:
+                    parent_body = bug.summary+'\n'
+                else:
+                    parent_body = parent.body
+                estr = 'Please enter your comment above\n\n> %s\n' \
+                    % ('\n> '.join(parent_body.splitlines()))
+                body = libbe.ui.util.editor.editor_string(estr)
+            except libbe.ui.util.editor.CantFindEditor, e:
+                raise libbe.command.UserError(
+                    'No comment supplied, and EDITOR not specified.')
+            if body is None:
+                raise libbe.command.UserError('No comment entered.')
+        elif params['comment'] == '-': # read body from stdin
+            binary = not (params['content-type'] == None
+                          or params['content-type'].startswith("text/"))
+            if not binary:
+                body = self.stdin.read()
+                if not body.endswith('\n'):
+                    body += '\n'
+            else: # read-in without decoding
+                body = sys.stdin.read()
+        else: # body given on command line
+            body = params['comment']
             if not body.endswith('\n'):
                 body+='\n'
-        else: # read-in without decoding
-            body = sys.__stdin__.read()
-    else: # body = arg[1]
-        body = args[1]
-        if not body.endswith('\n'):
-            body+='\n'
+        if params['author'] == None:
+            params['author'] = params['user-id']
 
-    new = parent.new_reply(body=body, content_type=options.content_type)
-    if options.author != None:
-        new.author = options.author
-    if options.alt_id != None:
-        new.alt_id = options.alt_id
+        new = parent.new_reply(body=body)
+        for key in ['alt-id', 'author', 'content-type']:
+            if params[key] != None:
+                setattr(new, key, params[key])
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be comment ID [COMMENT]")
-    parser.add_option("-a", "--author", metavar="AUTHOR", dest="author",
-                      help="Set the comment author", default=None)
-    parser.add_option("--alt-id", metavar="ID", dest="alt_id",
-                      help="Set an alternate comment ID", default=None)
-    parser.add_option("-c", "--content-type", metavar="MIME", dest="content_type",
-                      help="Set comment content-type (e.g. text/plain)", default=None)
-    return parser
-
-longhelp="""
+    def _long_help(self):
+        return """
 To add a comment to a bug, use the bug ID as the argument.  To reply
 to another comment, specify the comment name (as shown in "be show"
 output).  COMMENT, if specified, should be either the text of your
@@ -126,39 +149,3 @@ you do not specify a COMMENT, $EDITOR is used to launch an editor.  If
 COMMENT is unspecified and EDITOR is not set, no comment will be
 created.
 """
-
-def help():
-    return get_parser().help_str() + longhelp
-
-def complete(options, args, parser):
-    for option,value in cmdutil.option_value_pairs(options, parser):
-        if value == "--complete":
-            # no argument-options at the moment, so this is future-proofing
-            raise cmdutil.GetCompletions()
-    for pos,value in enumerate(args):
-        if value == "--complete":
-            if pos == 0: # fist positional argument is a bug or comment id
-                if len(args) >= 2:
-                    partial = args[1].split(':')[0] # take only bugid portion
-                else:
-                    partial = ""
-                ids = []
-                try:
-                    bd = bugdir.BugDir(from_disk=True,
-                                       manipulate_encodings=False)
-                    bugs = []
-                    for uuid in bd.uuids():
-                        if uuid.startswith(partial):
-                            bug = bd.bug_from_uuid(uuid)
-                            if bug.active == True:
-                                bugs.append(bug)
-                    for bug in bugs:
-                        shortname = bd.bug_shortname(bug)
-                        ids.append(shortname)
-                        bug.load_comments(load_full=False)
-                        for id,comment in bug.comment_shortnames(shortname):
-                            ids.append(id)
-                except bugdir.NoBugDir:
-                    pass
-                raise cmdutil.GetCompletions(ids)
-            raise cmdutil.GetCompletions()

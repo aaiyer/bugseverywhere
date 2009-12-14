@@ -21,7 +21,6 @@ import os.path
 import libbe
 import libbe.bugdir
 import libbe.command
-import libbe.command.util
 import libbe.storage
 
 class Init (libbe.command.Command):
@@ -53,11 +52,13 @@ class Init (libbe.command.Command):
 
     >>> dir = libbe.util.utility.Dir()
     >>> vcs = libbe.storage.vcs.installed_vcs()
+    >>> vcs.repo = dir.path
+    >>> vcs._vcs_init(vcs.repo)
     >>> if vcs.name in libbe.storage.vcs.base.VCS_ORDER:
-    ...     vcs.repo = dir.path
-    ...     vcs._vcs_init(vcs.repo)
     ...     cmd.run(vcs) # doctest: +ELLIPSIS
     ... else:
+    ...     vcs.init()
+    ...     vcs.connect()
     ...     print 'Using ... for revision control.\\nDirectory initialized.'
     Using ... for revision control.
     BE repository initialized.
@@ -65,7 +66,6 @@ class Init (libbe.command.Command):
     >>> vcs.destroy()
     >>> dir.cleanup()
     """
-    
     name = 'init'
 
     def __init__(self, *args, **kwargs):

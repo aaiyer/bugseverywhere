@@ -88,3 +88,9 @@ execution + childrens' times).
 
   $ python -m cProfile -o profile be [command] [args]
   $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_stats(20)"
+
+It's often useful to toss a
+  import sys, traceback
+  print >> sys.stderr, '-'*60, '\n', '\n'.join(traceback.format_stack()[-10:])
+into expensive functions (e.g. libbe.util.subproc.invoke()), if you're
+not sure why they're being called.

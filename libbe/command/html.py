@@ -16,6 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """Generate a static HTML dump of the current repository status"""
 from libbe import cmdutil, bugdir, bug
+import libbe.util.encoding
 import codecs, os, os.path, re, string, time
 import xml.sax.saxutils, htmlentitydefs
 
@@ -312,15 +313,12 @@ class HTMLGen (object):
         return dir_path
 
     def _write_file(self, content, path_array, mode='w'):
-        f = codecs.open(os.path.join(*path_array), mode, self.encoding)
-        f.write(content)
-        f.close()
+        return libbe.util.encoding.set_file_contents(
+            os.path.join(*path_array), content, mode, self.encoding)
 
     def _read_file(self, path_array, mode='r'):
-        f = codecs.open(os.path.join(*path_array), mode, self.encoding)
-        content = f.read()
-        f.close()
-        return content
+        return libbe.util.encoding.get_file_contents(
+            os.path.join(*path_array), mode, self.encoding, decode=True)
 
     def write_default_template(self, out_dir):
         if self.verbose:

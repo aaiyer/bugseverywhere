@@ -28,11 +28,11 @@ import sys
 import tempfile
 
 import libbe
+import libbe.util.encoding
+
 if libbe.TESTING == True:
     import doctest
 
-
-default_encoding = sys.getfilesystemencoding() or locale.getpreferredencoding()
 
 comment_marker = u"== Anything below this line will be ignored\n"
 
@@ -60,7 +60,7 @@ def editor_string(comment=None, encoding=None):
     >>> del os.environ["VISUAL"]
     """
     if encoding == None:
-        encoding = default_encoding
+        encoding = libbe.util.encoding.get_filesystem_encoding()
     for name in ('VISUAL', 'EDITOR'):
         try:
             editor = os.environ[name]
@@ -77,9 +77,8 @@ def editor_string(comment=None, encoding=None):
         os.close(fhandle)
         oldmtime = os.path.getmtime(fname)
         os.system("%s %s" % (editor, fname))
-        f = codecs.open(fname, "r", encoding)
-        output = trimmed_string(f.read())
-        f.close()
+        output = libbe.util.encoding.get_file_contents(
+            fname, encoding=encoding, decode=True)
         if output.rstrip('\n') == "":
             output = None
     finally:

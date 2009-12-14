@@ -73,7 +73,9 @@ def load_comments(bug, load_full=False):
     from disk *now*, rather than waiting and lazy loading as required.
     """
     uuids = []
-    for id in libbe.util.id.child_uuids(bug.storage.children()):
+    for id in libbe.util.id.child_uuids(
+                  bug.storage.children(
+                      bug.id.storage())):
         uuids.append(id)
     comments = []
     for uuid in uuids:
@@ -118,14 +120,8 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                          doc="Alternate ID for linking imported comments.  Internally comments are linked (via In-reply-to) to the parent's UUID.  However, these UUIDs are generated internally, so Alt-id is provided as a user-controlled linking target.")
     def alt_id(): return {}
 
-    def _get_user_id(self):
-        if self.bug != None:
-            return self.bug._get_user_id()
-        return None
-
     @_versioned_property(name="Author",
-                         doc="The author of the comment",
-                         generator=_get_user_id)
+                         doc="The author of the comment")
     def author(): return {}
 
     @_versioned_property(name="In-reply-to",
@@ -613,7 +609,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             reply.in_reply_to = self.uuid
         self.append(reply)
 
-    def new_reply(self, body=None, content_type=None):
+    def new_reply(self, body=None):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
         >>> repA = comm.new_reply("Critique original comment")
@@ -622,10 +618,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         True
         """
         reply = Comment(self.bug, body=body)
-        if content_type != None: # set before saving body to decide binary format
-            reply.content_type = content_type
-        if reply.storage != None and reply.storage.is_writeable():
-            reply.save()
         self.add_reply(reply)
         return reply
 

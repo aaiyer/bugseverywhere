@@ -47,15 +47,15 @@ def set_val(name, value, section="DEFAULT", encoding=None):
         encoding = default_encoding
     config = ConfigParser.ConfigParser()
     if os.path.exists(path()) == False: # touch file or config 
-        open(path(), "w").close()       # read chokes on missing file
-    f = codecs.open(path(), "r", encoding)
+        open(path(), 'w').close()       # read chokes on missing file
+    f = codecs.open(path(), 'r', encoding)
     config.readfp(f, path())
     f.close()
     if value is not None:
         config.set(section, name, value)
     else:
         config.remove_option(section, name)
-    f = codecs.open(path(), "w", encoding)
+    f = codecs.open(path(), 'w', encoding)
     config.write(f)
     f.close()
 
@@ -79,7 +79,7 @@ def get_val(name, section="DEFAULT", default=None, encoding=None):
         if encoding == None:
             encoding = default_encoding
         config = ConfigParser.ConfigParser()
-        f = codecs.open(path(), "r", encoding)
+        f = codecs.open(path(), 'r', encoding)
         config.readfp(f, path())
         f.close()
         try:
