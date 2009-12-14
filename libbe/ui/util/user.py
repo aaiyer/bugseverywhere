@@ -7,13 +7,14 @@ example,
 Note that the Arch VCS backend *enforces* ids with this format.
 """
 
+import os
 import re
 from socket import gethostname
 
 import libbe
 import libbe.storage.util.config
 
-def get_fallback_username(self):
+def get_fallback_username():
     name = None
     for env in ["LOGNAME", "USERNAME"]:
         if os.environ.has_key(env):
@@ -22,7 +23,7 @@ def get_fallback_username(self):
     assert name != None
     return name
 
-def get_fallback_email(self):
+def get_fallback_email():
     hostname = gethostname()
     name = get_fallback_username()
     return "%s@%s" % (name, hostname)
@@ -66,7 +67,7 @@ def parse_user_id(value):
     assert len(name) > 0
     return (name, email)
 
-def get_user_id(self, storage=None):
+def get_user_id(storage=None):
     """
     Sometimes the storage will also keep track of the user id (e.g. most VCSs).
     """
@@ -82,7 +83,7 @@ def get_user_id(self, storage=None):
     user = create_user_id(name, email)
     return user
 
-def set_user_id(self, user_id):
+def set_user_id(user_id):
     """
     """
     user = libbe.storage.util.config.set_val('user', user_id)

@@ -56,15 +56,18 @@ class Filter (object):
 class List (libbe.command.Command):
     """List bugs
 
+    >>> import sys
     >>> import libbe.bugdir
-    >>> bd = libbe.bugdir.SimpleBugDir()
-    >>> bd.uuid = '1234abcd'
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = List()
     >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
     >>> cmd.run(bd)
-    123/a:om: Bug A
+    sim/a:om: Bug A
     >>> cmd.run(bd, {'status':'closed'})
-    123/b:cm: Bug B
+    sim/b:cm: Bug B
+    >>> bd.storage.writeable
+    True
     >>> bd.cleanup()
     """
 
@@ -129,6 +132,7 @@ class List (libbe.command.Command):
 #                ])
 
     def _run(self, bugdir, **params):
+        writeable = bugdir.storage.writeable
         bugdir.storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \
             self._parse_params(params)
@@ -148,6 +152,7 @@ class List (libbe.command.Command):
                 print >> self.stdout, bug.uuid
         else:
             self._list_bugs(bugs, xml=params['xml'])
+        bugdir.storage.writeable = writeable
 
     def _parse_params(self, params):
         cmp_list = []
@@ -250,15 +255,5 @@ assigned
 
 In addition, there are some shortcut options that set boolean flags.
 The boolean options are ignored if the matching string option is used.
-""" % (','.join(bug.status_values), ','.join(bug.severity_values))
-
-def complete(options, args, parser):
-    for option, value in cmdutil.option_value_pairs(options, parser):
-        if value == "--complete":
-            if option == "status":
-                raise cmdutil.GetCompletions(bug.status_values)
-            elif option == "severity":
-                raise cmdutil.GetCompletions(bug.severity_values)
-            raise cmdutil.GetCompletions()
-    if "--complete" in args:
-        raise cmdutil.GetCompletions() # no positional arguments for list
+""" % (','.join(libbe.bug.status_values),
+       ','.join(libbe.bug.severity_values))

@@ -5,8 +5,10 @@ import optparse
 import sys
 
 import libbe
+import libbe.ui.util.user
 import libbe.util.encoding
 import libbe.util.plugin
+
 
 class UserError(Exception):
     pass
@@ -162,18 +164,45 @@ class Command (object):
             args = []
         params = {}
         for option in self.options:
+            assert option.name not in params, params[option.name]
             if option.name in options:
                 params[option.name] = options.pop(option.name)
             elif option.arg != None:
                 params[option.name] = option.arg.default
             else: # non-arg options are flags, set to default flag value
                 params[option.name] = False
+        assert 'user-id' not in params, params['user-id']
+        if 'user-id' in options:
+            params['user-id'] = options.pop('user-id')
+        else:
+            params['user-id'] = libbe.ui.util.user.get_user_id(bugdir.storage)
         if len(options) > 0:
             raise UserError, 'Invalid option passed to command %s:\n  %s' \
                 % (self.name, '\n  '.join(['%s: %s' % (k,v)
                                            for k,v in options.items()]))
-        for arg in self.args:
-            pass
+        in_optional_args = False
+        for i,arg in enumerate(self.args):
+            if arg.repeatable == True:
+                assert i == len(self.args)-1, arg.name
+            if in_optional_args == True:
+                assert arg.optional == True, arg.name
+            else:
+                in_optional_args = arg.optional
+            if i < len(args):
+                if arg.repeatable == True:
+                    params[arg.name] = [args[i]]
+                else:
+                    params[arg.name] = args[i]
+            else:  # no value given
+                assert in_optional_args == True, arg.name
+                if arg.repeatable == True:
+                    params[arg.name] = [arg.default]
+                else:
+                    params[arg.name] = arg.default
+        if len(args) > len(self.args):  # add some additional repeats
+            assert self.args[-1].repeatable == True, self.args[-1].name
+            params[self.args[-1].name].extend(args[len(self.args):])
+
         if params['help'] == True:
             pass
         else:
@@ -182,6 +211,7 @@ class Command (object):
             pass
         else:
             params.pop('complete')
+
         self._setup_io(self.input_encoding, self.output_encoding)
         self.status = self._run(bugdir, **params)
         return self.status

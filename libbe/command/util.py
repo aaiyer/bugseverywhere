@@ -41,6 +41,8 @@ def complete_assigned(command, argument, fragment=None):
     return [fragment]
 def complete_extra_strings(command, argument, fragment=None):
     return [fragment]
+def complete_bug_id(command, argument, fragment=None):
+    return [fragment]
 
 def select_values(string, possible_values, name="unkown"):
     """

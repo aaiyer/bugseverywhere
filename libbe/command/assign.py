@@ -17,74 +17,76 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Assign an individual or group to fix a bug"""
-from libbe import cmdutil, bugdir
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> bd.bug_from_shortname("a").assigned is None
+import libbe
+import libbe.command
+import libbe.command.util
+
+class Assign (libbe.command.Command):
+    """Assign an individual or group to fix a bug
+
+    >>> import os, sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Assign()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> bd.bug_from_uuid('a').assigned is None
     True
+    >>> cmd.run(bd, {'user-id':u'Fran\xe7ois'}, ['-', 'a'])
+    >>> bd.flush_reload()
+    >>> bd.bug_from_uuid('a').assigned
+    u'Fran\\xe7ois'
 
-    >>> execute(["a"], manipulate_encodings=False)
-    >>> bd._clear_bugs()
-    >>> bd.bug_from_shortname("a").assigned == bd.user_id
-    True
+    >>> cmd.run(bd, args=['someone', 'a', 'b'])
+    >>> bd.flush_reload()
+    >>> bd.bug_from_uuid('a').assigned
+    'someone'
+    >>> bd.bug_from_uuid('b').assigned
+    'someone'
 
-    >>> execute(["a", "someone"], manipulate_encodings=False)
-    >>> bd._clear_bugs()
-    >>> print bd.bug_from_shortname("a").assigned
-    someone
-
-    >>> execute(["a","none"], manipulate_encodings=False)
-    >>> bd._clear_bugs()
-    >>> bd.bug_from_shortname("a").assigned is None
+    >>> cmd.run(bd, args=['none', 'a'])
+    >>> bd.flush_reload()
+    >>> bd.bug_from_uuid('a').assigned is None
     True
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True})
-    assert(len(args) in (0, 1, 2))
-    if len(args) == 0:
-        raise cmdutil.UsageError("Please specify a bug id.")
-    if len(args) > 2:
-        help()
-        raise cmdutil.UsageError("Too many arguments.")
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bug = cmdutil.bug_from_id(bd, args[0])
-    bug = bd.bug_from_shortname(args[0])
-    if len(args) == 1:
-        bug.assigned = bd.user_id
-    elif len(args) == 2:
-        if args[1] == "none":
-            bug.assigned = None
-        else:
-            bug.assigned = args[1]
-    bd.save()
+    
+    name = 'assign'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be assign BUG-ID [ASSIGNEE]")
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
+        self.args.extend([
+                libbe.command.Argument(
+                    name='assignee', metavar='ASSIGNEE', default=None,
+                    completion_callback=libbe.command.util.complete_assigned),
+                libbe.command.Argument(
+                    name='bug-id', metavar='BUG-ID', default=None,
+                    repeatable=True,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                ])
 
-longhelp = """
+    def _run(self, bugdir, **params):
+        assignee = params['assignee']
+        if assignee == 'none':
+            assignee = None
+        elif assignee == '-':
+            assignee = params['user-id']
+        for bug_id in params['bug-id']:
+            bug = bugdir.bug_from_uuid(bug_id)
+            if bug.assigned != assignee:
+                bug.assigned = assignee
+
+    def _long_help(self):
+        return """
 Assign a person to fix a bug.
 
-By default, the bug is self-assigned.  If an assignee is specified, the bug
-will be assigned to that person.
+Assignees should be the person's Bugs Everywhere identity, the same
+string that appears in Creator fields.
 
-Assignees should be the person's Bugs Everywhere identity, the string that
-appears in Creator fields.
-
-To un-assign a bug, specify "none" for the assignee.
+Special assignee strings:
+  "-"      assign the bug to yourself
+  "none"   un-assigns the bug
 """
-
-def help():
-    return get_parser().help_str() + longhelp

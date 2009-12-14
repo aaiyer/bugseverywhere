@@ -173,12 +173,14 @@ class BugDir (list, settings_object.SavedSettingsObject):
         settings_object.SavedSettingsObject.__init__(self)
         self.storage = storage
         self.id = libbe.util.id.ID(self, 'bugdir')
+        self.uuid = uuid
         if from_storage == True:
-            self.uuid = [c for c in self.storage.children()
-                         if c != 'version'][0]
+            if self.uuid == None:
+                self.uuid = [c for c in self.storage.children()
+                             if c != 'version'][0]
             self.load_settings()
         else:
-            if uuid == None:
+            if self.uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
             self.settings = {}
             self._setup_saved_settings()
@@ -357,28 +359,35 @@ if libbe.TESTING == True:
             else:
                 dir = utility.Dir()
                 self._dir_ref = dir # postpone cleanup since dir.cleanup() removes dir.
-                storage = libbe.storage.base.Storage( \
-                    os.path.join(dir.path, 'repo.pkl'))
+                storage = libbe.storage.base.Storage(dir.path)
                 storage.init()
                 storage.connect()
-            BugDir.__init__(self, storage=storage)
-            bug_a = self.new_bug(summary="Bug A", _uuid="a")
-            bug_a.creator = "John Doe <jdoe@example.com>"
+            BugDir.__init__(self, storage=storage, uuid='simple')
+            bug_a = self.new_bug(summary='Bug A', _uuid='a')
+            bug_a.creator = 'John Doe <jdoe@example.com>'
             bug_a.time = 0
-            bug_b = self.new_bug(summary="Bug B", _uuid="b")
-            bug_b.creator = "Jane Doe <jdoe@example.com>"
+            bug_b = self.new_bug(summary='Bug B', _uuid='b')
+            bug_b.creator = 'Jane Doe <jdoe@example.com>'
             bug_b.time = 0
-            bug_b.status = "closed"
+            bug_b.status = 'closed'
             if self.storage != None:
                 self.storage.disconnect() # flush to storage
                 self.storage.connect()
+
         def cleanup(self):
             if self.storage != None:
+                self.storage.writeable = True
                 self.storage.disconnect()
                 self.storage.destroy()
-            if hasattr(self, "_dir_ref"):
+            if hasattr(self, '_dir_ref'):
                 self._dir_ref.cleanup()
 
+        def flush_reload(self):
+            if self.storage != None:
+                self.storage.disconnect()
+                self.storage.connect()
+                self._clear_bugs()
+                
 #    class BugDirTestCase(unittest.TestCase):
 #        def setUp(self):
 #            self.dir = utility.Dir()
@@ -485,8 +494,7 @@ if libbe.TESTING == True:
         def setUp(self):
             # create a pre-existing bugdir in a temporary directory
             self.dir = utility.Dir()
-            self.storage = libbe.storage.base.Storage( \
-                os.path.join(self.dir.path, 'repo.pkl'))
+            self.storage = libbe.storage.base.Storage(self.dir.path)
             self.storage.init()
             self.storage.connect()
             self.bugdir = BugDir(self.storage)
@@ -511,9 +519,7 @@ if libbe.TESTING == True:
                             bugdir.storage.is_writeable())
             uuids = sorted([bug.uuid for bug in bugdir])
             self.failUnless(uuids == ['a', 'b'], uuids)
-            self.storage.disconnect() # flush
-            self.storage.connect()
-            bugdir._clear_bugs()
+            bugdir.flush_reload()
             uuids = sorted(bugdir.uuids())
             self.failUnless(uuids == ['a', 'b'], uuids)
             uuids = sorted([bug.uuid for bug in bugdir])
