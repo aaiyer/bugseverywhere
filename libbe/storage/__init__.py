@@ -15,8 +15,7 @@ def get_storage(location):
     Return a Storage instance from a repo location string.
     """
     import vcs
-    #s = vcs.detect_vcs(location)
-    s = vcs.vcs_by_name('None')
+    s = vcs.detect_vcs(location)
     s.repo = location
     return s
 

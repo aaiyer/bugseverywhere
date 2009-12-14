@@ -66,7 +66,6 @@ def _get_matching_vcs(matchfn):
         vcs = module.new()
         if matchfn(vcs) == True:
             return vcs
-        vcs.cleanup()
     return VCS()
 
 def vcs_by_name(vcs_name):
