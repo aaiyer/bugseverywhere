@@ -25,6 +25,7 @@ import os
 import os.path
 import re
 import shutil
+import time # work around http://mercurial.selenic.com/bts/issue618
 
 import libbe
 import base
@@ -45,6 +46,7 @@ class Hg(base.VCS):
     def __init__(self, *args, **kwargs):
         base.VCS.__init__(self, *args, **kwargs)
         self.versioned = True
+        self.__updated = [] # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
@@ -80,7 +82,7 @@ class Hg(base.VCS):
         self._u_invoke_client('rm', '--force', path)
 
     def _vcs_update(self, path):
-        pass
+        self.__updated.append(path) # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
@@ -93,6 +95,16 @@ class Hg(base.VCS):
     def _vcs_commit(self, commitfile, allow_empty=False):
         args = ['commit', '--logfile', commitfile]
         status,output,error = self._u_invoke_client(*args)
+        # work around http://mercurial.selenic.com/bts/issue618
+        strings = ['nothing changed']
+        if self._u_any_in_string(strings, output) == True \
+                and len(self.__updated) > 0:
+            time.sleep(1)
+            for path in self.__updated:
+                os.utime(os.path.join(self.repo, path), None)
+            status,output,error = self._u_invoke_client(*args)
+        self.__updated = []
+        # end work around
         if allow_empty == False:
             strings = ['nothing changed']
             if self._u_any_in_string(strings, output) == True:
