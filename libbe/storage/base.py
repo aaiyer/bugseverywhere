@@ -758,11 +758,14 @@ if TESTING == True:
             """
             Commit / revision_id should agree on revision ids.
             """
+            def val(i):
+                return '%s:%d' % (self.val, i+1)
+            self.s.add(self.id, directory=False)
             revs = []
-            for s in range(10):
-                revs.append(self.s.commit(self.commit_msg,
-                                          self.commit_body,
-                                          allow_empty=True))
+            for i in range(10):
+                self.s.set(self.id, val(i))
+                revs.append(self.s.commit('%s: %d' % (self.commit_msg, i),
+                                          self.commit_body))
             for i in range(10):
                 rev = self.s.revision_id(i+1) 
                 self.failUnless(rev == revs[i],
