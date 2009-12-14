@@ -75,7 +75,7 @@ def get_user_id(storage=None):
     if user != None:
         return user
     if storage != None and hasattr(storage, 'get_user_id'):
-        user = vcs.get_user_id()
+        user = storage.get_user_id()
         if user != None:
             return user
     name = get_fallback_username()

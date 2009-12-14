@@ -145,6 +145,7 @@ class Command (object):
         self.status = None
         self.result = None
         self.requires_bugdir = False
+        self.requires_unconnected_storage = False
         self.input_encoding = None
         self.output_encoding = None
         self.options = [
@@ -157,7 +158,7 @@ class Command (object):
                 ]
         self.args = []
 
-    def run(self, bugdir, options=None, args=None):
+    def run(self, storage=None, bugdir=None, options=None, args=None):
         if options == None:
             options = {}
         if args == None:
@@ -175,7 +176,7 @@ class Command (object):
         if 'user-id' in options:
             params['user-id'] = options.pop('user-id')
         else:
-            params['user-id'] = libbe.ui.util.user.get_user_id(bugdir.storage)
+            params['user-id'] = libbe.ui.util.user.get_user_id(storage)
         if len(options) > 0:
             raise UserError, 'Invalid option passed to command %s:\n  %s' \
                 % (self.name, '\n  '.join(['%s: %s' % (k,v)
@@ -213,10 +214,10 @@ class Command (object):
             params.pop('complete')
 
         self._setup_io(self.input_encoding, self.output_encoding)
-        self.status = self._run(bugdir, **params)
+        self.status = self._run(storage, bugdir, **params)
         return self.status
 
-    def _run(self, bugdir, **kwargs):
+    def _run(self, storage, bugdir, **kwargs):
         pass
 
     def _setup_io(self, input_encoding=None, output_encoding=None):

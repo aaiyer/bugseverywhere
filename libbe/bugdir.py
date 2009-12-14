@@ -165,9 +165,6 @@ class BugDir (list, settings_object.SavedSettingsObject):
     @doc_property(doc="A dict of (bug-uuid, bug-instance) pairs.")
     def _bug_map(): return {}
 
-    def _get_user_id(self):
-        return "X"
-
     def __init__(self, storage, uuid=None, from_storage=False):
         list.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)

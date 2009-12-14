@@ -255,16 +255,18 @@ def main():
     Class = getattr(module, command_name.capitalize())
     command = Class()
     parser = CmdOptionParser(command)
+    storage = None
+    bugdir = None
     if command.requires_bugdir == True:
+        assert command.requires_unconnected_storage == False
         storage = libbe.storage.get_storage(options['repo'])
         storage.connect()
         bugdir = libbe.bugdir.BugDir(storage, from_storage=True)
-    else:
-        storage = None
-        bugdir = None
+    elif: command.requires_unconnected_storage == True:
+        storage = libbe.storage.get_storage(options['repo'])
     try:
         options,args = parser.parse_args(args[1:])
-        command.run(bugdir, options, args)
+        command.run(storage, bugdir, options, args)
     except CallbackExit:
         if storage != None: storage.disconnect()
         return 0

@@ -62,9 +62,9 @@ class List (libbe.command.Command):
     >>> cmd = List()
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
-    >>> cmd.run(bd)
+    >>> cmd.run(bd.storage, bd)
     sim/a:om: Bug A
-    >>> cmd.run(bd, {'status':'closed'})
+    >>> cmd.run(bd.storage, bd, {'status':'closed'})
     sim/b:cm: Bug B
     >>> bd.storage.writeable
     True
@@ -131,7 +131,7 @@ class List (libbe.command.Command):
 #                
 #                ])
 
-    def _run(self, bugdir, **params):
+    def _run(self, storage, bugdir, **params):
         writeable = bugdir.storage.writeable
         bugdir.storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \

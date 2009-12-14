@@ -629,7 +629,8 @@ os.listdir(self.get_path("bugs")):
         """
         if not os.path.exists(self.repo) or not os.path.isdir(self.repo):
             raise VCSUnableToRoot(self)
-        self._vcs_init(self.repo)
+        if self._vcs_detect(self.repo) == False:
+            self._vcs_init(self.repo)
         self.root()
         os.mkdir(self.be_dir)
         self._vcs_add(self._u_rel_path(self.be_dir))
@@ -644,6 +645,8 @@ os.listdir(self.get_path("bugs")):
     def _connect(self):
         if self._rooted == False:
             self.root()
+        if not os.path.isdir(self.be_dir):
+            raise libbe.storage.base.ConnectionError(self)
         self._cached_path_id.connect()
         self.check_disk_version()
 
@@ -732,9 +735,8 @@ os.listdir(self.get_path("bugs")):
             return default
         relpath = self._u_rel_path(path)
         contents = self._vcs_get_file_contents(relpath,revision)
-        if contents == libbe.storage.base.InvalidDirectory:
-            raise libbe.storage.base.InvalidDirectory(id)
-        elif contents == libbe.util.InvalidObject:
+        if contents in [libbe.storage.base.InvalidDirectory,
+                        libbe.util.InvalidObject]:
             raise libbe.storage.base.InvalidID(id)
         elif len(contents) == 0:
             return None

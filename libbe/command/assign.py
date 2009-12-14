@@ -34,19 +34,19 @@ class Assign (libbe.command.Command):
 
     >>> bd.bug_from_uuid('a').assigned is None
     True
-    >>> cmd.run(bd, {'user-id':u'Fran\xe7ois'}, ['-', '/a'])
+    >>> cmd.run(bd.storage, bd, {'user-id':u'Fran\xe7ois'}, ['-', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     u'Fran\\xe7ois'
 
-    >>> cmd.run(bd, args=['someone', '/a', '/b'])
+    >>> cmd.run(bd.storage, bd, args=['someone', '/a', '/b'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     'someone'
     >>> bd.bug_from_uuid('b').assigned
     'someone'
 
-    >>> cmd.run(bd, args=['none', '/a'])
+    >>> cmd.run(bd.storage, bd, args=['none', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned is None
     True
@@ -68,7 +68,7 @@ class Assign (libbe.command.Command):
                     completion_callback=libbe.command.util.complete_bug_id),
                 ])
 
-    def _run(self, bugdir, **params):
+    def _run(self, storage, bugdir, **params):
         assignee = params['assignee']
         if assignee == 'none':
             assignee = None
