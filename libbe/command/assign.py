@@ -34,19 +34,19 @@ class Assign (libbe.command.Command):
 
     >>> bd.bug_from_uuid('a').assigned is None
     True
-    >>> cmd.run(bd.storage, bd, {'user-id':u'Fran\xe7ois'}, ['-', '/a'])
+    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Fran\xe7ois'}, ['-', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     u'Fran\\xe7ois'
 
-    >>> cmd.run(bd.storage, bd, args=['someone', '/a', '/b'])
+    >>> ret = cmd.run(bd.storage, bd, args=['someone', '/a', '/b'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     'someone'
     >>> bd.bug_from_uuid('b').assigned
     'someone'
 
-    >>> cmd.run(bd.storage, bd, args=['none', '/a'])
+    >>> ret = cmd.run(bd.storage, bd, args=['none', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned is None
     True
@@ -79,6 +79,7 @@ class Assign (libbe.command.Command):
                 libbe.command.util.bug_comment_from_user_id(bugdir, bug_id)
             if bug.assigned != assignee:
                 bug.assigned = assignee
+        return 0
 
     def _long_help(self):
         return """

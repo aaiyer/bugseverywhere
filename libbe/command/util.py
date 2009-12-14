@@ -94,8 +94,9 @@ def select_values(string, possible_values, name="unkown"):
         whitelisted_values = string.split(',')
         for value in whitelisted_values:
             if value not in possible_values:
-                raise UserError('Invalid %s %s\n  %s'
-                                % (name, value, possible_values))
+                raise libbe.command.UserError(
+                    'Invalid %s %s\n  %s'
+                    % (name, value, possible_values))
         possible_values = whitelisted_values
     return possible_values
 

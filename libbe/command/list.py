@@ -62,9 +62,9 @@ class List (libbe.command.Command):
     >>> cmd = List()
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
-    >>> cmd.run(bd.storage, bd)
+    >>> ret = cmd.run(bd.storage, bd)
     sim/a:om: Bug A
-    >>> cmd.run(bd.storage, bd, {'status':'closed'})
+    >>> ret = cmd.run(bd.storage, bd, {'status':'closed'})
     sim/b:cm: Bug B
     >>> bd.storage.writeable
     True
@@ -153,6 +153,7 @@ class List (libbe.command.Command):
         else:
             self._list_bugs(bugs, xml=params['xml'])
         bugdir.storage.writeable = writeable
+        return 0
 
     def _parse_params(self, params):
         cmp_list = []
