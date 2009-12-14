@@ -100,6 +100,7 @@ class Comment (libbe.command.Command):
                     optional=True,
                     completion_callback=libbe.command.util.complete_assigned),
                 ])
+
     def _run(self, storage, bugdir, **params):
         bug,parent = \
             libbe.command.util.bug_comment_from_user_id(bugdir, params['id'])

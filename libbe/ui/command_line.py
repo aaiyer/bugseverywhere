@@ -222,7 +222,7 @@ class BE (libbe.command.Command):
         cmdlist = []
         for name in libbe.command.commands():
             module = libbe.command.get_command(name)
-            Class = getattr(module, name.capitalize())
+            Class = libbe.command.get_command_class(module, name)
             cmdlist.append((name, Class.__doc__.splitlines()[0]))
         cmdlist.sort()
         longest_cmd_len = max([len(name) for name,desc in cmdlist])

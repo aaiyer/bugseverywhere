@@ -37,6 +37,21 @@ def get_command(command_name):
         raise UnknownCommand(command_name)
     return cmd
 
+def get_command_class(module, command_name):
+    """Retrieves a command class from a module.
+
+    >>> import_xml_mod = get_command('import-xml')
+    >>> import_xml = get_command_class(import_xml_mod, 'import-xml')
+    >>> repr(import_xml)
+    "<class 'libbe.command.import_xml.Import_XML'>"
+    """
+    try:
+        cname = command_name.capitalize().replace('-', '_')
+        cmd = getattr(module, cname)
+    except ImportError, e:
+        raise UnknownCommand(command_name)
+    return cmd
+
 def commands():
     for modname in libbe.util.plugin.modnames('libbe.command'):
         if modname not in ['base', 'util']:
@@ -76,13 +91,13 @@ class Option (CommandInput):
 
     def validate(self):
         if self.arg == None:
-            assert self.callback != None
+            assert self.callback != None, self.name
             return
-        assert self.callback == None, self.callback
+        assert self.callback == None, '%s: %s' (self.name, self.callback)
         assert self.arg.name == self.name, \
             'Name missmatch: %s != %s' % (self.arg.name, self.name)
-        assert self.arg.optional == False
-        assert self.arg.repeatable == False
+        assert self.arg.optional == False, self.name
+        assert self.arg.repeatable == False, self.name
 
     def __str__(self):
         return '--%s' % self.name
