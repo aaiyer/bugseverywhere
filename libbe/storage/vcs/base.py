@@ -481,9 +481,9 @@ os.listdir(self.get_path("bugs")):
                 path = os.path.abspath('.')
         return path
 
-    def _vcs_init(self):
+    def _vcs_init(self, path):
         """
-        Begin versioning the tree based at self.repo.
+        Begin versioning the tree based at path.
         """
         pass
 
@@ -615,6 +615,8 @@ os.listdir(self.get_path("bugs")):
         Begin versioning the tree based at self.repo.
         Also roots the vcs at path.
         """
+        if not os.path.exists(self.repo) or not os.path.isdir(self.repo):
+            raise VCSUnableToRoot(self)
         self._vcs_init(self.repo)
         self.root()
         os.mkdir(self.be_dir)
