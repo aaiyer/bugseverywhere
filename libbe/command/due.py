@@ -13,73 +13,77 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Set bug due dates"""
-from libbe import cmdutil, bugdir, utility
-__desc__ = __doc__
 
-DUE_TAG="DUE:"
+import libbe
+import libbe.command
+import libbe.command.util
+import libbe.util.utility
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> bd.save()
-    >>> os.chdir(bd.root)
-    >>> execute(["a"], manipulate_encodings=False)
+DUE_TAG = 'DUE:'
+
+class Due (libbe.command.Command):
+    """Set bug due dates
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Due()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
     No due date assigned.
-    >>> execute(["a", "Thu, 01 Jan 1970 00:00:00 +0000"], manipulate_encodings=False)
-    >>> execute(["a"], manipulate_encodings=False)
+    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', 'Thu, 01 Jan 1970 00:00:00 +0000'])
+    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
     Thu, 01 Jan 1970 00:00:00 +0000
-    >>> execute(["a", "none"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
-    >>> execute(["a"], manipulate_encodings=False)
+    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', 'none'])
+    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
     No due date assigned.
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True})
-                             
-    if len(args) not in (1, 2):
-        raise cmdutil.UsageError('Incorrect number of arguments.')
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bug = cmdutil.bug_from_id(bd, args[0])
-    if len(args) == 1:
-        due_time = get_due(bug)
-        if due_time is None:
-            print "No due date assigned."
-        else:
-            print utility.time_to_str(due_time)
-    else:
-        if args[1] == "none":
-            remove_due(bug)
-        else:
-            due_time = utility.str_to_time(args[1])
-            set_due(bug, due_time)
+    name = 'due'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be due BUG-ID [DATE]")
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
+        self.args.extend([
+                libbe.command.Argument(
+                    name='bug-id', metavar='BUG-ID',
+                    completion_callback=libbe.command.util.complete_bug_id),
+                libbe.command.Argument(
+                    name='due', metavar='DUE', optional=True),
+                ])
 
-longhelp="""
+    def _run(self, storage, bugdir, **params):
+        bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
+            bugdir, params['bug-id'])
+        if params['due'] == None:
+            due_time = get_due(bug)
+            if due_time is None:
+                print >> self.stdout, 'No due date assigned.'
+            else:
+                print >> self.stdout, libbe.util.utility.time_to_str(due_time)
+        else:
+            if params['due'] == 'none':
+                remove_due(bug)
+            else:
+                due_time = libbe.util.utility.str_to_time(params['due'])
+                set_due(bug, due_time)
+
+    def _long_help(self):
+        return """
 If no DATE is specified, the bug's current due date is printed.  If
 DATE is specified, it will be assigned to the bug.
 """
 
-def help():
-    return get_parser().help_str() + longhelp
-
 # internal helper functions
 
 def _generate_due_string(time):
-    return "%s%s" % (DUE_TAG, utility.time_to_str(time))
+    return "%s%s" % (DUE_TAG, libbe.util.utility.time_to_str(time))
 
 def _parse_due_string(string):
     assert string.startswith(DUE_TAG)
-    return utility.str_to_time(string[len(DUE_TAG):])
+    return libbe.util.utility.str_to_time(string[len(DUE_TAG):])
 
 # functions exposed to other modules
 

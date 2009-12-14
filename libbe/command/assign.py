@@ -25,7 +25,7 @@ import libbe.command.util
 class Assign (libbe.command.Command):
     """Assign an individual or group to fix a bug
 
-    >>> import os, sys
+    >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Assign()
@@ -52,7 +52,6 @@ class Assign (libbe.command.Command):
     True
     >>> bd.cleanup()
     """
-    
     name = 'assign'
 
     def __init__(self, *args, **kwargs):
