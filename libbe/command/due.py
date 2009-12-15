@@ -19,7 +19,9 @@ import libbe.command
 import libbe.command.util
 import libbe.util.utility
 
+
 DUE_TAG = 'DUE:'
+
 
 class Due (libbe.command.Command):
     """Set bug due dates

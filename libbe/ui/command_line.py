@@ -122,7 +122,7 @@ class CmdOptionParser(optparse.OptionParser):
                     fragment = args[i+1]
                 self.complete(argument, fragment)
         if len(parsed_args) > len(self.command.args) \
-                and self.command.args[-1] == False:
+                and self.command.args[-1].repeatable == False:
             raise libbe.command.UserError('Too many arguments')
         for arg in self.command.args[len(parsed_args):]:
             if arg.optional == False:

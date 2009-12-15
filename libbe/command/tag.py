@@ -14,124 +14,140 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Tag a bug, or search bugs for tags"""
-from libbe import cmdutil, bugdir
-import os, copy
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> from libbe import utility
-    >>> bd = bugdir.SimpleBugDir()
-    >>> bd.set_sync_with_disk(True)
-    >>> os.chdir(bd.root)
-    >>> a = bd.bug_from_shortname("a")
+import libbe
+import libbe.command
+import libbe.command.util
+import libbe.util.utility
+
+
+TAG_TAG = 'TAG:'
+
+
+import os, copy
+
+class Tag (libbe.command.Command):
+    __doc__ = """Tag a bug, or search bugs for tags
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Tag()
+    >>> cmd._bugdir = bd
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> execute(["a", "GUI"], manipulate_encodings=False)
-    Tags for a:
+    >>> ret = cmd.run(args=['/a', 'GUI'])
+    Tags for abc/a:
     GUI
-    >>> bd._clear_bugs() # resync our copy of bug
-    >>> a = bd.bug_from_shortname("a")
+    >>> bd.flush_reload()
+    >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
-    ['TAG:GUI']
-    >>> execute(["a", "later"], manipulate_encodings=False)
-    Tags for a:
+    ['%(tag_tag)sGUI']
+    >>> ret = cmd.run(args=['/a', 'later'])
+    Tags for abc/a:
     GUI
     later
-    >>> execute(["a"], manipulate_encodings=False)
-    Tags for a:
+    >>> ret = cmd.run(args=['/a'])
+    Tags for abc/a:
     GUI
     later
-    >>> execute(["--list"], manipulate_encodings=False)
+    >>> ret = cmd.run({'list':True})
     GUI
     later
-    >>> execute(["a", "Alphabetically first"], manipulate_encodings=False)
-    Tags for a:
+    >>> ret = cmd.run(args=['/a', 'Alphabetically first'])
+    Tags for abc/a:
     Alphabetically first
     GUI
     later
-    >>> bd._clear_bugs() # resync our copy of bug
-    >>> a = bd.bug_from_shortname("a")
+    >>> bd.flush_reload()
+    >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
-    ['TAG:Alphabetically first', 'TAG:GUI', 'TAG:later']
+    ['%(tag_tag)sAlphabetically first', '%(tag_tag)sGUI', '%(tag_tag)slater']
     >>> a.extra_strings = []
     >>> print a.extra_strings
     []
-    >>> execute(["a"], manipulate_encodings=False)
-    >>> bd._clear_bugs() # resync our copy of bug
-    >>> a = bd.bug_from_shortname("a")
+    >>> ret = cmd.run(args=['/a'])
+    >>> bd.flush_reload()
+    >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> execute(["a", "Alphabetically first"], manipulate_encodings=False)
-    Tags for a:
+    >>> ret = cmd.run(args=['/a', 'Alphabetically first'])
+    Tags for abc/a:
     Alphabetically first
-    >>> execute(["--remove", "a", "Alphabetically first"], manipulate_encodings=False)
+    >>> ret = cmd.run({'remove':True}, ['/a', 'Alphabetically first'])
     >>> bd.cleanup()
-    """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True})
+    """ % {'tag_tag':TAG_TAG}
+    name = 'tag'
 
-    if len(args) == 0 and options.list == False:
-        raise cmdutil.UsageError("Please specify a bug id.")
-    elif len(args) > 2 or (len(args) > 0 and options.list == True):
-        help()
-        raise cmdutil.UsageError("Too many arguments.")
-    
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    if options.list:
-        bd.load_all_bugs()
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.options.extend([
+                libbe.command.Option(name='remove', short_name='r',
+                    help='Remove TAG (instead of adding it)'),
+                libbe.command.Option(name='list', short_name='l',
+                    help='List all available tags and exit'),
+                ])
+        self.args.extend([
+                libbe.command.Argument(
+                    name='id', metavar='BUG-ID', optional=True,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                libbe.command.Argument(
+                    name='tag', metavar='TAG', default=tuple(),
+                    optional=True, repeatable=True),
+                ])
+
+    def _run(self, **params):
+        if params['id'] == None and params['list'] == False:
+            raise libbe.command.UserError('Please specify a bug id.')
+        if params['id'] != None and params['list'] == True:
+            raise libbe.command.UserError(
+                'Do not specify a bug id with the --list option.')
+        bugdir = self._get_bugdir()
+        if params['list'] == True:
+            bugdir.load_all_bugs()
+            tags = []
+            for bug in bugdir:
+                for estr in bug.extra_strings:
+                    if estr.startswith(TAG_TAG):
+                        tag = estr[len(TAG_TAG):]
+                        if tag not in tags:
+                            tags.append(tag)
+            tags.sort()
+            if len(tags) > 0:
+                print >> self.stdout, '\n'.join(tags)
+            return 0
+
+        bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
+            bugdir, params['id'])
+        if len(params['tag']) > 0:
+            estrs = bug.extra_strings
+            for tag in params['tag']:
+                tag_string = '%s%s' % (TAG_TAG, tag)
+                if params['remove'] == True:
+                    estrs.remove(tag_string)
+                else: # add the tag
+                    estrs.append(tag_string)
+            bug.extra_strings = estrs # reassign to notice change
+
         tags = []
-        for bug in bd:
-            for estr in bug.extra_strings:
-                if estr.startswith("TAG:"):
-                    tag = estr[4:]
-                    if tag not in tags:
-                        tags.append(tag)
-        tags.sort()
+        for estr in bug.extra_strings:
+            if estr.startswith(TAG_TAG):
+                tags.append(estr[len(TAG_TAG):])
+    
         if len(tags) > 0:
+            print "Tags for %s:" % bug.id.user()
             print '\n'.join(tags)
-        return
-    bug = cmdutil.bug_from_id(bd, args[0])
-    if len(args) == 2:
-        given_tag = args[1]
-        estrs = bug.extra_strings
-        tag_string = "TAG:%s" % given_tag
-        if options.remove == True:
-            estrs.remove(tag_string)
-        else: # add the tag
-            estrs.append(tag_string)
-        bug.extra_strings = estrs # reassign to notice change
+        return 0
 
-    tags = []
-    for estr in bug.extra_strings:
-        if estr.startswith("TAG:"):
-            tags.append(estr[4:])
-
-    if len(tags) > 0:
-        print "Tags for %s:" % bug.uuid
-        print '\n'.join(tags)
-
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be tag BUG-ID [TAG]\nor:    be tag --list")
-    parser.add_option("-r", "--remove", action="store_true", dest="remove",
-                      help="Remove TAG (instead of adding it)")
-    parser.add_option("-l", "--list", action="store_true", dest="list",
-                      help="List all available tags and exit")
-    return parser
-
-longhelp="""
+    def _long_help(self):
+        return """
 If TAG is given, add TAG to BUG-ID.  If it is not specified, just
 print the tags for BUG-ID.
 
 To search for bugs with a particular tag, try
-  $ be list --extra-strings TAG:<your-tag>
-"""
-
-def help():
-    return get_parser().help_str() + longhelp
+  $ be list --extra-strings %s<your-tag>
+""" % TAG_TAG

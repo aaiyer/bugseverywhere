@@ -232,10 +232,7 @@ class Command (object):
                     params[arg.name] = args[i]
             else:  # no value given
                 assert in_optional_args == True, arg.name
-                if arg.repeatable == True:
-                    params[arg.name] = [arg.default]
-                else:
-                    params[arg.name] = arg.default
+                params[arg.name] = arg.default
         if len(args) > len(self.args):  # add some additional repeats
             assert self.args[-1].repeatable == True, self.args[-1].name
             params[self.args[-1].name].extend(args[len(self.args):])
