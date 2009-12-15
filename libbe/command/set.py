@@ -85,6 +85,20 @@ class Set (libbe.command.Command):
             setattr(bugdir, attr, params['value'])
         return 0
 
+    def _long_help(self):
+        return """
+Show or change per-tree settings. 
+
+If name and value are supplied, the name is set to a new value.
+If no value is specified, the current value is printed.
+If no arguments are provided, all names and values are listed. 
+
+To unset a setting, set it to "none".
+
+Allowed settings are:
+
+%s""" % ('\n'.join(get_bugdir_settings()),)
+
 def get_bugdir_settings():
     settings = []
     for s in libbe.bugdir.BugDir.settings_properties:
@@ -108,20 +122,6 @@ def get_bugdir_settings():
                             subsequent_indent='  ')
         documented_settings.append('%s\n%s' % (s, '\n'.join(doc)))
     return documented_settings
-
-longhelp="""
-Show or change per-tree settings. 
-
-If name and value are supplied, the name is set to a new value.
-If no value is specified, the current value is printed.
-If no arguments are provided, all names and values are listed. 
-
-To unset a setting, set it to "none".
-
-Allowed settings are:
-
-%s""" % ('\n'.join(get_bugdir_settings()),)
-
 
 def _value_string(bugdir, setting):
     val = bugdir.settings.get(setting, EMPTY)

@@ -35,14 +35,14 @@ class Subscribe (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Subscribe()
-    >>> cmd._storage = bd.storage
+    >>> cmd._bugdir = bd
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> ret = cmd.run({'subscriber':'John Doe <j@doe.com>'], ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'subscriber':'John Doe <j@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     John Doe <j@doe.com>    all    *
     >>> bd.flush_reload()
@@ -57,7 +57,7 @@ class Subscribe (libbe.command.Command):
     Subscriptions for a:
     Jane Doe <J@doe.com>    all    a.com,a.edu,b.net
     John Doe <j@doe.com>    all    *
-    >>> ret = cmd.run({'-u', 'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for a:
     Jane Doe <J@doe.com>    all    a.edu,b.net
     John Doe <j@doe.com>    all    *
@@ -69,7 +69,7 @@ class Subscribe (libbe.command.Command):
     Subscriptions for a:
     John Doe <j@doe.com>    all    *
     >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'John Doe <j@doe.com>'}, ['/a'])
-    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', '-t':'new'}, 'DIR']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'types':'new'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for bug directory:
     Jane Doe <J@doe.com>    new    *
     >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE

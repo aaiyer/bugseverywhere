@@ -30,7 +30,7 @@ class Diff (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Subscribe()
+    >>> cmd = Diff()
     >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
@@ -38,8 +38,8 @@ class Diff (libbe.command.Command):
     >>> original = bd.storage.commit('Original status')
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.status = 'closed'
-    >>> changed = bd.vcs.commit('Closed bug a')
-    >>> if bd.vcs.versioned == True:
+    >>> changed = bd.storage.commit('Closed bug a')
+    >>> if bd.storage.versioned == True:
     ...     ret = cmd.run(args=[original])
     ... else:
     ...     print 'Modified bugs:\\n  a:cm: Bug A\\n    Changed bug settings:\\n      status: open -> closed'
@@ -47,12 +47,12 @@ class Diff (libbe.command.Command):
       a:cm: Bug A
         Changed bug settings:
           status: open -> closed
-    >>> if bd.vcs.versioned == True:
+    >>> if bd.storage.versioned == True:
     ...     ret = cmd.run({'subscribe':'%(bugdir_id)s:mod', 'uuids':True}, [original])
     ... else:
     ...     print 'a'
     a
-    >>> if bd.vcs.versioned == False:
+    >>> if bd.storage.versioned == False:
     ...     ret = cmd.run(args=[original])
     ... else:
     ...     raise libbe.command.UserError('This repository not revision-controlled.')
@@ -131,10 +131,10 @@ class Diff (libbe.command.Command):
 
     def _long_help(self):
         return """
-Uses the VCS to compare the current tree with a previous tree, and
-prints a pretty report.  If REVISION is given, it is a specifier for
-the particular previous tree to use.  Specifiers are specific to their
-VCS.
+Uses the storage backend to compare the current tree with a previous
+tree, and prints a pretty report.  If REVISION is given, it is a
+specifier for the particular previous tree to use.  Specifiers are
+specific to their storage backend.
 
 For Arch your specifier must be a fully-qualified revision name.
 

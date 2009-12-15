@@ -266,7 +266,7 @@ class Command (object):
     def help(self, *args):       
         return '\n\n'.join([self._usage(),
                             self._option_help(),
-                            self._long_help()])
+                            self._long_help().rstrip('\n')])
 
     def _usage(self):
         usage = 'usage: be %s [options]' % self.name

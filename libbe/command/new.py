@@ -35,9 +35,11 @@ class New (libbe.command.Command):
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
+    >>> uuid_gen = libbe.util.id.uuid_gen
     >>> libbe.util.id.uuid_gen = lambda: 'X'
     >>> ret = cmd.run(args=['this is a test',])
     Created bug with ID abc/X
+    >>> libbe.util.id.uuid_gen = uuid_gen
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('X')
     >>> print bug.summary

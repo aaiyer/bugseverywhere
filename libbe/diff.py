@@ -638,7 +638,3 @@ class Diff (object):
     def comment_body_change_string(self, bodies):
         old_body,new_body = bodies
         return difflib.unified_diff(old_body, new_body)
-
-
-if libbe.TESTING == True:
-    suite = doctest.DocTestSuite()

@@ -87,7 +87,7 @@ def select_values(string, possible_values, name="unkown"):
         blacklisted_values = set(string[1:].split(','))
         for value in blacklisted_values:
             if value not in possible_values:
-                raise UserError('Invalid %s %s\n  %s'
+                raise libbe.command.UserError('Invalid %s %s\n  %s'
                                 % (name, value, possible_values))
             possible_values.remove(value)
     else:
