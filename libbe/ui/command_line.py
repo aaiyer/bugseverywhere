@@ -241,7 +241,8 @@ class BE (libbe.command.Command):
         return libbe.version.version(verbose=True)
 
 def main():
-    parser = CmdOptionParser(BE())
+    be = BE()
+    parser = CmdOptionParser(be)
     try:
         options,args = parser.parse_args()
     except CallbackExit:
@@ -264,9 +265,12 @@ def main():
         print e
         return 1
     Class = getattr(module, command_name.capitalize())
-    def gucs():
-        return libbe.storage.get_storage(options['repo'])
-    command = Class(get_unconnected_storage=gucs, ui=ui)
+    class GUCS (object):
+        def __init__(self, repo):
+            self.repo = repo
+        def __call__(self):
+            return libbe.storage.get_storage(self.repo)
+    command = Class(get_unconnected_storage=GUCS(options['repo']), ui=be)
     parser = CmdOptionParser(command)
     try:
         options,args = parser.parse_args(args[1:])
@@ -278,7 +282,7 @@ def main():
         command.cleanup()
         print 'ERROR:\n', e
         return 1
-    if storage != None: storage.disconnect()
+    command.cleanup()
     return 0
 
 if __name__ == '__main__':

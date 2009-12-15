@@ -23,6 +23,7 @@ import libbe.bug
 import libbe.command
 import libbe.command.util
 
+
 class Severity (libbe.command.Command):
     """Change a bug's severity level
 
@@ -88,8 +89,8 @@ Severity levels are:
         except NotImplementedError:
             pass # No tree, just show the defaults
         longest_severity_len = max([len(s) for s in libbe.bug.severity_values])
-        for severity in bug.severity_values :
-            description = bug.severity_description[severity]
+        for severity in libbe.bug.severity_values :
+            description = libbe.bug.severity_description[severity]
             ret.append('%*s : %s\n' \
                 % (longest_severity_len, severity, description))
         return ''.join(ret)

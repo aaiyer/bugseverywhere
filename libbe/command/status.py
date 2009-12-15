@@ -14,68 +14,77 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Show or change a bug's status"""
-from libbe import cmdutil, bugdir, bug
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> execute(["a"], manipulate_encodings=False)
-    open
-    >>> execute(["a", "closed"], manipulate_encodings=False)
-    >>> execute(["a"], manipulate_encodings=False)
-    closed
-    >>> execute(["a", "none"], manipulate_encodings=False)
+import libbe
+import libbe.bug
+import libbe.command
+import libbe.command.util
+
+
+class Status (libbe.command.Command):
+    """Change a bug's status level
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Status()
+    >>> cmd._storage = bd.storage
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> bd.bug_from_uuid('a').status
+    'open'
+    >>> ret = cmd.run(args=['closed', '/a'])
+    >>> bd.flush_reload()
+    >>> bd.bug_from_uuid('a').status
+    'closed'
+    >>> ret = cmd.run(args=['none', '/a'])
     Traceback (most recent call last):
-    UserError: Invalid status: none
+    UserError: Invalid status level: none
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    complete(options, args, parser)
-    if len(args) not in (1,2):
-        raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bug = cmdutil.bug_from_id(bd, args[0])
-    if len(args) == 1:
-        print bug.status
-    else:
-        try:
-            bug.status = args[1]
-        except ValueError, e:
-            if e.name != "status":
-                raise
-            raise cmdutil.UserError ("Invalid status: %s" % e.value)
+    name = 'status'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be status BUG-ID [STATUS]")
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.args.extend([
+                libbe.command.Argument(
+                    name='status', metavar='STATUS', default=None,
+                    completion_callback=libbe.command.util.complete_status),
+                libbe.command.Argument(
+                    name='bug-id', metavar='BUG-ID', default=None,
+                    repeatable=True,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                ])
+    
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
+        for bug_id in params['bug-id']:
+            bug,dummy_comment = \
+                libbe.command.util.bug_comment_from_user_id(bugdir, bug_id)
+            if bug.status != params['status']:
+                try:
+                    bug.status = params['status']
+                except ValueError, e:
+                    if e.name != 'status':
+                        raise e
+                    raise libbe.command.UserError(
+                        'Invalid status level: %s' % e.value)
+        return 0
 
-
-def help():
-    try: # See if there are any per-tree status configurations
-        bd = bugdir.BugDir(from_disk=True,
-                           manipulate_encodings=False)
-    except bugdir.NoBugDir, e:
-        pass # No tree, just show the defaults
-    longest_status_len = max([len(s) for s in bug.status_values])
-    active_statuses = []
-    for status in bug.active_status_values :
-        description = bug.status_description[status]
-        s = "%*s : %s" % (longest_status_len, status, description)
-        active_statuses.append(s)
-    inactive_statuses = []
-    for status in bug.inactive_status_values :
-        description = bug.status_description[status]
-        s = "%*s : %s" % (longest_status_len, status, description)
-        inactive_statuses.append(s)
-    longhelp="""
+    def _long_help(self):
+        longest_status_len = max([len(s) for s in libbe.bug.status_values])
+        active_statuses = []
+        for status in libbe.bug.active_status_values :
+            description = libbe.bug.status_description[status]
+            s = "%*s : %s" % (longest_status_len, status, description)
+            active_statuses.append(s)
+        inactive_statuses = []
+        for status in libbe.bug.inactive_status_values :
+            description = libbe.bug.status_description[status]
+            s = "%*s : %s" % (longest_status_len, status, description)
+            inactive_statuses.append(s)
+        ret = """
 Show or change a bug's status.
 
 If no status is specified, the current value is printed.  If a status
@@ -93,26 +102,4 @@ Inactive status levels are:
 You can overide the list of allowed statuses on a per-repository basis.
 See "be set --help" for more details.
 """ % ('\n  '.join(active_statuses), '\n  '.join(inactive_statuses))
-    return get_parser().help_str() + longhelp
-
-def complete(options, args, parser):
-    for option,value in cmdutil.option_value_pairs(options, parser):
-        if value == "--complete":
-            # no argument-options at the moment, so this is future-proofing
-            raise cmdutil.GetCompletions()
-    for pos,value in enumerate(args):
-        if value == "--complete":
-            try: # See if there are any per-tree status configurations
-                bd = bugdir.BugDir(from_disk=True,
-                                   manipulate_encodings=False)
-            except bugdir.NoBugDir:
-                bd = None
-            if pos == 0: # fist positional argument is a bug id 
-                ids = []
-                if bd != None:
-                    bd.load_all_bugs()
-                    ids = [bd.bug_shortname(bg) for bg in bd]
-                raise cmdutil.GetCompletions(ids)
-            elif pos == 1: # second positional argument is a status
-                raise cmdutil.GetCompletions(bug.status_values)
-            raise cmdutil.GetCompletions()
+        return ret
