@@ -17,20 +17,32 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Show a particular bug, comment, or combination of both."""
-import sys
-from libbe import cmdutil, bugdir, comment, version, _version
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> execute (["a",], manipulate_encodings=False) # doctest: +ELLIPSIS
+import sys
+
+import libbe
+import libbe.command
+import libbe.command.util
+import libbe.util.id
+import libbe.version
+import libbe._version
+
+
+class Show (libbe.command.Command):
+    """Show a particular bug, comment, or combination of both.
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Show()
+    >>> cmd._storage = bd.storage
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+    >>> cmd.stdout.encoding = 'ascii'
+
+    >>> ret = cmd.run(args=['/a',])  # doctest: +ELLIPSIS
               ID : a
-      Short name : a
+      Short name : abc/a
         Severity : minor
           Status : open
         Assigned : 
@@ -39,7 +51,8 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
          Created : ...
     Bug A
     <BLANKLINE>
-    >>> execute (["--xml", "a"], manipulate_encodings=False) # doctest: +ELLIPSIS
+
+    >>> ret = cmd.run({'xml':True}, ['/a'])  # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="..." ?>
     <be-xml>
       <version>
@@ -50,7 +63,7 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
       </version>
       <bug>
         <uuid>a</uuid>
-        <short-name>a</short-name>
+        <short-name>abc/a</short-name>
         <severity>minor</severity>
         <status>open</status>
         <creator>John Doe &lt;jdoe@example.com&gt;</creator>
@@ -60,42 +73,51 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
     </be-xml>
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={-1: lambda bug : bug.active==True})
-    if len(args) == 0:
-        raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
+    name = 'show'
 
-    if options.only_raw_body == True:
-        if len(args) != 1:
-            raise cmdutil.UsageError(
-                'only one ID accepted with --only-raw-body')
-        bug,comment = cmdutil.bug_comment_from_id(bd, args[0])
-        if comment == bug.comment_root:
-            raise cmdutil.UsageError(
-                "--only-raw-body requires a comment ID, not '%s'" % args[0])
-        sys.__stdout__.write(comment.body)
-        sys.exit(0)
-    print output(args, bd, as_xml=options.XML, with_comments=options.comments)
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.options.extend([
+                libbe.command.Option(name='xml', short_name='x',
+                                     help='Dump as XML'),
+                libbe.command.Option(name='only-raw-body',
+                    help="When printing only a single comment, just print it's"
+                  " body.  This allows extraction of non-text content types."),
+                libbe.command.Option(name='no-comments', short_name='c',
+                    help="Disable comment output.  This is useful if you just "
+                         "want more details on a bug's current status."),
+                ])
+        self.args.extend([
+                libbe.command.Argument(
+                    name='id', metavar='ID', default=None,
+                    optional=True, repeatable=True,
+                    completion_callback=libbe.command.util.complete_bug_comment_id),
+                ])
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be show [options] ID [ID ...]")
-    parser.add_option("-x", "--xml", action="store_true", default=False,
-                      dest='XML', help="Dump as XML")
-    parser.add_option("--only-raw-body", action="store_true",
-                      dest='only_raw_body',
-                      help="When printing only a single comment, just print it's body.  This allows extraction of non-text content types.")
-    parser.add_option("-c", "--no-comments", dest="comments",
-                      action="store_false", default=True,
-                      help="Disable comment output.  This is useful if you just want more details on a bug's current status.")
-    return parser
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
+        if params['only-raw-body'] == True:
+            if len(params['id']) != 1:
+                raise libbe.command.UsageError(
+                    'only one ID accepted with --only-raw-body')
+            bug,comment = libbe.command.util.bug_comment_from_user_id(
+                bugdir, params['id'][0])
+            if comment == bug.comment_root:
+                raise libbe.command.UsageError(
+                    "--only-raw-body requires a comment ID, not '%s'"
+                    % params['id'][0])
+            sys.__stdout__.write(comment.body)
+            return 0
+        print >> self.stdout, \
+            output(bugdir, params['id'], encoding=self.stdout.encoding,
+                   as_xml=params['xml'],
+                   with_comments=not params['no-comments'])
+        return 0
 
-longhelp="""
+    def _long_help(self):
+        return """
 Show all information about the bugs or comments whose IDs are given.
+If no IDs are given, show the entire repository.
 
 Without the --xml flag set, it's probably not a good idea to mix bug
 and comment IDs in a single call, but you're free to do so if you
@@ -109,24 +131,21 @@ placed at the end of the output, so the ordering may not match the
 order of the listed IDs.
 """
 
-def help():
-    return get_parser().help_str() + longhelp
-
-def _sort_ids(ids, with_comments=True):
+def _sort_ids(bugdir, ids, with_comments=True):
     bugs = []
     root_comments = {}
     for id in ids:
-        bugname,commname = cmdutil.parse_id(id)
-        if commname == None:
-            bugs.append(bugname)
+        p = libbe.util.id.parse_user(bugdir, id)
+        if p['type'] == 'bug':
+            bugs.append(p['bug'])
         elif with_comments == True:
-            if bugname not in root_comments:
-                root_comments[bugname] = [commname]
+            if p['bug'] not in root_comments:
+                root_comments[p['bug']] = [p['comment']]
             else:
-                root_comments[bugname].append(commname)
+                root_comments[p['bug']].append(p['comment'])
     for bugname in root_comments.keys():
         assert bugname not in bugs, \
-            "specifically requested both '%s%s' and '%s'" \
+            'specifically requested both #/%s/%s# and #/%s#' \
             % (bugname, root_comments[bugname][0], bugname)
     return (bugs, root_comments)
 
@@ -134,9 +153,9 @@ def _xml_header(encoding):
     lines = ['<?xml version="1.0" encoding="%s" ?>' % encoding,
              '<be-xml>',
              '  <version>',
-             '    <tag>%s</tag>' % version.version()]
+             '    <tag>%s</tag>' % libbe.version.version()]
     for tag in ['branch-nick', 'revno', 'revision-id']:
-        value = _version.version_info[tag.replace('-', '_')]
+        value = libbe._version.version_info[tag.replace('-', '_')]
         lines.append('    <%s>%s</%s>' % (tag, value, tag))
     lines.append('  </version>')
     return lines
@@ -144,15 +163,18 @@ def _xml_header(encoding):
 def _xml_footer():
     return ['</be-xml>']
 
-def output(ids, bd, as_xml=True, with_comments=True):
-    bugs,root_comments = _sort_ids(ids, with_comments)
+def output(bd, ids, encoding, as_xml=True, with_comments=True):
+    if len(ids) == 0:
+        bd.load_all_bugs()
+        ids = [bug.id.user() for bug in bd]
+    bugs,root_comments = _sort_ids(bd, ids, with_comments)
     lines = []
     if as_xml:
-        lines.extend(_xml_header(bd.encoding))
+        lines.extend(_xml_header(encoding))
     else:
         spaces_left = len(ids) - 1
     for bugname in bugs:
-        bug = cmdutil.bug_from_id(bd, bugname)
+        bug = bd.bug_from_uuid(bugname)
         if as_xml:
             lines.append(bug.xml(indent=2, show_comments=with_comments))
         else:
@@ -161,18 +183,18 @@ def output(ids, bd, as_xml=True, with_comments=True):
                 spaces_left -= 1
                 lines.append('') # add a blank line between bugs/comments
     for bugname,comments in root_comments.items():
-        bug = cmdutil.bug_from_id(bd, bugname)
+        bug = bd.bug_from_uuid(bugname)
         if as_xml:
             lines.extend(['  <bug>', '    <uuid>%s</uuid>' % bug.uuid])
         for commname in comments:
             try:
-                comment = bug.comment_root.comment_from_shortname(commname)
-            except comment.InvalidShortname, e:
-                raise UserError(e.message)
+                comment = bug.comment_root.comment_from_uuid(commname)
+            except KeyError, e:
+                raise libbe.command.UserError(e.message)
             if as_xml:
-                lines.append(comment.xml(indent=4, shortname=bugname))
+                lines.append(comment.xml(indent=4))
             else:
-                lines.append(comment.string(shortname=bugname))
+                lines.append(comment.string())
                 if spaces_left > 0:
                     spaces_left -= 1
                     lines.append('') # add a blank line between bugs/comments

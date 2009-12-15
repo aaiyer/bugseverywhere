@@ -77,12 +77,12 @@ class Status (libbe.command.Command):
         active_statuses = []
         for status in libbe.bug.active_status_values :
             description = libbe.bug.status_description[status]
-            s = "%*s : %s" % (longest_status_len, status, description)
+            s = '%*s : %s' % (longest_status_len, status, description)
             active_statuses.append(s)
         inactive_statuses = []
         for status in libbe.bug.inactive_status_values :
             description = libbe.bug.status_description[status]
-            s = "%*s : %s" % (longest_status_len, status, description)
+            s = '%*s : %s' % (longest_status_len, status, description)
             inactive_statuses.append(s)
         ret = """
 Show or change a bug's status.
