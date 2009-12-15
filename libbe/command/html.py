@@ -108,6 +108,7 @@ class HTML (libbe.command.Command):
                            verbose=params['verbose'],
                            stdout=self.stdout)
         html_gen.run(params['output'])
+        return 0
 
     def _long_help(self):
         return """

@@ -15,23 +15,30 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Create a new bug"""
-from libbe import cmdutil, bugdir
-import sys
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os, time
-    >>> from libbe import bug
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> bug.uuid_gen = lambda: "X"
-    >>> execute (["this is a test",], manipulate_encodings=False)
-    Created bug with ID X
-    >>> bd._clear_bugs()
-    >>> bug = bd.bug_from_uuid("X")
+import libbe
+import libbe.command
+import libbe.command.util
+
+
+class New (libbe.command.Command):
+    """Create a new bug
+
+    >>> import os
+    >>> import sys
+    >>> import time
+    >>> import libbe.bugdir
+    >>> import libbe.util.id
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = New()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> libbe.util.id.uuid_gen = lambda: 'X'
+    >>> ret = cmd.run(bd.storage, bd, args=['this is a test',])
+    Created bug with ID abc/X
+    >>> bd.flush_reload()
+    >>> bug = bd.bug_from_uuid('X')
     >>> print bug.summary
     this is a test
     >>> bug.time <= int(time.time())
@@ -42,42 +49,44 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
     open
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser)
-    if len(args) != 1:
-        raise cmdutil.UsageError("Please supply a summary message")
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    if args[0] == '-': # read summary from stdin
-        summary = sys.stdin.readline()
-    else:
-        summary = args[0]
-    bug = bd.new_bug(summary=summary.strip())
-    if options.reporter != None:
-        bug.reporter = options.reporter
-    else:
-        bug.reporter = bug.creator
-    if options.assigned != None:
-        bug.assigned = options.assigned
-    elif bd.default_assignee != None:
-        bug.assigned = bd.default_assignee
-    print "Created bug with ID %s" % bd.bug_shortname(bug)
+    name = 'new'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be new SUMMARY")
-    parser.add_option("-r", "--reporter", metavar="REPORTER", dest="reporter",
-                      help="The user who reported the bug", default=None)
-    parser.add_option("-a", "--assigned", metavar="ASSIGNED", dest="assigned",
-                      help="The developer in charge of the bug", default=None)
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
+        self.options.extend([
+                libbe.command.Option(name='reporter', short_name='r',
+                    help='The user who reported the bug',
+                    arg=libbe.command.Argument(
+                        name='reporter', metavar='NAME')),
+                libbe.command.Option(name='assigned', short_name='a',
+                    help='The developer in charge of the bug',
+                    arg=libbe.command.Argument(
+                        name='assigned', metavar='NAME',
+                        completion_callback=libbe.command.util.complete_assigned)),
+                ])
+        self.args.extend([
+                libbe.command.Argument(name='summary', metavar='SUMMARY')
+                ])
 
-longhelp="""
+    def _run(self, storage, bugdir, **params):
+        if params['summary'] == '-': # read summary from stdin
+            summary = self.stdin.readline()
+        else:
+            summary = params['summary']
+        bug = bugdir.new_bug(summary=summary.strip())
+        if params['reporter'] != None:
+            bug.reporter = params['reporter']
+        else:
+            bug.reporter = bug.creator
+        if params['assigned'] != None:
+            bug.assigned = params['assigned']
+        print >> self.stdout, 'Created bug with ID %s' % bug.id.user()
+        return 0
+
+    def _long_help(self):
+        return """
 Create a new bug, with a new ID.  The summary specified on the
 commandline is a string (only one line) that describes the bug briefly
 or "-", in which case the string will be read from stdin.
 """
-
-def help():
-    return get_parser().help_str() + longhelp
