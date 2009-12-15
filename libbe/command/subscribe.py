@@ -22,6 +22,7 @@ import libbe.bug
 import libbe.command
 import libbe.diff
 import libbe.command.util
+import libbe.util.id
 import libbe.util.tree
 
 
@@ -54,19 +55,19 @@ class Subscribe (libbe.command.Command):
     Jane Doe <J@doe.com>    all    a.com,b.net
     John Doe <j@doe.com>    all    *
     >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.edu'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for a:
+    Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.com,a.edu,b.net
     John Doe <j@doe.com>    all    *
     >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for a:
+    Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.edu,b.net
     John Doe <j@doe.com>    all    *
     >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'*'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for a:
+    Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    *
     John Doe <j@doe.com>    all    *
     >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for a:
+    Subscriptions for abc/a:
     John Doe <j@doe.com>    all    *
     >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'John Doe <j@doe.com>'}, ['/a'])
     >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'types':'new'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
@@ -103,7 +104,7 @@ class Subscribe (libbe.command.Command):
                 ])
         self.args.extend([
                 libbe.command.Argument(
-                    name='id', metavar='ID', default=None,
+                    name='id', metavar='ID', default=tuple(),
                     optional=True, repeatable=True,
                     completion_callback=libbe.command.util.complete_bug_comment_id),
                 ])
@@ -131,17 +132,17 @@ class Subscribe (libbe.command.Command):
         servers = params['servers'].split(',')
         types = params['types'].split(',')
     
-        if params['id'] == None:
-            params['id'] = libbe.diff.BUGDIR_ID
-        for id in params['id']:
-            if id == libbe.diff.BUGDIR_ID: # directory-wide subscriptions
+        if len(params['id']) == 0:
+            params['id'] = [libbe.diff.BUGDIR_ID]
+        for _id in params['id']:
+            if _id == libbe.diff.BUGDIR_ID: # directory-wide subscriptions
                 type_root = libbe.diff.BUGDIR_TYPE_ALL
                 entity = bugdir
                 entity_name = 'bug directory'
             else: # bug-specific subscriptions
                 type_root = libbe.diff.BUG_TYPE_ALL
                 bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-                    bugdir, params['id'])
+                    bugdir, _id)
                 entity = bug
                 entity_name = bug.id.user()
             if params['list-all'] == True:

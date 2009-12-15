@@ -74,7 +74,7 @@ class Diff (libbe.command.Command):
                         completion_callback=libbe.command.util.complete_path)),
                 libbe.command.Option(name='subscribe', short_name='s',
                     help='Only print changes matching SUBSCRIPTION, '
-                    'subscription is a comma-separ\ated list of ID:TYPE '
+                    'subscription is a comma-separated list of ID:TYPE '
                     'tuples.  See `be subscribe --help` for descriptions '
                     'of ID and TYPE.',
                     arg=libbe.command.Argument(
