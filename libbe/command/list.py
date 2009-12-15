@@ -63,9 +63,9 @@ class List (libbe.command.Command):
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
     >>> ret = cmd.run(bd.storage, bd)
-    sim/a:om: Bug A
+    abc/a:om: Bug A
     >>> ret = cmd.run(bd.storage, bd, {'status':'closed'})
-    sim/b:cm: Bug B
+    abc/b:cm: Bug B
     >>> bd.storage.writeable
     True
     >>> bd.cleanup()

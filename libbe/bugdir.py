@@ -359,7 +359,7 @@ if libbe.TESTING == True:
                 storage = libbe.storage.base.Storage(dir.path)
                 storage.init()
                 storage.connect()
-            BugDir.__init__(self, storage=storage, uuid='simple')
+            BugDir.__init__(self, storage=storage, uuid='abc123')
             bug_a = self.new_bug(summary='Bug A', _uuid='a')
             bug_a.creator = 'John Doe <jdoe@example.com>'
             bug_a.time = 0

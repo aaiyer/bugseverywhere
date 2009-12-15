@@ -37,8 +37,8 @@ class Comment (libbe.command.Command):
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
-    >>> cmd.run(bd.storage, bd, {'user-id':u'Fran\\xe7ois'},
-    ...         ['/a', 'This is a comment about a'])
+    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Fran\\xe7ois'},
+    ...               ['/a', 'This is a comment about a'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
@@ -57,12 +57,12 @@ class Comment (libbe.command.Command):
 
     >>> if 'EDITOR' in os.environ:
     ...     del os.environ['EDITOR']
-    >>> cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
+    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
 
     >>> os.environ['EDITOR'] = "echo 'I like cheese' > "
-    >>> cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
+    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('b')
     >>> bug.load_comments(load_full=False)
@@ -139,6 +139,7 @@ class Comment (libbe.command.Command):
         for key in ['alt-id', 'author', 'content-type']:
             if params[key] != None:
                 setattr(new, key, params[key])
+        return 0
 
     def _long_help(self):
         return """

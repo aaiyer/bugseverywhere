@@ -296,8 +296,7 @@ class Bug(settings_object.SavedSettingsObject):
             bugout = "%s:%s: %s" % (self.id.user(),chars,self.summary.rstrip('\n'))
         
         if show_comments == True:
-            # take advantage of the string_thread(auto_name_map=True)
-            # SIDE-EFFECT of sorting by comment time.
+            self.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
             comout = self.comment_root.string_thread(flatten=False)
             output = bugout + '\n' + comout.rstrip('\n')
         else :

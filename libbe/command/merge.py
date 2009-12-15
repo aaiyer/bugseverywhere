@@ -14,41 +14,52 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Merge duplicate bugs"""
-from libbe import cmdutil, bugdir
-import os, copy
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> from libbe import utility
-    >>> bd = bugdir.SimpleBugDir()
-    >>> bd.set_sync_with_disk(True)
-    >>> a = bd.bug_from_shortname("a")
+import copy
+import os
+
+import libbe
+import libbe.command
+import libbe.command.util
+
+
+class Merge (libbe.command.Command):
+    """Merge duplicate bugs
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> import libbe.comment
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Merge()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> a = bd.bug_from_uuid('a')
     >>> a.comment_root.time = 0
-    >>> dummy = a.new_comment("Testing")
+    >>> dummy = a.new_comment('Testing')
     >>> dummy.time = 1
-    >>> dummy = dummy.new_reply("Testing...")
+    >>> dummy = dummy.new_reply('Testing...')
     >>> dummy.time = 2
-    >>> b = bd.bug_from_shortname("b")
-    >>> b.status = "open"
+    >>> b = bd.bug_from_uuid('b')
+    >>> b.status = 'open'
     >>> b.comment_root.time = 0
-    >>> dummy = b.new_comment("1 2")
+    >>> dummy = b.new_comment('1 2')
     >>> dummy.time = 1
-    >>> dummy = dummy.new_reply("1 2 3 4")
+    >>> dummy = dummy.new_reply('1 2 3 4')
     >>> dummy.time = 2
-    >>> os.chdir(bd.root)
-    >>> execute(["a", "b"], manipulate_encodings=False)
-    Merging bugs a and b
-    >>> bd._clear_bugs()
-    >>> a = bd.bug_from_shortname("a")
+
+    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', '/b'])
+    Merged bugs #abc/a# and #abc/b#
+    >>> bd.flush_reload()
+    >>> a = bd.bug_from_uuid('a')
     >>> a.load_comments()
-    >>> mergeA = a.comment_from_shortname(":3")
+    >>> a_comments = sorted([c for c in a.comments()],
+    ...                     cmp=libbe.comment.cmp_time)
+    >>> mergeA = a_comments[0]
     >>> mergeA.time = 3
     >>> print a.string(show_comments=True) # doctest: +ELLIPSIS
               ID : a
-      Short name : a
+      Short name : abc/a
         Severity : minor
           Status : open
         Assigned : 
@@ -57,42 +68,44 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
          Created : ...
     Bug A
     --------- Comment ---------
-    Name: a:1
+    Name: abc/a/...
     From: ...
     Date: ...
     <BLANKLINE>
     Testing
       --------- Comment ---------
-      Name: a:2
+      Name: abc/a/...
       From: ...
       Date: ...
     <BLANKLINE>
       Testing...
     --------- Comment ---------
-    Name: a:3
+    Name: abc/a/...
     From: ...
     Date: ...
     <BLANKLINE>
-    Merged from bug b
+    Merged from bug #abc/b#
       --------- Comment ---------
-      Name: a:4
+      Name: abc/a/...
       From: ...
       Date: ...
     <BLANKLINE>
       1 2
         --------- Comment ---------
-        Name: a:5
+        Name: abc/a/...
         From: ...
         Date: ...
     <BLANKLINE>
         1 2 3 4
-    >>> b = bd.bug_from_shortname("b")
+    >>> b = bd.bug_from_uuid('b')
     >>> b.load_comments()
-    >>> mergeB = b.comment_from_shortname(":3")
+    >>> b_comments = sorted([c for c in b.comments()],
+    ...                     libbe.comment.cmp_time)
+    >>> mergeB = b_comments[0]
     >>> mergeB.time = 3
     >>> print b.string(show_comments=True) # doctest: +ELLIPSIS
               ID : b
-      Short name : b
+      Short name : abc/b
         Severity : minor
           Status : closed
         Assigned : 
@@ -101,66 +114,73 @@ def execute(args, manipulate_encodings=True, restrict_file_access=False,
          Created : ...
     Bug B
     --------- Comment ---------
-    Name: b:1
+    Name: abc/b/...
     From: ...
     Date: ...
     <BLANKLINE>
     1 2
       --------- Comment ---------
-      Name: b:2
+      Name: abc/b/...
       From: ...
       Date: ...
     <BLANKLINE>
       1 2 3 4
     --------- Comment ---------
-    Name: b:3
+    Name: abc/b/...
     From: ...
     Date: ...
     <BLANKLINE>
-    Merged into bug a
+    Merged into bug #abc/a#
     >>> print b.status
     closed
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True,
-                                         1: lambda bug : bug.active==True})
+    name = 'merge'
 
-    if len(args) < 2:
-        raise cmdutil.UsageError("Please specify two bug ids.")
-    if len(args) > 2:
-        help()
-        raise cmdutil.UsageError("Too many arguments.")
-    
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bugA = cmdutil.bug_from_id(bd, args[0])
-    bugA.load_comments()
-    bugB = cmdutil.bug_from_id(bd, args[1])
-    bugB.load_comments()
-    mergeA = bugA.new_comment("Merged from bug %s" % bugB.uuid)
-    newCommTree = copy.deepcopy(bugB.comment_root)
-    for comment in newCommTree.traverse(): # all descendant comments
-        comment.bug = bugA
-        comment.save() # force onto disk under bugA
-    for comment in newCommTree: # just the child comments
-        mergeA.add_reply(comment, allow_time_inversion=True)
-    bugB.new_comment("Merged into bug %s" % bugA.uuid)
-    bugB.status = "closed"
-    print "Merging bugs %s and %s" % (bugA.uuid, bugB.uuid)
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
+        self.args.extend([
+                libbe.command.Argument(
+                    name='bug-id', metavar='BUG-ID', default=None,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                libbe.command.Argument(
+                    name='bug-id-to-merge', metavar='BUG-ID', default=None,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                ])
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be merge BUG-ID BUG-ID")
-    return parser
+    def _run(self, storage, bugdir, **params):
+        bugA,dummy_comment = \
+            libbe.command.util.bug_comment_from_user_id(
+                bugdir, params['bug-id'])
+        bugA.load_comments()
+        bugB,dummy_comment = \
+            libbe.command.util.bug_comment_from_user_id(
+                bugdir, params['bug-id-to-merge'])
+        bugB.load_comments()
+        mergeA = bugA.new_comment('Merged from bug #%s#' % bugB.id.long_user())
+        newCommTree = copy.deepcopy(bugB.comment_root)
+        for comment in newCommTree.traverse(): # all descendant comments
+            comment.bug = bugA
+            # uuids must be unique in storage
+            if comment.alt_id == None:
+                comment.storage = None
+                comment.alt_id = comment.uuid
+                comment.storage = storage
+            comment.uuid = libbe.util.id.uuid_gen() 
+            comment.save() # force onto disk under bugA
 
-longhelp="""
+        for comment in newCommTree: # just the child comments
+            mergeA.add_reply(comment, allow_time_inversion=True)
+        bugB.new_comment('Merged into bug #%s#' % bugA.id.long_user())
+        bugB.status = 'closed'
+        print >> self.stdout, 'Merged bugs #%s# and #%s#' \
+            % (bugA.id.user(), bugB.id.user())
+        return 0
+
+    def _long_help(self):
+        return """
 The second bug (B) is merged into the first (A).  This adds merge
 comments to both bugs, closes B, and appends B's comment tree to A's
 merge comment.
 """
-
-def help():
-    return get_parser().help_str() + longhelp
