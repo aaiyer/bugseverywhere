@@ -14,52 +14,63 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Remove (delete) a bug and its comments"""
-from libbe import cmdutil, bugdir
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> from libbe import mapfile
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> print bd.bug_from_shortname("b").status
+import libbe
+import libbe.command
+import libbe.command.util
+
+
+class Remove (libbe.command.Command):
+    """Remove (delete) a bug and its comments
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Remove()
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> print bd.bug_from_uuid('b').status
     closed
-    >>> execute (["b"], manipulate_encodings=False)
-    Removed bug b
-    >>> bd._clear_bugs()
+    >>> ret = cmd.run(bd.storage, bd, args=['/b'])
+    Removed bug abc/b
+    >>> bd.flush_reload()
     >>> try:
-    ...     bd.bug_from_shortname("b")
-    ... except bugdir.NoBugMatches:
-    ...     print "Bug not found"
+    ...     bd.bug_from_uuid('b')
+    ... except libbe.bugdir.NoBugMatches:
+    ...     print 'Bug not found'
     Bug not found
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True})
-    if len(args) != 1:
-        raise cmdutil.UsageError, "Please specify a bug id."
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bug = cmdutil.bug_from_id(bd, args[0])
-    bd.remove_bug(bug)
-    print "Removed bug %s" % bug.uuid
+    name = 'remove'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be remove BUG-ID")
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.requires_bugdir = True
+        self.args.extend([
+                libbe.command.Argument(
+                    name='bug-id', metavar='BUG-ID', default=None,
+                    repeatable=True,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                ])
 
-longhelp="""
-Remove (delete) an existing bug.  Use with caution: if you're not using a
-revision control system, there may be no way to recover the lost information.
-You should use this command, for example, to get rid of blank or otherwise 
-mangled bugs.
+    def _run(self, storage, bugdir, **params):
+        user_ids = []
+        for bug_id in params['bug-id']:
+            bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
+                bugdir, bug_id)
+            user_ids.append(bug.id.user())
+            bugdir.remove_bug(bug)
+        if len(user_ids) == 1:
+            print >> self.stdout, 'Removed bug %s' % user_ids[0]
+        else:
+            print >> self.stdout, 'Removed bugs %s' % ', '.join(user_ids)
+        return 0
+
+    def _long_help(self):
+        return """
+Remove (delete) existing bugs.  Use with caution: if you're not using
+a revision control system, there may be no way to recover the lost
+information.  You should use this command, for example, to get rid of
+blank or otherwise mangled bugs.
 """
-
-def help():
-    return get_parser().help_str() + longhelp

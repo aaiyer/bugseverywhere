@@ -266,8 +266,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     def bug_from_uuid(self, uuid):
         if not self.has_bug(uuid):
-            raise KeyError("No bug matches %s\n  bug map: %s\n  root: %s" \
-                               % (uuid, self._bug_map, self.root))
+            raise NoBugMatches('No bug matches %s\n  bug map: %s\n  repo: %s' \
+                               % (uuid, self._bug_map, self.storage))
         if self._bug_map[uuid] == None:
             self._load_bug(uuid)
         return self._bug_map[uuid]
