@@ -13,146 +13,170 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""(Un)subscribe to change notification"""
-from libbe import cmdutil, bugdir, tree, diff
-import os, copy
-__desc__ = __doc__
+
+import copy
+import os
+
+import libbe
+import libbe.bug
+import libbe.command
+import libbe.diff
+import libbe.command.util
+import libbe.util.tree
+
 
 TAG="SUBSCRIBE:"
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> bd = bugdir.SimpleBugDir()
-    >>> bd.set_sync_with_disk(True)
-    >>> os.chdir(bd.root)
-    >>> a = bd.bug_from_shortname("a")
+
+class Subscribe (libbe.command.Command):
+    """(Un)subscribe to change notification
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Subscribe()
+    >>> cmd._storage = bd.storage
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> execute(["-s","John Doe <j@doe.com>", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for a:
+    >>> ret = cmd.run({'subscriber':'John Doe <j@doe.com>'], ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    Subscriptions for abc/a:
     John Doe <j@doe.com>    all    *
-    >>> bd._clear_bugs() # resync our copy of bug
-    >>> a = bd.bug_from_shortname("a")
+    >>> bd.flush_reload()
+    >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     ['SUBSCRIBE:John Doe <j@doe.com>\\tall\\t*']
-    >>> execute(["-s","Jane Doe <J@doe.com>", "-S", "a.com,b.net", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for a:
+    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com,b.net'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.com,b.net
     John Doe <j@doe.com>    all    *
-    >>> execute(["-s","Jane Doe <J@doe.com>", "-S", "a.edu", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.edu'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for a:
     Jane Doe <J@doe.com>    all    a.com,a.edu,b.net
     John Doe <j@doe.com>    all    *
-    >>> execute(["-u", "-s","Jane Doe <J@doe.com>", "-S", "a.com", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'-u', 'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for a:
     Jane Doe <J@doe.com>    all    a.edu,b.net
     John Doe <j@doe.com>    all    *
-    >>> execute(["-s","Jane Doe <J@doe.com>", "-S", "*", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'*'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for a:
     Jane Doe <J@doe.com>    all    *
     John Doe <j@doe.com>    all    *
-    >>> execute(["-u", "-s","Jane Doe <J@doe.com>", "a"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for a:
     John Doe <j@doe.com>    all    *
-    >>> execute(["-u", "-s","John Doe <j@doe.com>", "a"], manipulate_encodings=False)
-    >>> execute(["-s","Jane Doe <J@doe.com>", "-t", "new", "DIR"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'John Doe <j@doe.com>'}, ['/a'])
+    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', '-t':'new'}, 'DIR']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for bug directory:
     Jane Doe <J@doe.com>    new    *
-    >>> execute(["-s","Jane Doe <J@doe.com>", "DIR"], manipulate_encodings=False) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for bug directory:
     Jane Doe <J@doe.com>    all    *
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    cmdutil.default_complete(options, args, parser,
-                             bugid_args={0: lambda bug : bug.active==True})
+    name = 'subscribe'
 
-    if len(args) > 1:
-        help()
-        raise cmdutil.UsageError("Too many arguments.")
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.options.extend([
+                libbe.command.Option(name='unsubscribe', short_name='u',
+                    help='Unsubscribe instead of subscribing'),
+                libbe.command.Option(name='list-all', short_name='a',
+                    help='List all subscribers (no ID argument, read only action)'),
+                libbe.command.Option(name='list', short_name='l',
+                    help='List subscribers (read only action).'),
+                libbe.command.Option(name='subscriber', short_name='s',
+                    help='Email address of the subscriber (defaults to bugdir.user_id).',
+                    arg=libbe.command.Argument(
+                        name='subscriber', metavar='EMAIL')),
+                libbe.command.Option(name='servers', short_name='S',
+                    help='Servers from which you want notification.',
+                    arg=libbe.command.Argument(
+                        name='servers', metavar='STRING')),
+                libbe.command.Option(name='types', short_name='t',
+                    help='Types of changes you wish to be notified about.',
+                    arg=libbe.command.Argument(
+                        name='types', metavar='STRING')),
+                ])
+        self.args.extend([
+                libbe.command.Argument(
+                    name='id', metavar='ID', default=None,
+                    optional=True, repeatable=True,
+                    completion_callback=libbe.command.util.complete_bug_comment_id),
+                ])
 
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
+        if params['list-all'] == True or params['list'] == True:
+            writeable = bugdir.storage.writeable
+            bugdir.storage.writeable = False
+            if params['list-all'] == True:
+                assert len(params['id']) == 0, params['id']
+        subscriber = params['subscriber']
+        if subscriber == None:
+            subscriber = self._get_user_id()
+        if params['unsubscribe'] == True:
+            if params['servers'] == None:
+                params['servers'] = 'INVALID'
+            if params['types'] == None:
+                params['types'] = 'INVALID'
+        else:
+            if params['servers'] == None:
+                params['servers'] = '*'
+            if params['types'] == None:
+                params['types'] = 'all'
+        servers = params['servers'].split(',')
+        types = params['types'].split(',')
+    
+        if params['id'] == None:
+            params['id'] = libbe.diff.BUGDIR_ID
+        for id in params['id']:
+            if id == libbe.diff.BUGDIR_ID: # directory-wide subscriptions
+                type_root = libbe.diff.BUGDIR_TYPE_ALL
+                entity = bugdir
+                entity_name = 'bug directory'
+            else: # bug-specific subscriptions
+                type_root = libbe.diff.BUG_TYPE_ALL
+                bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
+                    bugdir, params['id'])
+                entity = bug
+                entity_name = bug.id.user()
+            if params['list-all'] == True:
+                entity_name = 'anything in the bug directory'
+            types = [libbe.diff.type_from_name(name, type_root, default=libbe.diff.INVALID_TYPE,
+                                         default_ok=params['unsubscribe'])
+                     for name in types]
+            estrs = entity.extra_strings
+            if params['list'] == True or params['list-all'] == True:
+                pass
+            else: # alter subscriptions
+                if params['unsubscribe'] == True:
+                    estrs = unsubscribe(estrs, subscriber, types, servers, type_root)
+                else: # add the tag
+                    estrs = subscribe(estrs, subscriber, types, servers, type_root)
+                entity.extra_strings = estrs # reassign to notice change
+        
+            if params['list-all'] == True:
+                bugdir.load_all_bugs()
+                subscriptions = get_bugdir_subscribers(bugdir, servers[0])
+            else:
+                subscriptions = []
+                for estr in entity.extra_strings:
+                    if estr.startswith(TAG):
+                        subscriptions.append(estr[len(TAG):])
+    
+            if len(subscriptions) > 0:
+                print >> self.stdout, 'Subscriptions for %s:' % entity_name
+                print >> self.stdout, '\n'.join(subscriptions)
+        if params['list-all'] == True or params['list'] == True:
+            bugdir.storage.writeable = writeable
+        return 0
 
-    subscriber = options.subscriber
-    if subscriber == None:
-        subscriber = bd.user_id
-    if options.unsubscribe == True:
-        if options.servers == None:
-            options.servers = "INVALID"
-        if options.types == None:
-            options.types = "INVALID"
-    else:
-        if options.servers == None:
-            options.servers = "*"
-        if options.types == None:
-            options.types = "all"
-    servers = options.servers.split(",")
-    types = options.types.split(",")
-
-    if len(args) == 0 or args[0] == diff.BUGDIR_ID: # directory-wide subscriptions
-        type_root = diff.BUGDIR_TYPE_ALL
-        entity = bd
-        entity_name = "bug directory"
-    else: # bug-specific subscriptions
-        type_root = diff.BUG_TYPE_ALL
-        bug = bd.bug_from_shortname(args[0])
-        entity = bug
-        entity_name = bug.uuid
-    if options.list_all == True:
-        entity_name = "anything in the bug directory"
-
-    types = [diff.type_from_name(name, type_root, default=diff.INVALID_TYPE,
-                                 default_ok=options.unsubscribe)
-             for name in types]
-    estrs = entity.extra_strings
-    if options.list == True or options.list_all == True:
-        pass
-    else: # alter subscriptions
-        if options.unsubscribe == True:
-            estrs = unsubscribe(estrs, subscriber, types, servers, type_root)
-        else: # add the tag
-            estrs = subscribe(estrs, subscriber, types, servers, type_root)
-        entity.extra_strings = estrs # reassign to notice change
-
-    if options.list_all == True:
-        bd.load_all_bugs()
-        subscriptions = get_bugdir_subscribers(bd, servers[0])
-    else:
-        subscriptions = []
-        for estr in entity.extra_strings:
-            if estr.startswith(TAG):
-                subscriptions.append(estr[len(TAG):])
-
-    if len(subscriptions) > 0:
-        print "Subscriptions for %s:" % entity_name
-        print '\n'.join(subscriptions)
-
-
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be subscribe ID")
-    parser.add_option("-u", "--unsubscribe", action="store_true",
-                      dest="unsubscribe", default=False,
-                      help="Unsubscribe instead of subscribing.")
-    parser.add_option("-a", "--list-all", action="store_true",
-                      dest="list_all", default=False,
-                      help="List all subscribers (no ID argument, read only action).")
-    parser.add_option("-l", "--list", action="store_true",
-                      dest="list", default=False,
-                      help="List subscribers (read only action).")
-    parser.add_option("-s", "--subscriber", dest="subscriber",
-                      metavar="SUBSCRIBER",
-                      help="Email address of the subscriber (defaults to bugdir.user_id).")
-    parser.add_option("-S", "--servers", dest="servers", metavar="SERVERS",
-                      help="Servers from which you want notification.")
-    parser.add_option("-t", "--type", dest="types", metavar="TYPES",
-                      help="Types of changes you wish to be notified about.")
-    return parser
-
-longhelp="""
+    def _long_help(self):
+        return """
 ID can be either a bug id, or blank/"DIR", in which case it refers to the
 whole bug directory.
 
@@ -177,12 +201,10 @@ if you're just hacking away on your private repository, you'll known
 what's changed ;).  This command just (un)sets the appropriate
 subscriptions, and leaves it up to each interface to perform the
 notification.
-""" % (diff.BUG_TYPE_ALL.string_tree(6), diff.BUGDIR_ID,
-       diff.BUGDIR_TYPE_ALL.string_tree(6),
-       diff.BUGDIR_TYPE_ALL)
+""" % (libbe.diff.BUG_TYPE_ALL.string_tree(6), libbe.diff.BUGDIR_ID,
+       libbe.diff.BUGDIR_TYPE_ALL.string_tree(6),
+       libbe.diff.BUGDIR_TYPE_ALL)
 
-def help():
-    return get_parser().help_str() + longhelp
 
 # internal helper functions
 
@@ -195,7 +217,7 @@ def _parse_string(string, type_root):
     assert string.startswith(TAG), string
     string = string[len(TAG):]
     subscriber,types,servers = string.split("\t")
-    types = [diff.type_from_name(name, type_root) for name in types.split(",")]
+    types = [libbe.diff.type_from_name(name, type_root) for name in types.split(",")]
     return (subscriber,types,servers.split(","))
 
 def _get_subscriber(extra_strings, subscriber, type_root):
@@ -269,21 +291,21 @@ def get_subscribers(extra_strings, type, server, type_root,
     >>> def sgs(*args, **kwargs):
     ...     return sorted(get_subscribers(*args, **kwargs))
     >>> es = []
-    >>> es = subscribe(es, "John Doe <j@doe.com>", [diff.BUGDIR_TYPE_ALL],
-    ...                ["a.com"], diff.BUGDIR_TYPE_ALL)
-    >>> es = subscribe(es, "Jane Doe <J@doe.com>", [diff.BUGDIR_TYPE_NEW],
-    ...                ["*"], diff.BUGDIR_TYPE_ALL)
-    >>> sgs(es, diff.BUGDIR_TYPE_ALL, "a.com", diff.BUGDIR_TYPE_ALL)
+    >>> es = subscribe(es, "John Doe <j@doe.com>", [libbe.diff.BUGDIR_TYPE_ALL],
+    ...                ["a.com"], libbe.diff.BUGDIR_TYPE_ALL)
+    >>> es = subscribe(es, "Jane Doe <J@doe.com>", [libbe.diff.BUGDIR_TYPE_NEW],
+    ...                ["*"], libbe.diff.BUGDIR_TYPE_ALL)
+    >>> sgs(es, libbe.diff.BUGDIR_TYPE_ALL, "a.com", libbe.diff.BUGDIR_TYPE_ALL)
     ['John Doe <j@doe.com>']
-    >>> sgs(es, diff.BUGDIR_TYPE_ALL, "a.com", diff.BUGDIR_TYPE_ALL,
+    >>> sgs(es, libbe.diff.BUGDIR_TYPE_ALL, "a.com", libbe.diff.BUGDIR_TYPE_ALL,
     ...     match_descendant_types=True)
     ['Jane Doe <J@doe.com>', 'John Doe <j@doe.com>']
-    >>> sgs(es, diff.BUGDIR_TYPE_ALL, "b.net", diff.BUGDIR_TYPE_ALL,
+    >>> sgs(es, libbe.diff.BUGDIR_TYPE_ALL, "b.net", libbe.diff.BUGDIR_TYPE_ALL,
     ...     match_descendant_types=True)
     ['Jane Doe <J@doe.com>']
-    >>> sgs(es, diff.BUGDIR_TYPE_NEW, "a.com", diff.BUGDIR_TYPE_ALL)
+    >>> sgs(es, libbe.diff.BUGDIR_TYPE_NEW, "a.com", libbe.diff.BUGDIR_TYPE_ALL)
     ['Jane Doe <J@doe.com>']
-    >>> sgs(es, diff.BUGDIR_TYPE_NEW, "a.com", diff.BUGDIR_TYPE_ALL,
+    >>> sgs(es, libbe.diff.BUGDIR_TYPE_NEW, "a.com", libbe.diff.BUGDIR_TYPE_ALL,
     ... match_ancestor_types=True)
     ['Jane Doe <J@doe.com>', 'John Doe <j@doe.com>']
     """
@@ -324,11 +346,11 @@ def get_bugdir_subscribers(bugdir, server):
     >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
     >>> a = bd.bug_from_shortname("a")
     >>> bd.extra_strings = subscribe(bd.extra_strings, "John Doe <j@doe.com>",
-    ...                [diff.BUGDIR_TYPE_ALL], ["a.com"], diff.BUGDIR_TYPE_ALL)
+    ...                [libbe.diff.BUGDIR_TYPE_ALL], ["a.com"], libbe.diff.BUGDIR_TYPE_ALL)
     >>> bd.extra_strings = subscribe(bd.extra_strings, "Jane Doe <J@doe.com>",
-    ...                [diff.BUGDIR_TYPE_NEW], ["*"], diff.BUGDIR_TYPE_ALL)
+    ...                [libbe.diff.BUGDIR_TYPE_NEW], ["*"], libbe.diff.BUGDIR_TYPE_ALL)
     >>> a.extra_strings = subscribe(a.extra_strings, "John Doe <j@doe.com>",
-    ...                [diff.BUG_TYPE_ALL], ["a.com"], diff.BUG_TYPE_ALL)
+    ...                [libbe.diff.BUG_TYPE_ALL], ["a.com"], libbe.diff.BUG_TYPE_ALL)
     >>> subscribers = get_bugdir_subscribers(bd, "a.com")
     >>> subscribers["Jane Doe <J@doe.com>"]["%(bugdir_id)s"]
     [<SubscriptionType: new>]
@@ -339,20 +361,20 @@ def get_bugdir_subscribers(bugdir, server):
     >>> get_bugdir_subscribers(bd, "b.net")
     {'Jane Doe <J@doe.com>': {'%(bugdir_id)s': [<SubscriptionType: new>]}}
     >>> bd.cleanup()
-    """ % {'bugdir_id':diff.BUGDIR_ID}
+    """ % {'bugdir_id':libbe.diff.BUGDIR_ID}
     subscribers = {}
-    for sub in get_subscribers(bugdir.extra_strings, diff.BUGDIR_TYPE_ALL,
-                               server, diff.BUGDIR_TYPE_ALL,
+    for sub in get_subscribers(bugdir.extra_strings, libbe.diff.BUGDIR_TYPE_ALL,
+                               server, libbe.diff.BUGDIR_TYPE_ALL,
                                match_descendant_types=True):
         i,s,ts,srvs = _get_subscriber(bugdir.extra_strings, sub,
-                                      diff.BUGDIR_TYPE_ALL)
+                                      libbe.diff.BUGDIR_TYPE_ALL)
         subscribers[sub] = {"DIR":ts}
     for bug in bugdir:
-        for sub in get_subscribers(bug.extra_strings, diff.BUG_TYPE_ALL,
-                                   server, diff.BUG_TYPE_ALL,
+        for sub in get_subscribers(bug.extra_strings, libbe.diff.BUG_TYPE_ALL,
+                                   server, libbe.diff.BUG_TYPE_ALL,
                                    match_descendant_types=True):
             i,s,ts,srvs = _get_subscriber(bug.extra_strings, sub,
-                                          diff.BUG_TYPE_ALL)
+                                          libbe.diff.BUG_TYPE_ALL)
             if sub in subscribers:
                 subscribers[sub][bug.uuid] = ts
             else:

@@ -22,19 +22,20 @@ import difflib
 import types
 
 import libbe
-from libbe import bugdir, bug, settings_object, tree
-from libbe.utility import time_to_str
-if libbe.TESTING == True:
-    import doctest
+import libbe.bugdir
+import libbe.bug
+import libbe.storage.util.settings_object
+import libbe.util.tree
+from libbe.util.utility import time_to_str
 
 
-class SubscriptionType (tree.Tree):
+class SubscriptionType (libbe.util.tree.Tree):
     """
     Trees of subscription types to allow users to select exactly what
     notifications they want to subscribe to.
     """
     def __init__(self, type_name, *args, **kwargs):
-        tree.Tree.__init__(self, *args, **kwargs)
+        libbe.util.tree.Tree.__init__(self, *args, **kwargs)
         self.type = type_name
     def __str__(self):
         return self.type
@@ -133,7 +134,7 @@ def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
         subscriptions.append(Subscription(id, type))
     return subscriptions
 
-class DiffTree (tree.Tree):
+class DiffTree (libbe.util.tree.Tree):
     """
     A tree holding difference data for easy report generation.
     >>> bugdir = DiffTree("bugdir")
@@ -174,7 +175,7 @@ class DiffTree (tree.Tree):
     """
     def __init__(self, name, data=None, data_part_fn=str,
                  requires_children=False, masked=False):
-        tree.Tree.__init__(self)
+        libbe.util.tree.Tree.__init__(self)
         self.name = name
         self.data = data
         self.data_part_fn = data_part_fn
