@@ -46,40 +46,40 @@ class Depend (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Depend()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', '/b'])
+    >>> ret = cmd.run(args=['/a', '/b'])
     a blocked by:
     b
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
+    >>> ret = cmd.run(args=['/a'])
     a blocked by:
     b
-    >>> ret = cmd.run(bd.storage, bd, {'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     a blocked by:
     b closed
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/b', '/a'])
+    >>> ret = cmd.run(args=['/b', '/a'])
     b blocked by:
     a
     b blocks:
     a
-    >>> ret = cmd.run(bd.storage, bd, {'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = cmd.run({'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     a blocked by:
     b closed
     a blocks:
     b closed
-    >>> ret = cmd.run(bd.storage, bd, {'repair':True})
-    >>> ret = cmd.run(bd.storage, bd, {'remove':True}, ['/b', '/a'])
+    >>> ret = cmd.run({'repair':True})
+    >>> ret = cmd.run({'remove':True}, ['/b', '/a'])
     b blocks:
     a
-    >>> ret = cmd.run(bd.storage, bd, {'remove':True}, ['/a', '/b'])
+    >>> ret = cmd.run({'remove':True}, ['/a', '/b'])
     >>> bd.cleanup()
     """
     name = 'depend'
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='remove', short_name='r',
                     help='Remove dependency (instead of adding it)'),
@@ -114,7 +114,7 @@ class Depend (libbe.command.Command):
                     completion_callback=libbe.command.util.complete_bug_id),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
         if params['repair'] == True and params['bug-id'] != None:
             raise libbe.command.UsageError(
                 'No arguments with --repair calls.')
@@ -125,6 +125,7 @@ class Depend (libbe.command.Command):
                 and params['blocking-bug-id'] != None:
             raise libbe.command.UsageError(
                 'Only one bug id used in tree mode.')
+        bugdir = self._get_bugdir()
         if params['repair'] == True:
             good,fixed,broken = check_dependencies(bugdir, repair_broken_links=True)
             assert len(broken) == 0, broken

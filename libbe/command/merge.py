@@ -31,6 +31,7 @@ class Merge (libbe.command.Command):
     >>> import libbe.comment
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Merge()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
@@ -48,7 +49,7 @@ class Merge (libbe.command.Command):
     >>> dummy = dummy.new_reply('1 2 3 4')
     >>> dummy.time = 2
 
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', '/b'])
+    >>> ret = cmd.run(args=['/a', '/b'])
     Merged bugs #abc/a# and #abc/b#
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
@@ -139,7 +140,6 @@ class Merge (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.args.extend([
                 libbe.command.Argument(
                     name='bug-id', metavar='BUG-ID', default=None,
@@ -149,7 +149,8 @@ class Merge (libbe.command.Command):
                     completion_callback=libbe.command.util.complete_bug_id),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
         bugA,dummy_comment = \
             libbe.command.util.bug_comment_from_user_id(
                 bugdir, params['bug-id'])
@@ -166,7 +167,7 @@ class Merge (libbe.command.Command):
             if comment.alt_id == None:
                 comment.storage = None
                 comment.alt_id = comment.uuid
-                comment.storage = storage
+                comment.storage = bugdir.storage
             comment.uuid = libbe.util.id.uuid_gen() 
             comment.save() # force onto disk under bugA
 

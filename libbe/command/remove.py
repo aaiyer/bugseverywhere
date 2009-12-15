@@ -27,12 +27,13 @@ class Remove (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Remove()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
     >>> print bd.bug_from_uuid('b').status
     closed
-    >>> ret = cmd.run(bd.storage, bd, args=['/b'])
+    >>> ret = cmd.run(args=['/b'])
     Removed bug abc/b
     >>> bd.flush_reload()
     >>> try:
@@ -46,7 +47,6 @@ class Remove (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.args.extend([
                 libbe.command.Argument(
                     name='bug-id', metavar='BUG-ID', default=None,
@@ -54,7 +54,8 @@ class Remove (libbe.command.Command):
                     completion_callback=libbe.command.util.complete_bug_id),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
         user_ids = []
         for bug_id in params['bug-id']:
             bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(

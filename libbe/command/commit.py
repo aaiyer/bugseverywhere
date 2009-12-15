@@ -40,11 +40,11 @@ class Commit (libbe.command.Command):
     >>> vcs.repo = dir.path
     >>> vcs.init()
     >>> vcs.connect()
+    >>> cmd._storage = vcs
     >>> if vcs.name in libbe.storage.vcs.base.VCS_ORDER:
     ...     bd = libbe.bugdir.BugDir(vcs, from_storage=False)
     ...     bd.extra_strings = ['hi there']
-    ...     cmd.run(vcs, None, {'user-id':'Joe'},
-    ...             ['Making a commit']) # doctest: +ELLIPSIS
+    ...     cmd.run({'user-id':'Joe'}, ['Making a commit']) # doctest: +ELLIPSIS
     ... else:
     ...     print 'Committed ...'
     Committed ...
@@ -56,7 +56,6 @@ class Commit (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_storage = True
         self.options.extend([
                 libbe.command.Option(name='body', short_name='b',
                     help='Provide the detailed body for the commit message.  In the special case that FILE == "EDITOR", spawn an editor to enter the body text (in which case you cannot use stdin for the summary)',
@@ -70,20 +69,21 @@ class Commit (libbe.command.Command):
                     name='comment', metavar='COMMENT', default=None),
                 ])
 
-    def _run(self, storage, bugdir=None, **params):
+    def _run(self, **params):
         if params['comment'] == '-': # read summary from stdin
             assert params['body'] != 'EDITOR', \
                 'Cannot spawn and editor when the summary is using stdin.'
             summary = sys.stdin.readline()
         else:
             summary = params['comment']
+        storage = self._get_storage()
         if params['body'] == None:
             body = None
         elif params['body'] == 'EDITOR':
             body = libbe.ui.util.editor.editor_string(
                 'Please enter your commit message above')
         else:
-            self.check_restricted_access(storage, params['body'])
+            self._check_restricted_access(storage, params['body'])
             body = libbe.util.encoding.get_file_contents(
                 params['body'], decode=True)
         try:

@@ -177,16 +177,15 @@ class Command (object):
 
     name = 'command'
 
-    def __init__(self, input_encoding=None, output_encoding=None):
+    def __init__(self, input_encoding=None, output_encoding=None,
+                 get_unconnected_storage=None, ui=None):
+        self.input_encoding = input_encoding
+        self.output_encoding = output_encoding
+        self.get_unconnected_storage = get_unconnected_storage
+        self.ui = ui # calling user-interface, e.g. for Help()
         self.status = None
         self.result = None
-        self.ui = None # calling user-interface, e.g. for Help()
-        self.requires_bugdir = False
-        self.requires_storage = False
-        self.requires_unconnected_storage = False
         self.restrict_file_access = True
-        self.input_encoding = None
-        self.output_encoding = None
         self.options = [
             Option(name='help', short_name='h',
                 help='Print a help message.',
@@ -197,7 +196,7 @@ class Command (object):
                 ]
         self.args = []
 
-    def run(self, storage=None, bugdir=None, options=None, args=None):
+    def run(self, options=None, args=None):
         if options == None:
             options = {}
         if args == None:
@@ -213,9 +212,7 @@ class Command (object):
                 params[option.name] = False
         assert 'user-id' not in params, params['user-id']
         if 'user-id' in options:
-            params['user-id'] = options.pop('user-id')
-        else:
-            params['user-id'] = libbe.ui.util.user.get_user_id(storage)
+            self._user_id = options.pop('user-id')
         if len(options) > 0:
             raise UserError, 'Invalid option passed to command %s:\n  %s' \
                 % (self.name, '\n  '.join(['%s: %s' % (k,v)
@@ -253,11 +250,11 @@ class Command (object):
             params.pop('complete')
 
         self._setup_io(self.input_encoding, self.output_encoding)
-        self.status = self._run(storage, bugdir, **params)
+        self.status = self._run(**params)
         return self.status
 
-    def _run(self, storage, bugdir, **kwargs):
-        pass
+    def _run(self, **kwargs):
+        raise NotImplementedError
 
     def _setup_io(self, input_encoding=None, output_encoding=None):
         if input_encoding == None:
@@ -306,7 +303,7 @@ class Command (object):
             return argument.completion_callback(self, argument, fragment)
         return [] # the particular argument doesn't supply completion info
 
-    def check_restricted_access(self, storage, path):
+    def _check_restricted_access(self, storage, path):
         """
         Check that the file at path is inside bugdir.root.  This is
         important if you allow other users to execute becommands with
@@ -322,15 +319,15 @@ class Command (object):
         >>> s.repo = os.path.expanduser('~/x/')
         >>> c = Command()
         >>> try:
-        ...     c.check_restricted_access(s, os.path.expanduser('~/.ssh/id_rsa'))
+        ...     c._check_restricted_access(s, os.path.expanduser('~/.ssh/id_rsa'))
         ... except UserError, e:
         ...     assert str(e).startswith('file access restricted!'), str(e)
         ...     print 'we got the expected error'
         we got the expected error
-        >>> c.check_restricted_access(s, os.path.expanduser('~/x'))
-        >>> c.check_restricted_access(s, os.path.expanduser('~/x/y'))
+        >>> c._check_restricted_access(s, os.path.expanduser('~/x'))
+        >>> c._check_restricted_access(s, os.path.expanduser('~/x/y'))
         >>> c.restrict_file_access = False
-        >>> c.check_restricted_access(s, os.path.expanduser('~/.ssh/id_rsa'))
+        >>> c._check_restricted_access(s, os.path.expanduser('~/.ssh/id_rsa'))
         """
         if self.restrict_file_access == True:
             path = os.path.abspath(path)
@@ -339,3 +336,41 @@ class Command (object):
                 return
             raise UserError('file access restricted!\n  %s not in %s'
                             % (path, repo))
+
+    def _get_unconnected_storage(self):
+        """Callback for use by commands that need it."""
+        if not hasattr(self, '_unconnected_storage'):
+            if self.get_unconnected_storage == None:
+                raise NotImplementedError
+            self._unconnected_storage = self.get_unconnected_storage()
+        return self._unconnected_storage
+
+    def _get_storage(self):
+        """
+        Callback for use by commands that need it.
+        
+        Note that with the current implementation,
+        _get_unconnected_storage() will not work after this method
+        runs, but that shouldn't be an issue for any command I can
+        think of...
+        """
+        if not hasattr(self, '_storage'):
+            self._storage = self._get_unconnected_storage()
+            self._storage.connect()
+        return self._storage
+
+    def _get_bugdir(self):
+        """Callback for use by commands that need it."""
+        if not hasattr(self, '_bugdir'):
+            self._bugdir = libbe.bugdir.BugDir(self._get_storage(), from_storage=True)
+        return self._bugdir
+
+    def _get_user_id(self):
+        """Callback for use by commands that need it."""
+        if not hasattr(self, '_user_id'):
+            self._user_id = libbe.ui.util.user.get_user_id(self._get_storage())
+        return self._user_id
+
+    def cleanup(self):
+        if hasattr(self, '_storage'):
+            self._storage.disconnect()

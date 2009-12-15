@@ -17,51 +17,65 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""Show or change a bug's severity level"""
-from libbe import cmdutil, bugdir, bug
-__desc__ = __doc__
 
-def execute(args, manipulate_encodings=True, restrict_file_access=False,
-            dir="."):
-    """
-    >>> import os
-    >>> bd = bugdir.SimpleBugDir()
-    >>> os.chdir(bd.root)
-    >>> execute(["a"], manipulate_encodings=False)
-    minor
-    >>> execute(["a", "wishlist"], manipulate_encodings=False)
-    >>> execute(["a"], manipulate_encodings=False)
-    wishlist
-    >>> execute(["a", "none"], manipulate_encodings=False)
+import libbe
+import libbe.bug
+import libbe.command
+import libbe.command.util
+
+class Severity (libbe.command.Command):
+    """Change a bug's severity level
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> cmd = Severity()
+    >>> cmd._storage = bd.storage
+    >>> cmd._setup_io = lambda i_enc,o_enc : None
+    >>> cmd.stdout = sys.stdout
+
+    >>> bd.bug_from_uuid('a').severity
+    'minor'
+    >>> ret = cmd.run(args=['wishlist', '/a'])
+    >>> bd.flush_reload()
+    >>> bd.bug_from_uuid('a').severity
+    'wishlist'
+    >>> ret = cmd.run(args=['none', '/a'])
     Traceback (most recent call last):
     UserError: Invalid severity level: none
     >>> bd.cleanup()
     """
-    parser = get_parser()
-    options, args = parser.parse_args(args)
-    complete(options, args, parser)
-    if len(args) not in (1,2):
-        raise cmdutil.UsageError
-    bd = bugdir.BugDir(from_disk=True,
-                       manipulate_encodings=manipulate_encodings,
-                       root=dir)
-    bug = cmdutil.bug_from_id(bd, args[0])
-    if len(args) == 1:
-        print bug.severity
-    elif len(args) == 2:
-        try:
-            bug.severity = args[1]
-        except ValueError, e:
-            if e.name != "severity":
-                raise e
-            raise cmdutil.UserError ("Invalid severity level: %s" % e.value)
+    name = 'severity'
 
-def get_parser():
-    parser = cmdutil.CmdOptionParser("be severity BUG-ID [SEVERITY]")
-    return parser
+    def __init__(self, *args, **kwargs):
+        libbe.command.Command.__init__(self, *args, **kwargs)
+        self.args.extend([
+                libbe.command.Argument(
+                    name='severity', metavar='SEVERITY', default=None,
+                    completion_callback=libbe.command.util.complete_severity),
+                libbe.command.Argument(
+                    name='bug-id', metavar='BUG-ID', default=None,
+                    repeatable=True,
+                    completion_callback=libbe.command.util.complete_bug_id),
+                ])
+    
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
+        for bug_id in params['bug-id']:
+            bug,dummy_comment = \
+                libbe.command.util.bug_comment_from_user_id(bugdir, bug_id)
+            if bug.severity != params['severity']:
+                try:
+                    bug.severity = params['severity']
+                except ValueError, e:
+                    if e.name != 'severity':
+                        raise e
+                    raise libbe.command.UserError(
+                        'Invalid severity level: %s' % e.value)
+        return 0
 
-def help():
-    longhelp=["""
+    def _long_help(self):
+        ret = ["""
 Show or change a bug's severity level.
 
 If no severity is specified, the current value is printed.  If a severity level
@@ -69,38 +83,13 @@ is specified, it will be assigned to the bug.
 
 Severity levels are:
 """]
-    try: # See if there are any per-tree severity configurations
-        bd = bugdir.BugDir(from_disk=True, manipulate_encodings=False)
-    except bugdir.NoBugDir, e:
-        pass # No tree, just show the defaults
-    longest_severity_len = max([len(s) for s in bug.severity_values])
-    for severity in bug.severity_values :
-        description = bug.severity_description[severity]
-        s = "%*s : %s\n" % (longest_severity_len, severity, description)
-        longhelp.append(s)
-    longhelp = ''.join(longhelp)
-    return get_parser().help_str() + longhelp
-
-def complete(options, args, parser):
-    for option,value in cmdutil.option_value_pairs(options, parser):
-        if value == "--complete":
-            # no argument-options at the moment, so this is future-proofing
-            raise cmdutil.GetCompletions()
-    for pos,value in enumerate(args):
-        if value == "--complete":
-            try: # See if there are any per-tree severity configurations
-                bd = bugdir.BugDir(from_disk=True,
-                                   manipulate_encodings=False)
-            except bugdir.NoBugDir:
-                bd = None
-            if pos == 0: # fist positional argument is a bug id 
-                ids = []
-                if bd != None:
-                    bd.load_all_bugs()
-                    filter = lambda bg : bg.active==True
-                    bugs = [bg for bg in bd if filter(bg)==True]
-                    ids = [bd.bug_shortname(bg) for bg in bugs]
-                raise cmdutil.GetCompletions(ids)
-            elif pos == 1: # second positional argument is a severity
-                raise cmdutil.GetCompletions(bug.severity_values)
-            raise cmdutil.GetCompletions()
+        try: # See if there are any per-tree severity configurations
+            bd = self._get_bugdir()
+        except NotImplementedError:
+            pass # No tree, just show the defaults
+        longest_severity_len = max([len(s) for s in libbe.bug.severity_values])
+        for severity in bug.severity_values :
+            description = bug.severity_description[severity]
+            ret.append('%*s : %s\n' \
+                % (longest_severity_len, severity, description))
+        return ''.join(ret)

@@ -31,11 +31,12 @@ class New (libbe.command.Command):
     >>> import libbe.util.id
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = New()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
     >>> libbe.util.id.uuid_gen = lambda: 'X'
-    >>> ret = cmd.run(bd.storage, bd, args=['this is a test',])
+    >>> ret = cmd.run(args=['this is a test',])
     Created bug with ID abc/X
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('X')
@@ -53,7 +54,6 @@ class New (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='reporter', short_name='r',
                     help='The user who reported the bug',
@@ -69,11 +69,12 @@ class New (libbe.command.Command):
                 libbe.command.Argument(name='summary', metavar='SUMMARY')
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
         if params['summary'] == '-': # read summary from stdin
             summary = self.stdin.readline()
         else:
             summary = params['summary']
+        bugdir = self._get_bugdir()
         bug = bugdir.new_bug(summary=summary.strip())
         if params['reporter'] != None:
             bug.reporter = params['reporter']

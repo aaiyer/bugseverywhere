@@ -28,16 +28,17 @@ class Due (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Due()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
+    >>> ret = cmd.run(args=['/a'])
     No due date assigned.
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', 'Thu, 01 Jan 1970 00:00:00 +0000'])
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
+    >>> ret = cmd.run(args=['/a', 'Thu, 01 Jan 1970 00:00:00 +0000'])
+    >>> ret = cmd.run(args=['/a'])
     Thu, 01 Jan 1970 00:00:00 +0000
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a', 'none'])
-    >>> ret = cmd.run(bd.storage, bd, {}, ['/a'])
+    >>> ret = cmd.run(args=['/a', 'none'])
+    >>> ret = cmd.run(args=['/a'])
     No due date assigned.
     >>> bd.cleanup()
     """
@@ -45,7 +46,6 @@ class Due (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.args.extend([
                 libbe.command.Argument(
                     name='bug-id', metavar='BUG-ID',
@@ -54,7 +54,8 @@ class Due (libbe.command.Command):
                     name='due', metavar='DUE', optional=True),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
         bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
             bugdir, params['bug-id'])
         if params['due'] == None:

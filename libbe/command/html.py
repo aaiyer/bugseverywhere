@@ -37,12 +37,13 @@ class HTML (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = HTML()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
     >>> cwd = os.getcwd()
     >>> os.chdir(bd.storage.repo)
-    >>> ret = cmd.run(bd.storage, bd)
+    >>> ret = cmd.run()
     >>> os.path.exists('./html_export')
     True
     >>> os.path.exists('./html_export/index.html')
@@ -62,7 +63,6 @@ class HTML (libbe.command.Command):
     
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='output', short_name='o',
                     help='Set the output path (%default)',
@@ -96,10 +96,11 @@ class HTML (libbe.command.Command):
                     help='Verbose output, default is %default'),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
         if params['export-template'] == True:
             html_gen.write_default_template(params['export-template-dir'])
             return 0
+        bugdir = self._get_bugdir()
         bugdir.load_all_bugs()
         html_gen = HTMLGen(bugdir,
                            template=params['template-dir'],

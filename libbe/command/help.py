@@ -54,14 +54,15 @@ class Help (libbe.command.Command):
                     completion_callback=self.complete_topic)
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
         if params['topic'] == None:
             if hasattr(self.ui, 'help'):
                 self.ui.help()
         elif params['topic'] in libbe.command.commands():
             module = libbe.command.get_command(params['topic'])
             Class = libbe.command.get_command_class(module,params['topic'])
-            c = Class()
+            c = Class(get_unconnected_storage=self.get_unconnected_storage,
+                      ui=self.ui)
             print >> self.stdout, c.help().rstrip('\n')
         elif params['topic'] in TOPICS:
             print >> self.stdout, TOPICS[params['topic']].rstrip('\n')

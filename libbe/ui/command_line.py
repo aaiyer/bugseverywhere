@@ -264,29 +264,18 @@ def main():
         print e
         return 1
     Class = getattr(module, command_name.capitalize())
-    command = Class()
-    command.ui = self
+    def gucs():
+        return libbe.storage.get_storage(options['repo'])
+    command = Class(get_unconnected_storage=gucs, ui=ui)
     parser = CmdOptionParser(command)
-    storage = None
-    bugdir = None
-    if command.requires_bugdir == True:
-        assert command.requires_unconnected_storage == False
-        storage = libbe.storage.get_storage(options['repo'])
-        storage.connect()
-        bugdir = libbe.bugdir.BugDir(storage, from_storage=True)
-    elif command.requires_storage == True \
-            or command.requires_unconnected_storage == True:
-        storage = libbe.storage.get_storage(options['repo'])
-        if command.requires_unconnected_storage == False:
-            storage.connect()
     try:
         options,args = parser.parse_args(args[1:])
-        command.run(storage, bugdir, options, args)
+        command.run(options, args)
     except CallbackExit:
-        if storage != None: storage.disconnect()
+        command.cleanup()
         return 0
     except libbe.command.UserError, e:
-        if storage != None: storage.disconnect()
+        command.cleanup()
         print 'ERROR:\n', e
         return 1
     if storage != None: storage.disconnect()

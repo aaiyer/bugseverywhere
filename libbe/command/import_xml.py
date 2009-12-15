@@ -45,12 +45,13 @@ class Import_XML (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Import_XML()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
     >>> cmd.stdin = StringIO.StringIO('<be-xml><comment><uuid>c</uuid><body>This is a comment about a</body></comment></be-xml>')
     >>> cmd.stdin.encoding = 'ascii'
-    >>> ret = cmd.run(bd.storage, bd, {'comment-root':'/a'}, ['-'])
+    >>> ret = cmd.run({'comment-root':'/a'}, ['-'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
@@ -68,7 +69,6 @@ class Import_XML (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='ignore-missing-references', short_name='i',
                     help="If any comment's <in-reply-to> refers to a non-existent comment, ignore it (instead of raising an exception)."),
@@ -85,7 +85,8 @@ class Import_XML (libbe.command.Command):
                     name='xml-file', metavar='XML-FILE'),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
         writeable = bugdir.storage.writeable
         bugdir.storage.writeable = False
         if params['comment-root'] != None:
@@ -113,7 +114,7 @@ class Import_XML (libbe.command.Command):
         if params['xml-file'] == '-':
             xml = self.stdin.read().encode(self.stdin.encoding)                
         else:
-            self.check_restricted_access(storage, params['xml-file'])
+            self._check_restricted_access(storage, params['xml-file'])
             xml = libbe.util.encoding.get_file_contents(
                 params['xml-file'])
 
@@ -321,6 +322,7 @@ if libbe.TESTING == True:
         def setUp(self):
             self.bugdir = libbe.bugdir.SimpleBugDir(memory=False)
             self.cmd = Import_XML()
+            self.cmd._storage = self.bugdir.storage
             self.cmd._setup_io = lambda i_enc,o_enc : None
             bugA = self.bugdir.bug_from_uuid('a')
             self.bugdir.remove_bug(bugA)
@@ -364,7 +366,7 @@ if libbe.TESTING == True:
         def tearDown(self):
             self.bugdir.cleanup()
         def _execute(self, params={}, args=[]):
-            self.cmd.run(self.bugdir.storage, self.bugdir, params, args)
+            self.cmd.run(params, args)
             self.bugdir.flush_reload()
         def testCleanBugdir(self):
             uuids = list(self.bugdir.uuids())

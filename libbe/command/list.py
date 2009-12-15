@@ -60,11 +60,13 @@ class List (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = List()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
-    >>> ret = cmd.run(bd.storage, bd)
+
+    >>> ret = cmd.run()
     abc/a:om: Bug A
-    >>> ret = cmd.run(bd.storage, bd, {'status':'closed'})
+    >>> ret = cmd.run({'status':'closed'})
     abc/b:cm: Bug B
     >>> bd.storage.writeable
     True
@@ -75,7 +77,6 @@ class List (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='status',
                     help='Only show bugs matching the STATUS specifier',
@@ -131,7 +132,8 @@ class List (libbe.command.Command):
 #                
 #                ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
         writeable = bugdir.storage.writeable
         bugdir.storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \

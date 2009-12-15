@@ -42,7 +42,8 @@ class Init (libbe.command.Command):
     ... except libbe.storage.ConnectionError:
     ...     True
     True
-    >>> cmd.run(vcs)
+    >>> cmd._unconnected_storage = vcs
+    >>> cmd.run()
     No revision control detected.
     BE repository initialized.
     >>> bd = libbe.bugdir.BugDir(vcs)
@@ -54,8 +55,9 @@ class Init (libbe.command.Command):
     >>> vcs = libbe.storage.vcs.installed_vcs()
     >>> vcs.repo = dir.path
     >>> vcs._vcs_init(vcs.repo)
+    >>> cmd._unconnected_storage = vcs
     >>> if vcs.name in libbe.storage.vcs.base.VCS_ORDER:
-    ...     cmd.run(vcs) # doctest: +ELLIPSIS
+    ...     cmd.run() # doctest: +ELLIPSIS
     ... else:
     ...     vcs.init()
     ...     vcs.connect()
@@ -70,9 +72,9 @@ class Init (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_unconnected_storage = True
 
-    def _run(self, storage, bugdir=None, **params):
+    def _run(self, **params):
+        storage = self._get_unconnected_storage()
         if not os.path.isdir(storage.repo):
             raise libbe.command.UserError(
                 'No such directory: %s' % storage.repo)

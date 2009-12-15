@@ -34,10 +34,11 @@ class Comment (libbe.command.Command):
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> cmd = Comment()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
-    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Fran\\xe7ois'},
+    >>> ret = cmd.run({'user-id':u'Fran\\xe7ois'},
     ...               ['/a', 'This is a comment about a'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
@@ -57,12 +58,12 @@ class Comment (libbe.command.Command):
 
     >>> if 'EDITOR' in os.environ:
     ...     del os.environ['EDITOR']
-    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
+    >>> ret = cmd.run({'user-id':u'Frank'}, ['/b'])
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
 
     >>> os.environ['EDITOR'] = "echo 'I like cheese' > "
-    >>> ret = cmd.run(bd.storage, bd, {'user-id':u'Frank'}, ['/b'])
+    >>> ret = cmd.run({'user-id':u'Frank'}, ['/b'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('b')
     >>> bug.load_comments(load_full=False)
@@ -76,7 +77,6 @@ class Comment (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
-        self.requires_bugdir = True
         self.options.extend([
                 libbe.command.Option(name='author', short_name='a',
                     help='Set the comment author',
@@ -101,7 +101,8 @@ class Comment (libbe.command.Command):
                     completion_callback=libbe.command.util.complete_assigned),
                 ])
 
-    def _run(self, storage, bugdir, **params):
+    def _run(self, **params):
+        bugdir = self._get_bugdir()
         bug,parent = \
             libbe.command.util.bug_comment_from_user_id(bugdir, params['id'])
         if params['comment'] == None:
@@ -133,7 +134,7 @@ class Comment (libbe.command.Command):
             if not body.endswith('\n'):
                 body+='\n'
         if params['author'] == None:
-            params['author'] = params['user-id']
+            params['author'] = self._get_user_id()
 
         new = parent.new_reply(body=body)
         for key in ['alt-id', 'author', 'content-type']:
