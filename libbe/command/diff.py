@@ -25,7 +25,7 @@ import libbe.storage
 import libbe.diff
 
 class Diff (libbe.command.Command):
-    """Compare bug reports with older tree
+    __doc__ = """Compare bug reports with older tree
 
     >>> import sys
     >>> import libbe.bugdir

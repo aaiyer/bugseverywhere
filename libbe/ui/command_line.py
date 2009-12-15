@@ -223,6 +223,8 @@ class BE (libbe.command.Command):
         for name in libbe.command.commands():
             module = libbe.command.get_command(name)
             Class = libbe.command.get_command_class(module, name)
+            assert hasattr(Class, '__doc__') and Class.__doc__ != None, \
+                'Command class %s missing docstring' % Class
             cmdlist.append((name, Class.__doc__.splitlines()[0]))
         cmdlist.sort()
         longest_cmd_len = max([len(name) for name,desc in cmdlist])

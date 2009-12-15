@@ -18,13 +18,10 @@
 import libbe
 import libbe.command
 import libbe.command.util
-import libbe.util.utility
 
 
 TAG_TAG = 'TAG:'
 
-
-import os, copy
 
 class Tag (libbe.command.Command):
     __doc__ = """Tag a bug, or search bugs for tags
