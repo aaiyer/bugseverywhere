@@ -25,7 +25,6 @@ import libbe.command.util
 import libbe.command.depend
 
 
-
 class Target (libbe.command.Command):
     """Assorted bug target manipulations and queries
 
@@ -70,12 +69,10 @@ class Target (libbe.command.Command):
                 ])
         self.args.extend([
                 libbe.command.Argument(
-                    name='id', metavar='BUG-ID', default=None,
-                    optional=True,
+                    name='id', metavar='BUG-ID', optional=True,
                     completion_callback=libbe.command.util.complete_bug_id),
                 libbe.command.Argument(
-                    name='target', metavar='TARGET', default=None,
-                    optional=True,
+                    name='target', metavar='TARGET', optional=True,
                     completion_callback=complete_target),
                 ])
 
