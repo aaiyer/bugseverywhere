@@ -78,7 +78,7 @@ def get_file_contents(path, mode='r', encoding=None, decode=False):
     return contents
 
 def set_file_contents(path, contents, mode='w', encoding=None):
-    if type(value) == types.UnicodeType:
+    if type(contents) == types.UnicodeType:
         if encoding == None:
             encoding = get_filesystem_encoding()
         f = codecs.open(path, mode, encoding)

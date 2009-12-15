@@ -22,6 +22,7 @@ import libbe
 import libbe.command
 import libbe.command.util
 
+
 class Assign (libbe.command.Command):
     """Assign an individual or group to fix a bug
 
