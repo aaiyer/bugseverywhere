@@ -261,7 +261,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     def remove_bug(self, bug):
         self.remove(bug)
-        if self.storage.is_writeable():
+        if self.storage != None and self.storage.is_writeable():
             bug.remove()
 
     def bug_from_uuid(self, uuid):
@@ -403,7 +403,7 @@ if libbe.TESTING == True:
 #            self.assertRaises(AlreadyInitialized, BugDir,
 #                              self.dir.path, assertNewBugDir=True)
 #        def versionTest(self):
-#            if self.storage.versioned == False:
+#            if self.storage != None and self.storage.versioned == False:
 #                return
 #            original = self.bugdir.storage.commit("Began versioning")
 #            bugA = self.bugdir.bug_from_uuid("a")
