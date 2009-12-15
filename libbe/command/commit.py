@@ -27,30 +27,19 @@ import libbe.ui.util.editor
 class Commit (libbe.command.Command):
     """Commit the currently pending changes to the repository
 
-    >>> import os, sys
-    >>> import libbe.storage.vcs
-    >>> import libbe.storage.vcs.base
-    >>> import libbe.util.utility
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False, versioned=True)
     >>> cmd = Commit()
+    >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
-    >>> dir = libbe.util.utility.Dir()
-    >>> vcs = libbe.storage.vcs.installed_vcs()
-    >>> vcs.repo = dir.path
-    >>> vcs.init()
-    >>> vcs.connect()
-    >>> cmd._storage = vcs
-    >>> if vcs.name in libbe.storage.vcs.base.VCS_ORDER:
-    ...     bd = libbe.bugdir.BugDir(vcs, from_storage=False)
-    ...     bd.extra_strings = ['hi there']
-    ...     cmd.run({'user-id':'Joe'}, ['Making a commit']) # doctest: +ELLIPSIS
-    ... else:
-    ...     print 'Committed ...'
+    >>> bd.extra_strings = ['hi there']
+    >>> bd.flush_reload()
+    >>> cmd.run({'user-id':'Joe'}, ['Making a commit']) # doctest: +ELLIPSIS
     Committed ...
-    >>> vcs.disconnect()
-    >>> vcs.destroy()
-    >>> dir.cleanup()
+    >>> bd.cleanup()
     """
     name = 'commit'
 

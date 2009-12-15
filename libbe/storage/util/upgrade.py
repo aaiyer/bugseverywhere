@@ -24,17 +24,16 @@ import sys
 
 import libbe
 import libbe.bug as bug
-import libbe.util.encoding as encoding
 import libbe.storage.util.mapfile as mapfile
+import libbe.util.encoding as encoding
+import libbe.util.id
 
-if libbe.TESTING == True:
-    import doctest
 
 # a list of all past versions
-BUGDIR_DISK_VERSIONS = ["Bugs Everywhere Tree 1 0",
-                        "Bugs Everywhere Directory v1.1",
-                        "Bugs Everywhere Directory v1.2",
-                        "Bugs Everywhere Directory v1.3"]
+BUGDIR_DISK_VERSIONS = ['Bugs Everywhere Tree 1 0',
+                        'Bugs Everywhere Directory v1.1',
+                        'Bugs Everywhere Directory v1.2',
+                        'Bugs Everywhere Directory v1.3']
 
 # the current version
 BUGDIR_DISK_VERSION = BUGDIR_DISK_VERSIONS[-1]
@@ -43,13 +42,17 @@ class Upgrader (object):
     "Class for converting between different on-disk BE storage formats."
     initial_version = None
     final_version = None
-    def __init__(self, root):
-        self.root = root
+    def __init__(self, repo):
+        self.repo = repo
 
-    def get_path(self, *args):
+    def get_path(self, id):
         """
-        Return a path relative to .root.
+        Return a path relative to .repo.
         """
+        if id == 'version':
+            return os.path.join(self.repo, id)
+
+TODO
         dir = os.path.join(self.root, '.be')
         if len(args) == 0:
             return dir
@@ -58,15 +61,15 @@ class Upgrader (object):
 
     def check_initial_version(self):
         path = self.get_path('version')
-        version = self.vcs.get_file_contents(path).rstrip('\n')
+        version = encoding.get_file_contents(path).rstrip('\n')
         assert version == self.initial_version, version
 
     def set_version(self):
-        path = self.get_path("version")
-        self.vcs.set_file_contents(path, self.final_version+"\n")
+        path = self.get_path('version')
+        encoding.set_file_contents(path, self.final_version+'\n')
 
     def upgrade(self):
-        print >> sys.stderr, "upgrading bugdir from '%s' to '%s'" \
+        print >> sys.stderr, 'upgrading bugdir from "%s" to "%s"' \
             % (self.initial_version, self.final_version)
         self.check_initial_version()
         self.set_version()
@@ -237,6 +240,3 @@ def upgrade(path, current_version,
             if version_b == target_version:
                 break
             i += 1
-
-if libbe.TESTING == True:
-    suite = doctest.DocTestSuite()

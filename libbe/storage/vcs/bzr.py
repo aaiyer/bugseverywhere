@@ -49,7 +49,7 @@ class Bzr(base.VCS):
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
-        return output        
+        return output
 
     def _vcs_get_user_id(self):
         status,output,error = self._u_invoke_client('whoami')
@@ -88,7 +88,7 @@ class Bzr(base.VCS):
             return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
-                self._u_invoke_client('cat', '-r', revision,path)
+                self._u_invoke_client('cat', '-r', revision, path)
             return output
 
     def _vcs_commit(self, commitfile, allow_empty=False):
@@ -123,7 +123,7 @@ class Bzr(base.VCS):
             return str(index) # bzr commit 0 is the empty tree.
         return str(current_revision+index+1)
 
-    
+
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Bzr, sys.modules[__name__])
 

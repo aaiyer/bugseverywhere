@@ -90,9 +90,9 @@ class Subscription (object):
     def __init__(self, id, subscription_type, **kwargs):
         if 'type_root' not in kwargs:
             if id == BUGDIR_ID:
-                kwargs['type_root'] = BUGDIR_TYPE_ALL 
+                kwargs['type_root'] = BUGDIR_TYPE_ALL
             else:
-                kwargs['type_root'] = BUG_TYPE_ALL 
+                kwargs['type_root'] = BUG_TYPE_ALL
         if type(subscription_type) in types.StringTypes:
             subscription_type = type_from_name(subscription_type, **kwargs)
         self.id = id

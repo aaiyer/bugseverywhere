@@ -259,7 +259,7 @@ def main():
     if options['no-pager'] == True:
         paginate = 'never'
     libbe.ui.util.pager.run_pager(paginate)
-    
+
     command_name = args[0]
     try:
         module = libbe.command.get_command(command_name)

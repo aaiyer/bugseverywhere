@@ -195,6 +195,9 @@ class CachedPathID (object):
                 id = self.id(dirpath)
                 relpath = dirpath[len(self._root)+1:]
                 if id.count('/') == 0:
+                    if id in self._cache:
+                        import sys
+                        print >> sys.stderr, 'Multiple paths for %s: \n  %s\n  %s' % (id, self._cache[id], relpath)
                     self._cache[id] = relpath
             except InvalidPath:
                 pass
@@ -521,7 +524,7 @@ os.listdir(self.get_path("bugs")):
         dumping VCS-specific files into the .be directory.
 
         If you do need to implement this method (e.g. Arch), set
-          self.interspersed_vcs_files = True 
+          self.interspersed_vcs_files = True
         """
         assert self.interspersed_vcs_files == False
         raise NotImplementedError

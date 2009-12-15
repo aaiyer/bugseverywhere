@@ -197,9 +197,8 @@ class SavedSettingsObject(object):
         settings as primed.
         """
         for property in self.settings_properties:
-            if property not in self.settings:
-                self.settings[property] = EMPTY
-            elif self.settings[property] == UNPRIMED:
+            if property not in self.settings \
+                    or self.settings[property] == UNPRIMED:
                 self.settings[property] = EMPTY
         if flag_as_loaded == True:
             self._settings_loaded = True

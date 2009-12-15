@@ -58,7 +58,7 @@ class Target (libbe.command.Command):
     >>> bd.cleanup()
     """
     name = 'target'
-    
+
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
         self.options.extend([

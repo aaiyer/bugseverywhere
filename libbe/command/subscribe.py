@@ -131,7 +131,7 @@ class Subscribe (libbe.command.Command):
                 params['types'] = 'all'
         servers = params['servers'].split(',')
         types = params['types'].split(',')
-    
+
         if len(params['id']) == 0:
             params['id'] = [libbe.diff.BUGDIR_ID]
         for _id in params['id']:
@@ -159,7 +159,7 @@ class Subscribe (libbe.command.Command):
                 else: # add the tag
                     estrs = subscribe(estrs, subscriber, types, servers, type_root)
                 entity.extra_strings = estrs # reassign to notice change
-        
+
             if params['list-all'] == True:
                 bugdir.load_all_bugs()
                 subscriptions = get_bugdir_subscribers(bugdir, servers[0])
@@ -168,7 +168,7 @@ class Subscribe (libbe.command.Command):
                 for estr in entity.extra_strings:
                     if estr.startswith(TAG):
                         subscriptions.append(estr[len(TAG):])
-    
+
             if len(subscriptions) > 0:
                 print >> self.stdout, 'Subscriptions for %s:' % entity_name
                 print >> self.stdout, '\n'.join(subscriptions)

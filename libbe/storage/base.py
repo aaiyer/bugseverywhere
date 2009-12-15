@@ -256,8 +256,10 @@ class Storage (object):
         else:
             decode = False
         value = self._get(*args, **kwargs)
-        if decode == True:
+        if decode == True and type(value) != types.UnicodeType:
             return unicode(value, self.encoding)
+        if decode == False and type(value) != types.StringType:
+            return value.encode(self.encoding)
         return value
 
     def _get(self, id, default=InvalidObject, revision=None):
@@ -673,7 +675,7 @@ if TESTING == True:
             self.failUnless(s == val,
                     "%s.get() returned %s not %s"
                     % (vars(self.Class)['name'], s, self.val))
-            
+
 
     class Storage_persistence_TestCase (StorageTestCase):
         """Test cases for Storage.disconnect and .connect methods."""
@@ -767,7 +769,7 @@ if TESTING == True:
                 revs.append(self.s.commit('%s: %d' % (self.commit_msg, i),
                                           self.commit_body))
             for i in range(10):
-                rev = self.s.revision_id(i+1) 
+                rev = self.s.revision_id(i+1)
                 self.failUnless(rev == revs[i],
                                 "%s.revision_id(%d) returned %s not %s"
                                 % (vars(self.Class)['name'], i+1, rev, revs[i]))
@@ -794,7 +796,7 @@ if TESTING == True:
                 self.failUnless(ret == val(i),
                                 "%s.get() returned %s not %s for revision %s"
                                 % (vars(self.Class)['name'], ret, val(i), revs[i]))
-        
+
     def make_storage_testcase_subclasses(storage_class, namespace):
         """Make StorageTestCase subclasses for storage_class in namespace."""
         storage_testcase_classes = [

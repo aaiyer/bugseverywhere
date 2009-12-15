@@ -190,7 +190,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
         if settings_mapfile == None:
             settings_mapfile = \
                 self.storage.get(self.id.storage('settings'), default='\n')
-        self.settings = mapfile.parse(settings_mapfile)
+        try:
+            self.settings = mapfile.parse(settings_mapfile)
+        except mapfile.InvalidMapfileContents, e:
+            raise Exception('Invalid settings file for bugdir %s\n'
+                            '(BE version missmatch?)' % self.id.user())
         self._setup_saved_settings()
         #self._setup_user_id(self.user_id)
         self._setup_severities(self.severities)
@@ -291,52 +295,66 @@ class BugDir (list, settings_object.SavedSettingsObject):
         Duplicate bugdirs are read-only copies used for generating
         diffs between revisions.
         """
-        dbd = copy.copy(self)
-        dbd.storage = copy.copy(self.storage)
-        dbd._bug_map = copy.copy(self._bug_map)
-        dbd.storage.writeable = False
-        added,changed,removed = self.storage.changed_since(revision)
-        for id in added:
-            pass
-        for id in removed:
-            pass
-        for id in changed:
-            parsed = libbe.util.id.parse_id(id)
-            if parsed['type'] == 'bugdir':
-                assert parsed['remaining'] == ['settings'], parsed['remaining']
-                dbd._settings = copy.copy(self._settings)
-                mf = self.storage.get(self.id.storage('settings'), default='\n',
-                                      revision=revision)
-                dbd.load_settings(mf)
-            else:
-                if parsed['bug'] not in self:
-                    self._load_bug(parsed['bug'])
-                    dbd._load_bug(parsed['bug'])
-                else:
-                    bug = copy.copy(self._bug_map[parsed['bug']])
-                    bug.settings = copy.copy(bug.settings)
-                    dbd._bug_map[parsed['bug']] = bug
-                if parsed['type'] == 'bug':
-                    assert parsed['remaining'] == ['values'], parsed['remaining']
-                    mf = self.storage.get(self.id.storage('values'), default='\n',
-                                          revision=revision)
-                    bug.load_settings(mf)
-                elif parsed['type'] == 'comment':
-                    assert parsed['remaining'] in [['values'], ['body']], \
-                        parsed['remaining']
-                    bug.comment_root = copy.deepcopy(bug.comment_root)
-                    comment = bug.comment_from_uuid(parsed['comment'])
-                    if parsed['remaining'] == ['values']:
-                        mf = self.storage.get(self.id.storage('values'), default='\n',
-                                              revision=revision)
-                        comment.load_settings(mf)
-                    else:
-                        body = self.storage.get(self.id.storage('body'), default='\n',
-                                                revision=revision)
-                        comment.body = body                        
-                else:
-                    assert 1==0, 'Unkown type "%s" for id "%s"' % (type, id)
-        dbd.storage.readable = False # so we won't read in added bugs, etc.
+        s = copy.deepcopy(self.storage)
+        s.writeable = False
+        class RevisionedStorageGet (object):
+            def __init__(self, storage, default_revision):
+                self.s = storage
+                self.sget = self.s.get
+                self.r = default_revision
+            def get(self, *args, **kwargs):
+                if not 'revision' in kwargs or kwargs['revision'] == None:
+                    kwargs['revision'] = self.r
+                return self.sget(*args, **kwargs)
+        rsg = RevisionedStorageGet(s, revision)
+        s.get = rsg.get
+        dbd = BugDir(s, from_storage=True)
+#        dbd = copy.copy(self)
+#        dbd.storage = copy.copy(self.storage)
+#        dbd._bug_map = copy.copy(self._bug_map)
+#        dbd.storage.writeable = False
+#        added,changed,removed = self.storage.changed_since(revision)
+#        for id in added:
+#            pass
+#        for id in removed:
+#            pass
+#        for id in changed:
+#            parsed = libbe.util.id.parse_id(id)
+#            if parsed['type'] == 'bugdir':
+#                assert parsed['remaining'] == ['settings'], parsed['remaining']
+#                dbd._settings = copy.copy(self._settings)
+#                mf = self.storage.get(self.id.storage('settings'), default='\n',
+#                                      revision=revision)
+#                dbd.load_settings(mf)
+#            else:
+#                if parsed['bug'] not in self:
+#                    self._load_bug(parsed['bug'])
+#                    dbd._load_bug(parsed['bug'])
+#                else:
+#                    bug = copy.copy(self._bug_map[parsed['bug']])
+#                    bug.settings = copy.copy(bug.settings)
+#                    dbd._bug_map[parsed['bug']] = bug
+#                if parsed['type'] == 'bug':
+#                    assert parsed['remaining'] == ['values'], parsed['remaining']
+#                    mf = self.storage.get(self.id.storage('values'), default='\n',
+#                                          revision=revision)
+#                    bug.load_settings(mf)
+#                elif parsed['type'] == 'comment':
+#                    assert parsed['remaining'] in [['values'], ['body']], \
+#                        parsed['remaining']
+#                    bug.comment_root = copy.deepcopy(bug.comment_root)
+#                    comment = bug.comment_from_uuid(parsed['comment'])
+#                    if parsed['remaining'] == ['values']:
+#                        mf = self.storage.get(self.id.storage('values'), default='\n',
+#                                              revision=revision)
+#                        comment.load_settings(mf)
+#                    else:
+#                        body = self.storage.get(self.id.storage('body'), default='\n',
+#                                                revision=revision)
+#                        comment.body = body
+#                else:
+#                    assert 1==0, 'Unkown type "%s" for id "%s"' % (type, id)
+#        dbd.storage.readable = False # so we won't read in added bugs, etc.
         return dbd
 
 if libbe.TESTING == True:
@@ -350,13 +368,16 @@ if libbe.TESTING == True:
         ['a', 'b']
         >>> bugdir.cleanup()
         """
-        def __init__(self, memory=True):
+        def __init__(self, memory=True, versioned=False):
             if memory == True:
                 storage = None
             else:
                 dir = utility.Dir()
                 self._dir_ref = dir # postpone cleanup since dir.cleanup() removes dir.
-                storage = libbe.storage.base.Storage(dir.path)
+                if versioned == False:
+                    storage = libbe.storage.base.Storage(dir.path)
+                else:
+                    storage = libbe.storage.base.VersionedStorage(dir.path)
                 storage.init()
                 storage.connect()
             BugDir.__init__(self, storage=storage, uuid='abc123')
@@ -384,7 +405,7 @@ if libbe.TESTING == True:
                 self.storage.disconnect()
                 self.storage.connect()
                 self._clear_bugs()
-                
+
 #    class BugDirTestCase(unittest.TestCase):
 #        def setUp(self):
 #            self.dir = utility.Dir()
@@ -486,7 +507,7 @@ if libbe.TESTING == True:
 #                                "Invalid comment: %d\n%s" % (index, comment))
 #        def testSyncedComments(self):
 #            self.testComments(sync_with_disk=True)
-    
+
     class SimpleBugDirTestCase (unittest.TestCase):
         def setUp(self):
             # create a pre-existing bugdir in a temporary directory
@@ -542,7 +563,7 @@ if libbe.TESTING == True:
             uuids = sorted([bug.uuid for bug in bugdir])
             self.failUnless(uuids == [], uuids)
             bugdir.cleanup()
-    
+
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
 

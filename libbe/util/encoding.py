@@ -72,7 +72,7 @@ def get_file_contents(path, mode='r', encoding=None, decode=False):
             encoding = get_filesystem_encoding()
         f = codecs.open(path, mode, encoding)
     else:
-        f = open(path, mode) 
+        f = open(path, mode)
     contents = f.read()
     f.close()
     return contents

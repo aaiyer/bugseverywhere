@@ -76,7 +76,7 @@ class Darcs(base.VCS):
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, "_darcs") != None :
             return True
-        return False 
+        return False
 
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
@@ -129,7 +129,7 @@ class Darcs(base.VCS):
                     'diff', '--unified', '--patch', revision, path,
                     unicode_output=False)
                 target_patch = output
-                
+
                 # '--output -' to be supported in GNU patch > 2.5.9
                 # but that hasn't been released as of June 30th, 2009.
 
@@ -206,7 +206,7 @@ class Darcs(base.VCS):
         except IndexError:
             return None
 
-    
+
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Darcs, sys.modules[__name__])
 

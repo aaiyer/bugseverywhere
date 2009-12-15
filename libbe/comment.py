@@ -190,18 +190,18 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         Set from_storage=False to create a new comment.
 
         The uuid option is required when from_storage==True.
-        
+
         The in_reply_to and body options are only used if
         from_storage==False (the default).  When from_storage==True,
         they are loaded from the bug database.
-        
+
         in_reply_to should be the uuid string of the parent comment.
         """
         Tree.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)
         self.bug = bug
         self.storage = None
-        self.uuid = uuid 
+        self.uuid = uuid
         self.id = libbe.util.id.ID(self, 'comment')
         if from_storage == False:
             if uuid == None:
@@ -214,7 +214,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if self.bug != None:
             self.storage = self.bug.storage
         if from_storage == False:
-            if self.storage != None and self.storage.is_writeable():            
+            if self.storage != None and self.storage.is_writeable():
                 self.save()
 
     def __cmp__(self, other):
@@ -368,7 +368,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                 self.body = base64.decodestring(body)
         self.extra_strings = estrs
 
-    def merge(self, other, accept_changes=True, 
+    def merge(self, other, accept_changes=True,
               accept_extra_strings=True, change_exception=False):
         """
         Merge info from other into this comment.  Overrides any
@@ -448,7 +448,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> print comm.string(indent=2)
           --------- Comment ---------
           Name: //abc
-          From: 
+          From:
           Date: Thu, 01 Jan 1970 00:00:00 +0000
         <BLANKLINE>
           Some
@@ -468,7 +468,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             lines.extend(body.splitlines())
         else:
             lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)
-        
+
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
@@ -478,12 +478,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         """
         Return a string displaying a thread of comments.
         bug_shortname is only used if auto_name_map == True.
-        
+
         string_method_name (defaults to "string") is the name of the
         Comment method used to generate the output string for each
         Comment in the thread.  The method must take the arguments
         indent and shortname.
-        
+
         SIDE-EFFECT: if auto_name_map==True, calls comment_shortnames()
         which will sort the tree by comment.time.  Avoid by calling
           name_map = {}
@@ -507,50 +507,50 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> print a.string_thread(flatten=True)
         --------- Comment ---------
         Name: //a
-        From: 
+        From:
         Date: Thu, 20 Nov 2008 01:00:00 +0000
         <BLANKLINE>
         Insightful remarks
           --------- Comment ---------
           Name: //b
-          From: 
+          From:
           Date: Thu, 20 Nov 2008 02:00:00 +0000
         <BLANKLINE>
           Critique original comment
           --------- Comment ---------
           Name: //c
-          From: 
+          From:
           Date: Thu, 20 Nov 2008 03:00:00 +0000
         <BLANKLINE>
           Begin flamewar :p
         --------- Comment ---------
         Name: //d
-        From: 
+        From:
         Date: Thu, 20 Nov 2008 04:00:00 +0000
         <BLANKLINE>
         Useful examples
         >>> print a.string_thread()
         --------- Comment ---------
         Name: //a
-        From: 
+        From:
         Date: Thu, 20 Nov 2008 01:00:00 +0000
         <BLANKLINE>
         Insightful remarks
           --------- Comment ---------
           Name: //b
-          From: 
+          From:
           Date: Thu, 20 Nov 2008 02:00:00 +0000
         <BLANKLINE>
           Critique original comment
           --------- Comment ---------
           Name: //c
-          From: 
+          From:
           Date: Thu, 20 Nov 2008 03:00:00 +0000
         <BLANKLINE>
           Begin flamewar :p
         --------- Comment ---------
         Name: //d
-        From: 
+        From:
         Date: Thu, 20 Nov 2008 04:00:00 +0000
         <BLANKLINE>
         Useful examples
@@ -571,7 +571,11 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if settings_mapfile == None:
             settings_mapfile = \
                 self.storage.get(self.id.storage("values"), default="\n")
-        self.settings = mapfile.parse(settings_mapfile)
+        try:
+            self.settings = mapfile.parse(settings_mapfile)
+        except mapfile.InvalidMapfileContents, e:
+            raise Exception('Invalid settings file for comment %s\n'
+                            '(BE version missmatch?)' % self.id.user())
         self._setup_saved_settings()
 
     def save_settings(self):
@@ -581,7 +585,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     def save(self):
         """
         Save any loaded contents to storage.
-        
+
         However, if self.storage.is_writeable() == True, then any
         changes are automatically written to storage as soon as they
         happen, so calling this method will just waste time (unless
@@ -688,7 +692,7 @@ def cmp_attr(comment_1, comment_2, attr, invert=False):
     val_2 = getattr(comment_2, attr)
     if val_1 == None: val_1 = None
     if val_2 == None: val_2 = None
-    
+
     if invert == True :
         return -cmp(val_1, val_2)
     else :
@@ -718,7 +722,7 @@ class CommentCompoundComparator (object):
             if val != 0 :
                 return val
         return 0
-        
+
 cmp_full = CommentCompoundComparator()
 
 if libbe.TESTING == True:

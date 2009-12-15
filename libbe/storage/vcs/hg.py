@@ -124,7 +124,7 @@ class Hg(base.VCS):
             return id
         return None
 
-    
+
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Hg, sys.modules[__name__])
 

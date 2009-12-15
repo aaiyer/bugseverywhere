@@ -167,7 +167,7 @@ class Arch(base.VCS):
           http://regexps.srparish.net/tutorial-tla/naming-conventions.html
         Since our bug directory '.be' doesn't satisfy these conventions,
         we need to adjust them.
-        
+
         The conventions are specified in
           project-root/{arch}/=tagging-method
         """
@@ -211,7 +211,7 @@ class Arch(base.VCS):
             dirname = path
         status,output,error = self._u_invoke_client('tree-root', dirname)
         root = output.rstrip('\n')
-        
+
         self._get_archive_project_name(root)
 
         return root

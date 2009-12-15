@@ -61,7 +61,7 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
         else:
             assert _MSWINDOWS==True, 'invalid platform'
             # win32 don't have os.execvp() so have to run command in a shell
-            q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr, 
+            q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr,
                       shell=True, cwd=cwd)
     except OSError, e:
         raise CommandError(args, status=e.args[0], stderr=e)
@@ -133,7 +133,7 @@ class Pipe (object):
                 thread.start()
                 threads.append(thread)
                 std_X_arrays.append(stderr_array)
-    
+
             # also listen to the last processes stdout
             stdout_array = []
             thread = Thread(target=proc._readerthread,
@@ -142,11 +142,11 @@ class Pipe (object):
             thread.start()
             threads.append(thread)
             std_X_arrays.append(stdout_array)
-    
+
             # join threads as they die
             for thread in threads:
                 thread.join()
-    
+
             # read output from reader threads
             std_X_strings = []
             for std_X_array in std_X_arrays:

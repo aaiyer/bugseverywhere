@@ -51,7 +51,7 @@ def search_parent_directories(path, filename):
     """
     Find the file (or directory) named filename in path or in any
     of path's parents.
-    
+
     e.g.
     search_parent_directories("/a/b/c", ".be")
     will return the path to the first existing file from
@@ -112,7 +112,7 @@ def str_to_time(str_time):
     time_val = calendar.timegm(time.strptime(str_time, RFC_2822_TIME_FMT))
     timesign = -int(timezone_str[0]+"1") # "+" -> time_val ahead of GMT
     timezone_tuple = time.strptime(timezone_str[1:], "%H%M")
-    timezone = timezone_tuple.tm_hour*3600 + timezone_tuple.tm_min*60 
+    timezone = timezone_tuple.tm_hour*3600 + timezone_tuple.tm_min*60
     return time_val + timesign*timezone
 
 def handy_time(time_val):
@@ -153,7 +153,7 @@ def underlined(instring):
     >>> underlined("Underlined String")
     'Underlined String\\n================='
     """
-    
+
     return "%s\n%s" % (instring, "="*len(instring))
 
 if libbe.TESTING == True:

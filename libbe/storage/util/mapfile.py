@@ -24,6 +24,7 @@ independent/conflicting changes.
 
 import errno
 import os.path
+import types
 import yaml
 
 import libbe
@@ -39,32 +40,37 @@ class IllegalKey(Exception):
 class IllegalValue(Exception):
     def __init__(self, value):
         Exception.__init__(self, 'Illegal value "%s"' % value)
-        self.value = value 
+        self.value = value
+
+class InvalidMapfileContents(Exception):
+    def __init__(self, contents):
+        Exception.__init__(self, 'Invalid YAML contents')
+        self.contents = contents
 
 def generate(map):
     """Generate a YAML mapfile content string.
-    >>> generate({"q":"p"})
+    >>> generate({'q':'p'})
     'q: p\\n\\n'
-    >>> generate({"q":u"Fran\u00e7ais"})
+    >>> generate({'q':u'Fran\u00e7ais'})
     'q: Fran\\xc3\\xa7ais\\n\\n'
-    >>> generate({"q":u"hello"})
+    >>> generate({'q':u'hello'})
     'q: hello\\n\\n'
-    >>> generate({"q=":"p"})
+    >>> generate({'q=':'p'})
     Traceback (most recent call last):
     IllegalKey: Illegal key "q="
-    >>> generate({"q:":"p"})
+    >>> generate({'q:':'p'})
     Traceback (most recent call last):
     IllegalKey: Illegal key "q:"
-    >>> generate({"q\\n":"p"})
+    >>> generate({'q\\n':'p'})
     Traceback (most recent call last):
     IllegalKey: Illegal key "q\\n"
-    >>> generate({"":"p"})
+    >>> generate({'':'p'})
     Traceback (most recent call last):
     IllegalKey: Illegal key ""
-    >>> generate({">q":"p"})
+    >>> generate({'>q':'p'})
     Traceback (most recent call last):
     IllegalKey: Illegal key ">q"
-    >>> generate({"q":"p\\n"})
+    >>> generate({'q':'p\\n'})
     Traceback (most recent call last):
     IllegalValue: Illegal value "p\\n"
     """
@@ -97,20 +103,28 @@ def parse(contents):
     'p'
     >>> parse('q: \\'p\\'\\n\\n')['q']
     'p'
-    >>> contents = generate({"a":"b", "c":"d", "e":"f"})
+    >>> contents = generate({'a':'b', 'c':'d', 'e':'f'})
     >>> dict = parse(contents)
-    >>> dict["a"]
+    >>> dict['a']
     'b'
-    >>> dict["c"]
+    >>> dict['c']
     'd'
-    >>> dict["e"]
+    >>> dict['e']
     'f'
-    >>> contents = generate({"q":u"Fran\u00e7ais"})
+    >>> contents = generate({'q':u'Fran\u00e7ais'})
     >>> dict = parse(contents)
-    >>> dict["q"]
+    >>> dict['q']
     u'Fran\\xe7ais'
+    >>> dict = parse('a!')
+    Traceback (most recent call last):
+      ...
+    InvalidMapfileContents: Invalid YAML contents
     """
-    return yaml.load(contents) or {}
+    c = yaml.load(contents)
+    if type(c) == types.StringType:
+        raise InvalidMapfileContents(
+            'Unable to parse YAML (BE format missmatch?):\n\n%s' % contents)
+    return c or {}
 
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()

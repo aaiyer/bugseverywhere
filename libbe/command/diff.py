@@ -29,7 +29,7 @@ class Diff (libbe.command.Command):
 
     >>> import sys
     >>> import libbe.bugdir
-    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=False, versioned=True)
     >>> cmd = Diff()
     >>> cmd._storage = bd.storage
     >>> cmd._setup_io = lambda i_enc,o_enc : None
@@ -39,23 +39,15 @@ class Diff (libbe.command.Command):
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.status = 'closed'
     >>> changed = bd.storage.commit('Closed bug a')
-    >>> if bd.storage.versioned == True:
-    ...     ret = cmd.run(args=[original])
-    ... else:
-    ...     print 'Modified bugs:\\n  a:cm: Bug A\\n    Changed bug settings:\\n      status: open -> closed'
+    >>> ret = cmd.run(args=[original])
     Modified bugs:
-      a:cm: Bug A
+      abc/a:cm: Bug A
         Changed bug settings:
           status: open -> closed
-    >>> if bd.storage.versioned == True:
-    ...     ret = cmd.run({'subscribe':'%(bugdir_id)s:mod', 'uuids':True}, [original])
-    ... else:
-    ...     print 'a'
+    >>> ret = cmd.run({'subscribe':'%(bugdir_id)s:mod', 'uuids':True}, [original])
     a
-    >>> if bd.storage.versioned == False:
-    ...     ret = cmd.run(args=[original])
-    ... else:
-    ...     raise libbe.command.UserError('This repository not revision-controlled.')
+    >>> bd.storage.versioned = False
+    >>> ret = cmd.run(args=[original])
     Traceback (most recent call last):
       ...
     UserError: This repository is not revision-controlled.
@@ -101,7 +93,7 @@ class Diff (libbe.command.Command):
         if params['repo'] == None:
             if params['revision'] == None: # get the most recent revision
                 params['revision'] = bugdir.storage.revision_id(-1)
-            old_bd = bugdir.duplicate_bugdir(params['revision']) # TODO
+            old_bd = bugdir.duplicate_bugdir(params['revision'])
         else:
             old_storage = libbe.storage.get_storage(params['repo'])
             old_storage.connect()
@@ -113,8 +105,8 @@ class Diff (libbe.command.Command):
                     raise libbe.command.UserError(
                         '%s is not revision-controlled.'
                         % storage.repo)
-                old_bd = old_bd_current.duplicate_bugdir(revision) # TODO
-        d = libbe.diff.Diff(old_bd, bugir)
+                old_bd = old_bd_current.duplicate_bugdir(revision)
+        d = libbe.diff.Diff(old_bd, bugdir)
         tree = d.report_tree(subscriptions)
 
         if params['uuids'] == True:

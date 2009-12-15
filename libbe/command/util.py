@@ -32,7 +32,7 @@ def complete_path(command, argument, fragment=None):
     if len(comps) == 1 and os.path.isdir(comps[0]):
         comps.extend(glob.glob(comps[0]+'/*'))
     return comps
-    
+
 def complete_status(command, argument, fragment=None):
     return [fragment]
 def complete_severity(command, argument, fragment=None):

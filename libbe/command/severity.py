@@ -59,7 +59,7 @@ class Severity (libbe.command.Command):
                     repeatable=True,
                     completion_callback=libbe.command.util.complete_bug_id),
                 ])
-    
+
     def _run(self, **params):
         bugdir = self._get_bugdir()
         for bug_id in params['bug-id']:

@@ -63,8 +63,8 @@ class Merge (libbe.command.Command):
       Short name : abc/a
         Severity : minor
           Status : open
-        Assigned : 
-        Reporter : 
+        Assigned :
+        Reporter :
          Creator : John Doe <jdoe@example.com>
          Created : ...
     Bug A
@@ -109,8 +109,8 @@ class Merge (libbe.command.Command):
       Short name : abc/b
         Severity : minor
           Status : closed
-        Assigned : 
-        Reporter : 
+        Assigned :
+        Reporter :
          Creator : Jane Doe <jdoe@example.com>
          Created : ...
     Bug B
@@ -168,7 +168,7 @@ class Merge (libbe.command.Command):
                 comment.storage = None
                 comment.alt_id = comment.uuid
                 comment.storage = bugdir.storage
-            comment.uuid = libbe.util.id.uuid_gen() 
+            comment.uuid = libbe.util.id.uuid_gen()
             comment.save() # force onto disk under bugA
 
         for comment in newCommTree: # just the child comments

@@ -110,9 +110,9 @@ class Import_XML (libbe.command.Command):
                 new.explicit_attrs = []
         else:
             croot_bug,croot_comment = (None, None)
-    
+
         if params['xml-file'] == '-':
-            xml = self.stdin.read().encode(self.stdin.encoding)                
+            xml = self.stdin.read().encode(self.stdin.encoding)
         else:
             self._check_restricted_access(storage, params['xml-file'])
             xml = libbe.util.encoding.get_file_contents(
@@ -147,7 +147,7 @@ class Import_XML (libbe.command.Command):
             else:
                 print >> sys.stderr, 'ignoring unknown tag %s in %s' \
                     % (child.tag, comment_list.tag)
-    
+
         # merge the new root_comments
         if params['add-only'] == True:
             accept_changes = False
@@ -172,7 +172,7 @@ class Import_XML (libbe.command.Command):
             croot_bug.merge(new_croot_bug, accept_changes=accept_changes,
                             accept_extra_strings=accept_extra_strings,
                             accept_comments=accept_comments)
-    
+
         # merge the new croot_bugs
         merged_bugs = []
         old_bugs = []
@@ -190,7 +190,7 @@ class Import_XML (libbe.command.Command):
                           accept_comments=accept_comments)
                 merged_bugs.append(new)
                 old_bugs.append(old)
-    
+
         # protect against programmer error causing data loss:
         if croot_bug != None:
             comms = [c.uuid for c in croot_comment.traverse()]
@@ -201,7 +201,7 @@ class Import_XML (libbe.command.Command):
             if not new in merged_bugs:
                 assert bugdir.has_bug(new.uuid), \
                     "bug %s wasn't added" % (new.uuid)
-    
+
         # save new information
         bugdir.storage.writeable = writeable
         if croot_bug != None:

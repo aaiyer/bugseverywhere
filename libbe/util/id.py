@@ -50,7 +50,7 @@ except ImportError:
                 q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             else:
                 # win32 don't have os.execvp() so have to run command in a shell
-                q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, 
+                q = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE,
                           shell=True, cwd=cwd)
         except OSError, e :
             strerror = "%s\nwhile executing %s" % (e.args[1], args)
@@ -210,7 +210,7 @@ def child_uuids(child_storage_ids):
         fields = _split(id)
         if len(fields) == 1:
             yield fields[0]
-    
+
 
 REGEXP = '#([-a-f0-9]*)(/[-a-g0-9]*)?(/[-a-g0-9]*)?#'
 
@@ -298,7 +298,7 @@ if libbe.TESTING == True:
             self._siblings = siblings
         def sibling_uuids(self):
             return self._siblings
-        
+
     class IDtestCase(unittest.TestCase):
         def setUp(self):
             self.bugdir = DummyObject('1234abcd')
@@ -342,11 +342,11 @@ if libbe.TESTING == True:
             self.bug = DummyObject('abcdef', ['a1234', 'ab9876'])
             self.bug.bugdir = self.bugdir
             self.bugdir.bug_from_uuid = lambda uuid: self.bug
-            self.bugdir.uuids = lambda : self.bug.sibling_uuids() + [self.bug.uuid] 
+            self.bugdir.uuids = lambda : self.bug.sibling_uuids() + [self.bug.uuid]
             self.comment = DummyObject('12345678', ['1234abcd', '1234cdef'])
             self.comment.bug = self.bug
             self.bug.comment_from_uuid = lambda uuid: self.comment
-            self.bug.uuids = lambda : self.comment.sibling_uuids() + [self.comment.uuid] 
+            self.bug.uuids = lambda : self.comment.sibling_uuids() + [self.comment.uuid]
             self.bd_id = ID(self.bugdir, 'bugdir')
             self.b_id = ID(self.bug, 'bug')
             self.c_id = ID(self.comment, 'comment')

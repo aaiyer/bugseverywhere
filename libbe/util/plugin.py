@@ -57,7 +57,7 @@ def modnames(prefix):
     >>> 'plugin' in [n for n in modnames('libbe.util')]
     True
     """
-    components = prefix.split('.')    
+    components = prefix.split('.')
     modfiles = os.listdir(os.path.join(_PLUGIN_PATH, *components))
     modfiles.sort()
     for modfile in modfiles:

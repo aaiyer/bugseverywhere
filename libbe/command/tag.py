@@ -134,7 +134,7 @@ class Tag (libbe.command.Command):
         for estr in bug.extra_strings:
             if estr.startswith(TAG_TAG):
                 tags.append(estr[len(TAG_TAG):])
-    
+
         if len(tags) > 0:
             print "Tags for %s:" % bug.id.user()
             print '\n'.join(tags)

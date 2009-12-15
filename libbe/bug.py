@@ -24,6 +24,7 @@ import copy
 import os
 import os.path
 import errno
+import sys
 import time
 import types
 try: # import core module, Python >= 2.5
@@ -170,7 +171,7 @@ class Bug(settings_object.SavedSettingsObject):
                          check_fn=lambda s: s in status_values,
                          require_save=True)
     def status(): return {}
-    
+
     @property
     def active(self):
         return self.status in active_status_values
@@ -249,7 +250,7 @@ class Bug(settings_object.SavedSettingsObject):
         if self.bugdir != None:
             self.storage = self.bugdir.storage
         if from_storage == False:
-            if self.storage != None and self.storage.is_writeable():            
+            if self.storage != None and self.storage.is_writeable():
                 self.save()
 
     def __repr__(self):
@@ -294,7 +295,7 @@ class Bug(settings_object.SavedSettingsObject):
             severitychar = self.severity[0]
             chars = "%c%c" % (statuschar, severitychar)
             bugout = "%s:%s: %s" % (self.id.user(),chars,self.summary.rstrip('\n'))
-        
+
         if show_comments == True:
             self.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
             comout = self.comment_root.string_thread(flatten=False)
@@ -398,7 +399,7 @@ class Bug(settings_object.SavedSettingsObject):
                 self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
-                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
                     % (child.tag, comment.tag)
         if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:
@@ -492,7 +493,7 @@ class Bug(settings_object.SavedSettingsObject):
             except KeyError:
                 if ignore_missing_references == True:
                     print >> sys.stderr, \
-                        "Ignoring missing reference to %s" % c.in_reply_to
+                        'Ignoring missing reference to %s' % c.in_reply_to
                     parent = default_parent
                     if parent.uuid != comment.INVALID_UUID:
                         c.in_reply_to = parent.uuid
@@ -628,7 +629,11 @@ class Bug(settings_object.SavedSettingsObject):
         if settings_mapfile == None:
             settings_mapfile = \
                 self.storage.get(self.id.storage("values"), default="\n")
-        self.settings = mapfile.parse(settings_mapfile)
+        try:
+            self.settings = mapfile.parse(settings_mapfile)
+        except mapfile.InvalidMapfileContents, e:
+            raise Exception('Invalid settings file for bug %s\n'
+                            '(BE version missmatch?)' % self.id.user())
         self._setup_saved_settings()
 
     def save_settings(self):
@@ -639,7 +644,7 @@ class Bug(settings_object.SavedSettingsObject):
         """
         Save any loaded contents to storage.  Because of lazy loading
         of comments, this is actually not too inefficient.
-        
+
         However, if self.storage.is_writeable() == True, then any
         changes are automatically written to storage as soon as they
         happen, so calling this method will just waste time (unless
@@ -666,14 +671,14 @@ class Bug(settings_object.SavedSettingsObject):
             # next _get_comment_root returns a fresh version.  Turn of
             # writing temporarily so we don't write our blank comment
             # tree to disk.
-            w = self.storage.writeable 
+            w = self.storage.writeable
             self.storage.writeable = False
             self.comment_root = None
             self.storage.writeable = w
 
     def remove(self):
         self.storage.recursive_remove(self.id.storage())
-    
+
     # methods for managing comments
 
     def uuids(self):
@@ -770,7 +775,7 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
     val_2 = getattr(bug_2, attr)
     if val_1 == None: val_1 = None
     if val_2 == None: val_2 = None
-    
+
     if invert == True :
         return -cmp(val_1, val_2)
     else :
@@ -816,7 +821,7 @@ class BugCompoundComparator (object):
             if val != 0 :
                 return val
         return 0
-        
+
 cmp_full = BugCompoundComparator()
 
 

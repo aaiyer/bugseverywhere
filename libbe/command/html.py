@@ -60,7 +60,7 @@ class HTML (libbe.command.Command):
     >>> bd.cleanup()
     """
     name = 'html'
-    
+
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
         self.options.extend([

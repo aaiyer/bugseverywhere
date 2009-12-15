@@ -76,7 +76,7 @@ class Git(base.VCS):
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, '.git') != None :
             return True
-        return False 
+        return False
 
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
@@ -154,7 +154,7 @@ class Git(base.VCS):
         except IndexError:
             return None
 
-    
+
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Git, sys.modules[__name__])
 

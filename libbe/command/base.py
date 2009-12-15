@@ -263,7 +263,7 @@ class Command (object):
         self.stdout = codecs.getwriter(output_encoding)(sys.stdout)
         self.stdout.encoding = output_encoding
 
-    def help(self, *args):       
+    def help(self, *args):
         return '\n\n'.join([self._usage(),
                             self._option_help(),
                             self._long_help().rstrip('\n')])
@@ -345,7 +345,7 @@ class Command (object):
     def _get_storage(self):
         """
         Callback for use by commands that need it.
-        
+
         Note that with the current implementation,
         _get_unconnected_storage() will not work after this method
         runs, but that shouldn't be an issue for any command I can

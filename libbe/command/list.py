@@ -25,7 +25,7 @@ import libbe.bug
 import libbe.command
 import libbe.command.util
 
-# get a list of * for cmp_*() comparing two bugs. 
+# get a list of * for cmp_*() comparing two bugs.
 AVAILABLE_CMPS = [fn[4:] for fn in dir(libbe.bug) if fn[:4] == 'cmp_']
 AVAILABLE_CMPS.remove('attr') # a cmp_* template.
 
@@ -129,7 +129,7 @@ class List (libbe.command.Command):
 #        parser.add_option(short, long, action="store_true",
 #                          dest=attr, help=help, default=False)
 #    return parser
-#                
+#
 #                ])
 
     def _run(self, **params):
@@ -144,7 +144,7 @@ class List (libbe.command.Command):
         self.result = bugs
         if len(bugs) == 0 and params['xml'] == False:
             print >> self.stdout, "No matching bugs found"
-    
+
         # sort bugs
         bugs = self._sort_bugs(bugs, cmp_list)
 
