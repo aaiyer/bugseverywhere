@@ -265,6 +265,7 @@ def main():
         return 1
     Class = getattr(module, command_name.capitalize())
     command = Class()
+    command.ui = self
     parser = CmdOptionParser(command)
     storage = None
     bugdir = None

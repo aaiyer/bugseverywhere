@@ -180,6 +180,7 @@ class Command (object):
     def __init__(self, input_encoding=None, output_encoding=None):
         self.status = None
         self.result = None
+        self.ui = None # calling user-interface, e.g. for Help()
         self.requires_bugdir = False
         self.requires_storage = False
         self.requires_unconnected_storage = False
