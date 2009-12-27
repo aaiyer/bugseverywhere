@@ -628,7 +628,7 @@ class Bug(settings_object.SavedSettingsObject):
     def load_settings(self, settings_mapfile=None):
         if settings_mapfile == None:
             settings_mapfile = \
-                self.storage.get(self.id.storage("values"), default="\n")
+                self.storage.get(self.id.storage('values'), default='\n')
         try:
             self.settings = mapfile.parse(settings_mapfile)
         except mapfile.InvalidMapfileContents, e:
@@ -638,7 +638,7 @@ class Bug(settings_object.SavedSettingsObject):
 
     def save_settings(self):
         mf = mapfile.generate(self._get_saved_settings())
-        self.storage.set(self.id.storage("values"), mf)
+        self.storage.set(self.id.storage('values'), mf)
 
     def save(self):
         """

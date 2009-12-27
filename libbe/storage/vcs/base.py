@@ -40,7 +40,7 @@ from libbe.storage.base import EmptyCommit, InvalidRevision
 from libbe.util.utility import Dir, search_parent_directories
 from libbe.util.subproc import CommandError, invoke
 from libbe.util.plugin import import_by_name
-#import libbe.storage.util.upgrade as upgrade
+import libbe.storage.util.upgrade as upgrade
 
 if libbe.TESTING == True:
     import unittest
@@ -657,8 +657,7 @@ os.listdir(self.get_path("bugs")):
     def disconnect(self):
         self._cached_path_id.disconnect()
 
-    def _add(self, id, parent=None, directory=False):
-        path = self._cached_path_id.add_id(id, parent)
+    def _add_path(self, path, directory=False):
         relpath = self._u_rel_path(path)
         reldirs = relpath.split(os.path.sep)
         if directory == False:
@@ -675,6 +674,10 @@ os.listdir(self.get_path("bugs")):
             if not os.path.exists(path):
                 open(path, 'w').close()
             self._vcs_add(self._u_rel_path(path))
+
+    def _add(self, id, parent=None, **kwargs):
+        path = self._cached_path_id.add_id(id, parent)
+        self._add_path(path, **kwargs)
 
     def _remove(self, id):
         path = self._cached_path_id.path(id)
@@ -877,27 +880,17 @@ os.listdir(self.get_path("bugs")):
         return (summary, body)
 
     def check_disk_version(self):
-        version = self.version()
-        #if version != upgrade.BUGDIR_DISK_VERSION:
-        #    upgrade.upgrade(self.repo, version)
+        version = self.disk_version()
+        if version != upgrade.BUGDIR_DISK_VERSION:
+            upgrade.upgrade(self.repo, version)
 
     def disk_version(self, path=None):
         """
         Requires disk access.
         """
         if path == None:
-            path = self.get_path('version')
-        return self.get(path).rstrip('\n')
-
-    def set_disk_version(self):
-        """
-        Requires disk access.
-        """
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired('set version')
-        self.vcs.mkdir(self.get_path())
-        #self.vcs.set_file_contents(self.get_path("version"),
-        #                           upgrade.BUGDIR_DISK_VERSION+"\n")
+            path = os.path.join(self.repo, '.be', 'version')
+        return libbe.util.encoding.get_file_contents(path).rstrip('\n')
 
 
 

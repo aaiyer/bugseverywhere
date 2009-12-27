@@ -23,7 +23,10 @@ be bothered setting version strings" and the "I want complete control
 over the version strings" workflows.
 """
 
+import copy
+
 import libbe._version as _version
+import libbe.storage.util.upgrade as upgrade
 
 # Manually set a version string (optional, defaults to bzr revision id)
 #_VERSION = "1.2.3"
@@ -39,11 +42,14 @@ def version(verbose=False):
     else:
         string = _version.version_info["revision_id"]
     if verbose == True:
+        info = copy.copy(_version.version_info)
+        info['storage'] = upgrade.BUGDIR_DISK_VERSION
         string += ("\n"
                    "revision: %(revno)d\n"
                    "nick: %(branch_nick)s\n"
-                   "revision id: %(revision_id)s"
-                   % _version.version_info)
+                   "revision id: %(revision_id)s\n"
+                   "storage version: %(storage)s"
+                   % info)
     return string
 
 if __name__ == "__main__":

@@ -172,7 +172,6 @@ class ID (object):
         assert self._type in HIERARCHY, self._type
 
     def storage(self, *args):
-        import libbe.comment
         return _assemble(self._object.uuid, *args)
 
     def _ancestors(self):
