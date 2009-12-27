@@ -3,6 +3,7 @@
 import base
 
 ConnectionError = base.ConnectionError
+InvalidStorageVersion = base.InvalidStorageVersion
 InvalidID = base.InvalidID
 InvalidRevision = base.InvalidRevision
 InvalidDirectory = base.InvalidDirectory
@@ -30,7 +31,7 @@ def get_storage(location):
     s.repo = location
     return s
 
-__all__ = [ConnectionError, InvalidID, InvalidRevision,
-           InvalidDirectory, NotWriteable, NotReadable,
+__all__ = [ConnectionError, InvalidStorageVersion, InvalidID,
+           InvalidRevision, InvalidDirectory, NotWriteable, NotReadable,
            EmptyCommit, STORAGE_VERSIONS, STORAGE_VERSION,
            get_storage]

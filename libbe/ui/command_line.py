@@ -284,6 +284,10 @@ def main():
         command.cleanup()
         print 'ERROR:\n', e
         return 1
+    except libbe.storage.ConnectionError, e:
+        command.cleanup()
+        print 'Connection Error:\n', e
+        return 1
     command.cleanup()
     return 0
 

@@ -295,6 +295,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
         Duplicate bugdirs are read-only copies used for generating
         diffs between revisions.
         """
+        storage_version = self.storage.storage_version(revision)
+        if storage_version != libbe.storage.STORAGE_VERSION:
+            raise libbe.storage.InvalidStorageVersion(storage_version)
         s = copy.deepcopy(self.storage)
         s.writeable = False
         class RevisionedStorageGet (object):

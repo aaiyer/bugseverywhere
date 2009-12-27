@@ -26,6 +26,16 @@ if TESTING == True:
 class ConnectionError (Exception):
     pass
 
+class InvalidStorageVersion(ConnectionError):
+    def __init__(self, active_version, expected_version=None):
+        if expected_version == None:
+            expected_version = libbe.storage.STORAGE_VERSION
+        msg = 'Storage in "%s" not the expected "%s"' \
+            % (active_version, expected_version)
+        Exception.__init__(self, msg)
+        self.active_version = active_version
+        self.expected_version = expected_version
+
 class InvalidID (KeyError):
     pass
 
@@ -49,6 +59,7 @@ class NotReadable (NotSupported):
 class EmptyCommit(Exception):
     def __init__(self):
         Exception.__init__(self, 'No changes to commit')
+
 
 class Entry (Tree):
     def __init__(self, id, value=None, parent=None, directory=False,
@@ -134,7 +145,7 @@ class Storage (object):
         """Return a version string for this backend."""
         return '0'
 
-    def storage_version(self):
+    def storage_version(self, revision=None):
         """Return the storage format for this backend."""
         return libbe.storage.STORAGE_VERSION
 

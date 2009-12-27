@@ -32,6 +32,7 @@ import re
 import shutil
 import sys
 import tempfile
+import types
 
 import libbe
 import libbe.storage
@@ -885,15 +886,19 @@ os.listdir(self.get_path("bugs")):
         if version != libbe.storage.STORAGE_VERSION:
             upgrade.upgrade(self.repo, version)
 
-    def storage_version(self, path=None):
+    def storage_version(self, revision=None, path=None):
         """
         Requires disk access.
         """
         if path == None:
             path = os.path.join(self.repo, '.be', 'version')
-        return libbe.util.encoding.get_file_contents(
-            path, decode=True).rstrip('\n')
-
+        if revision == None: # don't require connection
+            return libbe.util.encoding.get_file_contents(
+                path, decode=True).rstrip('\n')
+        contents = self._vcs_get_file_contents(path, revision=revision)
+        if type(contents) != types.UnicodeType:
+            contents = unicode(contents, self.encoding)
+        return contents.strip()
 
 
 if libbe.TESTING == True:

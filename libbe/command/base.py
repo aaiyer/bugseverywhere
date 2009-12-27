@@ -19,16 +19,6 @@ class UnknownCommand(UserError):
         Exception.__init__(self, "Unknown command '%s'" % cmd)
         self.cmd = cmd
 
-class InvalidStorageVersion(UserError):
-    def __init__(self, active_version, expected_version=None):
-        if expected_version == None:
-            expected_version = libbe.storage.STORAGE_VERSION
-        msg = 'Storage in "%s" not the expected "%s"' \
-            % (active_version, expected_version)
-        UserError.__init__(self, msg)
-        self.active_version = active_version
-        self.expected_version = expected_version
-
 def get_command(command_name):
     """Retrieves the module for a user command
 
@@ -366,7 +356,7 @@ class Command (object):
             self._storage.connect()
             version = self._storage.storage_version()
             if version != libbe.storage.STORAGE_VERSION:
-                raise InvalidStorageVersion(version)
+                raise libbe.storage.InvalidStorageVersion(version)
         return self._storage
 
     def _get_bugdir(self):
