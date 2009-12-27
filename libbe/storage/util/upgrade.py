@@ -25,23 +25,13 @@ import sys
 import libbe
 import libbe.bug
 import libbe.storage.util.mapfile as mapfile
+from libbe.storage import STORAGE_VERSIONS, STORAGE_VERSION
 #import libbe.storage.vcs # delay import to avoid cyclic dependency
 import libbe.ui.util.editor
 import libbe.util
 import libbe.util.encoding as encoding
 import libbe.util.id
 
-
-# a list of all past versions
-BUGDIR_DISK_VERSIONS = ['Bugs Everywhere Tree 1 0',
-                        'Bugs Everywhere Directory v1.1',
-                        'Bugs Everywhere Directory v1.2',
-                        'Bugs Everywhere Directory v1.3',
-                        'Bugs Everywhere Directory v1.4',
-                        ]
-
-# the current version
-BUGDIR_DISK_VERSION = BUGDIR_DISK_VERSIONS[-1]
 
 class Upgrader (object):
     "Class for converting between different on-disk BE storage formats."
@@ -304,16 +294,16 @@ for upgrader in upgraders:
     upgrade_classes[(upgrader.initial_version,upgrader.final_version)]=upgrader
 
 def upgrade(path, current_version,
-            target_version=BUGDIR_DISK_VERSION):
+            target_version=STORAGE_VERSION):
     """
     Call the appropriate upgrade function to convert current_version
     to target_version.  If a direct conversion function does not exist,
     use consecutive conversion functions.
     """
-    if current_version not in BUGDIR_DISK_VERSIONS:
+    if current_version not in STORAGE_VERSIONS:
         raise NotImplementedError, \
             "Cannot handle version '%s' yet." % current_version
-    if target_version not in BUGDIR_DISK_VERSIONS:
+    if target_version not in STORAGE_VERSIONS:
         raise NotImplementedError, \
             "Cannot handle version '%s' yet." % current_version
 
@@ -324,10 +314,10 @@ def upgrade(path, current_version,
         u.upgrade()
     else:
         # consecutive single-step conversion
-        i = BUGDIR_DISK_VERSIONS.index(current_version)
+        i = STORAGE_VERSIONS.index(current_version)
         while True:
-            version_a = BUGDIR_DISK_VERSIONS[i]
-            version_b = BUGDIR_DISK_VERSIONS[i+1]
+            version_a = STORAGE_VERSIONS[i]
+            version_b = STORAGE_VERSIONS[i+1]
             try:
                 upgrade_class = upgrade_classes[(version_a, version_b)]
             except KeyError:

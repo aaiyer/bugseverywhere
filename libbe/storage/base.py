@@ -10,6 +10,7 @@ import pickle
 import types
 
 from libbe.error import NotSupported
+import libbe.storage
 from libbe.util.tree import Tree
 from libbe.util import InvalidObject
 from libbe import TESTING
@@ -132,6 +133,10 @@ class Storage (object):
     def version(self):
         """Return a version string for this backend."""
         return '0'
+
+    def storage_version(self):
+        """Return the storage format for this backend."""
+        return libbe.storage.STORAGE_VERSION
 
     def is_readable(self):
         return self.readable and self._readable

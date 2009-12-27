@@ -26,7 +26,7 @@ over the version strings" workflows.
 import copy
 
 import libbe._version as _version
-import libbe.storage.util.upgrade as upgrade
+import libbe.storage
 
 # Manually set a version string (optional, defaults to bzr revision id)
 #_VERSION = "1.2.3"
@@ -43,7 +43,7 @@ def version(verbose=False):
         string = _version.version_info["revision_id"]
     if verbose == True:
         info = copy.copy(_version.version_info)
-        info['storage'] = upgrade.BUGDIR_DISK_VERSION
+        info['storage'] = libbe.storage.STORAGE_VERSION
         string += ("\n"
                    "revision: %(revno)d\n"
                    "nick: %(branch_nick)s\n"

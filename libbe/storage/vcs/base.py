@@ -34,6 +34,7 @@ import sys
 import tempfile
 
 import libbe
+import libbe.storage
 import libbe.storage.base
 import libbe.util.encoding
 from libbe.storage.base import EmptyCommit, InvalidRevision
@@ -652,7 +653,7 @@ os.listdir(self.get_path("bugs")):
         if not os.path.isdir(self.be_dir):
             raise libbe.storage.base.ConnectionError(self)
         self._cached_path_id.connect()
-        self.check_disk_version()
+        self.check_storage_version()
 
     def disconnect(self):
         self._cached_path_id.disconnect()
@@ -879,18 +880,19 @@ os.listdir(self.get_path("bugs")):
         f.close()
         return (summary, body)
 
-    def check_disk_version(self):
-        version = self.disk_version()
-        if version != upgrade.BUGDIR_DISK_VERSION:
+    def check_storage_version(self):
+        version = self.storage_version()
+        if version != libbe.storage.STORAGE_VERSION:
             upgrade.upgrade(self.repo, version)
 
-    def disk_version(self, path=None):
+    def storage_version(self, path=None):
         """
         Requires disk access.
         """
         if path == None:
             path = os.path.join(self.repo, '.be', 'version')
-        return libbe.util.encoding.get_file_contents(path).rstrip('\n')
+        return libbe.util.encoding.get_file_contents(
+            path, decode=True).rstrip('\n')
 
 
 
