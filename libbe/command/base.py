@@ -264,11 +264,11 @@ class Command (object):
         self.stdout.encoding = output_encoding
 
     def help(self, *args):
-        return '\n\n'.join([self._usage(),
+        return '\n\n'.join([self.usage(),
                             self._option_help(),
                             self._long_help().rstrip('\n')])
 
-    def _usage(self):
+    def usage(self):
         usage = 'usage: be %s [options]' % self.name
         num_optional = 0
         for arg in self.args:

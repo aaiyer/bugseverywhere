@@ -48,6 +48,8 @@ class CmdOptionParser(optparse.OptionParser):
         self._option_by_name = {}
         for option in self.command.options:
             self._add_option(option)
+        self.set_usage(command.usage())
+
 
     def _add_option(self, option):
         option.validate()
@@ -215,7 +217,7 @@ class BE (libbe.command.Command):
                     name='args', optional=True, repeatable=True)
                 ])
 
-    def _usage(self):
+    def usage(self):
         return 'usage: be [options] [COMMAND [command-options] [COMMAND-ARGS ...]]'
 
     def _long_help(self):

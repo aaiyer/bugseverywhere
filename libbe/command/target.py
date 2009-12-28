@@ -107,7 +107,7 @@ class Target (libbe.command.Command):
                 target = add_target(bugdir, bug, params['target'])
         return 0
 
-    def _usage(self):
+    def usage(self):
         return 'usage: be %(name)s BUG-ID [TARGET]\nor:    be %(name)s --resolve [TARGET]' \
             % vars(self)
 
