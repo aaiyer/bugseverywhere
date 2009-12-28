@@ -253,13 +253,6 @@ def main():
         print 'ERROR:\n', e
         return 1
 
-    paginate = 'auto'
-    if options['paginate'] == True:
-        paginate = 'always'
-    if options['no-pager'] == True:
-        paginate = 'never'
-    libbe.ui.util.pager.run_pager(paginate)
-
     command_name = args[0]
     try:
         module = libbe.command.get_command(command_name)
@@ -274,6 +267,17 @@ def main():
             return libbe.storage.get_storage(self.repo)
     command = Class(get_unconnected_storage=GUCS(options['repo']), ui=be)
     parser = CmdOptionParser(command)
+
+    if command.name in ['comment']:
+        paginate = 'never'
+    else:
+        paginate = 'auto'
+    if options['paginate'] == True:
+        paginate = 'always'
+    if options['no-pager'] == True:
+        paginate = 'never'
+    libbe.ui.util.pager.run_pager(paginate)
+
     try:
         options,args = parser.parse_args(args[1:])
         command.run(options, args)
