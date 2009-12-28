@@ -1,0 +1,14 @@
+> We also have the unfortunate situation of duplicate UUIDs from the old
+>   be merge
+> implemtation.  This means that id-to-path is not a well defined
+> mapping with single-uuid ids.  That's ok though, we get a bit uglier
+> and send the long_user() id into the storage backend instead.  While
+> not so elegant, this will avoid the need for the cached id/path table.
+
+The situation is worse than just the old `be merge` effects, because
+the existence, children, and parents of a particular UUID may be
+revision dependent.  A UUID will always refer to the same
+bugdir/bug/comment, but that bugdir/bug/comment may have different
+relatives.  Another point in favor of long_user()-style storage ids,
+but that just pushes relation-tracking up to the command level.  I'm
+still figuring out a good way to deal with this...

@@ -56,6 +56,9 @@ def editor_string(comment=None, encoding=None):
     >>> os.environ["VISUAL"] = "echo baz > "
     >>> editor_string()
     u'baz\\n'
+    >>> os.environ["VISUAL"] = "echo 'baz\\n== Anything below this line will be ignored\\nHi' > "
+    >>> editor_string()
+    u'baz\\n'
     >>> del os.environ["EDITOR"]
     >>> del os.environ["VISUAL"]
     """
@@ -79,6 +82,7 @@ def editor_string(comment=None, encoding=None):
         os.system("%s %s" % (editor, fname))
         output = libbe.util.encoding.get_file_contents(
             fname, encoding=encoding, decode=True)
+        output = trimmed_string(output)
         if output.rstrip('\n') == "":
             output = None
     finally:
