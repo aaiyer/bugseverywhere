@@ -129,7 +129,7 @@ class Bzr(base.VCS):
             cmd.run(filename=path, revision=revision)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
-                raise base.InvalidID(path, revision)
+                raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
         return cmd.outf.getvalue()        
 
@@ -154,7 +154,7 @@ class Bzr(base.VCS):
             cmd.run(revision=revision, path=path)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
-                raise base.InvalidID(path, revision)
+                raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
         children = cmd.outf.getvalue().rstrip('\n').splitlines()
         children = [self._u_rel_path(c, path) for c in children]

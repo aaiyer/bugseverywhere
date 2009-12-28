@@ -783,9 +783,11 @@ os.listdir(self.get_path("bugs")):
             return default
         relpath = self._u_rel_path(path)
         try:
-            contents = self._vcs_get_file_contents(relpath,revision)
+            contents = self._vcs_get_file_contents(relpath, revision)
         except InvalidID, e:
-            raise InvalidPath(path=path, root=self.repo, id=id)
+            if InvalidID == None:
+                e.id = InvalidID
+            raise
         if contents in [libbe.storage.base.InvalidDirectory,
                         libbe.util.InvalidObject]:
             raise InvalidID(id)

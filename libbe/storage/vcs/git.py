@@ -118,6 +118,26 @@ class Git(base.VCS):
             status,output,error = self._u_invoke_client('show', arg)
             return output
 
+
+    def _vcs_path(self, id, revision):
+        return self._u_find_id(id, revision)
+
+    def _vcs_isdir(self, path, revision):
+        arg = '%s:%s' % (revision,path)
+        args = ['ls-tree', arg]
+        status,output,error = self._u_invoke_client(*args, expect=(0,128))
+        if status != 0:
+            if 'not a tree object' in error:
+                return False
+            raise base.CommandError(args, status, stderr=error)
+        return True
+
+    def _vcs_listdir(self, path, revision):
+        arg = '%s:%s' % (revision,path)
+        status,output,error = self._u_invoke_client(
+            'ls-tree', '--name-only', arg)
+        return output.rstrip('\n').splitlines()
+
     def _vcs_commit(self, commitfile, allow_empty=False):
         args = ['commit', '--all', '--file', commitfile]
         if allow_empty == True:
