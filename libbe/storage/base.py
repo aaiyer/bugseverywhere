@@ -272,10 +272,11 @@ class Storage (object):
         else:
             decode = False
         value = self._get(*args, **kwargs)
-        if decode == True and type(value) != types.UnicodeType:
-            return unicode(value, self.encoding)
-        if decode == False and type(value) != types.StringType:
-            return value.encode(self.encoding)
+        if value != None:
+            if decode == True and type(value) != types.UnicodeType:
+                return unicode(value, self.encoding)
+            elif decode == False and type(value) != types.StringType:
+                return value.encode(self.encoding)
         return value
 
     def _get(self, id, default=InvalidObject, revision=None):
