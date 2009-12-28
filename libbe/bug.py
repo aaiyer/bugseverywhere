@@ -405,7 +405,7 @@ class Bug(settings_object.SavedSettingsObject):
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
-        self.add_comments(comments)
+        self.add_comments(comments, ignore_missing_references=True)
 
     def add_comment(self, comment, *args, **kwargs):
         """

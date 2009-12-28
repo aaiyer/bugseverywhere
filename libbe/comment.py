@@ -85,7 +85,7 @@ def load_comments(bug, load_full=False):
             dummy = comm.body # force the body to load
         comments.append(comm)
     bug.comment_root = Comment(bug, uuid=INVALID_UUID)
-    bug.add_comments(comments)
+    bug.add_comments(comments, ignore_missing_references=True)
     return bug.comment_root
 
 def save_comments(bug):
