@@ -737,11 +737,22 @@ if TESTING == True:
     class VersionedStorage_commit_TestCase (VersionedStorageTestCase):
         """Test cases for VersionedStorage methods."""
 
-        id = 'I' #unlikely id'
-        val = 'X'
-        commit_msg = 'C' #ommitting something interesting'
-        commit_body = 'B' #ome\nlonger\ndescription\n'
+        id = 'unlikely id'
+        val = 'Some value'
+        commit_msg = 'Committing something interesting'
+        commit_body = 'Some\nlonger\ndescription\n'
 
+        def _setup_for_empty_commit(self):
+            """
+            Initialization might add some files to version control, so
+            commit those first, before testing the empty commit
+            functionality.
+            """
+            try:
+                self.s.commit('Added initialization files')
+            except EmptyCommit:
+                pass
+                
         def test_revision_id_exception(self):
             """
             Invalid revision id should raise InvalidRevision.
@@ -758,6 +769,7 @@ if TESTING == True:
             """
             Empty commit should raise exception.
             """
+            self._setup_for_empty_commit()
             try:
                 self.s.commit(self.commit_msg, self.commit_body)
                 self.fail(
@@ -770,6 +782,7 @@ if TESTING == True:
             """
             Empty commit should _not_ raise exception if allow_empty=True.
             """
+            self._setup_for_empty_commit()
             self.s.commit(self.commit_msg, self.commit_body,
                           allow_empty=True)
 
