@@ -37,7 +37,12 @@ class InvalidStorageVersion(ConnectionError):
         self.expected_version = expected_version
 
 class InvalidID (KeyError):
-    pass
+    def __init__(self, id=None, revision=None, msg=None):
+        if msg == None and id != None:
+            msg = id
+        KeyError.__init__(self, msg)
+        self.id = id
+        self.revision = revision
 
 class InvalidRevision (KeyError):
     pass

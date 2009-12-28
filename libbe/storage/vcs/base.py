@@ -98,10 +98,10 @@ class VCSUnableToRoot (libbe.storage.base.ConnectionError):
         self.vcs = vcs
 
 class InvalidPath (InvalidID):
-    def __init__(self, path, root, msg=None):
+    def __init__(self, path, root, msg=None, **kwargs):
         if msg == None:
             msg = 'Path "%s" not in root "%s"' % (path, root)
-        InvalidID.__init__(self, msg)
+        InvalidID.__init__(self, msg=msg, **kwargs)
         self.path = path
         self.root = root
 
@@ -277,9 +277,9 @@ class CachedPathID (object):
         self._changed = True
 
     def id(self, path):
-        path = os.path.abspath(path)
+        path = os.path.join(self._root, path)
         if not path.startswith(self._root + os.path.sep):
-            raise InvalidPath('Path %s not in root %s' % (path, self._root))
+            raise InvalidPath(path, self._root)
         path = path[len(self._root)+1:]
         orig_path = path
         if not path.startswith(self._spacer_dirs[0] + os.path.sep):
@@ -548,6 +548,33 @@ os.listdir(self.get_path("bugs")):
         f.close()
         return contents
 
+    def _vcs_path(self, id, revision):
+        """
+        Return the path to object id as of revision.
+        
+        Revision will not be None.
+        """
+        raise NotImplementedError
+
+    def _vcs_isdir(self, path, revision):
+        """
+        Return True if path (as returned by _vcs_path) was a directory
+        as of revision, False otherwise.
+        
+        Revision will not be None.
+        """
+        raise NotImplementedError
+
+    def _vcs_listdir(self, path, revision):
+        """
+        Return a list of the contents of the directory path (as
+        returned by _vcs_path) as of revision.
+        
+        Revision will not be None, and ._vcs_isdir(path, revision)
+        will be True.
+        """
+        raise NotImplementedError
+
     def _vcs_commit(self, commitfile, allow_empty=False):
         """
         Commit the current working directory, using the contents of
@@ -711,28 +738,40 @@ os.listdir(self.get_path("bugs")):
                 self._cached_path_id.remove_id(id)
 
     def _children(self, id=None, revision=None):
+        if revision == None:
+            id_to_path = self._cached_path_id.path
+            path_to_id = self._cached_path_id.id
+            isdir = os.path.isdir
+            listdir = os.listdir
+        else:
+            id_to_path = lambda id : self._vcs_path(id, revision)
+            path_to_id = self._cached_path_id.id
+            isdir = lambda path : self._vcs_isdir(path, revision)
+            listdir = lambda path : self._vcs_listdir(path, revision)
         if id==None:
             path = self.be_dir
         else:
-            path = self._cached_path_id.path(id)
-        if os.path.isdir(path) == False:
+            path = id_to_path(id)
+        if isdir(path) == False: 
             return []
-        children = os.listdir(path)
+        children = listdir(path)
         for i,c in enumerate(children):
             if c in self._cached_path_id._spacer_dirs:
                 children[i] = None
                 children.extend([os.path.join(c, c2) for c2 in
-                                 os.listdir(os.path.join(path, c))])
+                                 listdir(os.path.join(path, c))])
             elif c in ['id-cache', 'version']:
                 children[i] = None
         for i,c in enumerate(children):
             if c == None: continue
             cpath = os.path.join(path, c)
             if self.interspersed_vcs_files == True \
+                    and revision != None \
                     and self._vcs_is_versioned(cpath) == False:
                 children[i] = None
             else:
-                children[i] = self._cached_path_id.id(cpath)
+                children[i] = path_to_id(cpath)
+                children[i]
         return [c for c in children if c != None]
 
     def _get(self, id, default=libbe.util.InvalidObject, revision=None):
@@ -746,7 +785,7 @@ os.listdir(self.get_path("bugs")):
         try:
             contents = self._vcs_get_file_contents(relpath,revision)
         except InvalidID, e:
-            raise InvalidID(id)
+            raise InvalidPath(path=path, root=self.repo, id=id)
         if contents in [libbe.storage.base.InvalidDirectory,
                         libbe.util.InvalidObject]:
             raise InvalidID(id)
@@ -836,6 +875,25 @@ os.listdir(self.get_path("bugs")):
         or None if none of those files exist.
         """
         return search_parent_directories(path, filename)
+
+    def _u_find_id(self, id, revision):
+        """
+        Search for the relative path to id as of revision.
+        Returns None if the id is not found.
+        """
+        assert self._rooted == True
+        be_dir = self._cached_path_id._spacer_dirs[0]
+        stack = [(be_dir, be_dir)]
+        while len(stack) > 0:
+            path,long_id = stack.pop()
+            if long_id.endswith('/'+id):
+                return path
+            if self._vcs_isdir(path, revision) == False:
+                continue
+            for child in self._vcs_listdir(path, revision):
+                stack.append((os.path.join(path, child),
+                              '/'.join([long_id, child])))
+        return None
 
     def _u_rel_path(self, path, root=None):
         """

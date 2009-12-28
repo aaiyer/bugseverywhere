@@ -129,9 +129,36 @@ class Bzr(base.VCS):
             cmd.run(filename=path, revision=revision)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
-                raise base.InvalidID(path)
+                raise base.InvalidID(path, revision)
             raise
         return cmd.outf.getvalue()        
+
+    def _vcs_path(self, id, revision):
+        return self._u_find_id(id, revision)
+
+    def _vcs_isdir(self, path, revision):
+        try:
+            self._vcs_listdir(path, revision)
+        except AttributeError, e:
+            if 'children' in str(e):
+                return False
+            raise
+        return True
+
+    def _vcs_listdir(self, path, revision):
+        path = os.path.join(self.repo, path)
+        revision = self._parse_revision_string(revision)
+        cmd = bzrlib.builtins.cmd_ls()
+        cmd.outf = StringIO.StringIO()
+        try:
+            cmd.run(revision=revision, path=path)
+        except bzrlib.errors.BzrCommandError, e:
+            if 'not present in revision' in str(e):
+                raise base.InvalidID(path, revision)
+            raise
+        children = cmd.outf.getvalue().rstrip('\n').splitlines()
+        children = [self._u_rel_path(c, path) for c in children]
+        return children
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         cmd = bzrlib.builtins.cmd_commit()
