@@ -827,6 +827,29 @@ if TESTING == True:
                                 "%s.get() returned %s not %s for revision %s"
                                 % (vars(self.Class)['name'], ret, val(i), revs[i]))
 
+        def test_get_previous_children(self):
+            """
+            Children list should be revision dependent.
+            """
+            self.s.add('parent', directory=True)
+            revs = []
+            cur_children = []
+            children = []
+            for i in range(10):
+                new_child = str(i)
+                self.s.add(new_child, 'parent', directory=False)
+                self.s.set(new_child, self.val)
+                revs.append(self.s.commit('%s: %d' % (self.commit_msg, i),
+                                          self.commit_body))
+                cur_children.append(new_child)
+                children.append(list(cur_children))
+            for i in range(10):
+                ret = self.s.children('parent', revision=revs[i])
+                self.failUnless(ret == children[i],
+                                "%s.get() returned %s not %s for revision %s"
+                                % (vars(self.Class)['name'], ret,
+                                   children[i], revs[i]))
+
     def make_storage_testcase_subclasses(storage_class, namespace):
         """Make StorageTestCase subclasses for storage_class in namespace."""
         storage_testcase_classes = [
