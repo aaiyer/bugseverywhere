@@ -22,10 +22,20 @@
 Bazaar (bzr) backend.
 """
 
+try:
+    import bzrlib
+    import bzrlib.branch
+    import bzrlib.builtins
+    import bzrlib.config
+    import bzrlib.errors
+    import bzrlib.option
+except ImportError:
+    bzrlib = None
 import os
 import os.path
 import re
 import shutil
+import StringIO
 
 import libbe
 import base
@@ -41,19 +51,24 @@ def new():
 
 class Bzr(base.VCS):
     name = 'bzr'
-    client = 'bzr'
+    client = None # bzrlib
 
     def __init__(self, *args, **kwargs):
         base.VCS.__init__(self, *args, **kwargs)
         self.versioned = True
 
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client('--version')
-        return output
+        if bzrlib == None:
+            return None
+        return bzrlib.__version__
 
     def _vcs_get_user_id(self):
-        status,output,error = self._u_invoke_client('whoami')
-        return output.rstrip('\n')
+        # excerpted from bzrlib.builtins.cmd_whoami.run()
+        try:
+            c = bzrlib.branch.Branch.open_containing(self.repo)[0].get_config()
+        except errors.NotBranchError:
+            c = bzrlib.config.GlobalConfig()
+        return c.username()
 
     def _vcs_detect(self, path):
         if self._u_search_parent_directories(path, '.bzr') != None :
@@ -62,11 +77,15 @@ class Bzr(base.VCS):
 
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
-        status,output,error = self._u_invoke_client('root', path)
-        return output.rstrip('\n')
+        cmd = bzrlib.builtins.cmd_root()
+        cmd.outf = StringIO.StringIO()
+        cmd.run(filename=path)
+        return cmd.outf.getvalue().rstrip('\n')
 
     def _vcs_init(self, path):
-        self._u_invoke_client('init', cwd=path)
+        cmd = bzrlib.builtins.cmd_init()
+        cmd.outf = StringIO.StringIO()
+        cmd.run(location=path)
 
     def _vcs_destroy(self):
         vcs_dir = os.path.join(self.repo, '.bzr')
@@ -74,50 +93,69 @@ class Bzr(base.VCS):
             shutil.rmtree(vcs_dir)
 
     def _vcs_add(self, path):
-        self._u_invoke_client('add', path)
+        path = os.path.join(self.repo, path)
+        cmd = bzrlib.builtins.cmd_add()
+        cmd.outf = StringIO.StringIO()
+        cmd.run(file_list=[path], file_ids_from=self.repo)
 
     def _vcs_remove(self, path):
         # --force to also remove unversioned files.
-        self._u_invoke_client('remove', '--force', path)
+        path = os.path.join(self.repo, path)
+        cmd = bzrlib.builtins.cmd_remove()
+        cmd.outf = StringIO.StringIO()
+        cmd.run(file_list=[path], file_deletion_strategy='force')
 
     def _vcs_update(self, path):
         pass
 
+    def _parse_revision_string(self, revision=None):
+        if revision == None:
+            return revision
+        rev_opt = bzrlib.option.Option.OPTIONS['revision']
+        try:
+            rev_spec = rev_opt.type(revision)
+        except bzrlib.errors.NoSuchRevisionSpec:
+            raise base.InvalidRevision(revision)
+        return rev_spec
+
     def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
             return base.VCS._vcs_get_file_contents(self, path, revision)
-        else:
-            status,output,error = \
-                self._u_invoke_client('cat', '-r', revision, path)
-            return output
+        path = os.path.join(self.repo, path)
+        revision = self._parse_revision_string(revision)
+        cmd = bzrlib.builtins.cmd_cat()
+        cmd.outf = StringIO.StringIO()
+        try:
+            cmd.run(filename=path, revision=revision)
+        except bzrlib.errors.BzrCommandError, e:
+            if 'not present in revision' in str(e):
+                raise base.InvalidID(path)
+            raise
+        return cmd.outf.getvalue()        
 
     def _vcs_commit(self, commitfile, allow_empty=False):
-        args = ['commit', '--file', commitfile]
-        if allow_empty == True:
-            args.append('--unchanged')
-            status,output,error = self._u_invoke_client(*args)
-        else:
-            kwargs = {'expect':(0,3)}
-            status,output,error = self._u_invoke_client(*args, **kwargs)
-            if status != 0:
-                strings = ['ERROR: no changes to commit.', # bzr 1.3.1
-                           'ERROR: No changes to commit.'] # bzr 1.15.1
-                if self._u_any_in_string(strings, error) == True:
-                    raise base.EmptyCommit()
-                else:
-                    raise base.CommandError(args, status, stderr=error)
-        revision = None
-        revline = re.compile('Committed revision (.*)[.]')
-        match = revline.search(error)
-        assert match != None, output+error
-        assert len(match.groups()) == 1
-        revision = match.groups()[0]
-        return revision
+        cmd = bzrlib.builtins.cmd_commit()
+        cmd.outf = StringIO.StringIO()
+        cwd = os.getcwd()
+        os.chdir(self.repo)
+        try:
+            cmd.run(file=commitfile, unchanged=allow_empty)
+        except bzrlib.errors.BzrCommandError, e:
+            strings = ['no changes to commit.', # bzr 1.3.1
+                       'No changes to commit.'] # bzr 1.15.1
+            if self._u_any_in_string(strings, str(e)) == True:
+                raise base.EmptyCommit()
+            raise
+        finally:
+            os.chdir(cwd)
+        return self._vcs_revision_id(-1)
 
     def _vcs_revision_id(self, index):
-        status,output,error = self._u_invoke_client('revno')
-        current_revision = int(output)
-        if index >= current_revision or index < -current_revision:
+        cmd = bzrlib.builtins.cmd_revno()
+        cmd.outf = StringIO.StringIO()
+        cmd.run(location=self.repo)
+        current_revision = int(cmd.outf.getvalue())
+        if index > current_revision or index < -current_revision:
             return None
         if index >= 0:
             return str(index) # bzr commit 0 is the empty tree.
