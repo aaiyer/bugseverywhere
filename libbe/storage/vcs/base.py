@@ -740,12 +740,10 @@ os.listdir(self.get_path("bugs")):
     def _children(self, id=None, revision=None):
         if revision == None:
             id_to_path = self._cached_path_id.path
-            path_to_id = self._cached_path_id.id
             isdir = os.path.isdir
             listdir = os.listdir
         else:
             id_to_path = lambda id : self._vcs_path(id, revision)
-            path_to_id = self._cached_path_id.id
             isdir = lambda path : self._vcs_isdir(path, revision)
             listdir = lambda path : self._vcs_listdir(path, revision)
         if id==None:
@@ -770,7 +768,7 @@ os.listdir(self.get_path("bugs")):
                     and self._vcs_is_versioned(cpath) == False:
                 children[i] = None
             else:
-                children[i] = path_to_id(cpath)
+                children[i] = self._u_path_to_id(cpath)
                 children[i]
         return [c for c in children if c != None]
 
@@ -895,7 +893,10 @@ os.listdir(self.get_path("bugs")):
             for child in self._vcs_listdir(path, revision):
                 stack.append((os.path.join(path, child),
                               '/'.join([long_id, child])))
-        return None
+        raise InvalidID(id, revision=revision)
+
+    def _u_path_to_id(self, path):
+        return self._cached_path_id.id(path)
 
     def _u_rel_path(self, path, root=None):
         """

@@ -43,7 +43,6 @@ import base
 
 if libbe.TESTING == True:
     import doctest
-    import sys
     import unittest
 
 
@@ -112,6 +111,38 @@ class Hg(base.VCS):
             return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
             return self._u_invoke_client('cat', '-r', revision, path)
+
+    def _vcs_path(self, id, revision):
+        output = self._u_invoke_client('manifest', '--rev', revision)
+        be_dir = self._cached_path_id._spacer_dirs[0]
+        be_dir_sep = self._cached_path_id._spacer_dirs[0] + os.path.sep
+        files = [f for f in output.splitlines() if f.startswith(be_dir_sep)]
+        for file in files:
+            if not file.startswith(be_dir+os.path.sep):
+                continue
+            parts = file.split(os.path.sep)
+            dir = parts.pop(0) # don't add the first spacer dir
+            for part in parts[:-1]:
+                dir = os.path.join(dir, part)
+                if not dir in files:
+                    files.append(dir)
+        for file in files:
+            if self._u_path_to_id(file) == id:
+                return file
+        raise base.InvalidId(id, revision=revision)
+
+    def _vcs_isdir(self, path, revision):
+        output = self._u_invoke_client('manifest', '--rev', revision)
+        files = output.splitlines()
+        if path in files:
+            return False
+        return True
+
+    def _vcs_listdir(self, path, revision):
+        output = self._u_invoke_client('manifest', '--rev', revision)
+        files = output.splitlines()
+        path = path.rstrip(os.path.sep) + os.path.sep
+        return [self._u_rel_path(f, path) for f in files if f.startswith(path)]
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         args = ['commit', '--logfile', commitfile]
