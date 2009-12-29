@@ -904,6 +904,10 @@ os.listdir(self.get_path("bugs")):
         >>> vcs = new()
         >>> vcs._u_rel_path("/a.b/c/.be", "/a.b/c")
         '.be'
+        >>> vcs._u_rel_path("/a.b/c/", "/a.b/c")
+        '.'
+        >>> vcs._u_rel_path("/a.b/c/", "/a.b/c/")
+        '.'
         """
         if root == None:
             if self.repo == None:
@@ -912,10 +916,10 @@ os.listdir(self.get_path("bugs")):
         path = os.path.abspath(path)
         absRoot = os.path.abspath(root)
         absRootSlashedDir = os.path.join(absRoot,"")
+        if path in [absRoot, absRootSlashedDir]:
+            return '.'
         if not path.startswith(absRootSlashedDir):
             raise InvalidPath(path, absRootSlashedDir)
-        assert path != absRootSlashedDir, \
-            "file %s == root directory %s" % (path, absRootSlashedDir)
         relpath = path[len(absRootSlashedDir):]
         return relpath
 
@@ -1093,4 +1097,5 @@ if libbe.TESTING == True:
     make_vcs_testcase_subclasses(VCS, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    #suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
+    suite = unittest.TestSuite([doctest.DocTestSuite()])
