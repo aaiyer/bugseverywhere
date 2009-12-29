@@ -53,9 +53,47 @@ class Darcs(base.VCS):
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
-        num_part = output.split(' ')[0]
-        self.parsed_version = [int(i) for i in num_part.split('.')]
-        return output
+        return output.rstrip('\n')
+
+    def version_cmp(self, *args):
+        """
+        Compare the installed darcs version V_i with another version
+        V_o (given in *args).  Returns
+           1 if V_i > V_o,
+           0 if V_i == V_o, and
+          -1 if V_i < V_o
+        >>> d = Darcs(repo='.')
+        >>> d._vcs_version = lambda : "2.3.1 (release)"
+        >>> d.version_cmp(2,3,1)
+        0
+        >>> d.version_cmp(2,3,2)
+        -1
+        >>> d.version_cmp(2,3,0)
+        1
+        >>> d.version_cmp(3)
+        -1
+        >>> d._vcs_version = lambda : "2.0.0pre2"
+        >>> d._parsed_version = None
+        >>> d.version_cmp(3)
+        Traceback (most recent call last):
+          ...
+        NotImplementedError: Cannot parse "2.0.0pre2" portion of Darcs version "2.0.0pre2"
+          invalid literal for int() with base 10: '0pre2'
+        """
+        if not hasattr(self, '_parsed_version') \
+                or self._parsed_version == None:
+            num_part = self._vcs_version().split(' ')[0]
+            try:
+                self._parsed_version = [int(i) for i in num_part.split('.')]
+            except ValueError, e:
+                raise NotImplementedError(
+                    'Cannot parse "%s" portion of Darcs version "%s"\n  %s'
+                    % (num_part, self._vcs_version(), str(e)))
+        cmps = [cmp(a,b) for a,b in zip(self._parsed_version, args)]
+        for c in cmps:
+            if c != 0:
+                return c
+        return 0
 
     def _vcs_get_user_id(self):
         # following http://darcs.net/manual/node4.html#SECTION00410030000000000000
@@ -113,45 +151,81 @@ class Darcs(base.VCS):
     def _vcs_get_file_contents(self, path, revision=None):
         if revision == None:
             return base.VCS._vcs_get_file_contents(self, path, revision)
+        if self.version_cmp(2, 0, 0) == 1:
+            status,output,error = self._u_invoke_client( \
+                'show', 'contents', '--patch', revision, path)
+            return output
+        # Darcs versions < 2.0.0pre2 lack the 'show contents' command
+
+        status,output,error = self._u_invoke_client( \
+            'diff', '--unified', '--from-patch', revision, path,
+            unicode_output=False)
+        major_patch = output
+        status,output,error = self._u_invoke_client( \
+            'diff', '--unified', '--patch', revision, path,
+            unicode_output=False)
+        target_patch = output
+
+        # '--output -' to be supported in GNU patch > 2.5.9
+        # but that hasn't been released as of June 30th, 2009.
+
+        # Rewrite path to status before the patch we want
+        args=['patch', '--reverse', path]
+        status,output,error = self._u_invoke(args, stdin=major_patch)
+        # Now apply the patch we want
+        args=['patch', path]
+        status,output,error = self._u_invoke(args, stdin=target_patch)
+
+        if os.path.exists(os.path.join(self.repo, path)) == True:
+            contents = base.VCS._vcs_get_file_contents(self, path)
         else:
-            if self.parsed_version[0] >= 2:
-                status,output,error = self._u_invoke_client( \
-                    'show', 'contents', '--patch', revision, path)
-                return output
+            contents = ''
+
+        # Now restore path to it's current incarnation
+        args=['patch', '--reverse', path]
+        status,output,error = self._u_invoke(args, stdin=target_patch)
+        args=['patch', path]
+        status,output,error = self._u_invoke(args, stdin=major_patch)
+        current_contents = base.VCS._vcs_get_file_contents(self, path)
+        return contents
+
+    def _vcs_path(self, id, revision):
+        return self._u_find_id(id, revision)
+
+    def _vcs_isdir(self, path, revision):
+        if self.version_cmp(2, 3, 1) == 1:
+            # Sun Nov 15 20:32:06 EST 2009  thomashartman1@gmail.com
+            #   * add versioned show files functionality (darcs show files -p 'some patch')
+            status,output,error = self._u_invoke_client( \
+                'show', 'files', '--no-files', '--patch', revision)
+            children = output.rstrip('\n').splitlines()
+            rpath = '.'
+            children = [self._u_rel_path(c, rpath) for c in children]
+            if path in children:
+                return True
+            return False
+        # Darcs versions <= 2.3.1 lack the --patch option for 'show files'
+        raise NotImplementedError
+
+    def _vcs_listdir(self, path, revision):
+        if self.version_cmp(2, 3, 1) == 1:
+            # Sun Nov 15 20:32:06 EST 2009  thomashartman1@gmail.com
+            #   * add versioned show files functionality (darcs show files -p 'some patch')
+            # Wed Dec  9 05:42:21 EST 2009  Luca Molteni <volothamp@gmail.com>
+            #   * resolve issue835 show file with file directory arguments
+            path = path.rstrip(os.path.sep)
+            status,output,error = self._u_invoke_client( \
+                'show', 'files', '--patch', revision, path)
+            files = output.rstrip('\n').splitlines()
+            if path == '.':
+                descendents = [self._u_rel_path(f, path) for f in files
+                               if f != '.']
             else:
-                # Darcs versions < 2.0.0pre2 lack the 'show contents' command
-
-                status,output,error = self._u_invoke_client( \
-                    'diff', '--unified', '--from-patch', revision, path,
-                    unicode_output=False)
-                major_patch = output
-                status,output,error = self._u_invoke_client( \
-                    'diff', '--unified', '--patch', revision, path,
-                    unicode_output=False)
-                target_patch = output
-
-                # '--output -' to be supported in GNU patch > 2.5.9
-                # but that hasn't been released as of June 30th, 2009.
-
-                # Rewrite path to status before the patch we want
-                args=['patch', '--reverse', path]
-                status,output,error = self._u_invoke(args, stdin=major_patch)
-                # Now apply the patch we want
-                args=['patch', path]
-                status,output,error = self._u_invoke(args, stdin=target_patch)
-
-                if os.path.exists(os.path.join(self.repo, path)) == True:
-                    contents = base.VCS._vcs_get_file_contents(self, path)
-                else:
-                    contents = ''
-
-                # Now restore path to it's current incarnation
-                args=['patch', '--reverse', path]
-                status,output,error = self._u_invoke(args, stdin=target_patch)
-                args=['patch', path]
-                status,output,error = self._u_invoke(args, stdin=major_patch)
-                current_contents = base.VCS._vcs_get_file_contents(self, path)
-                return contents
+                descendents = [self._u_rel_path(f, path) for f in files
+                               if f.startswith(path)]
+            return [f for f in descendents if f.count(os.path.sep) == 0]
+        # Darcs versions <= 2.3.1 lack the --patch option for 'show files'
+        raise NotImplementedError
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         id = self.get_user_id()
