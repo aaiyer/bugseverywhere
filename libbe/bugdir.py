@@ -300,17 +300,23 @@ class BugDir (list, settings_object.SavedSettingsObject):
             raise libbe.storage.InvalidStorageVersion(storage_version)
         s = copy.deepcopy(self.storage)
         s.writeable = False
-        class RevisionedStorageGet (object):
+        class RevisionedStorage (object):
             def __init__(self, storage, default_revision):
                 self.s = storage
                 self.sget = self.s.get
+                self.schildren = self.s.children
                 self.r = default_revision
             def get(self, *args, **kwargs):
                 if not 'revision' in kwargs or kwargs['revision'] == None:
                     kwargs['revision'] = self.r
                 return self.sget(*args, **kwargs)
-        rsg = RevisionedStorageGet(s, revision)
-        s.get = rsg.get
+            def children(self, *args, **kwargs):
+                if not 'revision' in kwargs or kwargs['revision'] == None:
+                    kwargs['revision'] = self.r
+                return self.schildren(*args, **kwargs)
+        rs = RevisionedStorage(s, revision)
+        s.get = rs.get
+        s.children = rs.children
         dbd = BugDir(s, from_storage=True)
 #        dbd = copy.copy(self)
 #        dbd.storage = copy.copy(self.storage)
