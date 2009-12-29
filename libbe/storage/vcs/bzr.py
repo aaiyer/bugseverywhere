@@ -51,7 +51,7 @@ def new():
 
 class Bzr(base.VCS):
     name = 'bzr'
-    client = None # bzrlib
+    client = None # bzrlib module
 
     def __init__(self, *args, **kwargs):
         base.VCS.__init__(self, *args, **kwargs)
