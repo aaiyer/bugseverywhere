@@ -125,7 +125,8 @@ class Git(base.VCS):
     def _vcs_isdir(self, path, revision):
         arg = '%s:%s' % (revision,path)
         args = ['ls-tree', arg]
-        status,output,error = self._u_invoke_client(*args, expect=(0,128))
+        kwargs = {'expect':(0,128)}
+        status,output,error = self._u_invoke_client(*args, **kwargs)
         if status != 0:
             if 'not a tree object' in error:
                 return False
