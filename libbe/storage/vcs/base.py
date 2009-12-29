@@ -908,6 +908,8 @@ os.listdir(self.get_path("bugs")):
         '.'
         >>> vcs._u_rel_path("/a.b/c/", "/a.b/c/")
         '.'
+        >>> vcs._u_rel_path("./a", ".")
+        'a'
         """
         if root == None:
             if self.repo == None:
@@ -1097,5 +1099,4 @@ if libbe.TESTING == True:
     make_vcs_testcase_subclasses(VCS, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-    #suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
-    suite = unittest.TestSuite([doctest.DocTestSuite()])
+    suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
