@@ -156,7 +156,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     def _set_comment_body(self, old=None, new=None, force=False):
         assert self.uuid != INVALID_UUID, self
         if self.bug != None and self.bug.bugdir != None:
-            new = libbe.util.id.short_to_long_user([self.bug.bugdir], new)
+            new = libbe.util.id.short_to_long_text([self.bug.bugdir], new)
         if (self.storage != None and self.storage.writeable == True) \
                 or force==True:
             assert new != None, "Can't save empty comment"
@@ -464,7 +464,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         if self.content_type.startswith("text/"):
             body = (self.body or "")
             if self.bug != None and self.bug.bugdir != None:
-                body = libbe.util.id.long_to_short_user([self.bug.bugdir], body)
+                body = libbe.util.id.long_to_short_text([self.bug.bugdir], body)
             lines.extend(body.splitlines())
         else:
             lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)
