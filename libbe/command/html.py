@@ -119,14 +119,6 @@ directory.
 
 Html = HTML # alias for libbe.command.base.get_command_class()
 
-def help():
-    return get_parser().help_str() + longhelp
-
-def complete(options, args, parser):
-    for option, value in cmdutil.option_value_pairs(options, parser):
-        if "--complete" in args:
-            raise cmdutil.GetCompletions() # no positional arguments for list
-
 class HTMLGen (object):
     def __init__(self, bd, template=None,
                  title="Site Title", index_header="Index Header",
@@ -259,8 +251,8 @@ class HTMLGen (object):
                                 % (comment.uuid, comment.content_type),
                             [per_bug_dir, '.htaccess'], mode='a')
                         self._write_file( # TODO: long_to_linked_user()
-                            libbe.util.id.long_to_short_user(
-                                self.bd, comment.body),
+                            libbe.util.id.long_to_short_text(
+                                [self.bd], comment.body),
                             [per_bug_dir, comment.uuid], mode='wb')
                 else:
                     value = self._escape(value)
@@ -339,7 +331,8 @@ class HTMLGen (object):
             try:
                 os.makedirs(dir_path)
             except:
-                raise cmdutil.UsageError, 'Cannot create output directory "%s".' % dir_path
+                raise libbe.command.UserError(
+                    'Cannot create output directory "%s".' % dir_path)
         return dir_path
 
     def _write_file(self, content, path_array, mode='w'):
