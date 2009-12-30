@@ -70,7 +70,9 @@ class Hg(base.VCS):
         stdout = sys.stdout
         tmp_stdout = StringIO.StringIO()
         sys.stdout = tmp_stdout
+        cwd = os.getcwd()
         mercurial.dispatch.dispatch(fullargs)
+        os.chdir(cwd)
         sys.stdout = stdout
         return tmp_stdout.getvalue().rstrip('\n')
 
