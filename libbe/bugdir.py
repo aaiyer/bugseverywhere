@@ -39,6 +39,7 @@ import libbe.storage.util.settings_object as settings_object
 import libbe.storage.util.mapfile as mapfile
 import libbe.bug as bug
 import libbe.util.utility as utility
+import libbe.util.id
 
 if libbe.TESTING == True:
     import doctest
@@ -73,11 +74,13 @@ class MultipleBugMatches(ValueError):
         self.shortname = shortname
         self.matches = matches
 
-class NoBugMatches(KeyError):
-    def __init__(self, shortname):
-        msg = "No bug matches %s" % shortname
-        KeyError.__init__(self, msg)
-        self.shortname = shortname
+class NoBugMatches(libbe.util.id.NoIDMatches):
+    def __init__(self, *args, **kwargs):
+        libbe.util.id.NoIDMatches.__init__(self, *args, **kwargs)
+    def __str__(self):
+        if self.msg == None:
+            return 'No bug matches %s' % self.id
+        return self.msg
 
 class DiskAccessRequired (Exception):
     def __init__(self, goal):
@@ -270,8 +273,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     def bug_from_uuid(self, uuid):
         if not self.has_bug(uuid):
-            raise NoBugMatches('No bug matches %s\n  bug map: %s\n  repo: %s' \
-                               % (uuid, self._bug_map, self.storage))
+            raise NoBugMatches(
+                uuid, self.uuids(),
+                'No bug matches %s in %s' % (uuid, self.storage))
         if self._bug_map[uuid] == None:
             self._load_bug(uuid)
         return self._bug_map[uuid]

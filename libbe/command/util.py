@@ -34,17 +34,86 @@ def complete_path(command, argument, fragment=None):
     return comps
 
 def complete_status(command, argument, fragment=None):
-    return [fragment]
+    bd = command._get_bugdir()
+    import libbe.bug
+    return libbe.bug.status_values
+
 def complete_severity(command, argument, fragment=None):
-    return [fragment]
+    bd = command._get_bugdir()
+    import libbe.bug
+    return libbe.bug.severity_values
+
 def complete_assigned(command, argument, fragment=None):
+    if fragment == None:
+        return []
     return [fragment]
+
 def complete_extra_strings(command, argument, fragment=None):
+    if fragment == None:
+        return []
     return [fragment]
+
 def complete_bug_id(command, argument, fragment=None):
-    return [fragment]
-def complete_bug_comment_id(command, argument, fragment=None):
-    return [fragment]
+    return complete_bug_comment_id(command, argument, fragment,
+                                   comments=False)
+
+def complete_bug_comment_id(command, argument, fragment=None,
+                            active_only=True, comments=True):
+    import libbe.bugdir
+    import libbe.util.id
+    bd = command._get_bugdir()
+    if fragment == None or len(fragment) == 0:
+        fragment = '/'
+    try:
+        p = libbe.util.id.parse_user(bd, fragment)
+        matches = None
+        root,residual = (fragment, None)
+        if not root.endswith('/'):
+            root += '/'
+    except libbe.util.id.InvalidIDStructure, e:
+        return []
+    except libbe.util.id.NoIDMatches:
+        return []
+    except libbe.util.id.MultipleIDMatches, e:
+        if e.common == None:
+            # choose among bugdirs
+            return e.matches
+        common = e.common
+        matches = e.matches
+        root,residual = libbe.util.id.residual(common, fragment)
+        p = libbe.util.id.parse_user(bd, e.common)
+    bug = None
+    if matches == None: # fragment was complete, get a list of children uuids
+        if p['type'] == 'bugdir':
+            matches = bd.uuids()
+            common = bd.id.user()
+        elif p['type'] == 'bug':
+            if comments == False:
+                return [fragment]
+            bug = bd.bug_from_uuid(p['bug'])
+            matches = bug.uuids()
+            common = bug.id.user()
+        else:
+            assert p['type'] == 'comment', p
+            return [fragment]
+    if p['type'] == 'bugdir':
+        child_fn = bd.bug_from_uuid
+    elif p['type'] == 'bug':
+        if comments == False:
+            return[fragment]
+        if bug == None:
+            bug = bd.bug_from_uuid(p['bug'])
+        child_fn = bug.comment_from_uuid
+    elif p['type'] == 'comment':
+        assert matches == None, matches
+        return [fragment]
+    possible = []
+    common += '/'
+    for m in matches:
+        child = child_fn(m)
+        id = child.id.user()
+        possible.append(id.replace(common, root))
+    return possible
 
 def select_values(string, possible_values, name="unkown"):
     """
