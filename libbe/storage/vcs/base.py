@@ -1085,7 +1085,8 @@ if libbe.TESTING == True:
             vcs_testcase_classes = [
                 c for c in (
                     ob for ob in globals().values() if isinstance(ob, type))
-                if issubclass(c, VCSTestCase)]
+                if issubclass(c, VCSTestCase) \
+                    and c.Class == VCS]
 
             for base_class in vcs_testcase_classes:
                 testcase_class_name = vcs_class.__name__ + base_class.__name__
