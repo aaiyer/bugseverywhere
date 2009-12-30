@@ -22,8 +22,6 @@ Mercurial (hg) backend.
 """
 
 try:
-    # enable importing on demand to reduce startup time
-    from mercurial import demandimport; demandimport.enable()
     import mercurial
     import mercurial.version
     import mercurial.dispatch
