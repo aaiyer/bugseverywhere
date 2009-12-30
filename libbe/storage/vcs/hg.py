@@ -67,13 +67,12 @@ class Hg(base.VCS):
         if 'cwd' not in kwargs:
             kwargs['cwd'] = self.repo
         assert len(kwargs) == 1, kwargs
-        ui = mercurial.ui.ui(interactive=False)
         fullargs = ['--cwd', kwargs['cwd']]
         fullargs.extend(args)
         stdout = sys.stdout
         tmp_stdout = StringIO.StringIO()
         sys.stdout = tmp_stdout
-        mercurial.dispatch._dispatch(ui, fullargs)
+        mercurial.dispatch.dispatch(fullargs)
         sys.stdout = stdout
         return tmp_stdout.getvalue().rstrip('\n')
 
