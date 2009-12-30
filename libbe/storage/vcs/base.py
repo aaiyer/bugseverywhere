@@ -760,6 +760,9 @@ os.listdir(self.get_path("bugs")):
                                  listdir(os.path.join(path, c))])
             elif c in ['id-cache', 'version']:
                 children[i] = None
+            elif self.interspersed_vcs_files \
+                    and self._vcs_is_versioned(c) == False:
+                children[i] = None
         for i,c in enumerate(children):
             if c == None: continue
             cpath = os.path.join(path, c)
