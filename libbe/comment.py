@@ -448,7 +448,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> print comm.string(indent=2)
           --------- Comment ---------
           Name: //abc
-          From:
+          From: 
           Date: Thu, 01 Jan 1970 00:00:00 +0000
         <BLANKLINE>
           Some
@@ -507,50 +507,50 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> print a.string_thread(flatten=True)
         --------- Comment ---------
         Name: //a
-        From:
+        From: 
         Date: Thu, 20 Nov 2008 01:00:00 +0000
         <BLANKLINE>
         Insightful remarks
           --------- Comment ---------
           Name: //b
-          From:
+          From: 
           Date: Thu, 20 Nov 2008 02:00:00 +0000
         <BLANKLINE>
           Critique original comment
           --------- Comment ---------
           Name: //c
-          From:
+          From: 
           Date: Thu, 20 Nov 2008 03:00:00 +0000
         <BLANKLINE>
           Begin flamewar :p
         --------- Comment ---------
         Name: //d
-        From:
+        From: 
         Date: Thu, 20 Nov 2008 04:00:00 +0000
         <BLANKLINE>
         Useful examples
         >>> print a.string_thread()
         --------- Comment ---------
         Name: //a
-        From:
+        From: 
         Date: Thu, 20 Nov 2008 01:00:00 +0000
         <BLANKLINE>
         Insightful remarks
           --------- Comment ---------
           Name: //b
-          From:
+          From: 
           Date: Thu, 20 Nov 2008 02:00:00 +0000
         <BLANKLINE>
           Critique original comment
           --------- Comment ---------
           Name: //c
-          From:
+          From: 
           Date: Thu, 20 Nov 2008 03:00:00 +0000
         <BLANKLINE>
           Begin flamewar :p
         --------- Comment ---------
         Name: //d
-        From:
+        From: 
         Date: Thu, 20 Nov 2008 04:00:00 +0000
         <BLANKLINE>
         Useful examples

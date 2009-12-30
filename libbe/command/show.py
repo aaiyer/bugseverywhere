@@ -45,8 +45,8 @@ class Show (libbe.command.Command):
       Short name : abc/a
         Severity : minor
           Status : open
-        Assigned :
-        Reporter :
+        Assigned : 
+        Reporter : 
          Creator : John Doe <jdoe@example.com>
          Created : ...
     Bug A
