@@ -167,7 +167,7 @@ class BE (libbe.command.Command):
     >>> p = CmdOptionParser(be)
     >>> p.exit_after_callback = False
     >>> try:
-    ...     options,args = p.parse_args(['--help']) # doctest: +ELLIPSIS
+    ...     options,args = p.parse_args(['--help']) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     ... except CallbackExit:
     ...     pass
     usage: be [options] [COMMAND [command-options] [COMMAND-ARGS ...]]
