@@ -41,22 +41,19 @@ class HTML (libbe.command.Command):
     >>> cmd._setup_io = lambda i_enc,o_enc : None
     >>> cmd.stdout = sys.stdout
 
-    >>> cwd = os.getcwd()
-    >>> os.chdir(bd.storage.repo)
-    >>> ret = cmd.run()
-    >>> os.path.exists('./html_export')
+    >>> ret = cmd.run({'output':os.path.join(bd.storage.repo, 'html_export')})
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export'))
     True
-    >>> os.path.exists('./html_export/index.html')
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'index.html'))
     True
-    >>> os.path.exists('./html_export/index_inactive.html')
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'index_inactive.html'))
     True
-    >>> os.path.exists('./html_export/bugs')
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs'))
     True
-    >>> os.path.exists('./html_export/bugs/a.html')
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'a.html'))
     True
-    >>> os.path.exists('./html_export/bugs/b.html')
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'b.html'))
     True
-    >>> os.chdir(cwd)
     >>> bd.cleanup()
     """
     name = 'html'
