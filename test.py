@@ -52,7 +52,11 @@ def python_tree(root_path='libbe', root_modname='libbe'):
     return tree
 
 def add_module_tests(suite, modname):
-    mod = import_by_name(modname)
+    try:
+        mod = import_by_name(modname)
+    except ValueError, e:
+        print >> sys.stderr, 'Failed to import "%s"' % (modname)
+        raise e
     if hasattr(mod, 'suite'):
         s = mod.suite
     else:
