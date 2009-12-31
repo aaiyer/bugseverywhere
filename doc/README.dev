@@ -1,0 +1,64 @@
+Extending BE
+============
+
+Adding commands
+---------------
+
+To write a plugin, you simply create a new file in the libbe/commands/
+directory.  Take a look at one of the simpler plugins (e.g. remove.py)
+for an example of how that looks, and to start getting a feel for the
+libbe interface.
+
+See libbe/commands/base.py for the definition of the important classes
+Option, Argument, Command, InputOutput, StorageCallbacks, and
+UserInterface classes.  You'll be subclassing Command for your
+command, but all those classes will be important.
+
+
+Command completion
+
+BE implements a general framework to make it easy to support command
+completion for arbitrary plugins.  In order to support this system,
+any of your completable Argument() instances (in your commands
+.options or .args) should be initialized with some valid
+completion_callback function.  Some common cases are defined in
+libbe.command.util.  If you need more flexibility, see
+libbe.command.list's "--sort" option for an example of extensions via
+libbe.command.util.Completer, or write a custom completion function
+from scratch.
+
+
+Adding user interfaces
+----------------------
+
+Take a look at libbe/ui/command_line.py for an example.  Basically
+you'll need to setup a UserInterface instance for running commands.
+More details to come after I write an HTML ui...
+
+
+Testing
+=======
+
+Run any tests in your module with
+  be$ python test.py <python.module.name>
+for example
+  be$ python test.py libbe.command.merge
+
+For a definition of "any tests", see test.py's add_module_tests()
+function.
+
+
+Profiling
+=========
+
+Find out which 20 calls take the most cumulative time (time of
+execution + childrens' times).
+
+  $ python -m cProfile -o profile be [command] [args]
+  $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_stats(20)"
+
+It's often useful to toss a
+  import sys, traceback
+  print >> sys.stderr, '-'*60, '\n', '\n'.join(traceback.format_stack()[-10:])
+into expensive functions (e.g. libbe.util.subproc.invoke()), if you're
+not sure why they're being called.

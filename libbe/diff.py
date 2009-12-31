@@ -22,47 +22,48 @@ import difflib
 import types
 
 import libbe
-from libbe import bugdir, bug, settings_object, tree
-from libbe.utility import time_to_str
-if libbe.TESTING == True:
-    import doctest
+import libbe.bugdir
+import libbe.bug
+import libbe.util.tree
+from libbe.storage.util.settings_object import setting_name_to_attr_name
+from libbe.util.utility import time_to_str
 
 
-class SubscriptionType (tree.Tree):
+class SubscriptionType (libbe.util.tree.Tree):
     """
     Trees of subscription types to allow users to select exactly what
     notifications they want to subscribe to.
     """
     def __init__(self, type_name, *args, **kwargs):
-        tree.Tree.__init__(self, *args, **kwargs)
+        libbe.util.tree.Tree.__init__(self, *args, **kwargs)
         self.type = type_name
     def __str__(self):
         return self.type
     def __cmp__(self, other):
         return cmp(self.type, other.type)
     def __repr__(self):
-        return "<SubscriptionType: %s>" % str(self)
+        return '<SubscriptionType: %s>' % str(self)
     def string_tree(self, indent=0):
         lines = []
         for depth,node in self.thread():
-            lines.append("%s%s" % (" "*(indent+2*depth), node))
-        return "\n".join(lines)
+            lines.append('%s%s' % (' '*(indent+2*depth), node))
+        return '\n'.join(lines)
 
-BUGDIR_ID = "DIR"
-BUGDIR_TYPE_NEW = SubscriptionType("new")
-BUGDIR_TYPE_MOD = SubscriptionType("mod")
-BUGDIR_TYPE_REM = SubscriptionType("rem")
-BUGDIR_TYPE_ALL = SubscriptionType("all",
+BUGDIR_ID = 'DIR'
+BUGDIR_TYPE_NEW = SubscriptionType('new')
+BUGDIR_TYPE_MOD = SubscriptionType('mod')
+BUGDIR_TYPE_REM = SubscriptionType('rem')
+BUGDIR_TYPE_ALL = SubscriptionType('all',
                       [BUGDIR_TYPE_NEW, BUGDIR_TYPE_MOD, BUGDIR_TYPE_REM])
 
 # same name as BUGDIR_TYPE_ALL for consistency
 BUG_TYPE_ALL = SubscriptionType(str(BUGDIR_TYPE_ALL))
 
-INVALID_TYPE = SubscriptionType("INVALID")
+INVALID_TYPE = SubscriptionType('INVALID')
 
 class InvalidType (ValueError):
     def __init__(self, type_name, type_root):
-        msg = "Invalid type %s for tree:\n%s" \
+        msg = 'Invalid type %s for tree:\n%s' \
             % (type_name, type_root.string_tree(4))
         ValueError.__init__(self, msg)
         self.type_name = type_name
@@ -89,9 +90,9 @@ class Subscription (object):
     def __init__(self, id, subscription_type, **kwargs):
         if 'type_root' not in kwargs:
             if id == BUGDIR_ID:
-                kwargs['type_root'] = BUGDIR_TYPE_ALL 
+                kwargs['type_root'] = BUGDIR_TYPE_ALL
             else:
-                kwargs['type_root'] = BUG_TYPE_ALL 
+                kwargs['type_root'] = BUG_TYPE_ALL
         if type(subscription_type) in types.StringTypes:
             subscription_type = type_from_name(subscription_type, **kwargs)
         self.id = id
@@ -108,7 +109,7 @@ class Subscription (object):
     def __str__(self):
         return str(self.type)
     def __repr__(self):
-        return "<Subscription: %s (%s)>" % (self.id, self.type)
+        return '<Subscription: %s (%s)>' % (self.id, self.type)
 
 def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
     """
@@ -133,48 +134,48 @@ def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
         subscriptions.append(Subscription(id, type))
     return subscriptions
 
-class DiffTree (tree.Tree):
+class DiffTree (libbe.util.tree.Tree):
     """
     A tree holding difference data for easy report generation.
-    >>> bugdir = DiffTree("bugdir")
-    >>> bdsettings = DiffTree("settings", data="target: None -> 1.0")
+    >>> bugdir = DiffTree('bugdir')
+    >>> bdsettings = DiffTree('settings', data='target: None -> 1.0')
     >>> bugdir.append(bdsettings)
-    >>> bugs = DiffTree("bugs", "bug-count: 5 -> 6")
+    >>> bugs = DiffTree('bugs', 'bug-count: 5 -> 6')
     >>> bugdir.append(bugs)
-    >>> new = DiffTree("new", "new bugs: ABC, DEF")
+    >>> new = DiffTree('new', 'new bugs: ABC, DEF')
     >>> bugs.append(new)
-    >>> rem = DiffTree("rem", "removed bugs: RST, UVW")
+    >>> rem = DiffTree('rem', 'removed bugs: RST, UVW')
     >>> bugs.append(rem)
     >>> print bugdir.report_string()
     target: None -> 1.0
     bug-count: 5 -> 6
       new bugs: ABC, DEF
       removed bugs: RST, UVW
-    >>> print "\\n".join(bugdir.paths())
+    >>> print '\\n'.join(bugdir.paths())
     bugdir
     bugdir/settings
     bugdir/bugs
     bugdir/bugs/new
     bugdir/bugs/rem
-    >>> bugdir.child_by_path("/") == bugdir
+    >>> bugdir.child_by_path('/') == bugdir
     True
-    >>> bugdir.child_by_path("/bugs") == bugs
+    >>> bugdir.child_by_path('/bugs') == bugs
     True
-    >>> bugdir.child_by_path("/bugs/rem") == rem
+    >>> bugdir.child_by_path('/bugs/rem') == rem
     True
-    >>> bugdir.child_by_path("bugdir") == bugdir
+    >>> bugdir.child_by_path('bugdir') == bugdir
     True
-    >>> bugdir.child_by_path("bugdir/") == bugdir
+    >>> bugdir.child_by_path('bugdir/') == bugdir
     True
-    >>> bugdir.child_by_path("bugdir/bugs") == bugs
+    >>> bugdir.child_by_path('bugdir/bugs') == bugs
     True
-    >>> bugdir.child_by_path("/bugs").masked = True
+    >>> bugdir.child_by_path('/bugs').masked = True
     >>> print bugdir.report_string()
     target: None -> 1.0
     """
     def __init__(self, name, data=None, data_part_fn=str,
                  requires_children=False, masked=False):
-        tree.Tree.__init__(self)
+        libbe.util.tree.Tree.__init__(self)
         self.name = name
         self.data = data
         self.data_part_fn = data_part_fn
@@ -185,17 +186,17 @@ class DiffTree (tree.Tree):
         if parent_path == None:
             path = self.name
         else:
-            path = "%s/%s" % (parent_path, self.name)
+            path = '%s/%s' % (parent_path, self.name)
         paths.append(path)
         for child in self:
             paths.extend(child.paths(path))
         return paths
     def child_by_path(self, path):
-        if hasattr(path, "split"): # convert string path to a list of names
-            names = path.split("/")
-            if names[0] == "":
+        if hasattr(path, 'split'): # convert string path to a list of names
+            names = path.split('/')
+            if names[0] == '':
                 names[0] = self.name # replace root with self
-            if len(names) > 1 and names[-1] == "":
+            if len(names) > 1 and names[-1] == '':
                 names = names[:-1] # strip empty tail
         else: # it was already an array
             names = path
@@ -208,7 +209,7 @@ class DiffTree (tree.Tree):
                     return child.child_by_path(names[1:])
         if len(names) == 1:
             raise KeyError, "%s doesn't match '%s'" % (names, self.name)
-        raise KeyError, "%s points to child not in %s" % (names, [c.name for c in self])
+        raise KeyError, '%s points to child not in %s' % (names, [c.name for c in self])
     def report_string(self):
         report = self.report()
         if report == None:
@@ -238,13 +239,13 @@ class DiffTree (tree.Tree):
     def data_part(self, depth, indent=True):
         if self.data == None:
             return None
-        if hasattr(self, "_cached_data_part"):
+        if hasattr(self, '_cached_data_part'):
             return self._cached_data_part
         data_part = self.data_part_fn(self.data)
         if indent == True:
             data_part_lines = data_part.splitlines()
-            indent = "  "*(depth)
-            line_sep = "\n"+indent
+            indent = '  '*(depth)
+            line_sep = '\n'+indent
             data_part = indent+line_sep.join(data_part_lines)
         self._cached_data_part = data_part
         return data_part
@@ -253,21 +254,21 @@ class Diff (object):
     """
     Difference tree generator for BugDirs.
     >>> import copy
-    >>> bd = bugdir.SimpleBugDir(sync_with_disk=False)
-    >>> bd.user_id = "John Doe <j@doe.com>"
+    >>> bd = libbe.bugdir.SimpleBugDir(memory=True)
     >>> bd_new = copy.deepcopy(bd)
-    >>> bd_new.target = "1.0"
-    >>> a = bd_new.bug_from_uuid("a")
+    >>> bd_new.target = '1.0'
+    >>> a = bd_new.bug_from_uuid('a')
     >>> rep = a.comment_root.new_reply("I'm closing this bug")
-    >>> rep.uuid = "acom"
-    >>> rep.date = "Thu, 01 Jan 1970 00:00:00 +0000"
-    >>> a.status = "closed"
-    >>> b = bd_new.bug_from_uuid("b")
+    >>> rep.uuid = 'acom'
+    >>> rep.author = 'John Doe <j@doe.com>'
+    >>> rep.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
+    >>> a.status = 'closed'
+    >>> b = bd_new.bug_from_uuid('b')
     >>> bd_new.remove_bug(b)
-    >>> c = bd_new.new_bug("c", "Bug C")
+    >>> c = bd_new.new_bug('Bug C', _uuid='c')
     >>> d = Diff(bd, bd_new)
     >>> r = d.report_tree()
-    >>> print "\\n".join(r.paths())
+    >>> print '\\n'.join(r.paths())
     bugdir
     bugdir/settings
     bugdir/bugs
@@ -287,11 +288,11 @@ class Diff (object):
     Changed bug directory settings:
       target: None -> 1.0
     New bugs:
-      c:om: Bug C
+      abc/c:om: Bug C
     Removed bugs:
-      b:cm: Bug B
+      abc/b:cm: Bug B
     Modified bugs:
-      a:cm: Bug A
+      abc/a:cm: Bug A
         Changed bug settings:
           status: open -> closed
         New comments:
@@ -306,9 +307,9 @@ class Diff (object):
     >>> r = d.report_tree(subscriptions)
     >>> print r.report_string()
     New bugs:
-      c:om: Bug C
+      abc/c:om: Bug C
     Removed bugs:
-      b:cm: Bug B
+      abc/b:cm: Bug B
 
     While sending subscriptions to report_tree() makes the report
     generation more efficient (because you may not need to compare
@@ -319,10 +320,10 @@ class Diff (object):
     >>> d.full_report()
     >>> print d.report_tree([subscriptions[0]]).report_string()
     New bugs:
-      c:om: Bug C
+      abc/c:om: Bug C
     >>> print d.report_tree([subscriptions[1]]).report_string()
     Removed bugs:
-      b:cm: Bug B
+      abc/b:cm: Bug B
 
     >>> bd.cleanup()
     """
@@ -356,9 +357,9 @@ class Diff (object):
         for s in subscriptions:
             if s.id != BUGDIR_ID:
                 try:
-                    bug = self.new_bugdir.bug_from_shortname(s.id)
-                except bugdir.NoBugMatches:
-                    bug = self.old_bugdir.bug_from_shortname(s.id)
+                    bug = self.new_bugdir.bug_from_uuid(s.id)
+                except libbe.bugdir.NoBugMatches:
+                    bug = self.old_bugdir.bug_from_uuid(s.id)
                 subscribed_bugs.append(bug.uuid)
         new_uuids.extend([s for s in subscribed_bugs
                           if self.new_bugdir.has_bug(s)])
@@ -382,9 +383,9 @@ class Diff (object):
             if BUGDIR_TYPE_ALL in bugdir_types \
                     or BUGDIR_TYPE_MOD in bugdir_types \
                     or uuid in subscribed_bugs:
-                if old_bug.sync_with_disk == True:
+                if old_bug.storage != None and old_bug.storage.is_readable():
                     old_bug.load_comments()
-                if new_bug.sync_with_disk == True:
+                if new_bug.storage != None and new_bug.storage.is_readable():
                     new_bug.load_comments()
                 if old_bug != new_bug:
                     modified.append((old_bug, new_bug))
@@ -405,7 +406,7 @@ class Diff (object):
           (added_comments, modified_comments, removed_comments)
         analogous to ._changed_bugs.
         """
-        if hasattr(self, "__changed_comments"):
+        if hasattr(self, '__changed_comments'):
             if new.uuid in self.__changed_comments:
                 return self.__changed_comments[new.uuid]
         else:
@@ -453,13 +454,12 @@ class Diff (object):
         properties = sorted(new.settings_properties)
         for p in hidden_properties:
             properties.remove(p)
-        attributes = [settings_object.setting_name_to_attr_name(None, p)
+        attributes = [setting_name_to_attr_name(None, p)
                       for p in properties]
         return self._attribute_changes(old, new, attributes)
     def _bugdir_attribute_changes(self):
         return self._settings_properties_attribute_changes( \
-            self.old_bugdir, self.new_bugdir,
-            ["vcs_name"]) # tweaked by bugdir.duplicate_bugdir
+            self.old_bugdir, self.new_bugdir)
     def _bug_attribute_changes(self, old, new):
         return self._settings_properties_attribute_changes(old, new)
     def _comment_attribute_changes(self, old, new):
@@ -529,65 +529,64 @@ class Diff (object):
         if subscriptions == None:
             subscriptions = [Subscription(BUGDIR_ID, BUGDIR_TYPE_ALL)]
         bugdir_settings = sorted(self.new_bugdir.settings_properties)
-        bugdir_settings.remove("vcs_name") # tweaked by bugdir.duplicate_bugdir
-        root = diff_tree("bugdir")
+        root = diff_tree('bugdir')
         bugdir_subscriptions = [s.type for s in subscriptions
                                 if s.id == BUGDIR_ID]
         if BUGDIR_TYPE_ALL in bugdir_subscriptions:
             bugdir_attribute_changes = self._bugdir_attribute_changes()
             if len(bugdir_attribute_changes) > 0:
-                bugdir = diff_tree("settings", bugdir_attribute_changes,
+                bugdir = diff_tree('settings', bugdir_attribute_changes,
                                    self.bugdir_attribute_change_string)
                 root.append(bugdir)
-        bug_root = diff_tree("bugs")
+        bug_root = diff_tree('bugs')
         root.append(bug_root)
         add,mod,rem = self._changed_bugs(subscriptions)
-        bnew = diff_tree("new", "New bugs:", requires_children=True)
+        bnew = diff_tree('new', 'New bugs:', requires_children=True)
         bug_root.append(bnew)
         for bug in add:
             b = diff_tree(bug.uuid, bug, self.bug_add_string)
             bnew.append(b)
-        brem = diff_tree("rem", "Removed bugs:", requires_children=True)
+        brem = diff_tree('rem', 'Removed bugs:', requires_children=True)
         bug_root.append(brem)
         for bug in rem:
             b = diff_tree(bug.uuid, bug, self.bug_rem_string)
             brem.append(b)
-        bmod = diff_tree("mod", "Modified bugs:", requires_children=True)
+        bmod = diff_tree('mod', 'Modified bugs:', requires_children=True)
         bug_root.append(bmod)
         for old,new in mod:
             b = diff_tree(new.uuid, (old,new), self.bug_mod_string)
             bmod.append(b)
             bug_attribute_changes = self._bug_attribute_changes(old, new)
             if len(bug_attribute_changes) > 0:
-                bset = diff_tree("settings", bug_attribute_changes,
+                bset = diff_tree('settings', bug_attribute_changes,
                                  self.bug_attribute_change_string)
                 b.append(bset)
             if old.summary != new.summary:
                 data = (old.summary, new.summary)
-                bsum = diff_tree("summary", data, self.bug_summary_change_string)
+                bsum = diff_tree('summary', data, self.bug_summary_change_string)
                 b.append(bsum)
-            cr = diff_tree("comments")
+            cr = diff_tree('comments')
             b.append(cr)
             a,m,d = self._changed_comments(old, new)
-            cnew = diff_tree("new", "New comments:", requires_children=True)
+            cnew = diff_tree('new', 'New comments:', requires_children=True)
             for comment in a:
                 c = diff_tree(comment.uuid, comment, self.comment_add_string)
                 cnew.append(c)
-            crem = diff_tree("rem", "Removed comments:",requires_children=True)
+            crem = diff_tree('rem', 'Removed comments:',requires_children=True)
             for comment in d:
                 c = diff_tree(comment.uuid, comment, self.comment_rem_string)
                 crem.append(c)
-            cmod = diff_tree("mod","Modified comments:",requires_children=True)
+            cmod = diff_tree('mod','Modified comments:',requires_children=True)
             for o,n in m:
                 c = diff_tree(n.uuid, (o,n), self.comment_mod_string)
                 cmod.append(c)
                 comm_attribute_changes = self._comment_attribute_changes(o, n)
                 if len(comm_attribute_changes) > 0:
-                    cset = diff_tree("settings", comm_attribute_changes,
+                    cset = diff_tree('settings', comm_attribute_changes,
                                      self.comment_attribute_change_string)
                 if o.body != n.body:
                     data = (o.body, n.body)
-                    cbody = diff_tree("cbody", data,
+                    cbody = diff_tree('cbody', data,
                                       self.comment_body_change_string)
                     c.append(cbody)
             cr.extend([cnew, crem, cmod])
@@ -597,19 +596,19 @@ class Diff (object):
     # Feel free to play with these in subclasses.
 
     def attribute_change_string(self, attribute_changes, indent=0):
-        indent_string = "  "*indent
-        change_strings = [u"%s: %s -> %s" % f for f in attribute_changes]
+        indent_string = '  '*indent
+        change_strings = [u'%s: %s -> %s' % f for f in attribute_changes]
         for i,change_string in enumerate(change_strings):
             change_strings[i] = indent_string+change_string
-        return u"\n".join(change_strings)
+        return u'\n'.join(change_strings)
     def bugdir_attribute_change_string(self, attribute_changes):
-        return "Changed bug directory settings:\n%s" % \
+        return 'Changed bug directory settings:\n%s' % \
             self.attribute_change_string(attribute_changes, indent=1)
     def bug_attribute_change_string(self, attribute_changes):
-        return "Changed bug settings:\n%s" % \
+        return 'Changed bug settings:\n%s' % \
             self.attribute_change_string(attribute_changes, indent=1)
     def comment_attribute_change_string(self, attribute_changes):
-        return "Changed comment settings:\n%s" % \
+        return 'Changed comment settings:\n%s' % \
             self.attribute_change_string(attribute_changes, indent=1)
     def bug_add_string(self, bug):
         return bug.string(shortlist=True)
@@ -620,24 +619,20 @@ class Diff (object):
         return new_bug.string(shortlist=True)
     def bug_summary_change_string(self, summaries):
         old_summary,new_summary = summaries
-        return "summary changed:\n  %s\n  %s" % (old_summary, new_summary)
+        return 'summary changed:\n  %s\n  %s' % (old_summary, new_summary)
     def _comment_summary_string(self, comment):
-        return "from %s on %s" % (comment.author, time_to_str(comment.time))
+        return 'from %s on %s' % (comment.author, time_to_str(comment.time))
     def comment_add_string(self, comment):
         summary = self._comment_summary_string(comment)
         first_line = comment.body.splitlines()[0]
-        return "%s\n  %s..." % (summary, first_line)
+        return '%s\n  %s...' % (summary, first_line)
     def comment_rem_string(self, comment):
         summary = self._comment_summary_string(comment)
         first_line = comment.body.splitlines()[0]
-        return "%s\n  %s..." % (summary, first_line)
+        return '%s\n  %s...' % (summary, first_line)
     def comment_mod_string(self, comments):
         old_comment,new_comment = comments
         return self._comment_summary_string(new_comment)
     def comment_body_change_string(self, bodies):
         old_body,new_body = bodies
         return difflib.unified_diff(old_body, new_body)
-
-
-if libbe.TESTING == True:
-    suite = doctest.DocTestSuite()

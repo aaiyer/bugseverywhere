@@ -1,0 +1,14 @@
+> The situation is worse than just the old `be merge` effects, because
+> the existence, children, and parents of a particular UUID may be
+> revision dependent.  A UUID will always refer to the same
+> bugdir/bug/comment, but that bugdir/bug/comment may have different
+> relatives.
+
+I'm not sure how to support .children(revision) in the Arch backend
+or the older versions of Darcs without checking out a pristine tree
+for the revision in question.  That's how we used to support
+  BugDir.duplicate_bugdir()
+but it doesn't fit well with the new Storage system.  Since I don't
+feel strongly about tla or old Darcs support, I'm leaving that
+functionality unimplemented.
+

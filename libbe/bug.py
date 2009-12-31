@@ -24,6 +24,7 @@ import copy
 import os
 import os.path
 import errno
+import sys
 import time
 import types
 try: # import core module, Python >= 2.5
@@ -33,14 +34,15 @@ except ImportError: # look for non-core module
 import xml.sax.saxutils
 
 import libbe
-from beuuid import uuid_gen
-from properties import Property, doc_property, local_property, \
-    defaulting_property, checked_property, cached_property, \
+import libbe.util.id
+from libbe.storage.util.properties import Property, doc_property, \
+    local_property, defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
-import settings_object
-import mapfile
-import comment
-import utility
+import libbe.storage.util.settings_object as settings_object
+import libbe.storage.util.mapfile as mapfile
+import libbe.comment as comment
+import libbe.util.utility as utility
+
 if libbe.TESTING == True:
     import doctest
 
@@ -169,7 +171,7 @@ class Bug(settings_object.SavedSettingsObject):
                          check_fn=lambda s: s in status_values,
                          require_save=True)
     def status(): return {}
-    
+
     @property
     def active(self):
         return self.status in active_status_values
@@ -219,8 +221,8 @@ class Bug(settings_object.SavedSettingsObject):
     def summary(): return {}
 
     def _get_comment_root(self, load_full=False):
-        if self.sync_with_disk:
-            return comment.loadComments(self, load_full=load_full)
+        if self.storage != None and self.storage.is_readable():
+            return comment.load_comments(self, load_full=load_full)
         else:
             return comment.Comment(self, uuid=comment.INVALID_UUID)
 
@@ -230,31 +232,26 @@ class Bug(settings_object.SavedSettingsObject):
     @doc_property(doc="The trunk of the comment tree.  We use a dummy root comment by default, because there can be several comment threads rooted on the same parent bug.  To simplify comment interaction, we condense these threads into a single thread with a Comment dummy root.")
     def comment_root(): return {}
 
-    def _get_vcs(self):
-        if hasattr(self.bugdir, "vcs"):
-            return self.bugdir.vcs
-
-    @Property
-    @cached_property(generator=_get_vcs)
-    @local_property("vcs")
-    @doc_property(doc="A revision control system instance.")
-    def vcs(): return {}
-
-    def __init__(self, bugdir=None, uuid=None, from_disk=False,
+    def __init__(self, bugdir=None, uuid=None, from_storage=False,
                  load_comments=False, summary=None):
         settings_object.SavedSettingsObject.__init__(self)
         self.bugdir = bugdir
+        self.storage = None
         self.uuid = uuid
-        if from_disk == True:
-            self.sync_with_disk = True
-        else:
-            self.sync_with_disk = False
+        self.id = libbe.util.id.ID(self, 'bug')
+        if from_storage == False:
             if uuid == None:
-                self.uuid = uuid_gen()
+                self.uuid = libbe.util.id.uuid_gen()
+            self.settings = {}
+            self._setup_saved_settings()
             self.time = int(time.time()) # only save to second precision
-            if self.vcs != None:
-                self.creator = self.vcs.get_user_id()
             self.summary = summary
+            dummy = self.comment_root
+        if self.bugdir != None:
+            self.storage = self.bugdir.storage
+        if from_storage == False:
+            if self.storage != None and self.storage.is_writeable():
+                self.save()
 
     def __repr__(self):
         return "Bug(uuid=%r)" % self.uuid
@@ -275,20 +272,46 @@ class Bug(settings_object.SavedSettingsObject):
             return str(value)
         return value
 
-    def xml(self, indent=0, shortname=None, show_comments=False):
-        if shortname == None:
-            if self.bugdir == None:
-                shortname = self.uuid
+    def string(self, shortlist=False, show_comments=False):
+        if shortlist == False:
+            if self.time == None:
+                timestring = ""
             else:
-                shortname = self.bugdir.bug_shortname(self)
+                htime = utility.handy_time(self.time)
+                timestring = "%s (%s)" % (htime, self.time_string)
+            info = [("ID", self.uuid),
+                    ("Short name", self.id.user()),
+                    ("Severity", self.severity),
+                    ("Status", self.status),
+                    ("Assigned", self._setting_attr_string("assigned")),
+                    ("Reporter", self._setting_attr_string("reporter")),
+                    ("Creator", self._setting_attr_string("creator")),
+                    ("Created", timestring)]
+            longest_key_len = max([len(k) for k,v in info])
+            infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
+            bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
+        else:
+            statuschar = self.status[0]
+            severitychar = self.severity[0]
+            chars = "%c%c" % (statuschar, severitychar)
+            bugout = "%s:%s: %s" % (self.id.user(),chars,self.summary.rstrip('\n'))
 
+        if show_comments == True:
+            self.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
+            comout = self.comment_root.string_thread(flatten=False)
+            output = bugout + '\n' + comout.rstrip('\n')
+        else :
+            output = bugout
+        return output
+
+    def xml(self, indent=0, show_comments=False):
         if self.time == None:
             timestring = ""
         else:
             timestring = utility.time_to_str(self.time)
 
         info = [('uuid', self.uuid),
-                ('short-name', shortname),
+                ('short-name', self.id.user()),
                 ('severity', self.severity),
                 ('status', self.status),
                 ('assigned', self.assigned),
@@ -303,9 +326,7 @@ class Bug(settings_object.SavedSettingsObject):
         for estr in self.extra_strings:
             lines.append('  <extra-string>%s</extra-string>' % estr)
         if show_comments == True:
-            comout = self.comment_root.xml_thread(indent=indent+2,
-                                                  auto_name_map=True,
-                                                  bug_shortname=shortname)
+            comout = self.comment_root.xml_thread(indent=indent+2)
             if len(comout) > 0:
                 lines.append(comout)
         lines.append('</bug>')
@@ -323,16 +344,16 @@ class Bug(settings_object.SavedSettingsObject):
         >>> commA = bugA.comment_root.new_reply(body='comment A')
         >>> commB = bugA.comment_root.new_reply(body='comment B')
         >>> commC = commA.new_reply(body='comment C')
-        >>> xml = bugA.xml(shortname="bug-1", show_comments=True)
+        >>> xml = bugA.xml(show_comments=True)
         >>> bugB = Bug()
         >>> bugB.from_xml(xml, verbose=True)
-        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
+        >>> bugB.xml(show_comments=True) == xml
         False
         >>> bugB.uuid = bugB.alt_id
         >>> for comm in bugB.comments():
         ...     comm.uuid = comm.alt_id
         ...     comm.alt_id = None
-        >>> bugB.xml(shortname="bug-1", show_comments=True) == xml
+        >>> bugB.xml(show_comments=True) == xml
         True
         >>> bugB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
         ['severity', 'status', 'creator', 'created', 'summary']
@@ -378,13 +399,13 @@ class Bug(settings_object.SavedSettingsObject):
                 self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
-                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
                     % (child.tag, comment.tag)
         if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
-        self.add_comments(comments)
+        self.add_comments(comments, ignore_missing_references=True)
 
     def add_comment(self, comment, *args, **kwargs):
         """
@@ -402,10 +423,10 @@ class Bug(settings_object.SavedSettingsObject):
         >>> commC.uuid = 'commC'
         >>> commC.in_reply_to = commA.uuid
         >>> bugA.add_comment(commC)
-        >>> print bugA.xml(shortname="bug-1", show_comments=True)  # doctest: +ELLIPSIS
+        >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
         <bug>
           <uuid>0123</uuid>
-          <short-name>bug-1</short-name>
+          <short-name>/012</short-name>
           <severity>minor</severity>
           <status>open</status>
           <creator>Jack</creator>
@@ -413,7 +434,7 @@ class Bug(settings_object.SavedSettingsObject):
           <summary>Need to test Bug.add_comment()</summary>
           <comment>
             <uuid>commA</uuid>
-            <short-name>bug-1:1</short-name>
+            <short-name>/012/commA</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -421,7 +442,7 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
           <comment>
             <uuid>commC</uuid>
-            <short-name>bug-1:2</short-name>
+            <short-name>/012/commC</short-name>
             <in-reply-to>commA</in-reply-to>
             <author></author>
             <date>...</date>
@@ -430,7 +451,7 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
           <comment>
             <uuid>commB</uuid>
-            <short-name>bug-1:3</short-name>
+            <short-name>/012/commB</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -458,8 +479,9 @@ class Bug(settings_object.SavedSettingsObject):
             if c.alt_id != None:
                 uuid_map[c.alt_id] = c
         uuid_map[None] = self.comment_root
+        uuid_map[comment.INVALID_UUID] = self.comment_root
         if default_parent != self.comment_root:
-            assert default_parent.uuid in uuid_map, default_parent
+            assert default_parent.uuid in uuid_map, default_parent.uuid
         for c in comments:
             if c.in_reply_to == None \
                     and default_parent.uuid != comment.INVALID_UUID:
@@ -471,7 +493,7 @@ class Bug(settings_object.SavedSettingsObject):
             except KeyError:
                 if ignore_missing_references == True:
                     print >> sys.stderr, \
-                        "Ignoring missing reference to %s" % c.in_reply_to
+                        'Ignoring missing reference to %s' % c.in_reply_to
                     parent = default_parent
                     if parent.uuid != comment.INVALID_UUID:
                         c.in_reply_to = parent.uuid
@@ -533,7 +555,7 @@ class Bug(settings_object.SavedSettingsObject):
         >>> print bugA.xml(show_comments=True)  # doctest: +ELLIPSIS
         <bug>
           <uuid>0123</uuid>
-          <short-name>0123</short-name>
+          <short-name>/012</short-name>
           <severity>minor</severity>
           <status>open</status>
           <creator>John</creator>
@@ -544,7 +566,7 @@ class Bug(settings_object.SavedSettingsObject):
           <extra-string>TAG: very helpful</extra-string>
           <comment>
             <uuid>uuid-commA</uuid>
-            <short-name>0123:1</short-name>
+            <short-name>/012/uuid-commA</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -552,7 +574,7 @@ class Bug(settings_object.SavedSettingsObject):
           </comment>
           <comment>
             <uuid>uuid-commB</uuid>
-            <short-name>0123:2</short-name>
+            <short-name>/012/uuid-commB</short-name>
             <author></author>
             <date>...</date>
             <content-type>text/plain</content-type>
@@ -590,6 +612,7 @@ class Bug(settings_object.SavedSettingsObject):
                 if accept_comments == True:
                     o_comm_copy = copy.copy(o_comm)
                     o_comm_copy.bug = self
+                    o_comm_copy.id = libbe.util.id.ID(o_comm_copy, 'comment')
                     self.comment_root.add_reply(o_comm_copy)
                 elif change_exception == True:
                     raise ValueError, \
@@ -600,115 +623,67 @@ class Bug(settings_object.SavedSettingsObject):
                              accept_extra_strings=accept_extra_strings,
                              change_exception=change_exception)
 
-    def string(self, shortlist=False, show_comments=False):
-        if self.bugdir == None:
-            shortname = self.uuid
-        else:
-            shortname = self.bugdir.bug_shortname(self)
-        if shortlist == False:
-            if self.time == None:
-                timestring = ""
-            else:
-                htime = utility.handy_time(self.time)
-                timestring = "%s (%s)" % (htime, self.time_string)
-            info = [("ID", self.uuid),
-                    ("Short name", shortname),
-                    ("Severity", self.severity),
-                    ("Status", self.status),
-                    ("Assigned", self._setting_attr_string("assigned")),
-                    ("Reporter", self._setting_attr_string("reporter")),
-                    ("Creator", self._setting_attr_string("creator")),
-                    ("Created", timestring)]
-            longest_key_len = max([len(k) for k,v in info])
-            infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
-            bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
-        else:
-            statuschar = self.status[0]
-            severitychar = self.severity[0]
-            chars = "%c%c" % (statuschar, severitychar)
-            bugout = "%s:%s: %s" % (shortname,chars,self.summary.rstrip('\n'))
-        
-        if show_comments == True:
-            # take advantage of the string_thread(auto_name_map=True)
-            # SIDE-EFFECT of sorting by comment time.
-            comout = self.comment_root.string_thread(flatten=False,
-                                                     auto_name_map=True,
-                                                     bug_shortname=shortname)
-            output = bugout + '\n' + comout.rstrip('\n')
-        else :
-            output = bugout
-        return output
-
     # methods for saving/loading/acessing settings and properties.
 
-    def get_path(self, *args):
-        dir = os.path.join(self.bugdir.get_path("bugs"), self.uuid)
-        if len(args) == 0:
-            return dir
-        assert args[0] in ["values", "comments"], str(args)
-        return os.path.join(dir, *args)
-
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
-        for comment in self.comments():
-            comment.set_sync_with_disk(value)
-
-    def load_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("load settings")
-        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
+    def load_settings(self, settings_mapfile=None):
+        if settings_mapfile == None:
+            settings_mapfile = \
+                self.storage.get(self.id.storage('values'), default='\n')
+        try:
+            self.settings = mapfile.parse(settings_mapfile)
+        except mapfile.InvalidMapfileContents, e:
+            raise Exception('Invalid settings file for bug %s\n'
+                            '(BE version missmatch?)' % self.id.user())
         self._setup_saved_settings()
 
     def save_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("save settings")
-        assert self.summary != None, "Can't save blank bug"
-        self.vcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.vcs, path, self._get_saved_settings())
+        mf = mapfile.generate(self._get_saved_settings())
+        self.storage.set(self.id.storage('values'), mf)
 
     def save(self):
         """
-        Save any loaded contents to disk.  Because of lazy loading of
-        comments, this is actually not too inefficient.
-        
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
+        Save any loaded contents to storage.  Because of lazy loading
+        of comments, this is actually not too inefficient.
+
+        However, if self.storage.is_writeable() == True, then any
+        changes are automatically written to storage as soon as they
+        happen, so calling this method will just waste time (unless
+        something else has been messing with your stored files).
         """
-        sync_with_disk = self.sync_with_disk
-        if sync_with_disk == False:
-            self.set_sync_with_disk(True)
+        assert self.storage != None, "Can't save without storage"
+        if self.bugdir != None:
+            parent = self.bugdir.id.storage()
+        else:
+            parent = None
+        self.storage.add(self.id.storage(), parent=parent, directory=True)
+        self.storage.add(self.id.storage('values'), parent=self.id.storage(),
+                         directory=False)
         self.save_settings()
         if len(self.comment_root) > 0:
-            comment.saveComments(self)
-        if sync_with_disk == False:
-            self.set_sync_with_disk(False)
+            comment.save_comments(self)
 
     def load_comments(self, load_full=True):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("load comments")
         if load_full == True:
             # Force a complete load of the whole comment tree
             self.comment_root = self._get_comment_root(load_full=True)
         else:
             # Setup for fresh lazy-loading.  Clear _comment_root, so
-            # _get_comment_root returns a fresh version.  Turn of
-            # syncing temporarily so we don't write our blank comment
+            # next _get_comment_root returns a fresh version.  Turn of
+            # writing temporarily so we don't write our blank comment
             # tree to disk.
-            self.sync_with_disk = False
+            w = self.storage.writeable
+            self.storage.writeable = False
             self.comment_root = None
-            self.sync_with_disk = True
+            self.storage.writeable = w
 
     def remove(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("remove")
-        self.comment_root.remove()
-        path = self.get_path()
-        self.vcs.recursive_remove(path)
-    
+        self.storage.recursive_remove(self.id.storage())
+
     # methods for managing comments
+
+    def uuids(self):
+        for comment in self.comments():
+            yield comment.uuid
 
     def comments(self):
         for comment in self.comment_root.traverse():
@@ -718,20 +693,15 @@ class Bug(settings_object.SavedSettingsObject):
         comm = self.comment_root.new_reply(body=body)
         return comm
 
-    def comment_from_shortname(self, shortname, *args, **kwargs):
-        return self.comment_root.comment_from_shortname(shortname,
-                                                        *args, **kwargs)
-
     def comment_from_uuid(self, uuid, *args, **kwargs):
         return self.comment_root.comment_from_uuid(uuid, *args, **kwargs)
 
-    def comment_shortnames(self, shortname=None):
-        """
-        SIDE-EFFECT : Comment.comment_shortnames will sort the comment
-        tree by comment.time
-        """
-        for id, comment in self.comment_root.comment_shortnames(shortname):
-            yield (id, comment)
+    # methods for id generation
+
+    def sibling_uuids(self):
+        if self.bugdir != None:
+            return self.bugdir.uuids()
+        return []
 
 
 # The general rule for bug sorting is that "more important" bugs are
@@ -805,7 +775,7 @@ def cmp_attr(bug_1, bug_2, attr, invert=False):
     val_2 = getattr(bug_2, attr)
     if val_1 == None: val_1 = None
     if val_2 == None: val_2 = None
-    
+
     if invert == True :
         return -cmp(val_1, val_2)
     else :
@@ -851,7 +821,7 @@ class BugCompoundComparator (object):
             if val != 0 :
                 return val
         return 0
-        
+
 cmp_full = BugCompoundComparator()
 
 

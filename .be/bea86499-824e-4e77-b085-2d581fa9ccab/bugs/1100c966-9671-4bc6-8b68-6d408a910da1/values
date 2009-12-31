@@ -1,0 +1,17 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Reoranize BE for more flexible backend / frontend
+
+
+time: Tue, 08 Dec 2009 00:48:27 +0000
+

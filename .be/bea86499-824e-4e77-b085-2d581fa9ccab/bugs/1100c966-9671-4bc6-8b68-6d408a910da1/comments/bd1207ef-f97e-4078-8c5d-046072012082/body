@@ -1,0 +1,45 @@
+Some additional thoughts, as I've been developing this idea:
+
+Different BE storage versions will be difficult to handle.
+We currently do disk upgrades via
+  libbe.storage.util.upgrade
+which browses through the .be/ directory, making appropriate changes.
+
+The new formats know very little about paths, which brought on the
+whole libbe.storage.vcs.base.CachedPathID bit.  Still, most VCSs
+seem to be able to handle renames, e.g.
+  $ bzr cat -r 200 ./libbe/command/new.py
+works, when as of revision 200, the file was
+  ./becommands/new.py
+In fact, bzr recognizes both names:
+  $ diff <(bzr cat -r 200 ./becommands/new.py) \
+         <(bzr cat -r 200 ./libbe/commands/new.py)
+returns nothing.  Still, I'm not sure this is something we should
+require in a storage backend.  Which means we'd need to have a
+version-dependent id-to-path(version) function.
+
+We also have the unfortunate situation of duplicate UUIDs from the old
+  be merge
+implemtation.  This means that id-to-path is not a well defined
+mapping with single-uuid ids.  That's ok though, we get a bit uglier
+and send the long_user() id into the storage backend instead.  While
+not so elegant, this will avoid the need for the cached id/path table.
+
+Ok, you say, we're fine if we have the compound bugdir/bug/comment ids
+going out to storage, with the upgrader upgrading the file
+appropriately for each file type.  Almost.  You'll still run into
+trouble with upgrades like dir format v1.2 to 1.3 where targets
+moved from a per-bug string to a seperate-bugs-with-dependencies.
+Now you need to create virtual-target-bugs on the fly when you're
+loading the old bugs.  Yuck.
+
+All of this makes me wonder how much we care about being able to
+see bug diffs for any repository format older than the current one.
+I think that we don't really care ;).  After all, the on-disk
+format should settle down as BE matures :p.  When you _do_ want
+to see the long-term history of a particular bug, there's always
+  bzr log .be/123/bugs/456/values
+or the equivalent for your VCS.  If access to the raw log ends
+up being important, it should be very easy to add
+  libbe.storage.base.VersionedStorage.log(id)
+  libbe.command.log
