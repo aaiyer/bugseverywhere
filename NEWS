@@ -1,3 +1,15 @@
+December 31, 2009
+ * New bugdir/bug/comment ID format replaces old bug:comment format.
+ * Deprecated support for `be diff` on Arch and Darcs <= 2.3.1.  A new
+   backend abstraction (Storage) makes the former implementation
+   ungainly.
+ * Improved command completion.
+ * Removed commands close, open, email_bugs, 
+ * Flipped some arguments
+   `be assign BUG-ID [ASSIGNEE]` -> `be status ASSIGNED BUG-ID ...`
+   `be severity BUG-ID SEVERITY` -> `be severity SEVERITY BUG-ID ...`
+   `be status BUG-ID STATUS` -> `be status STATUS BUG-ID ...`
+
 December 7, 2009
  * added --paginate and --no-pager to be.
  * be --dir DIR COMMAND now roots the bugdir in DIR _without_ changing

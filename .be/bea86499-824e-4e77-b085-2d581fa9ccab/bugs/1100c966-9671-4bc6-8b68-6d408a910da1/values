@@ -7,7 +7,7 @@ reporter: W. Trevor King <wking@drexel.edu>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Reoranize BE for more flexible backend / frontend
