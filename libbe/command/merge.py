@@ -30,10 +30,11 @@ class Merge (libbe.command.Command):
     >>> import libbe.bugdir
     >>> import libbe.comment
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Merge()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> cmd = Merge(ui=ui)
 
     >>> a = bd.bug_from_uuid('a')
     >>> a.comment_root.time = 0
@@ -49,7 +50,7 @@ class Merge (libbe.command.Command):
     >>> dummy = dummy.new_reply('1 2 3 4')
     >>> dummy.time = 2
 
-    >>> ret = cmd.run(args=['/a', '/b'])
+    >>> ret = ui.run(cmd, args=['/a', '/b'])
     Merged bugs #abc/a# and #abc/b#
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
@@ -134,6 +135,7 @@ class Merge (libbe.command.Command):
     Merged into bug #abc/a#
     >>> print b.status
     closed
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'merge'

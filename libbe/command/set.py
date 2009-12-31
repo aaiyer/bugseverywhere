@@ -34,19 +34,21 @@ class Set (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Set()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Set(ui=ui)
 
-    >>> ret = cmd.run(args=['target'])
+    >>> ret = ui.run(cmd, args=['target'])
     None
-    >>> ret = cmd.run(args=['target', 'abcdefg'])
-    >>> ret = cmd.run(args=['target'])
+    >>> ret = ui.run(cmd, args=['target', 'abcdefg'])
+    >>> ret = ui.run(cmd, args=['target'])
     abcdefg
-    >>> ret = cmd.run(args=['target', 'none'])
-    >>> ret = cmd.run(args=['target'])
+    >>> ret = ui.run(cmd, args=['target', 'none'])
+    >>> ret = ui.run(cmd, args=['target'])
     None
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'set'

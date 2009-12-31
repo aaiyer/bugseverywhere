@@ -28,11 +28,12 @@ class Help (libbe.command.Command):
 
     >>> import sys
     >>> import libbe.bugdir
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
     >>> cmd = Help()
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
 
-    >>> ret = cmd.run(args=['help'])
+    >>> ret = ui.run(cmd, args=['help'])
     usage: be help [options] [TOPIC]
     <BLANKLINE>
     Options:
@@ -61,8 +62,7 @@ class Help (libbe.command.Command):
         elif params['topic'] in libbe.command.commands():
             module = libbe.command.get_command(params['topic'])
             Class = libbe.command.get_command_class(module,params['topic'])
-            c = Class(get_unconnected_storage=self.get_unconnected_storage,
-                      ui=self.ui)
+            c = Class(ui=self.ui)
             print >> self.stdout, c.help().rstrip('\n')
         elif params['topic'] in TOPICS:
             print >> self.stdout, TOPICS[params['topic']].rstrip('\n')

@@ -29,33 +29,34 @@ class Tag (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Tag()
-    >>> cmd._bugdir = bd
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> cmd = Tag(ui=ui)
 
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> ret = cmd.run(args=['/a', 'GUI'])
+    >>> ret = ui.run(cmd, args=['/a', 'GUI'])
     Tags for abc/a:
     GUI
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     ['%(tag_tag)sGUI']
-    >>> ret = cmd.run(args=['/a', 'later'])
+    >>> ret = ui.run(cmd, args=['/a', 'later'])
     Tags for abc/a:
     GUI
     later
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a'])
     Tags for abc/a:
     GUI
     later
-    >>> ret = cmd.run({'list':True})
+    >>> ret = ui.run(cmd, {'list':True})
     GUI
     later
-    >>> ret = cmd.run(args=['/a', 'Alphabetically first'])
+    >>> ret = ui.run(cmd, args=['/a', 'Alphabetically first'])
     Tags for abc/a:
     Alphabetically first
     GUI
@@ -67,15 +68,16 @@ class Tag (libbe.command.Command):
     >>> a.extra_strings = []
     >>> print a.extra_strings
     []
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a'])
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> ret = cmd.run(args=['/a', 'Alphabetically first'])
+    >>> ret = ui.run(cmd, args=['/a', 'Alphabetically first'])
     Tags for abc/a:
     Alphabetically first
-    >>> ret = cmd.run({'remove':True}, ['/a', 'Alphabetically first'])
+    >>> ret = ui.run(cmd, {'remove':True}, ['/a', 'Alphabetically first'])
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """ % {'tag_tag':TAG_TAG}
     name = 'tag'

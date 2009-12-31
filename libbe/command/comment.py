@@ -33,13 +33,14 @@ class Comment (libbe.command.Command):
     >>> import time
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Comment()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Comment(ui=ui)
 
-    >>> ret = cmd.run({'user-id':u'Fran\\xe7ois'},
-    ...               ['/a', 'This is a comment about a'])
+    >>> ui._user_id = u'Fran\\xe7ois'
+    >>> ret = ui.run(cmd, args=['/a', 'This is a comment about a'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
@@ -58,12 +59,13 @@ class Comment (libbe.command.Command):
 
     >>> if 'EDITOR' in os.environ:
     ...     del os.environ['EDITOR']
-    >>> ret = cmd.run({'user-id':u'Frank'}, ['/b'])
+    >>> ui._user_id = u'Frank'
+    >>> ret = ui.run(cmd, args=['/b'])
     Traceback (most recent call last):
     UserError: No comment supplied, and EDITOR not specified.
 
     >>> os.environ['EDITOR'] = "echo 'I like cheese' > "
-    >>> ret = cmd.run({'user-id':u'Frank'}, ['/b'])
+    >>> ret = ui.run(cmd, args=['/b'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('b')
     >>> bug.load_comments(load_full=False)
@@ -71,6 +73,7 @@ class Comment (libbe.command.Command):
     >>> print comment.body
     I like cheese
     <BLANKLINE>
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'comment'

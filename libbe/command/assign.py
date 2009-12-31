@@ -29,29 +29,32 @@ class Assign (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Assign()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Assign(ui=ui)
 
     >>> bd.bug_from_uuid('a').assigned is None
     True
-    >>> ret = cmd.run({'user-id':u'Fran\xe7ois'}, ['-', '/a'])
+    >>> ui._user_id = u'Fran\xe7ois'
+    >>> ret = ui.run(cmd, args=['-', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     u'Fran\\xe7ois'
 
-    >>> ret = cmd.run(args=['someone', '/a', '/b'])
+    >>> ret = ui.run(cmd, args=['someone', '/a', '/b'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
     'someone'
     >>> bd.bug_from_uuid('b').assigned
     'someone'
 
-    >>> ret = cmd.run(args=['none', '/a'])
+    >>> ret = ui.run(cmd, args=['none', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned is None
     True
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'assign'

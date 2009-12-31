@@ -45,35 +45,37 @@ class Depend (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Depend()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Depend(ui=ui)
 
-    >>> ret = cmd.run(args=['/a', '/b'])
+    >>> ret = ui.run(cmd, args=['/a', '/b'])
     a blocked by:
     b
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a'])
     a blocked by:
     b
-    >>> ret = cmd.run({'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     a blocked by:
     b closed
-    >>> ret = cmd.run(args=['/b', '/a'])
+    >>> ret = ui.run(cmd, args=['/b', '/a'])
     b blocked by:
     a
     b blocks:
     a
-    >>> ret = cmd.run({'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     a blocked by:
     b closed
     a blocks:
     b closed
-    >>> ret = cmd.run({'repair':True})
-    >>> ret = cmd.run({'remove':True}, ['/b', '/a'])
+    >>> ret = ui.run(cmd, {'repair':True})
+    >>> ret = ui.run(cmd, {'remove':True}, ['/b', '/a'])
     b blocks:
     a
-    >>> ret = cmd.run({'remove':True}, ['/a', '/b'])
+    >>> ret = ui.run(cmd, {'remove':True}, ['/a', '/b'])
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'depend'

@@ -30,27 +30,29 @@ class Diff (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False, versioned=True)
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
     >>> cmd = Diff()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
 
     >>> original = bd.storage.commit('Original status')
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.status = 'closed'
     >>> changed = bd.storage.commit('Closed bug a')
-    >>> ret = cmd.run(args=[original])
+    >>> ret = ui.run(cmd, args=[original])
     Modified bugs:
       abc/a:cm: Bug A
         Changed bug settings:
           status: open -> closed
-    >>> ret = cmd.run({'subscribe':'%(bugdir_id)s:mod', 'uuids':True}, [original])
+    >>> ret = ui.run(cmd, {'subscribe':'%(bugdir_id)s:mod', 'uuids':True}, [original])
     a
     >>> bd.storage.versioned = False
-    >>> ret = cmd.run(args=[original])
+    >>> ret = ui.run(cmd, args=[original])
     Traceback (most recent call last):
       ...
     UserError: This repository is not revision-controlled.
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """ % {'bugdir_id':libbe.diff.BUGDIR_ID}
     name = 'diff'

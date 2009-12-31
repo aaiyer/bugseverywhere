@@ -29,19 +29,21 @@ class Due (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Due()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Due(ui=ui)
 
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a'])
     No due date assigned.
-    >>> ret = cmd.run(args=['/a', 'Thu, 01 Jan 1970 00:00:00 +0000'])
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a', 'Thu, 01 Jan 1970 00:00:00 +0000'])
+    >>> ret = ui.run(cmd, args=['/a'])
     Thu, 01 Jan 1970 00:00:00 +0000
-    >>> ret = cmd.run(args=['/a', 'none'])
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a', 'none'])
+    >>> ret = ui.run(cmd, args=['/a'])
     No due date assigned.
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'due'

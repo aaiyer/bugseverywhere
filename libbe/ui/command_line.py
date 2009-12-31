@@ -145,7 +145,7 @@ class CmdOptionParser(optparse.OptionParser):
                 fragment = parser.rargs[0]
             self.complete(argument, fragment)
         else:
-            print command_option.callback(
+            print >> self.command.stdout, command_option.callback(
                 self.command, command_option, value)
         raise CallbackExit
 
@@ -154,16 +154,18 @@ class CmdOptionParser(optparse.OptionParser):
         if fragment != None:
             comps = [c for c in comps if c.startswith(fragment)]
         if len(comps) > 0:
-            print '\n'.join(comps)
+            print >> self.command.stdout, '\n'.join(comps)
         raise CallbackExit
-
 
 class BE (libbe.command.Command):
     """Class for parsing the command line arguments for `be`.
     This class does not contain a useful _run() method.  Call this
     module's main() function instead.
 
-    >>> be = BE()
+    >>> ui = libbe.command.UserInterface()
+    >>> ui.io.stdout = sys.stdout
+    >>> be = BE(ui=ui)
+    >>> ui.io.setup_command(be)
     >>> p = CmdOptionParser(be)
     >>> p.exit_after_callback = False
     >>> try:
@@ -228,8 +230,7 @@ class BE (libbe.command.Command):
     def _long_help(self):
         cmdlist = []
         for name in libbe.command.commands():
-            module = libbe.command.get_command(name)
-            Class = libbe.command.get_command_class(module, name)
+            Class = libbe.command.get_command_class(command_name=name)
             assert hasattr(Class, '__doc__') and Class.__doc__ != None, \
                 'Command class %s missing docstring' % Class
             cmdlist.append((name, Class.__doc__.splitlines()[0]))
@@ -249,31 +250,51 @@ class BE (libbe.command.Command):
     def full_version(self, *args):
         return libbe.version.version(verbose=True)
 
+def dispatch(ui, command, args):
+    parser = CmdOptionParser(command)
+    try:
+        options,args = parser.parse_args(args)
+        ret = ui.run(command, options, args)
+    except CallbackExit:
+        return 0
+    except libbe.command.UserError, e:
+        print >> ui.io.stdout, 'ERROR:\n', e
+        return 1
+    except libbe.storage.ConnectionError, e:
+        print >> ui.io.stdout, 'Connection Error:\n', e
+        return 1
+    except (libbe.util.id.MultipleIDMatches, libbe.util.id.NoIDMatches,
+            libbe.util.id.InvalidIDStructure), e:
+        print >> ui.io.stdout, 'Invalid id:\n', e
+        return 1
+    finally:
+        command.cleanup()
+    return ret
+
 def main():
-    be = BE()
+    io = libbe.command.StdInputOutput()
+    ui = libbe.command.UserInterface(io)
+    ui.restrict_file_access = False
+    ui.storage_callbacks = None
+    be = BE(ui=ui)
     parser = CmdOptionParser(be)
     try:
         options,args = parser.parse_args()
     except CallbackExit:
         return 0
     except libbe.command.UserError, e:
-        print 'ERROR:\n', e
+        print >> be.stdout, 'ERROR:\n', e
         return 1
 
-    command_name = args[0]
+    command_name = args.pop(0)
     try:
-        module = libbe.command.get_command(command_name)
+        Class = libbe.command.get_command_class(command_name=command_name)
     except libbe.command.UnknownCommand, e:
-        print e
+        print >> be.stdout, e
         return 1
-    Class = getattr(module, command_name.capitalize())
-    class GUCS (object):
-        def __init__(self, repo):
-            self.repo = repo
-        def __call__(self):
-            return libbe.storage.get_storage(self.repo)
-    command = Class(get_unconnected_storage=GUCS(options['repo']), ui=be)
-    parser = CmdOptionParser(command)
+
+    ui.storage_callbacks = libbe.command.StorageCallbacks(options['repo'])
+    command = Class(ui=ui)
 
     if command.name in ['comment']:
         paginate = 'never'
@@ -285,22 +306,9 @@ def main():
         paginate = 'never'
     libbe.ui.util.pager.run_pager(paginate)
 
-    try:
-        options,args = parser.parse_args(args[1:])
-        command.run(options, args)
-    except CallbackExit:
-        command.cleanup()
-        return 0
-    except libbe.command.UserError, e:
-        command.cleanup()
-        print 'ERROR:\n', e
-        return 1
-    except libbe.storage.ConnectionError, e:
-        command.cleanup()
-        print 'Connection Error:\n', e
-        return 1
-    command.cleanup()
-    return 0
+    ret = dispatch(ui, command, args)
+    ui.cleanup()
+    return ret
 
 if __name__ == '__main__':
     sys.exit(main())

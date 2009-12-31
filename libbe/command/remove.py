@@ -26,14 +26,15 @@ class Remove (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Remove()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Remove(ui=ui)
 
     >>> print bd.bug_from_uuid('b').status
     closed
-    >>> ret = cmd.run(args=['/b'])
+    >>> ret = ui.run(cmd, args=['/b'])
     Removed bug abc/b
     >>> bd.flush_reload()
     >>> try:
@@ -41,6 +42,7 @@ class Remove (libbe.command.Command):
     ... except libbe.bugdir.NoBugMatches:
     ...     print 'Bug not found'
     Bug not found
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'remove'

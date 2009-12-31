@@ -30,9 +30,10 @@ class Init (libbe.command.Command):
     >>> import libbe.storage.vcs
     >>> import libbe.storage.vcs.base
     >>> import libbe.util.utility
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
     >>> cmd = Init()
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
 
     >>> dir = libbe.util.utility.Dir()
     >>> vcs = libbe.storage.vcs.vcs_by_name('None')
@@ -40,10 +41,10 @@ class Init (libbe.command.Command):
     >>> try:
     ...     vcs.connect()
     ... except libbe.storage.ConnectionError:
-    ...     True
-    True
-    >>> cmd._unconnected_storage = vcs
-    >>> cmd.run()
+    ...     'got error'
+    'got error'
+    >>> ui.storage_callbacks.set_unconnected_storage(vcs)
+    >>> ui.run(cmd)
     No revision control detected.
     BE repository initialized.
     >>> bd = libbe.bugdir.BugDir(vcs)
@@ -55,9 +56,9 @@ class Init (libbe.command.Command):
     >>> vcs = libbe.storage.vcs.installed_vcs()
     >>> vcs.repo = dir.path
     >>> vcs._vcs_init(vcs.repo)
-    >>> cmd._unconnected_storage = vcs
+    >>> ui.storage_callbacks.set_unconnected_storage(vcs)
     >>> if vcs.name in libbe.storage.vcs.base.VCS_ORDER:
-    ...     cmd.run() # doctest: +ELLIPSIS
+    ...     ui.run(cmd) # doctest: +ELLIPSIS
     ... else:
     ...     vcs.init()
     ...     vcs.connect()

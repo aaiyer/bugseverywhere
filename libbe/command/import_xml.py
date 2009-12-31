@@ -44,14 +44,14 @@ class Import_XML (libbe.command.Command):
     >>> import StringIO
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Import_XML()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Import_XML(ui=ui)
 
-    >>> cmd.stdin = StringIO.StringIO('<be-xml><comment><uuid>c</uuid><body>This is a comment about a</body></comment></be-xml>')
-    >>> cmd.stdin.encoding = 'ascii'
-    >>> ret = cmd.run({'comment-root':'/a'}, ['-'])
+    >>> ui.io.set_stdin('<be-xml><comment><uuid>c</uuid><body>This is a comment about a</body></comment></be-xml>')
+    >>> ret = ui.run(cmd, {'comment-root':'/a'}, ['-'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
@@ -63,6 +63,7 @@ class Import_XML (libbe.command.Command):
     True
     >>> comment.in_reply_to is None
     True
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'import-xml'
@@ -321,7 +322,10 @@ if libbe.TESTING == True:
         """
         def setUp(self):
             self.bugdir = libbe.bugdir.SimpleBugDir(memory=False)
-            self.cmd = Import_XML()
+            io = libbe.command.StringInputOutput()
+            self.ui = libbe.command.UserInterface(io=io)
+            self.ui.storage_callbacks.set_storage(self.bugdir.storage)
+            self.cmd = Import_XML(ui=self.ui)
             self.cmd._storage = self.bugdir.storage
             self.cmd._setup_io = lambda i_enc,o_enc : None
             bugA = self.bugdir.bug_from_uuid('a')
@@ -360,13 +364,12 @@ if libbe.TESTING == True:
               </bug>
             </be-xml>
             """
-            self.cmd.stdin = StringIO.StringIO(self.xml)
-            self.cmd.stdin.encoding = 'ascii'
-            self.cmd.stdout = StringIO.StringIO()
         def tearDown(self):
             self.bugdir.cleanup()
+            self.ui.cleanup()
         def _execute(self, params={}, args=[]):
-            self.cmd.run(params, args)
+            self.ui.io.set_stdin(self.xml)
+            self.ui.run(self.cmd, params, args)
             self.bugdir.flush_reload()
         def testCleanBugdir(self):
             uuids = list(self.bugdir.uuids())

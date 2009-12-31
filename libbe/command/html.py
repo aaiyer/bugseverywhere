@@ -36,12 +36,13 @@ class HTML (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = HTML()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = HTML(ui=ui)
 
-    >>> ret = cmd.run({'output':os.path.join(bd.storage.repo, 'html_export')})
+    >>> ret = ui.run(cmd, {'output':os.path.join(bd.storage.repo, 'html_export')})
     >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export'))
     True
     >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'index.html'))
@@ -54,6 +55,7 @@ class HTML (libbe.command.Command):
     True
     >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'b.html'))
     True
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'html'

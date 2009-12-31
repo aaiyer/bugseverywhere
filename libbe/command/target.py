@@ -31,30 +31,32 @@ class Target (libbe.command.Command):
     >>> import os, StringIO, sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Target()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Target(ui=ui)
 
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a'])
     No target assigned.
-    >>> ret = cmd.run(args=['/a', 'tomorrow'])
-    >>> ret = cmd.run(args=['/a'])
+    >>> ret = ui.run(cmd, args=['/a', 'tomorrow'])
+    >>> ret = ui.run(cmd, args=['/a'])
     tomorrow
 
-    >>> cmd.stdout = StringIO.StringIO()
-    >>> ret = cmd.run({'resolve':True}, ['tomorrow'])
-    >>> output = cmd.stdout.getvalue().strip()
+    >>> ui.io.stdout = StringIO.StringIO()
+    >>> ret = ui.run(cmd, {'resolve':True}, ['tomorrow'])
+    >>> output = ui.io.get_stdout().strip()
     >>> target = bd.bug_from_uuid(output)
     >>> print target.summary
     tomorrow
     >>> print target.severity
     target
 
-    >>> cmd.stdout = sys.stdout
-    >>> ret = cmd.run(args=['/a', 'none'])
-    >>> ret = cmd.run(args=['/a'])
+    >>> ui.io.stdout = sys.stdout
+    >>> ret = ui.run(cmd, args=['/a', 'none'])
+    >>> ret = ui.run(cmd, args=['/a'])
     No target assigned.
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'target'

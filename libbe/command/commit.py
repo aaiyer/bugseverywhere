@@ -30,15 +30,17 @@ class Commit (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False, versioned=True)
-    >>> cmd = Commit()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = Commit(ui=ui)
 
     >>> bd.extra_strings = ['hi there']
     >>> bd.flush_reload()
-    >>> cmd.run({'user-id':'Joe'}, ['Making a commit']) # doctest: +ELLIPSIS
+    >>> ui.run(cmd, {'user-id':'Joe'}, ['Making a commit']) # doctest: +ELLIPSIS
     Committed ...
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'commit'

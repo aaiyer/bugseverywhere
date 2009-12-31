@@ -27,20 +27,23 @@ class Status (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Status()
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> cmd = Status(ui=ui)
     >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
 
     >>> bd.bug_from_uuid('a').status
     'open'
-    >>> ret = cmd.run(args=['closed', '/a'])
+    >>> ret = ui.run(cmd, args=['closed', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').status
     'closed'
-    >>> ret = cmd.run(args=['none', '/a'])
+    >>> ret = ui.run(cmd, args=['none', '/a'])
     Traceback (most recent call last):
     UserError: Invalid status level: none
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'status'

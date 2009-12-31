@@ -35,47 +35,49 @@ class Subscribe (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Subscribe()
-    >>> cmd._bugdir = bd
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> cmd = Subscribe(ui=ui)
 
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     []
-    >>> ret = cmd.run({'subscriber':'John Doe <j@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'subscriber':'John Doe <j@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     John Doe <j@doe.com>    all    *
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
     ['SUBSCRIBE:John Doe <j@doe.com>\\tall\\t*']
-    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com,b.net'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com,b.net'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.com,b.net
     John Doe <j@doe.com>    all    *
-    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.edu'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.edu'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.com,a.edu,b.net
     John Doe <j@doe.com>    all    *
-    >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.edu,b.net
     John Doe <j@doe.com>    all    *
-    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'servers':'*'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>', 'servers':'*'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    *
     John Doe <j@doe.com>    all    *
-    >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'unsubscribe':True, 'subscriber':'Jane Doe <J@doe.com>'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     John Doe <j@doe.com>    all    *
-    >>> ret = cmd.run({'unsubscribe':True, 'subscriber':'John Doe <j@doe.com>'}, ['/a'])
-    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>', 'types':'new'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'unsubscribe':True, 'subscriber':'John Doe <j@doe.com>'}, ['/a'])
+    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>', 'types':'new'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for bug directory:
     Jane Doe <J@doe.com>    new    *
-    >>> ret = cmd.run({'subscriber':'Jane Doe <J@doe.com>'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
+    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for bug directory:
     Jane Doe <J@doe.com>    all    *
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'subscribe'

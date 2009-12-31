@@ -34,13 +34,14 @@ class Show (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Show()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
-    >>> cmd.stdout.encoding = 'ascii'
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> io.stdout.encoding = 'ascii'
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> cmd = Show(ui=ui)
 
-    >>> ret = cmd.run(args=['/a',])  # doctest: +ELLIPSIS
+    >>> ret = ui.run(cmd, args=['/a',])  # doctest: +ELLIPSIS
               ID : a
       Short name : abc/a
         Severity : minor
@@ -52,7 +53,7 @@ class Show (libbe.command.Command):
     Bug A
     <BLANKLINE>
 
-    >>> ret = cmd.run({'xml':True}, ['/a'])  # doctest: +ELLIPSIS
+    >>> ret = ui.run(cmd, {'xml':True}, ['/a'])  # doctest: +ELLIPSIS
     <?xml version="1.0" encoding="..." ?>
     <be-xml>
       <version>
@@ -71,6 +72,7 @@ class Show (libbe.command.Command):
         <summary>Bug A</summary>
       </bug>
     </be-xml>
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'show'

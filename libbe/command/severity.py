@@ -30,20 +30,22 @@ class Severity (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = Severity()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> cmd = Severity(ui=ui)
 
     >>> bd.bug_from_uuid('a').severity
     'minor'
-    >>> ret = cmd.run(args=['wishlist', '/a'])
+    >>> ret = ui.run(cmd, args=['wishlist', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').severity
     'wishlist'
-    >>> ret = cmd.run(args=['none', '/a'])
+    >>> ret = ui.run(cmd, args=['none', '/a'])
     Traceback (most recent call last):
     UserError: Invalid severity level: none
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
     name = 'severity'

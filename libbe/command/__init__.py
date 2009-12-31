@@ -25,6 +25,16 @@ commands = base.commands
 Option = base.Option
 Argument = base.Argument
 Command = base.Command
+InputOutput = base.InputOutput
+StdInputOutput = base.StdInputOutput
+StringInputOutput = base.StringInputOutput
+UnconnectedStorageGetter = base.UnconnectedStorageGetter
+StorageCallbacks = base.StorageCallbacks
+UserInterface = base.UserInterface
 
-__all__ = [UserError, UnknownCommand, get_command, get_command_class,
-           commands, Option, Argument, Command]
+__all__ = [UserError, UnknownCommand,
+           get_command, get_command_class, commands,
+           Option, Argument, Command,
+           InputOutput, StdInputOutput, StringInputOutput,
+           StorageCallbacks, UnconnectedStorageGetter,
+           UserInterface]

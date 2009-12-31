@@ -59,17 +59,19 @@ class List (libbe.command.Command):
     >>> import sys
     >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> cmd = List()
-    >>> cmd._storage = bd.storage
-    >>> cmd._setup_io = lambda i_enc,o_enc : None
-    >>> cmd.stdout = sys.stdout
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> cmd = List(ui=ui)
 
-    >>> ret = cmd.run()
+    >>> ret = ui.run(cmd)
     abc/a:om: Bug A
-    >>> ret = cmd.run({'status':'closed'})
+    >>> ret = ui.run(cmd, {'status':'closed'})
     abc/b:cm: Bug B
     >>> bd.storage.writeable
     True
+    >>> ui.cleanup()
     >>> bd.cleanup()
     """
 
