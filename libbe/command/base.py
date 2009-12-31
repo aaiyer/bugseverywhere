@@ -294,7 +294,7 @@ class Command (object):
         if argument == None:
             ret = ['--%s' % o.name for o in self.options]
             if len(self.args) > 0 and self.args[0].completion_callback != None:
-                ret.extend(self.args[0].completion_callback(self, argument))
+                ret.extend(self.args[0].completion_callback(self, argument, fragment))
             return ret
         elif argument.completion_callback != None:
             # finish a particular argument
@@ -486,12 +486,18 @@ class UserInterface (object):
         raise NotImplementedError
 
     def run(self, command, options=None, args=None):
-        command.ui = self
-        self.io.setup_command(command)
-        self.storage_callbacks.setup_command(command)
+        self.setup_command(command)
+        return command.run(options, args)
+
+    def setup_command(self, command):
+        if command.ui == None:
+            command.ui = self
+        if self.io != None:
+            self.io.setup_command(command)
+        if self.storage_callbacks != None:
+            self.storage_callbacks.setup_command(command)        
         command.restrict_file_access = self.restrict_file_access
         command._get_user_id = self._get_user_id
-        return command.run(options, args)
 
     def _get_user_id(self):
         """Callback for use by commands that need it."""

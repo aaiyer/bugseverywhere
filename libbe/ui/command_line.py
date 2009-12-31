@@ -277,24 +277,27 @@ def main():
     ui.restrict_file_access = False
     ui.storage_callbacks = None
     be = BE(ui=ui)
+    ui.setup_command(be)
+
     parser = CmdOptionParser(be)
     try:
         options,args = parser.parse_args()
     except CallbackExit:
         return 0
     except libbe.command.UserError, e:
-        print >> be.stdout, 'ERROR:\n', e
+        print >> ui.io.stdout, 'ERROR:\n', e
         return 1
 
     command_name = args.pop(0)
     try:
         Class = libbe.command.get_command_class(command_name=command_name)
     except libbe.command.UnknownCommand, e:
-        print >> be.stdout, e
+        print >> ui.io.stdout, e
         return 1
 
     ui.storage_callbacks = libbe.command.StorageCallbacks(options['repo'])
     command = Class(ui=ui)
+    ui.setup_command(command)
 
     if command.name in ['comment']:
         paginate = 'never'
