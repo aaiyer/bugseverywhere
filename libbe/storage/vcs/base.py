@@ -683,7 +683,7 @@ os.listdir(self.get_path("bugs")):
         self._cached_path_id.connect()
         self.check_storage_version()
 
-    def disconnect(self):
+    def _disconnect(self):
         self._cached_path_id.disconnect()
 
     def _add_path(self, path, directory=False):
