@@ -125,7 +125,6 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             self.send_error(403, 'Write permission denied')
             return None
         except libbe.storage.InvalidID, e:
-            raise
             self.send_error(HTTP_USER_ERROR, 'InvalidID %s' % e)
             return None
         if content != None:
@@ -138,7 +137,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_add(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
-            return None
+            return (None,None)
         elif data['id'] == 'None':
             data['id'] = None
         id = data['id']
@@ -151,14 +150,14 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             directory = True
         else:
             directory = False
-        self.s.add(id, parent, directory)
+        self.s.add(id, parent=parent, directory=directory)
         self.send_response(200)
         return (None,None)
 
     def handle_remove(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
-            return None
+            return (None,None)
         elif data['id'] == 'None':
             data['id'] = None
         id = data['id']
@@ -178,7 +177,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_children(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
-            return None
+            return (None,None)
         elif data['id'] == 'None':
             data['id'] = None
         id = data['id']
@@ -194,7 +193,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         if not 'revision' in data or data['revision'] == 'None':
             data['revision'] = None
         revision = data['revision']
-        content = self.s.get(id, revision)
+        content = self.s.get(id, revision=revision)
         be_version = self.s.storage_version(revision)
         ctype = 'application/octet-stream'
         self.send_response(200)
@@ -204,16 +203,16 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_set(self, id, data):
         if not 'value' in data:
             self.send_error(406, 'Missing query key value')
-            return None
+            return (None,None)
         value = data['value']
         self.s.set(id, value)
         self.send_response(200)
-        return None
+        return (None,None)
 
     def handle_commit(self, data):
         if not 'summary' in data:
             self.send_error(406, 'Missing query key summary')
-            return None
+            return (None,None)
         summary = data['summary']
         if not body in data or data['body'] == 'None':
             data['body'] = None
@@ -225,12 +224,12 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             allow_empty = False
         self.s.commit(summary, body, allow_empty)
         self.send_response(200)
-        return None
+        return (None,None)
 
     def handle_revision_id(self, data):
         if not 'index' in data:
             self.send_error(406, 'Missing query key index')
-            return None
+            return (None,None)
         index = int(data['index'])
         content = self.s.revision_id(index)
         ctype = 'application/octet-stream'
