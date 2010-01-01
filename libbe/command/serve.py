@@ -214,15 +214,19 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             self.send_error(406, 'Missing query key summary')
             return (None,None)
         summary = data['summary']
-        if not body in data or data['body'] == 'None':
+        if not 'body' in data or data['body'] == 'None':
             data['body'] = None
         body = data['body']
-        if not allow_empty in data \
+        if not 'allow_empty' in data \
                 or data['allow_empty'] == 'True':
             allow_empty = True
         else:
             allow_empty = False
-        self.s.commit(summary, body, allow_empty)
+        try:
+            self.s.commit(summary, body, allow_empty)
+        except libbe.storage.EmptyCommit, e:
+            self.send_error(HTTP_USER_ERROR, 'EmptyCommit')
+            return (None,None)
         self.send_response(200)
         return (None,None)
 

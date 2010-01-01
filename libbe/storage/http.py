@@ -191,7 +191,7 @@ class HTTP (base.VersionedStorage):
         except InvalidURL, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
-            if self.e.error.code == HTTP_USER_ERROR:
+            if e.error.code == HTTP_USER_ERROR:
                 raise base.EmptyCommit
             raise base.InvalidID(id)
         return page.rstrip('\n')
@@ -222,7 +222,7 @@ class HTTP (base.VersionedStorage):
         except InvalidURL, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
-            if self.e.error.code == HTTP_USER_ERROR:
+            if e.error.code == HTTP_USER_ERROR:
                 raise base.InvalidRevision(index)
             raise base.InvalidID(id)
         return page.rstrip('\n')
