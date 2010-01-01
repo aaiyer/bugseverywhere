@@ -176,9 +176,9 @@ class HTTP (base.VersionedStorage):
         except InvalidURL, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
-            if self.e.error.code == HTTP_USER_ERROR:
+            if e.error.code == HTTP_USER_ERROR:
                 raise base.InvalidDirectory(
-                    'Directory %s cannot have data' % self.id)
+                    'Directory %s cannot have data' % id)
             raise base.InvalidID(id)
 
     def _commit(self, summary, body=None, allow_empty=False):
