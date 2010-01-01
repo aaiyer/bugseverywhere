@@ -18,7 +18,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import BaseHTTPServer as server
-import cgi
 import posixpath
 import urllib
 import urlparse
@@ -31,6 +30,10 @@ import libbe.version
 HTTP_USER_ERROR = 418
 STORAGE = None
 COMMAND = None
+
+# Maximum input we will accept when REQUEST_METHOD is POST
+# 0 ==> unlimited input
+MAXLEN = 0
 
 class BERequestHandler (server.BaseHTTPRequestHandler):
     """Simple HTTP request handler for serving the
@@ -61,16 +64,23 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             return None
         data = self.parse_query(query)
 
-        if path == ['children']:
-            content,ctype = self.handle_children(data)
-        elif len(path) > 1 and path[0] == 'get':
-            content,ctype = self.handle_get('/'.join(path[1:]), data)
-        elif path == ['revision-id']:
-            content,ctype = self.handle_revision_id(data)
-        elif path == ['version']:
-            content,ctype = self.handle_version(data)
-        else:
-            self.send_error(400, 'File not found')
+        try:
+            if path == ['children']:
+                content,ctype = self.handle_children(data)
+            elif len(path) > 1 and path[0] == 'get':
+                content,ctype = self.handle_get('/'.join(path[1:]), data)
+            elif path == ['revision-id']:
+                content,ctype = self.handle_revision_id(data)
+            elif path == ['version']:
+                content,ctype = self.handle_version(data)
+            else:
+                self.send_error(400, 'File not found')
+                return None
+        except libbe.storage.NotReadable, e:
+            self.send_error(403, 'Read permission denied')
+            return None
+        except libbe.storage.InvalidID, e:
+            self.send_error(HTTP_USER_ERROR, 'InvalidID %s' % e)
             return None
         if content != None:
             self.send_header('Content-type', ctype)
@@ -88,12 +98,8 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         self.s = STORAGE
         self.c = COMMAND
         self.log_request('POST')
-        data = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={'REQUEST_METHOD':'POST',
-                     'CONTENT_TYPE':self.headers['Content-Type'],
-                     })
+        post_data = self.read_post_data()
+        data = self.parse_post(post_data)
         path,query,fragment = self.parse_path(self.path)
         if query != '':
             self.send_error(
@@ -117,6 +123,10 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
                 return None
         except libbe.storage.NotWriteable, e:
             self.send_error(403, 'Write permission denied')
+            return None
+        except libbe.storage.InvalidID, e:
+            raise
+            self.send_error(HTTP_USER_ERROR, 'InvalidID %s' % e)
             return None
         if content != None:
             self.send_header('Content-type', ctype)
@@ -184,11 +194,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         if not 'revision' in data or data['revision'] == 'None':
             data['revision'] = None
         revision = data['revision']
-        try:
-            content = self.s.get(id, revision)
-        except libbe.storage.InvalidID, e:
-            self.send_error(HTTP_USER_ERROR, 'InvalidID %s' % e)
-            return None
+        content = self.s.get(id, revision)
         be_version = self.s.storage_version(revision)
         ctype = 'application/octet-stream'
         self.send_response(200)
@@ -261,6 +267,21 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             if len(v) == 1:
                 data[k] = v[0]
         return data
+
+    def parse_post(self, post):
+        return self.parse_query(post)
+
+    def read_post_data(self):
+        clen = -1
+        if 'content-length' in self.headers:
+            try:
+                clen = int(self.headers['content-length'])
+            except ValueError:
+                pass
+            if MAXLEN > 0 and clen > MAXLEN:
+                raise ValueError, 'Maximum content length exceeded'
+        post_data = self.rfile.read(clen)
+        return post_data
 
 
 class Serve (libbe.command.Command):
