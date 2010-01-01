@@ -18,6 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import BaseHTTPServer as server
+import cgi
 import posixpath
 import urllib
 import urlparse
@@ -87,10 +88,12 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         self.s = STORAGE
         self.c = COMMAND
         self.log_request('POST')
-        post_data = self.rfile.read()
-        print 'got post', post_data
-        data = self.parse_post(post_data)
-
+        data = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD':'POST',
+                     'CONTENT_TYPE':self.headers['Content-Type'],
+                     })
         path,query,fragment = self.parse_path(self.path)
         if query != '':
             self.send_error(
@@ -100,16 +103,20 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             self.send_error(
                 406, 'POST implementation does not allow fragment URL portion')
             return None
-        if path == ['add']:
-            content,ctype = self.handle_add(data)
-        elif path == ['remove']:
-            content,ctype = self.handle_remove(data)
-        elif len(path) > 1 and path[0] == 'set':
-            content,ctype = self.handle_set('/'.join(path[1:]), data)
-        elif path == ['commit']:
-            content,ctype = self.handle_commit(data)
-        else:
-            self.send_error(400, 'File not found')
+        try:
+            if path == ['add']:
+                content,ctype = self.handle_add(data)
+            elif path == ['remove']:
+                content,ctype = self.handle_remove(data)
+            elif len(path) > 1 and path[0] == 'set':
+                content,ctype = self.handle_set('/'.join(path[1:]), data)
+            elif path == ['commit']:
+                content,ctype = self.handle_commit(data)
+            else:
+                self.send_error(400, 'File not found')
+                return None
+        except libbe.storage.NotWriteable, e:
+            self.send_error(403, 'Write permission denied')
             return None
         if content != None:
             self.send_header('Content-type', ctype)
@@ -192,6 +199,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         if not 'value' in data:
             self.send_error(406, 'Missing query key value')
             return None
+        value = data['value']
         self.s.set(id, value)
         self.send_response(200)
         return None
@@ -254,8 +262,6 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
                 data[k] = v[0]
         return data
 
-    def parse_post(self, post):
-        return self.parse_query(post)
 
 class Serve (libbe.command.Command):
     """Serve a Storage backend for the HTTP storage client
@@ -291,16 +297,21 @@ class Serve (libbe.command.Command):
                     help='Set host string (blank for localhost, %default)',
                     arg=libbe.command.Argument(
                         name='host', metavar='HOST', default='')),
+                libbe.command.Option(name='read-only', short_name='r',
+                    help='Dissable operations that require writing'),
                 ])
 
     def _run(self, **params):
         global STORAGE, COMMAND
-        STORAGE = self._get_storage()
         COMMAND = self
+        STORAGE = self._get_storage()
+        if params['read-only'] == True:
+            writeable = STORAGE.writeable
+            STORAGE.writeable = False
         server_class = server.HTTPServer
         handler_class = BERequestHandler
-        server_address = (params['host'], params['port'])
-        httpd = server_class(server_address, handler_class)
+        httpd = server_class(
+            (params['host'], params['port']), handler_class)
         sa = httpd.socket.getsockname()
         print >> self.stdout, 'Serving HTTP on', sa[0], 'port', sa[1], '...'
         print >> self.stdout, 'BE repository', STORAGE.repo
@@ -310,37 +321,17 @@ class Serve (libbe.command.Command):
             pass
         print >> self.stdout, 'Closing server'
         httpd.server_close()
+        if params['read-only'] == True:
+            STORAGE.writeable = writeable
 
     def _long_help(self):
         return """
-This command lists bugs.  Normally it prints a short string like
-  576:om: Allow attachments
-Where
-  576   the bug id
-  o     the bug status is 'open' (first letter)
-  m     the bug severity is 'minor' (first letter)
-  Allo... the bug summary string
+Example usage:
+  $ be serve
+And in another terminal (or after backgrounding the server)
+  $ be --repo http://localhost:8000 list
 
-You can optionally (-u) print only the bug ids.
-
-There are several criteria that you can filter by:
-  * status
-  * severity
-  * assigned (who the bug is assigned to)
-Allowed values for each criterion may be given in a comma seperated
-list.  The special string "all" may be used with any of these options
-to match all values of the criterion.  As with the --status and
---severity options for `be depend`, starting the list with a minus
-sign makes your selections a blacklist instead of the default
-whitelist.
-
-status
-  %s
-severity
-  %s
-assigned
-  free form, with the string '-' being a shortcut for yourself.
-
-In addition, there are some shortcut options that set boolean flags.
-The boolean options are ignored if the matching string option is used.
+If you bind your server to a public interface, you should probably use
+the --read-only option so other people can't mess with your
+repository.
 """
