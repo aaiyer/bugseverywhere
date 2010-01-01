@@ -877,7 +877,11 @@ os.listdir(self.get_path("bugs")):
           /.be
         or None if none of those files exist.
         """
-        return search_parent_directories(path, filename)
+        try:
+            ret = search_parent_directories(path, filename)
+        except AssertionError, e:
+            return None
+        return ret
 
     def _u_find_id(self, id, revision):
         """
