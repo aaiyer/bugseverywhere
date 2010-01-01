@@ -3,7 +3,7 @@
 # doc/module.mk
 # Part of Bugs Everywhere, a distributed bug tracking system.
 #
-# Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
+# Copyright (C) 2008-2010 Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #

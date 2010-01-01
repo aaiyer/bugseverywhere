@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
+# Copyright (C) 2005-2010 Aaron Bentley and Panometrics, Inc.
 #                         Alexander Belchenko <bialix@ukr.net>
 #                         Ben Finney <benf@cybersource.com.au>
 #                         Chris Ball <cjb@laptop.org>

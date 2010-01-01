@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
+# Copyright (C) 2005-2010 Aaron Bentley and Panometrics, Inc.
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This program is free software; you can redistribute it and/or modify

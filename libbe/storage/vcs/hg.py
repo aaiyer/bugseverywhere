@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2009 Aaron Bentley and Panometrics, Inc.
+# Copyright (C) 2007-2010 Aaron Bentley and Panometrics, Inc.
 #                         Ben Finney <benf@cybersource.com.au>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>

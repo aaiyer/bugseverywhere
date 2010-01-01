@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Aaron Bentley and Panometrics, Inc.
+# Copyright (C) 2005-2010 Aaron Bentley and Panometrics, Inc.
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Oleg Romanyshyn <oromanyshyn@panoramicfeedback.com>
 #                         W. Trevor King <wking@drexel.edu>
