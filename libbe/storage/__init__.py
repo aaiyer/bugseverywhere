@@ -36,14 +36,23 @@ STORAGE_VERSIONS = ['Bugs Everywhere Tree 1 0',
 # the current version
 STORAGE_VERSION = STORAGE_VERSIONS[-1]
 
-def get_storage(location):
-    """
-    Return a Storage instance from a repo location string.
-    """
+def get_http_storage(location):
+    import http
+    return http.HTTP(location)
+
+def get_vcs_storage(location):
     import vcs
     s = vcs.detect_vcs(location)
     s.repo = location
     return s
+
+def get_storage(location):
+    """
+    Return a Storage instance from a repo location string.
+    """
+    if location.startswith('http://'):
+        return get_http_storage(location)
+    return get_vcs_storage(location)
 
 __all__ = [ConnectionError, InvalidStorageVersion, InvalidID,
            InvalidRevision, InvalidDirectory, NotWriteable, NotReadable,
