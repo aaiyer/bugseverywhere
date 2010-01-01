@@ -35,6 +35,10 @@ COMMAND = None
 # 0 ==> unlimited input
 MAXLEN = 0
 
+
+class _HandlerError (Exception):
+    pass
+
 class BERequestHandler (server.BaseHTTPRequestHandler):
     """Simple HTTP request handler for serving the
     libbe.storage.http.HTTP backend with GET, POST, and HEAD commands.
@@ -82,6 +86,9 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         except libbe.storage.InvalidID, e:
             self.send_error(HTTP_USER_ERROR, 'InvalidID %s' % e)
             return None
+        except _HandlerError:
+            return None
+
         if content != None:
             self.send_header('Content-type', ctype)
             self.send_header('Content-Length', len(content))
@@ -127,6 +134,8 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         except libbe.storage.InvalidID, e:
             self.send_error(HTTP_USER_ERROR, 'InvalidID %s' % e)
             return None
+        except _HandlerError:
+            return None
         if content != None:
             self.send_header('Content-type', ctype)
             self.send_header('Content-Length', len(content))
@@ -137,7 +146,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_add(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
-            return (None,None)
+            raise _HandlerError()
         elif data['id'] == 'None':
             data['id'] = None
         id = data['id']
@@ -157,7 +166,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_remove(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
-            return (None,None)
+            raise _HandlerError()
         elif data['id'] == 'None':
             data['id'] = None
         id = data['id']
@@ -177,7 +186,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_children(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
-            return (None,None)
+            raise _HandlerError()
         elif data['id'] == 'None':
             data['id'] = None
         id = data['id']
@@ -203,7 +212,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_set(self, id, data):
         if not 'value' in data:
             self.send_error(406, 'Missing query key value')
-            return (None,None)
+            raise _HandlerError()
         value = data['value']
         self.s.set(id, value)
         self.send_response(200)
@@ -212,7 +221,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def handle_commit(self, data):
         if not 'summary' in data:
             self.send_error(406, 'Missing query key summary')
-            return (None,None)
+            raise _HandlerError()
         summary = data['summary']
         if not 'body' in data or data['body'] == 'None':
             data['body'] = None
@@ -226,14 +235,14 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             self.s.commit(summary, body, allow_empty)
         except libbe.storage.EmptyCommit, e:
             self.send_error(HTTP_USER_ERROR, 'EmptyCommit')
-            return (None,None)
+            raise _HandlerError()
         self.send_response(200)
         return (None,None)
 
     def handle_revision_id(self, data):
         if not 'index' in data:
             self.send_error(406, 'Missing query key index')
-            return (None,None)
+            raise _HandlerError()
         index = int(data['index'])
         content = self.s.revision_id(index)
         ctype = 'application/octet-stream'
@@ -285,7 +294,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
                 raise ValueError, 'Maximum content length exceeded'
         post_data = self.rfile.read(clen)
         return post_data
-
+        
 
 class Serve (libbe.command.Command):
     """Serve a Storage backend for the HTTP storage client
