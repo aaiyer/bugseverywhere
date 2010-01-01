@@ -800,7 +800,7 @@ os.listdir(self.get_path("bugs")):
         try:
             path = self._cached_path_id.path(id)
         except InvalidID, e:
-            raise e
+            raise
         if not os.path.exists(path):
             raise InvalidID(id)
         if os.path.isdir(path):
@@ -877,7 +877,11 @@ os.listdir(self.get_path("bugs")):
           /.be
         or None if none of those files exist.
         """
-        return search_parent_directories(path, filename)
+        try:
+            ret = search_parent_directories(path, filename)
+        except AssertionError, e:
+            return None
+        return ret
 
     def _u_find_id(self, id, revision):
         """

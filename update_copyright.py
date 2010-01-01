@@ -26,7 +26,7 @@ import sys
 import select
 from threading import Thread
 
-from libbe.subproc import Pipe
+from libbe.util.subproc import Pipe
 
 COPYRIGHT_TEXT="""#
 # This program is free software; you can redistribute it and/or modify

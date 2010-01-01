@@ -1,3 +1,10 @@
+January 1, 2010
+ * Added HTTP storage backend and server
+   Serve a local repo on http://localhost:8000
+     be --repo REPO serve
+   Then connect from other be calls, for example
+     be --repo http://localhost:8000 list
+
 December 31, 2009
  * New bugdir/bug/comment ID format replaces old bug:comment format.
  * Deprecated support for `be diff` on Arch and Darcs <= 2.3.1.  A new

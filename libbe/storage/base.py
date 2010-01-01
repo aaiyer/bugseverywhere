@@ -27,6 +27,7 @@ from libbe.error import NotSupported
 import libbe.storage
 from libbe.util.tree import Tree
 from libbe.util import InvalidObject
+import libbe.version
 from libbe import TESTING
 
 if TESTING == True:
@@ -163,7 +164,7 @@ class Storage (object):
 
     def version(self):
         """Return a version string for this backend."""
-        return '0'
+        return libbe.version.version()
 
     def storage_version(self, revision=None):
         """Return the storage format for this backend."""
