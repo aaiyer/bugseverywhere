@@ -108,14 +108,14 @@ class List (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='sort', metavar='SORT', default=None,
                         completion_callback=libbe.command.util.Completer(AVAILABLE_CMPS))),
-                libbe.command.Option(name='uuids', short_name='u',
-                    help='Only print the bug UUIDS'),
+                libbe.command.Option(name='ids', short_name='i',
+                    help='Only print the bug IDS'),
                 libbe.command.Option(name='xml', short_name='x',
                     help='Dump output in XML format'),
                 ])
 #    parser.add_option("-S", "--sort", metavar="SORT-BY", dest="sort_by",
 #                      help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
-#    # boolean options.  All but uuids and xml are special cases of long forms
+#    # boolean options.  All but ids and xml are special cases of long forms
 #             ("w", "wishlist", "List bugs with 'wishlist' severity"),
 #             ("i", "important", "List bugs with >= 'serious' severity"),
 #             ("A", "active", "List all active bugs"),
@@ -151,9 +151,9 @@ class List (libbe.command.Command):
         bugs = self._sort_bugs(bugs, cmp_list)
 
         # print list of bugs
-        if params['uuids'] == True:
+        if params['ids'] == True:
             for bug in bugs:
-                print >> self.stdout, bug.uuid
+                print >> self.stdout, bug.id.user()
         else:
             self._list_bugs(bugs, xml=params['xml'])
         bugdir.storage.writeable = writeable

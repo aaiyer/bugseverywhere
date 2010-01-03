@@ -1,3 +1,7 @@
+January 3, 2010
+ * Changed `be list --uuids` -> `be list --ids`
+   Instead of UUIDs, it now outputs user ids: BUGDIR/BUG
+
 January 1, 2010
  * Added HTTP storage backend and server
    Serve a local repo on http://localhost:8000
