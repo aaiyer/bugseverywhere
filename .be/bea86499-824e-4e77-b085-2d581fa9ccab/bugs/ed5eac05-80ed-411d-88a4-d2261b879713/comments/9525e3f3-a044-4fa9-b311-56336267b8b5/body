@@ -1,0 +1,21 @@
+> I think a good solution would run along the lines of the currently
+> commented out code in duplicate_bugdir(), where a
+>   VersionedStorage.changed_since(revision)
+> call would give you a list of changed files.  diff could work off of
+> that directly, without the need to generate a whole duplicate bugdir.
+
+This is definately the way to go.  Rough approach for the VCS family:
+
+1) Parse `bzr diff` or such to get a list of new,changed,moved,removed
+   paths.
+2) Convert those paths to ids.
+3) Return a list of ids to duplicate_bugdir().
+4) Provide Storage.parent(id, revision), so duplicate_bugdir() could
+   figure out what type of id we were dealing with (bugdir, bug,
+   comment, other?), and construct the appropriate difference tree.
+
+There could be a DupBugDir class which stored that diff tree and a
+link to the current bugdir, which would make diffs much easier (work
+already done, just copy the diff tree), and provide faster access to
+unchanged files (just use the current version).
+
