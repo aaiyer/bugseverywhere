@@ -394,12 +394,16 @@ class VersionedStorage (Storage):
             id = '__ROOT__'
         if revision == None:
             revision = -1
+        else:
+            revision = int(revision)
         return [c.id for c in self._data[revision][id]
                 if not c.id.startswith('__')]
 
     def _get(self, id, default=InvalidObject, revision=None):
         if revision == None:
             revision = -1
+        else:
+            revision = int(revision)
         if id in self._data[revision]:
             return self._data[revision][id].value
         elif default == InvalidObject:
@@ -428,7 +432,7 @@ class VersionedStorage (Storage):
             raise EmptyCommit
         self._data[-1]["__COMMIT__SUMMARY__"].value = summary
         self._data[-1]["__COMMIT__BODY__"].value = body
-        rev = len(self._data)-1
+        rev = str(len(self._data)-1)
         self._data.append(copy.deepcopy(self._data[-1]))
         return rev
 
@@ -452,12 +456,34 @@ class VersionedStorage (Storage):
             raise InvalidRevision(index)
         L = len(self._data) - 1  # -1 b/c of initial commit
         if index >= -L and index <= L:
-            return index % L
+            return str(index % L)
         raise InvalidRevision(i)
+
+    def changed(self, revision):
+        """
+        Return a tuple of lists of ids
+          (new, modified, removed)
+        from the specified revision to the current situation.
+        """
+        new = []
+        modified = []
+        removed = []
+        for id,value in self._data[int(revision)].items():
+            if id.startswith('__'):
+                continue
+            if not id in self._data[-1]:
+                removed.append(id)
+            elif value.value != self._data[-1][id].value:
+                modified.append(id)
+        for id in self._data[-1]:
+            if not id in self._data[int(revision)]:
+                new.append(id)
+        return (new, modified, removed)
+
 
 if TESTING == True:
     class StorageTestCase (unittest.TestCase):
-        """Test cases for base Storage class."""
+        """Test cases for Storage class."""
 
         Class = Storage
 
@@ -764,12 +790,12 @@ if TESTING == True:
             self.failUnless(s == ['parent'], s)
 
     class VersionedStorageTestCase (StorageTestCase):
-        """Test cases for base VersionedStorage class."""
+        """Test cases for VersionedStorage methods."""
 
         Class = VersionedStorage
 
     class VersionedStorage_commit_TestCase (VersionedStorageTestCase):
-        """Test cases for VersionedStorage methods."""
+        """Test cases for VersionedStorage.commit and revision_ids methods."""
 
         id = 'unlikely id'
         val = 'Some value'
@@ -883,6 +909,34 @@ if TESTING == True:
                                 "%s.get() returned %s not %s for revision %s"
                                 % (vars(self.Class)['name'], ret,
                                    children[i], revs[i]))
+
+    class VersionedStorage_changed_TestCase (VersionedStorageTestCase):
+        """Test cases for VersionedStorage.changed() method."""
+
+        def test_changed(self):
+            self.s.add('dir', directory=True)
+            self.s.add('modified', parent='dir')
+            self.s.set('modified', 'some value to be modified')
+            self.s.add('moved', parent='dir')
+            self.s.set('moved', 'this entry will be moved')
+            self.s.add('removed', parent='dir')
+            self.s.set('removed', 'this entry will be deleted')
+            revA = self.s.commit('Initial state')
+            self.s.add('new', parent='dir')
+            self.s.set('new', 'this entry is new')
+            self.s.set('modified', 'a new value')
+            self.s.remove('moved')
+            self.s.add('moved2', parent='dir')
+            self.s.set('moved2', 'this entry will be moved')
+            self.s.remove('removed')
+            revB = self.s.commit('Final state')
+            new,mod,rem = self.s.changed(revA)
+            self.failUnless(sorted(new) == ['moved2', 'new'],
+                            'Unexpected new: %s' % new)
+            self.failUnless(mod == ['modified'],
+                            'Unexpected modified: %s' % mod)
+            self.failUnless(sorted(rem) == ['moved', 'removed'],
+                            'Unexpected removed: %s' % rem)
 
     def make_storage_testcase_subclasses(storage_class, namespace):
         """Make StorageTestCase subclasses for storage_class in namespace."""
