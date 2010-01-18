@@ -745,6 +745,27 @@ os.listdir(self.get_path("bugs")):
             if p.startswith(path):
                 self._cached_path_id.remove_id(id)
 
+    def _ancestors(self, id=None, revision=None):
+        if revision == None:
+            id_to_path = self._cached_path_id.path
+        else:
+            id_to_path = lambda id : self._vcs_path(id, revision)
+        if id==None:
+            path = self.be_dir
+        else:
+            path = id_to_path(id)
+        ancestors = []
+        while True:
+            if path == self.repo:
+                break
+            path = os.path.dirname(path)
+            try:
+                id = self._u_path_to_id(path)
+                ancestors.append(id)
+            except (SpacerCollision, InvalidPath):
+                pass    
+        return ancestors
+
     def _children(self, id=None, revision=None):
         if revision == None:
             id_to_path = self._cached_path_id.path
