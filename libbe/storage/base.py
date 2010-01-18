@@ -533,6 +533,23 @@ if TESTING == True:
             super(StorageTestCase, self).__init__(*args, **kwargs)
             self.dirname = None
 
+        # this class will be the basis of tests for several classes,
+        # so make sure we print the name of the class we're dealing with.
+        def fail(self, msg=None):
+            """Fail immediately, with the given message."""
+            raise self.failureException, \
+                '(%s) %s' % (self.Class.__name__, msg)
+
+        def failIf(self, expr, msg=None):
+            "Fail the test if the expression is true."
+            if expr: raise self.failureException, \
+                '(%s) %s' % (self.Class.__name__, msg)
+
+        def failUnless(self, expr, msg=None):
+            """Fail the test unless the expression is true."""
+            if not expr: raise self.failureException, \
+                '(%s) %s' % (self.Class.__name__, msg)
+
         def setUp(self):
             """Set up test fixtures for Storage test case."""
             super(StorageTestCase, self).setUp()
