@@ -597,6 +597,14 @@ os.listdir(self.get_path("bugs")):
         """
         return None
 
+    def _vcs_changed(self, revision):
+        """
+        Return a tuple of lists of ids
+          (new, modified, removed)
+        from the specified revision to the current situation.
+        """
+        return ([], [], [])
+
     def version(self):
         # Cache version string for efficiency.
         if not hasattr(self, '_version'):
@@ -838,6 +846,13 @@ os.listdir(self.get_path("bugs")):
         if revid == None:
             raise libbe.storage.base.InvalidRevision(index)
         return revid
+
+    def changed(self, revision):
+        new,mod,rem = self._vcs_changed(revision)
+        new = [self._u_path_to_id(p) for p in new]
+        mod = [self._u_path_to_id(p) for p in mod]
+        rem = [self._u_path_to_id(p) for p in rem]
+        return (new, mod, rem)
 
     def _u_any_in_string(self, list, string):
         """
