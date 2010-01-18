@@ -363,7 +363,7 @@ class VCS (libbe.storage.base.VersionedStorage):
     BugDir to search for an installed Storage backend and initialize
     it in the root directory.  This is a convenience option for
     supporting tests of versioning functionality
-    (e.g. .duplicate_bugdir).
+    (e.g. RevisionedBugDir).
 
     Disable encoding manipulation
     =============================
@@ -849,10 +849,17 @@ os.listdir(self.get_path("bugs")):
 
     def changed(self, revision):
         new,mod,rem = self._vcs_changed(revision)
-        new = [self._u_path_to_id(p) for p in new]
-        mod = [self._u_path_to_id(p) for p in mod]
-        rem = [self._u_path_to_id(p) for p in rem]
-        return (new, mod, rem)
+        def paths_to_ids(paths):
+            for p in paths:
+                try:
+                    id = self._u_path_to_id(p)
+                    yield id
+                except (SpacerCollision, InvalidPath):
+                    pass
+        new_id = list(paths_to_ids(new))
+        mod_id = list(paths_to_ids(mod))
+        rem_id = list(paths_to_ids(rem))
+        return (new_id, mod_id, rem_id)
 
     def _u_any_in_string(self, list, string):
         """
