@@ -112,23 +112,9 @@ class Hg(base.VCS):
             return self._u_invoke_client('cat', '-r', revision, path)
 
     def _vcs_path(self, id, revision):
-        output = self._u_invoke_client('manifest', '--rev', revision)
-        be_dir = self._cached_path_id._spacer_dirs[0]
-        be_dir_sep = self._cached_path_id._spacer_dirs[0] + os.path.sep
-        files = [f for f in output.splitlines() if f.startswith(be_dir_sep)]
-        for file in files:
-            if not file.startswith(be_dir+os.path.sep):
-                continue
-            parts = file.split(os.path.sep)
-            dir = parts.pop(0) # don't add the first spacer dir
-            for part in parts[:-1]:
-                dir = os.path.join(dir, part)
-                if not dir in files:
-                    files.append(dir)
-        for file in files:
-            if self._u_path_to_id(file) == id:
-                return file
-        raise base.InvalidId(id, revision=revision)
+        manifest = self._u_invoke_client(
+            'manifest', '--rev', revision).splitlines()
+        return self._u_find_id_from_manifest(id, manifest, revision=revision)
 
     def _vcs_isdir(self, path, revision):
         output = self._u_invoke_client('manifest', '--rev', revision)

@@ -756,7 +756,7 @@ os.listdir(self.get_path("bugs")):
             path = id_to_path(id)
         ancestors = []
         while True:
-            if path == self.repo:
+            if not path.startswith(self.repo + os.path.sep):
                 break
             path = os.path.dirname(path)
             try:
@@ -925,6 +925,33 @@ os.listdir(self.get_path("bugs")):
         except AssertionError, e:
             return None
         return ret
+
+    def _u_find_id_from_manifest(self, id, manifest, revision=None):
+        """
+        Search for the relative path to id using manifest, a list of all files.
+        
+        Returns None if the id is not found.
+        """
+        be_dir = self._cached_path_id._spacer_dirs[0]
+        be_dir_sep = self._cached_path_id._spacer_dirs[0] + os.path.sep
+        files = [f for f in manifest if f.startswith(be_dir_sep)]
+        for file in files:
+            if not file.startswith(be_dir+os.path.sep):
+                continue
+            parts = file.split(os.path.sep)
+            dir = parts.pop(0) # don't add the first spacer dir
+            for part in parts[:-1]:
+                dir = os.path.join(dir, part)
+                if not dir in files:
+                    files.append(dir)
+        for file in files:
+            try:
+                p_id = self._u_path_to_id(file)
+                if p_id == id:
+                    return file
+            except (SpacerCollision, InvalidPath):
+                pass
+        raise InvalidID(id, revision=revision)
 
     def _u_find_id(self, id, revision):
         """

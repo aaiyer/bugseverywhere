@@ -134,7 +134,9 @@ class Bzr(base.VCS):
         return cmd.outf.getvalue()        
 
     def _vcs_path(self, id, revision):
-        return self._u_find_id(id, revision)
+        manifest = self._vcs_listdir(
+            self.repo, revision=revision, recursive=True)
+        return self._u_find_id_from_manifest(id, manifest, revision=revision)
 
     def _vcs_isdir(self, path, revision):
         try:
@@ -145,13 +147,13 @@ class Bzr(base.VCS):
             raise
         return True
 
-    def _vcs_listdir(self, path, revision):
+    def _vcs_listdir(self, path, revision, recursive=False):
         path = os.path.join(self.repo, path)
         revision = self._parse_revision_string(revision)
         cmd = bzrlib.builtins.cmd_ls()
         cmd.outf = StringIO.StringIO()
         try:
-            cmd.run(revision=revision, path=path)
+            cmd.run(revision=revision, path=path, recursive=recursive)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
@@ -252,8 +254,7 @@ class Bzr(base.VCS):
         new = []
         modified = []
         removed = []
-        lines = diff_text.splitlines()
-        for i,line in enumerate(lines):
+        for line in diff_text.splitlines():
             if not line.startswith('=== '):
                 continue
             fields = line.split()
