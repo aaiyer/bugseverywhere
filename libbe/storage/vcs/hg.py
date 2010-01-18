@@ -158,6 +158,77 @@ class Hg(base.VCS):
             return None # before initial commit.
         return id
 
+    def _diff(self, revision):
+        return self._u_invoke_client(
+            'diff', '-r', revision, '--git')
+
+    def _parse_diff(self, diff_text):
+        """
+        Example diff text:
+                
+        diff --git a/.be/dir/bugs/modified b/.be/dir/bugs/modified
+        --- a/.be/dir/bugs/modified
+        +++ b/.be/dir/bugs/modified
+        @@ -1,1 +1,1 @@ some value to be modified
+        -some value to be modified
+        \ No newline at end of file
+        +a new value
+        \ No newline at end of file
+        diff --git a/.be/dir/bugs/moved b/.be/dir/bugs/moved
+        deleted file mode 100644
+        --- a/.be/dir/bugs/moved
+        +++ /dev/null
+        @@ -1,1 +0,0 @@
+        -this entry will be moved
+        \ No newline at end of file
+        diff --git a/.be/dir/bugs/moved2 b/.be/dir/bugs/moved2
+        new file mode 100644
+        --- /dev/null
+        +++ b/.be/dir/bugs/moved2
+        @@ -0,0 +1,1 @@
+        +this entry will be moved
+        \ No newline at end of file
+        diff --git a/.be/dir/bugs/new b/.be/dir/bugs/new
+        new file mode 100644
+        --- /dev/null
+        +++ b/.be/dir/bugs/new
+        @@ -0,0 +1,1 @@
+        +this entry is new
+        \ No newline at end of file
+        diff --git a/.be/dir/bugs/removed b/.be/dir/bugs/removed
+        deleted file mode 100644
+        --- a/.be/dir/bugs/removed
+        +++ /dev/null
+        @@ -1,1 +0,0 @@
+        -this entry will be deleted
+        \ No newline at end of file
+        """
+        new = []
+        modified = []
+        removed = []
+        lines = diff_text.splitlines()
+        for i,line in enumerate(lines):
+            if not line.startswith('diff '):
+                continue
+            file_a,file_b = line.split()[-2:]
+            assert file_a.startswith('a/'), \
+                'missformed file_a %s' % file_a
+            assert file_b.startswith('b/'), \
+                'missformed file_a %s' % file_b
+            file = file_a[2:]
+            assert file_b[2:] == file, \
+                'diff file missmatch %s != %s' % (file_a, file_b)
+            if lines[i+1].startswith('new '):
+                new.append(file)
+            elif lines[i+1].startswith('deleted '):
+                removed.append(file)
+            else:
+                modified.append(file)
+        return (new,modified,removed)
+
+    def _vcs_changed(self, revision):
+        return self._parse_diff(self._diff(revision))
+
 
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Hg, sys.modules[__name__])
