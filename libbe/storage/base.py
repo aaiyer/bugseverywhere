@@ -960,8 +960,11 @@ if TESTING == True:
         storage_testcase_classes = [
             c for c in (
                 ob for ob in globals().values() if isinstance(ob, type))
-            if issubclass(c, StorageTestCase) \
-                and c.Class == Storage]
+            if ((issubclass(c, StorageTestCase) \
+                     and c.Class == Storage)
+                or
+                (issubclass(c, VersionedStorageTestCase) \
+                     and c.Class == VersionedStorage))]
 
         for base_class in storage_testcase_classes:
             testcase_class_name = storage_class.__name__ + base_class.__name__
