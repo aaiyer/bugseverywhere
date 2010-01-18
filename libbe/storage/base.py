@@ -897,7 +897,7 @@ if TESTING == True:
             children = []
             for i in range(10):
                 new_child = str(i)
-                self.s.add(new_child, 'parent', directory=(i % 2 == 0))
+                self.s.add(new_child, 'parent')
                 self.s.set(new_child, self.val)
                 revs.append(self.s.commit('%s: %d' % (self.commit_msg, i),
                                           self.commit_body))
