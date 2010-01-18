@@ -367,32 +367,68 @@ class Diff (object):
         old_uuids.extend([s for s in subscribed_bugs
                           if self.old_bugdir.has_bug(s)])
         old_uuids = sorted(set(old_uuids))
+
         added = []
         removed = []
         modified = []
-        for uuid in new_uuids:
-            new_bug = self.new_bugdir.bug_from_uuid(uuid)
-            try:
-                old_bug = self.old_bugdir.bug_from_uuid(uuid)
-            except KeyError:
+        if hasattr(self.old_bugdir, 'changed'):
+            # take advantage of a RevisionedBugDir-style changed() method
+            new_ids,mod_ids,rem_ids = self.old_bugdir.changed()
+            for id in new_ids:
+                for a_id in self.new_bugdir.storage.ancestors(id):
+                    if a_id.count('/') == 0:
+                        if a_id in [b.id.storage() for b in added]:
+                            break
+                        try:
+                            bug = self.new_bugdir.bug_from_uuid(a_id)
+                            added.append(bug)
+                        except libbe.bugdir.NoBugMatches:
+                            pass
+            for id in rem_ids:
+                for a_id in self.old_bugdir.storage.ancestors(id):
+                    if a_id.count('/') == 0:
+                        if a_id in [b.id.storage() for b in removed]:
+                            break
+                        try:
+                            bug = self.old_bugdir.bug_from_uuid(a_id)
+                            removed.append(bug)
+                        except libbe.bugdir.NoBugMatches:
+                            pass
+            for id in mod_ids:
+                for a_id in self.new_bugdir.storage.ancestors(id):
+                    if a_id.count('/') == 0:
+                        if a_id in [b.id.storage() for b in modified]:
+                            break
+                        try:
+                            new_bug = self.new_bugdir.bug_from_uuid(a_id)
+                            old_bug = self.old_bugdir.bug_from_uuid(a_id)
+                            modified.append((old_bug, new_bug))
+                        except libbe.bugdir.NoBugMatches:
+                            pass
+        else:
+            for uuid in new_uuids:
+                new_bug = self.new_bugdir.bug_from_uuid(uuid)
+                try:
+                    old_bug = self.old_bugdir.bug_from_uuid(uuid)
+                except KeyError:
+                    if BUGDIR_TYPE_ALL in bugdir_types \
+                            or BUGDIR_TYPE_NEW in bugdir_types \
+                            or uuid in subscribed_bugs:
+                        added.append(new_bug)
+                    continue
                 if BUGDIR_TYPE_ALL in bugdir_types \
-                        or BUGDIR_TYPE_NEW in bugdir_types \
+                        or BUGDIR_TYPE_MOD in bugdir_types \
                         or uuid in subscribed_bugs:
-                    added.append(new_bug)
-                continue
-            if BUGDIR_TYPE_ALL in bugdir_types \
-                    or BUGDIR_TYPE_MOD in bugdir_types \
-                    or uuid in subscribed_bugs:
-                if old_bug.storage != None and old_bug.storage.is_readable():
-                    old_bug.load_comments()
-                if new_bug.storage != None and new_bug.storage.is_readable():
-                    new_bug.load_comments()
-                if old_bug != new_bug:
-                    modified.append((old_bug, new_bug))
-        for uuid in old_uuids:
-            if not self.new_bugdir.has_bug(uuid):
-                old_bug = self.old_bugdir.bug_from_uuid(uuid)
-                removed.append(old_bug)
+                    if old_bug.storage != None and old_bug.storage.is_readable():
+                        old_bug.load_comments()
+                    if new_bug.storage != None and new_bug.storage.is_readable():
+                        new_bug.load_comments()
+                    if old_bug != new_bug:
+                        modified.append((old_bug, new_bug))
+            for uuid in old_uuids:
+                if not self.new_bugdir.has_bug(uuid):
+                    old_bug = self.old_bugdir.bug_from_uuid(uuid)
+                    removed.append(old_bug)
         added.sort()
         removed.sort()
         modified.sort(self._bug_modified_cmp)
