@@ -36,13 +36,13 @@ import os.path
 import re
 import shutil
 import StringIO
+import sys
 
 import libbe
 import base
 
 if libbe.TESTING == True:
     import doctest
-    import sys
     import unittest
 
 
@@ -187,6 +187,88 @@ class Bzr(base.VCS):
         if index >= 0:
             return str(index) # bzr commit 0 is the empty tree.
         return str(current_revision+index+1)
+
+    def _diff(self, revision):
+        revision = self._parse_revision_string(revision)
+        cmd = bzrlib.builtins.cmd_diff()
+        cmd.outf = StringIO.StringIO()
+        # for some reason, cmd_diff uses sys.stdout not self.outf for output.
+        stdout = sys.stdout
+        sys.stdout = cmd.outf
+        try:
+            status = cmd.run(revision=revision, file_list=[self.repo])
+        finally:
+            sys.stdout = stdout
+        assert status in [0,1], "Invalid status %d" % status
+        return cmd.outf.getvalue()
+
+    def _parse_diff(self, diff_text):
+        """
+        Example diff text:
+                
+        === modified file 'dir/changed'
+        --- dir/changed	2010-01-16 01:54:53 +0000
+        +++ dir/changed	2010-01-16 01:54:54 +0000
+        @@ -1,3 +1,3 @@
+         hi
+        -there
+        +everyone and
+         joe
+        
+        === removed file 'dir/deleted'
+        --- dir/deleted	2010-01-16 01:54:53 +0000
+        +++ dir/deleted	1970-01-01 00:00:00 +0000
+        @@ -1,3 +0,0 @@
+        -in
+        -the
+        -beginning
+        
+        === removed file 'dir/moved'
+        --- dir/moved	2010-01-16 01:54:53 +0000
+        +++ dir/moved	1970-01-01 00:00:00 +0000
+        @@ -1,4 +0,0 @@
+        -the
+        -ants
+        -go
+        -marching
+        
+        === added file 'dir/moved2'
+        --- dir/moved2	1970-01-01 00:00:00 +0000
+        +++ dir/moved2	2010-01-16 01:54:34 +0000
+        @@ -0,0 +1,4 @@
+        +the
+        +ants
+        +go
+        +marching
+        
+        === added file 'dir/new'
+        --- dir/new	1970-01-01 00:00:00 +0000
+        +++ dir/new	2010-01-16 01:54:54 +0000
+        @@ -0,0 +1,2 @@
+        +hello
+        +world
+        
+        """
+        new = []
+        modified = []
+        removed = []
+        lines = diff_text.splitlines()
+        for i,line in enumerate(lines):
+            if not line.startswith('=== '):
+                continue
+            fields = line.split()
+            action = fields[1]
+            file = fields[-1].strip("'")
+            if action == 'added':
+                new.append(file)
+            elif action == 'modified':
+                modified.append(file)
+            elif action == 'removed':
+                removed.append(file)
+        return (new,modified,removed)
+
+    def _vcs_changed(self, revision):
+        return self._parse_diff(self._diff(revision))
 
 
 if libbe.TESTING == True:
