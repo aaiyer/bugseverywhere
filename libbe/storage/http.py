@@ -142,6 +142,13 @@ class HTTP (base.VersionedStorage):
             url, get=False,
             data_dict={'id':id, 'recursive':True})
 
+    def _ancestors(self, id=None, revision=None):
+        url = urlparse.urljoin(self.repo, 'ancestors')
+        page,final_url,info = get_post_url(
+            url, get=True,
+            data_dict={'id':id, 'revision':revision})
+        return page.strip('\n').splitlines()
+
     def _children(self, id=None, revision=None):
         url = urlparse.urljoin(self.repo, 'children')
         page,final_url,info = get_post_url(

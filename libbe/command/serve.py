@@ -66,7 +66,9 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         data = self.parse_query(query)
 
         try:
-            if path == ['children']:
+            if path == ['ancestors']:
+                content,ctype = self.handle_ancestors(data)
+            elif path == ['children']:
                 content,ctype = self.handle_children(data)
             elif len(path) > 1 and path[0] == 'get':
                 content,ctype = self.handle_get('/'.join(path[1:]), data)
@@ -179,6 +181,21 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
             self.s.remove(id)
         self.send_response(200)
         return (None,None)
+
+    def handle_ancestors(self, data):
+        if not 'id' in data:
+            self.send_error(406, 'Missing query key id')
+            raise _HandlerError()
+        elif data['id'] == 'None':
+            data['id'] = None
+        id = data['id']
+        if not 'revision' in data or data['revision'] == 'None':
+            data['revision'] = None
+        revision = data['revision']
+        content = '\n'.join(self.s.ancestors(id, revision))
+        ctype = 'application/octet-stream'
+        self.send_response(200)
+        return content,ctype
 
     def handle_children(self, data):
         if not 'id' in data:
