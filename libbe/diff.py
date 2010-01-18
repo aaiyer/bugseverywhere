@@ -397,7 +397,7 @@ class Diff (object):
             for id in mod_ids:
                 for a_id in self.new_bugdir.storage.ancestors(id):
                     if a_id.count('/') == 0:
-                        if a_id in [b.id.storage() for b in modified]:
+                        if a_id in [b[0].id.storage() for b in modified]:
                             break
                         try:
                             new_bug = self.new_bugdir.bug_from_uuid(a_id)
