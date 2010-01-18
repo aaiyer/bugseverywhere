@@ -1066,8 +1066,7 @@ if libbe.TESTING == True:
 
     class VCS_installed_TestCase (VCSTestCase):
         def test_installed(self):
-            """
-            See if the VCS is installed.
+            """See if the VCS is installed.
             """
             self.failUnless(self.s.installed() == True,
                             '%(name)s VCS not found' % vars(self.Class))
@@ -1075,8 +1074,7 @@ if libbe.TESTING == True:
 
     class VCS_detection_TestCase (VCSTestCase):
         def test_detection(self):
-            """
-            See if the VCS detects its installed repository
+            """See if the VCS detects its installed repository
             """
             if self.s.installed():
                 self.s.disconnect()
@@ -1086,8 +1084,7 @@ if libbe.TESTING == True:
                 self.s.connect()
 
         def test_no_detection(self):
-            """
-            See if the VCS detects its installed repository
+            """See if the VCS detects its installed repository
             """
             if self.s.installed() and self.Class.name != 'None':
                 self.s.disconnect()
