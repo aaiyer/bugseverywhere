@@ -168,7 +168,7 @@ class CachedPathID (object):
     >>> c.path('qrs')
     Traceback (most recent call last):
       ...
-    InvalidID: 'qrs'
+    InvalidID: qrs in revision None
     >>> c.disconnect()
     >>> c.destroy()
     >>> dir.cleanup()
