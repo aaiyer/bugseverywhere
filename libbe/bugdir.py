@@ -292,23 +292,23 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def sibling_uuids(self):
         return []
 
-    # methods for managing duplicate BugDirs
-
-    def duplicate_bugdir(self, revision):
-        """
-        Duplicate bugdirs are read-only copies used for generating
-        diffs between revisions.
-        """
-        storage_version = self.storage.storage_version(revision)
+class RevisionedBugDir (BugDir):
+    """
+    RevisionedBugDirs are read-only copies used for generating
+    diffs between revisions.
+    """
+    def __init__(self, bugdir, revision):
+        storage_version = bugdir.storage.storage_version(revision)
         if storage_version != libbe.storage.STORAGE_VERSION:
             raise libbe.storage.InvalidStorageVersion(storage_version)
-        s = copy.deepcopy(self.storage)
+        s = copy.deepcopy(bugdir.storage)
         s.writeable = False
         class RevisionedStorage (object):
             def __init__(self, storage, default_revision):
                 self.s = storage
                 self.sget = self.s.get
                 self.schildren = self.s.children
+                self.schanged = self.s.changed
                 self.r = default_revision
             def get(self, *args, **kwargs):
                 if not 'revision' in kwargs or kwargs['revision'] == None:
@@ -318,10 +318,16 @@ class BugDir (list, settings_object.SavedSettingsObject):
                 if not 'revision' in kwargs or kwargs['revision'] == None:
                     kwargs['revision'] = self.r
                 return self.schildren(*args, **kwargs)
+            def changed(self, *args, **kwargs):
+                if not 'revision' in kwargs or kwargs['revision'] == None:
+                    kwargs['revision'] = self.r
+                return self.schanged(*args, **kwargs)
         rs = RevisionedStorage(s, revision)
         s.get = rs.get
         s.children = rs.children
-        dbd = BugDir(s, from_storage=True)
+        s.changed = rs.changed
+        BugDir.__init__(self, s, from_storage=True)
+        self.revision = revision
 #        dbd = copy.copy(self)
 #        dbd.storage = copy.copy(self.storage)
 #        dbd._bug_map = copy.copy(self._bug_map)
@@ -368,7 +374,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
 #                else:
 #                    assert 1==0, 'Unkown type "%s" for id "%s"' % (type, id)
 #        dbd.storage.readable = False # so we won't read in added bugs, etc.
-        return dbd
+#        return dbd
+    
 
 if libbe.TESTING == True:
     class SimpleBugDir (BugDir):
