@@ -234,6 +234,15 @@ class HTTP (base.VersionedStorage):
             raise base.InvalidID(id)
         return page.rstrip('\n')
 
+    def changed(self, revision=None):
+        url = urlparse.urljoin(self.repo, 'changed')
+        page,final_url,info = get_post_url(
+            url, get=True,
+            data_dict={'revision':revision})
+        lines = page.strip('\n')
+        new,mod,rem = [p.splitlines() for p in page.split('\n\n')]
+        return (new, mod, rem)
+
     def check_storage_version(self):
         version = self.storage_version()
         if version != libbe.storage.STORAGE_VERSION:

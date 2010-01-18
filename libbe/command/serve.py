@@ -19,6 +19,13 @@ import posixpath
 import urllib
 import urlparse
 
+try:
+    # Python >= 2.6
+    from urlparse import parse_qs
+except ImportError:
+    # Python <= 2.5
+    from cgi import parse_qs
+
 import libbe
 import libbe.command
 import libbe.command.util
@@ -74,6 +81,8 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
                 content,ctype = self.handle_get('/'.join(path[1:]), data)
             elif path == ['revision-id']:
                 content,ctype = self.handle_revision_id(data)
+            elif path == ['changed']:
+                content,ctype = self.handle_changed(data)
             elif path == ['version']:
                 content,ctype = self.handle_version(data)
             else:
@@ -263,6 +272,16 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         self.send_response(200)
         return content,ctype
 
+    def handle_changed(self, data):
+        if not 'revision' in data or data['revision'] == 'None':
+            data['revision'] = None
+        revision = data['revision']
+        add,mod,rem = self.s.changed(revision)
+        content = '\n\n'.join(['\n'.join(p) for p in (add,mod,rem)])
+        ctype = 'application/octet-stream'
+        self.send_response(200)
+        return content,ctype
+
     def handle_version(self, data):
         if not 'revision' in data or data['revision'] == 'None':
             data['revision'] = None
@@ -287,7 +306,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def parse_query(self, query):
         if len(query) == 0:
             return {}
-        data = urlparse.parse_qs(
+        data = parse_qs(
             query, keep_blank_values=True, strict_parsing=True)
         for k,v in data.items():
             if len(v) == 1:
