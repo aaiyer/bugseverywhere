@@ -303,7 +303,8 @@ class Arch(base.VCS):
             status,output,error = \
                 self._invoke_client(
                 'file-find', '--unescaped', path, revision)
-            relpath = output.rstrip('\n')
+            relpath = output.rstrip('\n').splitlines()[-1]
+            print >> sys.stderr, 'getting', relpath
             return base.VCS._vcs_get_file_contents(self, relpath)
 
     def _vcs_path(self, id, revision):
