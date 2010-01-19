@@ -27,7 +27,7 @@ import os
 import re
 import shutil
 import sys
-import time
+import time # work around http://mercurial.selenic.com/bts/issue618
 
 import libbe
 import libbe.ui.util.user
@@ -68,6 +68,7 @@ class Arch(base.VCS):
         self.versioned = True
         self.interspersed_vcs_files = True
         self.paranoid = False
+        self.__updated = [] # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
@@ -288,7 +289,7 @@ class Arch(base.VCS):
             shutil.rmtree(arch_ids)
 
     def _vcs_update(self, path):
-        pass
+        self.__updated.append(path) # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_is_versioned(self, path):
         if '.arch-ids' in path:
@@ -300,16 +301,28 @@ class Arch(base.VCS):
             return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
             status,output,error = \
-                self._invoke_client('file-find', path, revision)
+                self._invoke_client(
+                'file-find', '--unescaped', path, revision)
             relpath = output.rstrip('\n')
             return base.VCS._vcs_get_file_contents(self, relpath)
+
+    def _vcs_path(self, id, revision):
+        raise NotImplementedError
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         if allow_empty == False:
             # arch applies empty commits without complaining, so check first
             status,output,error = self._u_invoke_client('changes',expect=(0,1))
             if status == 0:
-                raise base.EmptyCommit()
+                # work around http://mercurial.selenic.com/bts/issue618
+                time.sleep(1)
+                for path in self.__updated:
+                    os.utime(os.path.join(self.repo, path), None)
+                self.__updated = []
+                status,output,error = self._u_invoke_client('changes',expect=(0,1))
+                if status == 0:
+                # end work around
+                    raise base.EmptyCommit()
         summary,body = self._u_parse_commitfile(commitfile)
         args = ['commit', '--summary', summary]
         if body != None:
@@ -341,6 +354,9 @@ class Arch(base.VCS):
         except IndexError:
             return None
         return '%s--%s' % (self._archive_project_name(), log)
+
+    def _vcs_changed(self, revision):
+        raise NotImplementedError
 
 
 if libbe.TESTING == True:
