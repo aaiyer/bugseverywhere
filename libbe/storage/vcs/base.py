@@ -815,12 +815,14 @@ os.listdir(self.get_path("bugs")):
         try:
             contents = self._vcs_get_file_contents(relpath, revision)
         except InvalidID, e:
-            if InvalidID == None:
-                e.id = InvalidID
+            if e.id == None:
+                e.id = id
+            if e.revision == None:
+                e.revision = revision
             raise
         if contents in [libbe.storage.base.InvalidDirectory,
                         libbe.util.InvalidObject]:
-            raise InvalidID(id)
+            raise InvalidID(id, revision)
         elif len(contents) == 0:
             return None
         return contents
