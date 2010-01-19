@@ -374,8 +374,8 @@ class Message (object):
     def _subject_tag_type(self):
         """
         Parse subject tag, return (type, value), where type is one of
-        None, "new", "comment", "control", or "xml"; and value is None
-        except in the case of "comment", in which case it's the bug
+        None, "new", "comment", or "control"; and value is None except
+        in the case of "comment", in which case it's the bug
         ID/shortname.
         """
         tag,subject = self._split_subject()
@@ -718,7 +718,7 @@ def open_logfile(logpath=None):
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != u'none':
         LOGFILE = codecs.open(LOGPATH, u'a+',
-            libbe.utuil.encoding.get_filesystem_encoding())
+            libbe.util.encoding.get_filesystem_encoding())
 
 def close_logfile():
     if LOGFILE != None and LOGPATH not in [u'stderr', u'none']:
