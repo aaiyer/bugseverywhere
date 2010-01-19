@@ -332,13 +332,16 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
 class Serve (libbe.command.Command):
     """Serve a Storage backend for the HTTP storage client
 
+    >>> raise NotImplementedError, "Serve tests not yet implemented"
+    >>> import sys
     >>> import libbe.bugdir
+    >>> import libbe.command.list
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
     >>> ui.storage_callbacks.set_storage(bd.storage)
-    >>> cmd = List(ui=ui)
+    >>> cmd = libbe.command.list.List(ui=ui)
 
     >>> ret = ui.run(cmd)
     abc/a:om: Bug A
