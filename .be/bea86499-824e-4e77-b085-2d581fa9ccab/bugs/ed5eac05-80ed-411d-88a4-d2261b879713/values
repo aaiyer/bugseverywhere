@@ -1,7 +1,7 @@
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Slow and ugly diff implementation
