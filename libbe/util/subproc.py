@@ -36,7 +36,7 @@ if _POSIX == True:
 class CommandError(Exception):
     def __init__(self, command, status, stdout=None, stderr=None):
         strerror = ['Command failed (%d):\n  %s\n' % (status, stderr),
-                    'while executing\n  %s' % command]
+                    'while executing\n  %s' % str(command)]
         Exception.__init__(self, '\n'.join(strerror))
         self.command = command
         self.status = status

@@ -19,6 +19,13 @@ import posixpath
 import urllib
 import urlparse
 
+try:
+    # Python >= 2.6
+    from urlparse import parse_qs
+except ImportError:
+    # Python <= 2.5
+    from cgi import parse_qs
+
 import libbe
 import libbe.command
 import libbe.command.util
@@ -66,12 +73,16 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         data = self.parse_query(query)
 
         try:
-            if path == ['children']:
+            if path == ['ancestors']:
+                content,ctype = self.handle_ancestors(data)
+            elif path == ['children']:
                 content,ctype = self.handle_children(data)
             elif len(path) > 1 and path[0] == 'get':
                 content,ctype = self.handle_get('/'.join(path[1:]), data)
             elif path == ['revision-id']:
                 content,ctype = self.handle_revision_id(data)
+            elif path == ['changed']:
+                content,ctype = self.handle_changed(data)
             elif path == ['version']:
                 content,ctype = self.handle_version(data)
             else:
@@ -180,6 +191,21 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         self.send_response(200)
         return (None,None)
 
+    def handle_ancestors(self, data):
+        if not 'id' in data:
+            self.send_error(406, 'Missing query key id')
+            raise _HandlerError()
+        elif data['id'] == 'None':
+            data['id'] = None
+        id = data['id']
+        if not 'revision' in data or data['revision'] == 'None':
+            data['revision'] = None
+        revision = data['revision']
+        content = '\n'.join(self.s.ancestors(id, revision))
+        ctype = 'application/octet-stream'
+        self.send_response(200)
+        return content,ctype
+
     def handle_children(self, data):
         if not 'id' in data:
             self.send_error(406, 'Missing query key id')
@@ -246,6 +272,16 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
         self.send_response(200)
         return content,ctype
 
+    def handle_changed(self, data):
+        if not 'revision' in data or data['revision'] == 'None':
+            data['revision'] = None
+        revision = data['revision']
+        add,mod,rem = self.s.changed(revision)
+        content = '\n\n'.join(['\n'.join(p) for p in (add,mod,rem)])
+        ctype = 'application/octet-stream'
+        self.send_response(200)
+        return content,ctype
+
     def handle_version(self, data):
         if not 'revision' in data or data['revision'] == 'None':
             data['revision'] = None
@@ -270,7 +306,7 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
     def parse_query(self, query):
         if len(query) == 0:
             return {}
-        data = urlparse.parse_qs(
+        data = parse_qs(
             query, keep_blank_values=True, strict_parsing=True)
         for k,v in data.items():
             if len(v) == 1:
@@ -296,13 +332,16 @@ class BERequestHandler (server.BaseHTTPRequestHandler):
 class Serve (libbe.command.Command):
     """Serve a Storage backend for the HTTP storage client
 
+    >>> raise NotImplementedError, "Serve tests not yet implemented"
+    >>> import sys
     >>> import libbe.bugdir
+    >>> import libbe.command.list
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
     >>> ui.storage_callbacks.set_storage(bd.storage)
-    >>> cmd = List(ui=ui)
+    >>> cmd = libbe.command.list.List(ui=ui)
 
     >>> ret = ui.run(cmd)
     abc/a:om: Bug A

@@ -292,83 +292,54 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def sibling_uuids(self):
         return []
 
-    # methods for managing duplicate BugDirs
-
-    def duplicate_bugdir(self, revision):
-        """
-        Duplicate bugdirs are read-only copies used for generating
-        diffs between revisions.
-        """
-        storage_version = self.storage.storage_version(revision)
+class RevisionedBugDir (BugDir):
+    """
+    RevisionedBugDirs are read-only copies used for generating
+    diffs between revisions.
+    """
+    def __init__(self, bugdir, revision):
+        storage_version = bugdir.storage.storage_version(revision)
         if storage_version != libbe.storage.STORAGE_VERSION:
             raise libbe.storage.InvalidStorageVersion(storage_version)
-        s = copy.deepcopy(self.storage)
+        s = copy.deepcopy(bugdir.storage)
         s.writeable = False
         class RevisionedStorage (object):
             def __init__(self, storage, default_revision):
                 self.s = storage
                 self.sget = self.s.get
+                self.sancestors = self.s.ancestors
                 self.schildren = self.s.children
+                self.schanged = self.s.changed
                 self.r = default_revision
             def get(self, *args, **kwargs):
                 if not 'revision' in kwargs or kwargs['revision'] == None:
                     kwargs['revision'] = self.r
                 return self.sget(*args, **kwargs)
+            def ancestors(self, *args, **kwargs):
+                print 'getting ancestors', args, kwargs
+                if not 'revision' in kwargs or kwargs['revision'] == None:
+                    kwargs['revision'] = self.r
+                ret = self.sancestors(*args, **kwargs)
+                print 'got ancestors', ret
+                return ret
             def children(self, *args, **kwargs):
                 if not 'revision' in kwargs or kwargs['revision'] == None:
                     kwargs['revision'] = self.r
                 return self.schildren(*args, **kwargs)
+            def changed(self, *args, **kwargs):
+                if not 'revision' in kwargs or kwargs['revision'] == None:
+                    kwargs['revision'] = self.r
+                return self.schanged(*args, **kwargs)
         rs = RevisionedStorage(s, revision)
         s.get = rs.get
+        s.ancestors = rs.ancestors
         s.children = rs.children
-        dbd = BugDir(s, from_storage=True)
-#        dbd = copy.copy(self)
-#        dbd.storage = copy.copy(self.storage)
-#        dbd._bug_map = copy.copy(self._bug_map)
-#        dbd.storage.writeable = False
-#        added,changed,removed = self.storage.changed_since(revision)
-#        for id in added:
-#            pass
-#        for id in removed:
-#            pass
-#        for id in changed:
-#            parsed = libbe.util.id.parse_id(id)
-#            if parsed['type'] == 'bugdir':
-#                assert parsed['remaining'] == ['settings'], parsed['remaining']
-#                dbd._settings = copy.copy(self._settings)
-#                mf = self.storage.get(self.id.storage('settings'), default='\n',
-#                                      revision=revision)
-#                dbd.load_settings(mf)
-#            else:
-#                if parsed['bug'] not in self:
-#                    self._load_bug(parsed['bug'])
-#                    dbd._load_bug(parsed['bug'])
-#                else:
-#                    bug = copy.copy(self._bug_map[parsed['bug']])
-#                    bug.settings = copy.copy(bug.settings)
-#                    dbd._bug_map[parsed['bug']] = bug
-#                if parsed['type'] == 'bug':
-#                    assert parsed['remaining'] == ['values'], parsed['remaining']
-#                    mf = self.storage.get(self.id.storage('values'), default='\n',
-#                                          revision=revision)
-#                    bug.load_settings(mf)
-#                elif parsed['type'] == 'comment':
-#                    assert parsed['remaining'] in [['values'], ['body']], \
-#                        parsed['remaining']
-#                    bug.comment_root = copy.deepcopy(bug.comment_root)
-#                    comment = bug.comment_from_uuid(parsed['comment'])
-#                    if parsed['remaining'] == ['values']:
-#                        mf = self.storage.get(self.id.storage('values'), default='\n',
-#                                              revision=revision)
-#                        comment.load_settings(mf)
-#                    else:
-#                        body = self.storage.get(self.id.storage('body'), default='\n',
-#                                                revision=revision)
-#                        comment.body = body
-#                else:
-#                    assert 1==0, 'Unkown type "%s" for id "%s"' % (type, id)
-#        dbd.storage.readable = False # so we won't read in added bugs, etc.
-        return dbd
+        s.changed = rs.changed
+        BugDir.__init__(self, s, from_storage=True)
+        self.revision = revision
+    def changed(self):
+        return self.storage.changed()
+    
 
 if libbe.TESTING == True:
     class SimpleBugDir (BugDir):

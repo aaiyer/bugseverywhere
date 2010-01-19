@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import libbe
+import libbe.bugdir
 import libbe.bug
 import libbe.command
 import libbe.command.util
@@ -95,11 +96,11 @@ class Diff (libbe.command.Command):
         if params['repo'] == None:
             if params['revision'] == None: # get the most recent revision
                 params['revision'] = bugdir.storage.revision_id(-1)
-            old_bd = bugdir.duplicate_bugdir(params['revision'])
+            old_bd = libbe.bugdir.RevisionedBugDir(bugdir, params['revision'])
         else:
             old_storage = libbe.storage.get_storage(params['repo'])
             old_storage.connect()
-            old_bd_current = bugdir.BugDir(old_storage, from_disk=True)
+            old_bd_current = libbe.bugdir.BugDir(old_storage, from_disk=True)
             if params['revision'] == None: # use the current working state
                 old_bd = old_bd_current
             else:
@@ -107,7 +108,7 @@ class Diff (libbe.command.Command):
                     raise libbe.command.UserError(
                         '%s is not revision-controlled.'
                         % storage.repo)
-                old_bd = old_bd_current.duplicate_bugdir(revision)
+                old_bd = libbe.bugdir.RevisionedBugDir(old_bd_current,revision)
         d = libbe.diff.Diff(old_bd, bugdir)
         tree = d.report_tree(subscriptions)
 

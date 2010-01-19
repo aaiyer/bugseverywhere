@@ -142,6 +142,13 @@ class HTTP (base.VersionedStorage):
             url, get=False,
             data_dict={'id':id, 'recursive':True})
 
+    def _ancestors(self, id=None, revision=None):
+        url = urlparse.urljoin(self.repo, 'ancestors')
+        page,final_url,info = get_post_url(
+            url, get=True,
+            data_dict={'id':id, 'revision':revision})
+        return page.strip('\n').splitlines()
+
     def _children(self, id=None, revision=None):
         url = urlparse.urljoin(self.repo, 'children')
         page,final_url,info = get_post_url(
@@ -226,6 +233,15 @@ class HTTP (base.VersionedStorage):
                 raise base.InvalidRevision(index)
             raise base.InvalidID(id)
         return page.rstrip('\n')
+
+    def changed(self, revision=None):
+        url = urlparse.urljoin(self.repo, 'changed')
+        page,final_url,info = get_post_url(
+            url, get=True,
+            data_dict={'revision':revision})
+        lines = page.strip('\n')
+        new,mod,rem = [p.splitlines() for p in page.split('\n\n')]
+        return (new, mod, rem)
 
     def check_storage_version(self):
         version = self.storage_version()

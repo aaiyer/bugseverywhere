@@ -168,7 +168,7 @@ class CachedPathID (object):
     >>> c.path('qrs')
     Traceback (most recent call last):
       ...
-    InvalidID: 'qrs'
+    InvalidID: qrs in revision None
     >>> c.disconnect()
     >>> c.destroy()
     >>> dir.cleanup()
@@ -363,7 +363,7 @@ class VCS (libbe.storage.base.VersionedStorage):
     BugDir to search for an installed Storage backend and initialize
     it in the root directory.  This is a convenience option for
     supporting tests of versioning functionality
-    (e.g. .duplicate_bugdir).
+    (e.g. RevisionedBugDir).
 
     Disable encoding manipulation
     =============================
@@ -597,6 +597,14 @@ os.listdir(self.get_path("bugs")):
         """
         return None
 
+    def _vcs_changed(self, revision):
+        """
+        Return a tuple of lists of ids
+          (new, modified, removed)
+        from the specified revision to the current situation.
+        """
+        return ([], [], [])
+
     def version(self):
         # Cache version string for efficiency.
         if not hasattr(self, '_version'):
@@ -737,6 +745,27 @@ os.listdir(self.get_path("bugs")):
             if p.startswith(path):
                 self._cached_path_id.remove_id(id)
 
+    def _ancestors(self, id=None, revision=None):
+        if revision == None:
+            id_to_path = self._cached_path_id.path
+        else:
+            id_to_path = lambda id : self._vcs_path(id, revision)
+        if id==None:
+            path = self.be_dir
+        else:
+            path = id_to_path(id)
+        ancestors = []
+        while True:
+            if not path.startswith(self.repo + os.path.sep):
+                break
+            path = os.path.dirname(path)
+            try:
+                id = self._u_path_to_id(path)
+                ancestors.append(id)
+            except (SpacerCollision, InvalidPath):
+                pass    
+        return ancestors
+
     def _children(self, id=None, revision=None):
         if revision == None:
             id_to_path = self._cached_path_id.path
@@ -786,12 +815,14 @@ os.listdir(self.get_path("bugs")):
         try:
             contents = self._vcs_get_file_contents(relpath, revision)
         except InvalidID, e:
-            if InvalidID == None:
-                e.id = InvalidID
+            if e.id == None:
+                e.id = id
+            if e.revision == None:
+                e.revision = revision
             raise
         if contents in [libbe.storage.base.InvalidDirectory,
                         libbe.util.InvalidObject]:
-            raise InvalidID(id)
+            raise InvalidID(id, revision)
         elif len(contents) == 0:
             return None
         return contents
@@ -839,6 +870,20 @@ os.listdir(self.get_path("bugs")):
             raise libbe.storage.base.InvalidRevision(index)
         return revid
 
+    def changed(self, revision):
+        new,mod,rem = self._vcs_changed(revision)
+        def paths_to_ids(paths):
+            for p in paths:
+                try:
+                    id = self._u_path_to_id(p)
+                    yield id
+                except (SpacerCollision, InvalidPath):
+                    pass
+        new_id = list(paths_to_ids(new))
+        mod_id = list(paths_to_ids(mod))
+        rem_id = list(paths_to_ids(rem))
+        return (new_id, mod_id, rem_id)
+
     def _u_any_in_string(self, list, string):
         """
         Return True if any of the strings in list are in string.
@@ -882,6 +927,33 @@ os.listdir(self.get_path("bugs")):
         except AssertionError, e:
             return None
         return ret
+
+    def _u_find_id_from_manifest(self, id, manifest, revision=None):
+        """
+        Search for the relative path to id using manifest, a list of all files.
+        
+        Returns None if the id is not found.
+        """
+        be_dir = self._cached_path_id._spacer_dirs[0]
+        be_dir_sep = self._cached_path_id._spacer_dirs[0] + os.path.sep
+        files = [f for f in manifest if f.startswith(be_dir_sep)]
+        for file in files:
+            if not file.startswith(be_dir+os.path.sep):
+                continue
+            parts = file.split(os.path.sep)
+            dir = parts.pop(0) # don't add the first spacer dir
+            for part in parts[:-1]:
+                dir = os.path.join(dir, part)
+                if not dir in files:
+                    files.append(dir)
+        for file in files:
+            try:
+                p_id = self._u_path_to_id(file)
+                if p_id == id:
+                    return file
+            except (SpacerCollision, InvalidPath):
+                pass
+        raise InvalidID(id, revision=revision)
 
     def _u_find_id(self, id, revision):
         """
@@ -1023,8 +1095,7 @@ if libbe.TESTING == True:
 
     class VCS_installed_TestCase (VCSTestCase):
         def test_installed(self):
-            """
-            See if the VCS is installed.
+            """See if the VCS is installed.
             """
             self.failUnless(self.s.installed() == True,
                             '%(name)s VCS not found' % vars(self.Class))
@@ -1032,8 +1103,7 @@ if libbe.TESTING == True:
 
     class VCS_detection_TestCase (VCSTestCase):
         def test_detection(self):
-            """
-            See if the VCS detects its installed repository
+            """See if the VCS detects its installed repository
             """
             if self.s.installed():
                 self.s.disconnect()
@@ -1043,8 +1113,7 @@ if libbe.TESTING == True:
                 self.s.connect()
 
         def test_no_detection(self):
-            """
-            See if the VCS detects its installed repository
+            """See if the VCS detects its installed repository
             """
             if self.s.installed() and self.Class.name != 'None':
                 self.s.disconnect()

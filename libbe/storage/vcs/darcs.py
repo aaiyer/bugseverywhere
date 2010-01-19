@@ -157,24 +157,14 @@ class Darcs(base.VCS):
             return output
         # Darcs versions < 2.0.0pre2 lack the 'show contents' command
 
-        status,output,error = self._u_invoke_client( \
-            'diff', '--unified', '--from-patch', revision, path,
-            unicode_output=False)
-        major_patch = output
-        status,output,error = self._u_invoke_client( \
-            'diff', '--unified', '--patch', revision, path,
-            unicode_output=False)
-        target_patch = output
+        patch = self._diff(revision, path=path, unicode_output=False)
 
         # '--output -' to be supported in GNU patch > 2.5.9
         # but that hasn't been released as of June 30th, 2009.
 
         # Rewrite path to status before the patch we want
         args=['patch', '--reverse', path]
-        status,output,error = self._u_invoke(args, stdin=major_patch)
-        # Now apply the patch we want
-        args=['patch', path]
-        status,output,error = self._u_invoke(args, stdin=target_patch)
+        status,output,error = self._u_invoke(args, stdin=patch)
 
         if os.path.exists(os.path.join(self.repo, path)) == True:
             contents = base.VCS._vcs_get_file_contents(self, path)
@@ -182,11 +172,8 @@ class Darcs(base.VCS):
             contents = ''
 
         # Now restore path to it's current incarnation
-        args=['patch', '--reverse', path]
-        status,output,error = self._u_invoke(args, stdin=target_patch)
         args=['patch', path]
-        status,output,error = self._u_invoke(args, stdin=major_patch)
-        current_contents = base.VCS._vcs_get_file_contents(self, path)
+        status,output,error = self._u_invoke(args, stdin=patch)
         return contents
 
     def _vcs_path(self, id, revision):
@@ -257,7 +244,10 @@ class Darcs(base.VCS):
             revision = match.groups()[0]
         return revision
 
-    def _vcs_revision_id(self, index):
+    def _revisions(self):
+        """
+        Return a list of revisions in the repository.
+        """
         status,output,error = self._u_invoke_client('changes', '--xml')
         revisions = []
         xml_str = output.encode('unicode_escape').replace(r'\n', '\n')
@@ -270,6 +260,10 @@ class Darcs(base.VCS):
                     text = unescape(unicode(child.text).decode('unicode_escape').strip())
                     revisions.append(text)
         revisions.reverse()
+        return revisions
+
+    def _vcs_revision_id(self, index):
+        revisions = self._revisions()
         try:
             if index > 0:
                 return revisions[index-1]
@@ -279,6 +273,105 @@ class Darcs(base.VCS):
                 return None
         except IndexError:
             return None
+
+    def _diff(self, revision, path=None, unicode_output=True):
+        revisions = self._revisions()
+        i = revisions.index(revision)
+        args = ['diff', '--unified']
+        if i+1 < len(revisions):
+            next_rev = revisions[i+1]
+            args.extend(['--from-patch', next_rev])
+        if path != None:
+            args.append(path)
+        kwargs = {'unicode_output':unicode_output}
+        status,output,error = self._u_invoke_client(
+            *args, **kwargs)
+        return output
+
+    def _parse_diff(self, diff_text):
+        """
+        Example diff text:
+
+        Mon Jan 18 15:19:30 EST 2010  None <None@invalid.com>
+          * Final state
+        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/modified new-BEtestgQtDuD/.be/dir/bugs/modified
+        --- old-BEtestgQtDuD/.be/dir/bugs/modified      2010-01-18 15:19:30.000000000 -0500
+        +++ new-BEtestgQtDuD/.be/dir/bugs/modified      2010-01-18 15:19:30.000000000 -0500
+        @@ -1 +1 @@
+        -some value to be modified
+        \ No newline at end of file
+        +a new value
+        \ No newline at end of file
+        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/moved new-BEtestgQtDuD/.be/dir/bugs/moved
+        --- old-BEtestgQtDuD/.be/dir/bugs/moved 2010-01-18 15:19:30.000000000 -0500
+        +++ new-BEtestgQtDuD/.be/dir/bugs/moved 1969-12-31 19:00:00.000000000 -0500
+        @@ -1 +0,0 @@
+        -this entry will be moved
+        \ No newline at end of file
+        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/moved2 new-BEtestgQtDuD/.be/dir/bugs/moved2
+        --- old-BEtestgQtDuD/.be/dir/bugs/moved2        1969-12-31 19:00:00.000000000 -0500
+        +++ new-BEtestgQtDuD/.be/dir/bugs/moved2        2010-01-18 15:19:30.000000000 -0500
+        @@ -0,0 +1 @@
+        +this entry will be moved
+        \ No newline at end of file
+        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/new new-BEtestgQtDuD/.be/dir/bugs/new
+        --- old-BEtestgQtDuD/.be/dir/bugs/new   1969-12-31 19:00:00.000000000 -0500
+        +++ new-BEtestgQtDuD/.be/dir/bugs/new   2010-01-18 15:19:30.000000000 -0500
+        @@ -0,0 +1 @@
+        +this entry is new
+        \ No newline at end of file
+        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/removed new-BEtestgQtDuD/.be/dir/bugs/removed
+        --- old-BEtestgQtDuD/.be/dir/bugs/removed       2010-01-18 15:19:30.000000000 -0500
+        +++ new-BEtestgQtDuD/.be/dir/bugs/removed       1969-12-31 19:00:00.000000000 -0500
+        @@ -1 +0,0 @@
+        -this entry will be deleted
+        \ No newline at end of file
+        
+        """
+        new = []
+        modified = []
+        removed = []
+        lines = diff_text.splitlines()
+        repodir = os.path.basename(self.repo) + os.path.sep
+        i = 0
+        while i < len(lines):
+            line = lines[i]; i += 1
+            if not line.startswith('diff '):
+                continue
+            file_a,file_b = line.split()[-2:]
+            assert file_a.startswith('old-'), \
+                'missformed file_a %s' % file_a
+            assert file_b.startswith('new-'), \
+                'missformed file_a %s' % file_b
+            file = file_a[4:]
+            assert file_b[4:] == file, \
+                'diff file missmatch %s != %s' % (file_a, file_b)
+            assert file.startswith(repodir), \
+                'missformed file_a %s' % file_a
+            file = file[len(repodir):]
+            lines_added = 0
+            lines_removed = 0
+            line = lines[i]; i += 1
+            assert line.startswith('--- old-'), \
+                'missformed "---" line %s' % line
+            time_a = line.split('\t')[1]
+            line = lines[i]; i += 1
+            assert line.startswith('+++ new-'), \
+                'missformed "+++" line %s' % line
+            time_b = line.split('\t')[1]
+            zero_time = time.strftime('%Y-%m-%d %H:%M:%S.000000000 ',
+                                      time.localtime(0))
+            # note that zero_time is missing the trailing timezone offset
+            if time_a.startswith(zero_time):
+                new.append(file)
+            elif time_b.startswith(zero_time):
+                removed.append(file)
+            else:
+                modified.append(file)
+        return (new,modified,removed)
+
+    def _vcs_changed(self, revision):
+        return self._parse_diff(self._diff(revision))
 
 
 if libbe.TESTING == True:
