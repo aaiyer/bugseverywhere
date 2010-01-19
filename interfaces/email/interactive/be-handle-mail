@@ -693,7 +693,7 @@ def generate_global_tags(tag_base=u'be-bug'):
     SUBJECT_TAG_START = u'[%s' % tag_base
     SUBJECT_TAG_RESPONSE = u'[%s]' % tag_base
     SUBJECT_TAG_NEW = u'[%s:submit]' % tag_base
-    SUBJECT_TAG_COMMENT = re.compile(u'\[%s:([\-0-9a-z]*)]' % tag_base)
+    SUBJECT_TAG_COMMENT = re.compile(u'\[%s:([\-0-9a-z/]*)]' % tag_base)
     SUBJECT_TAG_CONTROL = SUBJECT_TAG_RESPONSE
 
 def open_logfile(logpath=None):
@@ -723,9 +723,6 @@ def open_logfile(logpath=None):
 def close_logfile():
     if LOGFILE != None and LOGPATH not in [u'stderr', u'none']:
         LOGFILE.close()
-
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
 
 def test():
     result = unittest.TextTestRunner(verbosity=2).run(suite)
@@ -900,9 +897,12 @@ class GenerateGlobalTagsTestCase (unittest.TestCase):
     def test_subject_tag_comment(self):
         "Should set SUBJECT_TAG_COMMENT global correctly"
         generate_global_tags(u'projectX-bug')
-        m = SUBJECT_TAG_COMMENT.match('[projectX-bug:xyz-123]')
+        m = SUBJECT_TAG_COMMENT.match('[projectX-bug:abc/xyz-123]')
         self.failUnlessEqual(len(m.groups()), 1)
-        self.failUnlessEqual(m.group(1), u'xyz-123')
+        self.failUnlessEqual(m.group(1), u'abc/xyz-123')
+
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
 
 if __name__ == "__main__":
     main(sys.argv)
