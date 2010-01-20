@@ -23,6 +23,8 @@ import re
 import libbe
 import libbe.bug
 import libbe.command
+import libbe.command.depend
+import libbe.command.target
 import libbe.command.util
 
 # get a list of * for cmp_*() comparing two bugs.
@@ -30,19 +32,31 @@ AVAILABLE_CMPS = [fn[4:] for fn in dir(libbe.bug) if fn[:4] == 'cmp_']
 AVAILABLE_CMPS.remove('attr') # a cmp_* template.
 
 class Filter (object):
-    def __init__(self, status, severity, assigned, extra_strings_regexps):
+    def __init__(self, status='all', severity='all', assigned='all',
+                 target='all', extra_strings_regexps=[]):
         self.status = status
         self.severity = severity
         self.assigned = assigned
+        self.target = target
         self.extra_strings_regexps = extra_strings_regexps
 
-    def __call__(self, bug):
-        if self.status != "all" and not bug.status in self.status:
+    def __call__(self, bugdir, bug):
+        if self.status != 'all' and not bug.status in self.status:
             return False
-        if self.severity != "all" and not bug.severity in self.severity:
+        if self.severity != 'all' and not bug.severity in self.severity:
             return False
-        if self.assigned != "all" and not bug.assigned in self.assigned:
+        if self.assigned != 'all' and not bug.assigned in self.assigned:
             return False
+        if self.target == 'all':
+            pass
+        else:
+            target_bug = libbe.command.target.bug_target(bugdir, bug)
+            if self.target in ['none', None]:
+                if target_bug.summary != None:
+                    return False
+            else:
+                if target_bug.summary != self.target:
+                    return False
         if len(bug.extra_strings) == 0:
             if len(self.extra_strings_regexps) > 0:
                 return False
@@ -140,9 +154,10 @@ class List (libbe.command.Command):
         bugdir.storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \
             self._parse_params(params)
-        filter = Filter(status, severity, assigned, extra_strings_regexps)
+        filter = Filter(status, severity, assigned,
+                        extra_strings_regexps=extra_strings_regexps)
         bugs = [bugdir.bug_from_uuid(uuid) for uuid in bugdir.uuids()]
-        bugs = [b for b in bugs if filter(b) == True]
+        bugs = [b for b in bugs if filter(bugdir, b) == True]
         self.result = bugs
         if len(bugs) == 0 and params['xml'] == False:
             print >> self.stdout, "No matching bugs found"
@@ -191,13 +206,8 @@ class List (libbe.command.Command):
         if params['assigned'] == "all":
             assigned = "all"
         else:
-            possible_assignees = []
-            for bug in self.bugdir:
-                if bug.assigned != None \
-                        and not bug.assigned in possible_assignees:
-                    possible_assignees.append(bug.assigned)
             assigned = libbe.command.util.select_values(
-                params['assigned'], possible_assignees)
+                params['assigned'], libbe.command.util.assignees())
         for i in range(len(assigned)):
             if assigned[i] == '-':
                 assigned[i] = params['user-id']

@@ -185,15 +185,24 @@ def add_target(bugdir, bug, summary):
     return target
 
 def targets(bugdir):
+    """Generate all possible target bug summaries."""
     bugdir.load_all_bugs()
     for bug in bugdir:
         if bug.severity == 'target':
             yield bug.summary
 
-def complete_target(command, argument, fragment=None):
+def target_dict(bugdir):
     """
-    List possible command completions for fragment.
+    Return a dict with bug UUID keys and bug summary values for all
+    target bugs.
+    """
+    ret = {}
+    bugdir.load_all_bugs()
+    for bug in bugdir:
+        if bug.severity == 'target':
+            ret[bug.uuid] = bug.summary
+    return ret
 
-    argument argument is not used.
-    """
+def complete_target(command, argument, fragment=None):
+    """List possible command completions for fragment."""
     return targets(command._get_bugdir())

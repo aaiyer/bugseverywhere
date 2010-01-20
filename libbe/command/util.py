@@ -34,18 +34,18 @@ def complete_command(command, argument, fragment=None):
     """
     return list(libbe.command.commands())
 
-def complete_path(command, argument, fragment=None):
-    """
-    List possible path completions for fragment.
-
-    command argument is not used.
-    """
+def comp_path(fragment=None):
+    """List possible path completions for fragment."""
     if fragment == None:
         fragment = '.'
     comps = glob.glob(fragment+'*') + glob.glob(fragment+'/*')
     if len(comps) == 1 and os.path.isdir(comps[0]):
         comps.extend(glob.glob(comps[0]+'/*'))
     return comps
+
+def complete_path(command, argument, fragment=None):
+    """List possible path completions for fragment."""
+    return comp_path(fragment)
 
 def complete_status(command, argument, fragment=None):
     bd = command._get_bugdir()
@@ -57,10 +57,13 @@ def complete_severity(command, argument, fragment=None):
     import libbe.bug
     return libbe.bug.severity_values
 
+def assignees(bugdir):
+    bugdir.load_all_bugs()
+    return list(set([bug.assigned for bug in bugdir
+                     if bug.assigned != None]))
+
 def complete_assigned(command, argument, fragment=None):
-    if fragment == None:
-        return []
-    return [fragment]
+    return assignees(command._get_bugdir())
 
 def complete_extra_strings(command, argument, fragment=None):
     if fragment == None:
