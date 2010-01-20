@@ -261,9 +261,13 @@ class BugDir (list, settings_object.SavedSettingsObject):
                      from_storage=False)
         self.append(bg)
         self._bug_map_gen()
+        if hasattr(self, '_uuids_cache') and not bg.uuid in self._uuids_cache:
+            self._uuids_cache.append(bg.uuid)
         return bg
 
     def remove_bug(self, bug):
+        if hasattr(self, '_uuids_cache') and bug.uuid in self._uuids_cache:
+            self._uuids_cache.remove(bug.uuid)
         self.remove(bug)
         if self.storage != None and self.storage.is_writeable():
             bug.remove()
