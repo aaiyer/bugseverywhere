@@ -314,7 +314,7 @@ def main():
     command = Class(ui=ui)
     ui.setup_command(command)
 
-    if command.name in ['comment', 'commit', 'serve']:
+    if command.name in ['comment', 'commit', 'import-xml', 'serve']:
         paginate = 'never'
     else:
         paginate = 'auto'

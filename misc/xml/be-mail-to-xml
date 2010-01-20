@@ -34,6 +34,7 @@ from time import asctime, gmtime, mktime
 import types
 from xml.sax.saxutils import escape
 
+BREAK = u'--' # signature separator
 DEFAULT_ENCODING = get_output_encoding()
 sys.stdout = codecs.getwriter(DEFAULT_ENCODING)(sys.stdout)
 
@@ -59,6 +60,14 @@ def normalize_RFC_2822_date(date):
     assert time_tuple != None, \
         'unparsable date: "%s"' % date
     return time_to_str(mktime(time_tuple))
+
+def strip_footer(body):
+    body_lines = body.splitlines()
+    for i,line in enumerate(body_lines):
+        if line.startswith(BREAK):
+            break
+        i += 1 # increment past the current valid line.
+    return u'\n'.join(body_lines[:i]).strip()
 
 def comment_message_to_xml(message, fields=None):
     if fields == None:
@@ -131,7 +140,7 @@ def comment_message_to_xml(message, fields=None):
     body = message.get_payload(decode=True) # attempt to decode
     assert body != None, "Unable to decode?"
     if fields[u'content-type'].startswith(u"text/"):
-        body = unicode(body, encoding=charset).rstrip(u'\n')
+        body = strip_footer(unicode(body, encoding=charset))
     else:
         body = base64.encode(body)
     fields[u'body'] = body

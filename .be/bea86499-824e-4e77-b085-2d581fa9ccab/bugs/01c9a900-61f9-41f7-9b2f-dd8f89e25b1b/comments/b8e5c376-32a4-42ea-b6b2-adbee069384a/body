@@ -1,0 +1,19 @@
+On Wed, Jan 20, 2010 at 01:24:25PM -0500, W. Trevor King wrote:
+> Of course, incorperating interactive functionality in command output
+> (i.e. changing the bug target from the bug-show page), doesn't fit
+> into this model.  To do that, we'd have to abstract the default
+> command output the way we've already abstracted the commands and their
+> input...
+
+Does anyone know of any output-abstraction implementations to look at
+for inspiration.
+  * How would we handle the options we currently pass through
+    (shortlist, show_comments, etc.)?
+  * Would standard arguments know how to display themselves?
+    class Status (Argument):
+        def str(self, ui, command, *args, **kwargs):
+            ui.display_status(self, command, *args, **kwargs)
+    class Bug (Argument):
+        def str(self, ui, command, *args, **kwargs):
+            ui.display_bug(self, command, *args, **kwargs)
+    ...
