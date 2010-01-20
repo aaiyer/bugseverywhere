@@ -749,7 +749,8 @@ os.listdir(self.get_path("bugs")):
         if revision == None:
             id_to_path = self._cached_path_id.path
         else:
-            id_to_path = lambda id : self._vcs_path(id, revision)
+            id_to_path = lambda id : os.path.join(
+                self.repo, self._vcs_path(id, revision))
         if id==None:
             path = self.be_dir
         else:
@@ -772,7 +773,8 @@ os.listdir(self.get_path("bugs")):
             isdir = os.path.isdir
             listdir = os.listdir
         else:
-            id_to_path = lambda id : self._vcs_path(id, revision)
+            id_to_path = lambda id : os.path.join(
+                self.repo, self._vcs_path(id, revision))
             isdir = lambda path : self._vcs_isdir(
                 self._u_rel_path(path), revision)
             listdir = lambda path : self._vcs_listdir(
