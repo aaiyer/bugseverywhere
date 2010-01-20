@@ -58,7 +58,7 @@ class Help (libbe.command.Command):
     def _run(self, **params):
         if params['topic'] == None:
             if hasattr(self.ui, 'help'):
-                self.ui.help()
+                print >> self.stdout, self.ui.help().rstrip('\n')
         elif params['topic'] in libbe.command.commands():
             module = libbe.command.get_command(params['topic'])
             Class = libbe.command.get_command_class(module,params['topic'])
