@@ -285,7 +285,14 @@ def main():
     except CallbackExit:
         return 0
     except libbe.command.UserError, e:
-        print >> ui.io.stdout, 'ERROR:\n', e
+        if str(e).endswith('COMMAND'):
+            # no command given, print usage string
+            print >> ui.io.stdout, 'ERROR:'
+            print >> ui.io.stdout, be.usage(), '\n', e
+            print >> ui.io.stdout, 'For example, try'
+            print >> ui.io.stdout, '  be help'
+        else:
+            print >> ui.io.stdout, 'ERROR:\n', e
         return 1
 
     command_name = args.pop(0)
