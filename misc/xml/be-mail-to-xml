@@ -23,20 +23,17 @@ followed by a blank line.
 """
 
 import base64
-import codecs
 import email.utils
 from libbe.util.encoding import get_output_encoding
 from libbe.util.utility import time_to_str
 import mailbox # the mailbox people really want an on-disk copy
 import optparse
-import sys
 from time import asctime, gmtime, mktime
 import types
 from xml.sax.saxutils import escape
 
 BREAK = u'--' # signature separator
 DEFAULT_ENCODING = get_output_encoding()
-sys.stdout = codecs.getwriter(DEFAULT_ENCODING)(sys.stdout)
 
 KNOWN_IDS = []
 
@@ -172,4 +169,7 @@ def main(argv):
 
 if __name__ == "__main__":
     import sys
+    import codecs
+
+    sys.stdout = codecs.getwriter(DEFAULT_ENCODING)(sys.stdout)
     main(sys.argv)

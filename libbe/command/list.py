@@ -228,7 +228,7 @@ class List (libbe.command.Command):
         if xml == True:
             print >> self.stdout, \
                 '<?xml version="1.0" encoding="%s" ?>' % self.stdout.encoding
-            print >> self.stdout, '<bugs>'
+            print >> self.stdout, '<be-xml>'
         if len(bugs) > 0:
             for bug in bugs:
                 if xml == True:
@@ -236,7 +236,7 @@ class List (libbe.command.Command):
                 else:
                     print >> self.stdout, bug.string(shortlist=True)
         if xml == True:
-            print >> self.stdout, '</bugs>'
+            print >> self.stdout, '</be-xml>'
 
     def _long_help(self):
         return """

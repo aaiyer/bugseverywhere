@@ -25,10 +25,9 @@ followed by a blank line.
 """
 
 #from mailbox import mbox, Message  # the mailbox people really want an on-disk copy
-import codecs
 import email.utils
-from libbe.encoding import get_encoding, set_IO_stream_encodings
-from libbe.utility import str_to_time as rfc2822_to_gmtime_integer
+from libbe.util.encoding import get_output_encoding
+from libbe.util.utility import str_to_time as rfc2822_to_gmtime_integer
 from time import asctime, gmtime
 import types
 try: # import core module, Python >= 2.5
@@ -40,8 +39,7 @@ from xml.sax.saxutils import unescape
 
 DEFAULT_DOMAIN = "invalid.com"
 DEFAULT_EMAIL = "dummy@" + DEFAULT_DOMAIN
-DEFAULT_ENCODING = get_encoding()
-set_IO_stream_encodings(DEFAULT_ENCODING)
+DEFAULT_ENCODING = get_output_encoding()
 
 def rfc2822_to_asctime(rfc2822_string):
     """Convert an RFC 2822-fomatted string into a asctime string.
@@ -197,7 +195,11 @@ def print_to_mbox(element):
             print_to_mbox(elt)
 
 if __name__ == "__main__":
+    import codecs
     import sys
+    
+    sys.stdin = codecs.getreader(DEFAULT_ENCODING)(sys.stdin)
+    sys.stdout = codecs.getwriter(DEFAULT_ENCODING)(sys.stdout)
 
     if len(sys.argv) == 1: # no filename given, use stdin
         xml_unicode = sys.stdin.read()
