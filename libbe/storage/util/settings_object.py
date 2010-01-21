@@ -326,7 +326,8 @@ if libbe.TESTING == True:
             self.failUnless(t.content_type == "text/plain", t.content_type)
             self.failUnless(t.settings["Content-type"] == EMPTY,
                             t.settings["Content-type"])
-            self.failUnless(t._get_saved_settings() == {},
+            self.failUnless(t._get_saved_settings() ==
+                            {"Content-type":"text/plain"},
                             t._get_saved_settings())
             t.content_type = "text/html"
             self.failUnless(t.content_type == "text/html",
