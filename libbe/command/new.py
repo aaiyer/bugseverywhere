@@ -38,6 +38,7 @@ class New (libbe.command.Command):
 
     >>> uuid_gen = libbe.util.id.uuid_gen
     >>> libbe.util.id.uuid_gen = lambda: 'X'
+    >>> ui._user_id = u'Fran\\xe7ois'
     >>> ret = ui.run(cmd, args=['this is a test',])
     Created bug with ID abc/X
     >>> libbe.util.id.uuid_gen = uuid_gen
@@ -45,6 +46,10 @@ class New (libbe.command.Command):
     >>> bug = bd.bug_from_uuid('X')
     >>> print bug.summary
     this is a test
+    >>> bug.creator
+    u'Fran\\xe7ois'
+    >>> bug.reporter
+    u'Fran\\xe7ois'
     >>> bug.time <= int(time.time())
     True
     >>> print bug.severity
@@ -80,6 +85,7 @@ class New (libbe.command.Command):
             summary = params['summary']
         bugdir = self._get_bugdir()
         bug = bugdir.new_bug(summary=summary.strip())
+        bug.creator = self._get_user_id()
         if params['reporter'] != None:
             bug.reporter = params['reporter']
         else:

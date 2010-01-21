@@ -194,10 +194,19 @@ class Import_XML (libbe.command.Command):
 
         # protect against programmer error causing data loss:
         if croot_bug != None:
-            comms = [c.uuid for c in croot_comment.traverse()]
+            comms = []
+            for c in croot_comment.traverse():
+                comms.append(c.uuid)
+                if c.alt_id != None:
+                    comms.append(c.alt_id)
+            if croot_comment.uuid == libbe.comment.INVALID_UUID:
+                root_text = croot_bug.id.user()
+            else:
+                root_text = croot_comment.id.user()
             for new in root_comments:
-                assert new.uuid in comms, \
-                    "comment %s wasn't added to %s" % (new.uuid, croot_comment.uuid)
+                assert new.uuid in comms or new.alt_id in comms, \
+                    "comment %s (alt: %s) wasn't added to %s" \
+                    % (new.uuid, new.alt_id, root_text)
         for new in root_bugs:
             if not new in merged_bugs:
                 assert bugdir.has_bug(new.uuid), \
@@ -364,24 +373,39 @@ if libbe.TESTING == True:
               </bug>
             </be-xml>
             """
+            self.root_comment_xml = """
+            <be-xml>
+              <comment>
+                <uuid>c1</uuid>
+                <body>So long</body>
+              </comment>
+              <comment>
+                <uuid>c3</uuid>
+                <author>Jed</author>
+                <body>And thanks</body>
+              </comment>
+            </be-xml>
+            """
         def tearDown(self):
             self.bugdir.cleanup()
             self.ui.cleanup()
-        def _execute(self, params={}, args=[]):
-            self.ui.io.set_stdin(self.xml)
+        def _execute(self, xml, params={}, args=[]):
+            self.ui.io.set_stdin(xml)
             self.ui.run(self.cmd, params, args)
             self.bugdir.flush_reload()
         def testCleanBugdir(self):
             uuids = list(self.bugdir.uuids())
             self.failUnless(uuids == ['b'], uuids)
         def testNotAddOnly(self):
-            self._execute({}, ['-'])
+            bugB = self.bugdir.bug_from_uuid('b')
+            self._execute(self.xml, {}, ['-'])
             uuids = list(self.bugdir.uuids())
             self.failUnless(uuids == ['b'], uuids)
             bugB = self.bugdir.bug_from_uuid('b')
             self.failUnless(bugB.uuid == 'b', bugB.uuid)
             self.failUnless(bugB.creator == 'John', bugB.creator)
             self.failUnless(bugB.status == 'fixed', bugB.status)
+            self.failUnless(bugB.summary == 'a test bug', bugB.summary)
             estrs = ["don't forget your towel",
                      'helps with space travel',
                      'watch out for flying dolphins']
@@ -408,13 +432,87 @@ if libbe.TESTING == True:
             self.failUnless(c4.author == 'Jed', c4.author)
             self.failUnless(c4.body == 'And thanks\n', c4.body)
         def testAddOnly(self):
-            self._execute({'add-only':True}, ['-'])
+            bugB = self.bugdir.bug_from_uuid('b')
+            initial_bugB_summary = bugB.summary
+            self._execute(self.xml, {'add-only':True}, ['-'])
             uuids = list(self.bugdir.uuids())
             self.failUnless(uuids == ['b'], uuids)
             bugB = self.bugdir.bug_from_uuid('b')
             self.failUnless(bugB.uuid == 'b', bugB.uuid)
             self.failUnless(bugB.creator == 'John', bugB.creator)
             self.failUnless(bugB.status == 'open', bugB.status)
+            self.failUnless(bugB.summary == initial_bugB_summary, bugB.summary)
+            estrs = ["don't forget your towel",
+                     'helps with space travel']
+            self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)
+            comments = list(bugB.comments())
+            self.failUnless(len(comments) == 3,
+                            ['%s (%s)' % (c.uuid, c.alt_id) for c in comments])
+            c1 = bugB.comment_from_uuid('c1')
+            comments.remove(c1)
+            self.failUnless(c1.uuid == 'c1', c1.uuid)
+            self.failUnless(c1.alt_id == None, c1.alt_id)
+            self.failUnless(c1.author == 'Jane', c1.author)
+            self.failUnless(c1.body == 'Hello\n', c1.body)
+            c2 = bugB.comment_from_uuid('c2')
+            comments.remove(c2)
+            self.failUnless(c2.uuid == 'c2', c2.uuid)
+            self.failUnless(c2.alt_id == None, c2.alt_id)
+            self.failUnless(c2.author == 'Jess', c2.author)
+            self.failUnless(c2.body == 'World\n', c2.body)
+            c4 = comments[0]
+            self.failUnless(len(c4.uuid) == 36, c4.uuid)
+            self.failUnless(c4.alt_id == 'c3', c4.alt_id)
+            self.failUnless(c4.author == 'Jed', c4.author)
+            self.failUnless(c4.body == 'And thanks\n', c4.body)
+        def testRootCommentsNotAddOnly(self):
+            bugB = self.bugdir.bug_from_uuid('b')
+            initial_bugB_summary = bugB.summary
+            self._execute(self.root_comment_xml, {'comment-root':'/b'}, ['-'])
+            uuids = list(self.bugdir.uuids())
+            uuids = list(self.bugdir.uuids())
+            self.failUnless(uuids == ['b'], uuids)
+            bugB = self.bugdir.bug_from_uuid('b')
+            self.failUnless(bugB.uuid == 'b', bugB.uuid)
+            self.failUnless(bugB.creator == 'John', bugB.creator)
+            self.failUnless(bugB.status == 'open', bugB.status)
+            self.failUnless(bugB.summary == initial_bugB_summary, bugB.summary)
+            estrs = ["don't forget your towel",
+                     'helps with space travel']
+            self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)
+            comments = list(bugB.comments())
+            self.failUnless(len(comments) == 3,
+                            ['%s (%s, %s)' % (c.uuid, c.alt_id, c.body)
+                             for c in comments])
+            c1 = bugB.comment_from_uuid('c1')
+            comments.remove(c1)
+            self.failUnless(c1.uuid == 'c1', c1.uuid)
+            self.failUnless(c1.alt_id == None, c1.alt_id)
+            self.failUnless(c1.author == 'Jane', c1.author)
+            self.failUnless(c1.body == 'So long\n', c1.body)
+            c2 = bugB.comment_from_uuid('c2')
+            comments.remove(c2)
+            self.failUnless(c2.uuid == 'c2', c2.uuid)
+            self.failUnless(c2.alt_id == None, c2.alt_id)
+            self.failUnless(c2.author == 'Jess', c2.author)
+            self.failUnless(c2.body == 'World\n', c2.body)
+            c4 = comments[0]
+            self.failUnless(len(c4.uuid) == 36, c4.uuid)
+            self.failUnless(c4.alt_id == 'c3', c4.alt_id)
+            self.failUnless(c4.author == 'Jed', c4.author)
+            self.failUnless(c4.body == 'And thanks\n', c4.body)
+        def testRootCommentsAddOnly(self):
+            bugB = self.bugdir.bug_from_uuid('b')
+            initial_bugB_summary = bugB.summary
+            self._execute(self.root_comment_xml,
+                          {'comment-root':'/b', 'add-only':True}, ['-'])
+            uuids = list(self.bugdir.uuids())
+            self.failUnless(uuids == ['b'], uuids)
+            bugB = self.bugdir.bug_from_uuid('b')
+            self.failUnless(bugB.uuid == 'b', bugB.uuid)
+            self.failUnless(bugB.creator == 'John', bugB.creator)
+            self.failUnless(bugB.status == 'open', bugB.status)
+            self.failUnless(bugB.summary == initial_bugB_summary, bugB.summary)
             estrs = ["don't forget your towel",
                      'helps with space travel']
             self.failUnless(bugB.extra_strings == estrs, bugB.extra_strings)

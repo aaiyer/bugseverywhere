@@ -250,6 +250,16 @@ class BE (libbe.command.Command):
     def full_version(self, *args):
         return libbe.version.version(verbose=True)
 
+class CommandLine (libbe.command.UserInterface):
+    def __init__(self, *args, **kwargs):
+        libbe.command.UserInterface.__init__(self, *args, **kwargs)
+        self.restrict_file_access = False
+        self.storage_callbacks = None
+    def help(self):
+        be = BE(ui=self)
+        self.setup_command(be)
+        return be.help()
+
 def dispatch(ui, command, args):
     parser = CmdOptionParser(command)
     try:
@@ -273,9 +283,7 @@ def dispatch(ui, command, args):
 
 def main():
     io = libbe.command.StdInputOutput()
-    ui = libbe.command.UserInterface(io)
-    ui.restrict_file_access = False
-    ui.storage_callbacks = None
+    ui = CommandLine(io)
     be = BE(ui=ui)
     ui.setup_command(be)
 
@@ -285,7 +293,14 @@ def main():
     except CallbackExit:
         return 0
     except libbe.command.UserError, e:
-        print >> ui.io.stdout, 'ERROR:\n', e
+        if str(e).endswith('COMMAND'):
+            # no command given, print usage string
+            print >> ui.io.stdout, 'ERROR:'
+            print >> ui.io.stdout, be.usage(), '\n', e
+            print >> ui.io.stdout, 'For example, try'
+            print >> ui.io.stdout, '  be help'
+        else:
+            print >> ui.io.stdout, 'ERROR:\n', e
         return 1
 
     command_name = args.pop(0)
@@ -299,7 +314,7 @@ def main():
     command = Class(ui=ui)
     ui.setup_command(command)
 
-    if command.name in ['comment', 'commit', 'serve']:
+    if command.name in ['comment', 'commit', 'import-xml', 'serve']:
         paginate = 'never'
     else:
         paginate = 'auto'

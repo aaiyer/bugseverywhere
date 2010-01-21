@@ -204,18 +204,31 @@ class SavedSettingsObject(object):
             self._settings_loaded = True
 
     def save_settings(self):
-        """Load the settings from disk."""
+        """Save the settings to disk."""
         # Override.  Should save the dict output of ._get_saved_settings()
         settings = self._get_saved_settings()
         pass # write settings to disk....
 
     def _get_saved_settings(self):
+        """
+        In order to avoid overwriting unread on-disk data, make sure
+        we've loaded anything sitting on the disk.  In the current
+        implementation, all the settings are stored in a single file,
+        so we need to load _all_ the saved settings.  Another approach
+        would be per-setting saves, in which case you could skip this
+        step, since any setting changes would have forced that setting
+        load already.
+        """
         settings = {}
-        for k,v in self.settings.items():
-            if v != None and v != EMPTY:
-                settings[k] = v
-        for k in self.required_saved_properties:
-            settings[k] = getattr(self, self._setting_name_to_attr_name(k))
+        for k in self.settings_properties:
+            if k in self.settings and \
+                    not self.settings[k] in [None, EMPTY]:
+                settings[k] = self.settings[k]
+            else:
+                value = getattr(
+                    self, self._setting_name_to_attr_name(k))
+                if value not in [None, EMPTY, []]:
+                    settings[k] = value
         return settings
 
     def clear_cached_setting(self, setting=None):
@@ -313,7 +326,8 @@ if libbe.TESTING == True:
             self.failUnless(t.content_type == "text/plain", t.content_type)
             self.failUnless(t.settings["Content-type"] == EMPTY,
                             t.settings["Content-type"])
-            self.failUnless(t._get_saved_settings() == {},
+            self.failUnless(t._get_saved_settings() ==
+                            {"Content-type":"text/plain"},
                             t._get_saved_settings())
             t.content_type = "text/html"
             self.failUnless(t.content_type == "text/html",

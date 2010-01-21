@@ -23,11 +23,21 @@ Mercurial (hg) backend.
 
 try:
     import mercurial
-    import mercurial.version
     import mercurial.dispatch
     import mercurial.ui
 except ImportError:
     mercurial = None
+
+try:
+    # mercurial >= 1.2
+    from mercurial.util import version
+except ImportError:
+    try:
+        # mercurial <= 1.1.2
+        from mercurial.version import get_version as version
+    except ImportError:
+        version = None
+
 import os
 import os.path
 import re
@@ -57,9 +67,9 @@ class Hg(base.VCS):
         self.__updated = [] # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_version(self):
-        if mercurial == None:
+        if version == None:
             return None
-        return mercurial.version.get_version()
+        return version()
 
     def _u_invoke_client(self, *args, **kwargs):
         if 'cwd' not in kwargs:

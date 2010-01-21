@@ -374,8 +374,8 @@ class Message (object):
     def _subject_tag_type(self):
         """
         Parse subject tag, return (type, value), where type is one of
-        None, "new", "comment", "control", or "xml"; and value is None
-        except in the case of "comment", in which case it's the bug
+        None, "new", "comment", or "control"; and value is None except
+        in the case of "comment", in which case it's the bug
         ID/shortname.
         """
         tag,subject = self._split_subject()
@@ -619,7 +619,7 @@ class Message (object):
         bd = UI.storage_callbacks.get_bugdir()
         writeable = bd.storage.writeable
         bd.storage.writeable = False
-        if bd.vcs.versioned == False: # no way to tell what's changed
+        if bd.storage.versioned == False: # no way to tell what's changed
             bd.storage.writeable = writeable
             raise NotificationFailed('Not versioned')
 
@@ -656,7 +656,7 @@ class Message (object):
             commit_msg = self.commit_command.stdout
             assert commit_msg.startswith('Committed '), commit_msg
             after_revision = commit_msg[len('Committed '):]
-            before_revision = bd.vcs.revision_id(-2)
+            before_revision = bd.storage.revision_id(-2)
         else:
             before_revision = previous_revision
         if before_revision == None:
@@ -664,12 +664,12 @@ class Message (object):
             before_bd = libbe.bugdir.BugDir(from_disk=False,
                                             manipulate_encodings=False)
         else:
-            before_bd = bd.duplicate_bugdir(before_revision)
+            before_bd = libbe.bugdir.RevisionedBugDir(bd, before_revision)
         #after_bd = bd.duplicate_bugdir(after_revision)
         after_bd = bd # assume no changes since commit a few cycles ago
         return (before_bd, after_bd)
     def _subscriber_header(self, bd, previous_revision=None):
-        root_dir = os.path.basename(bd.root)
+        root_dir = os.path.basename(bd.storage.repo)
         if previous_revision == None:
             subject = 'Changes to %s on %s by %s' \
                 % (root_dir, THIS_SERVER, self.author_addr())
@@ -693,7 +693,7 @@ def generate_global_tags(tag_base=u'be-bug'):
     SUBJECT_TAG_START = u'[%s' % tag_base
     SUBJECT_TAG_RESPONSE = u'[%s]' % tag_base
     SUBJECT_TAG_NEW = u'[%s:submit]' % tag_base
-    SUBJECT_TAG_COMMENT = re.compile(u'\[%s:([\-0-9a-z]*)]' % tag_base)
+    SUBJECT_TAG_COMMENT = re.compile(u'\[%s:([\-0-9a-z/]*)]' % tag_base)
     SUBJECT_TAG_CONTROL = SUBJECT_TAG_RESPONSE
 
 def open_logfile(logpath=None):
@@ -718,14 +718,11 @@ def open_logfile(logpath=None):
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != u'none':
         LOGFILE = codecs.open(LOGPATH, u'a+',
-            libbe.utuil.encoding.get_filesystem_encoding())
+            libbe.util.encoding.get_filesystem_encoding())
 
 def close_logfile():
     if LOGFILE != None and LOGPATH not in [u'stderr', u'none']:
         LOGFILE.close()
-
-unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
 
 def test():
     result = unittest.TextTestRunner(verbosity=2).run(suite)
@@ -798,7 +795,6 @@ def main(args):
                         print send_pgp_mime.flatten(msg, to_unicode=True)
                     else:
                         send_pgp_mime.mail(msg, send_pgp_mime.sendmail)
-            self.commit_command.cleanup()
             close_logfile()
         UI.cleanup()
         sys.exit(0)
@@ -819,6 +815,7 @@ def main(args):
             LOGFILE.write(u'Uncaught exception:\n%s\n' % (e,))
             traceback.print_tb(sys.exc_traceback, file=LOGFILE)
             close_logfile()
+        m.commit_command.cleanup()
         UI.cleanup()
         sys.exit(1)
     else:
@@ -850,6 +847,7 @@ def main(args):
                     send_pgp_mime.mail(msg, send_pgp_mime.sendmail)
 
     close_logfile()
+    m.commit_command.cleanup()
     UI.cleanup()
 
 class GenerateGlobalTagsTestCase (unittest.TestCase):
@@ -900,9 +898,12 @@ class GenerateGlobalTagsTestCase (unittest.TestCase):
     def test_subject_tag_comment(self):
         "Should set SUBJECT_TAG_COMMENT global correctly"
         generate_global_tags(u'projectX-bug')
-        m = SUBJECT_TAG_COMMENT.match('[projectX-bug:xyz-123]')
+        m = SUBJECT_TAG_COMMENT.match('[projectX-bug:abc/xyz-123]')
         self.failUnlessEqual(len(m.groups()), 1)
-        self.failUnlessEqual(m.group(1), u'xyz-123')
+        self.failUnlessEqual(m.group(1), u'abc/xyz-123')
+
+unitsuite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
 
 if __name__ == "__main__":
     main(sys.argv)

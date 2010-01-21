@@ -38,7 +38,7 @@ class Commit (libbe.command.Command):
 
     >>> bd.extra_strings = ['hi there']
     >>> bd.flush_reload()
-    >>> ui.run(cmd, {'user-id':'Joe'}, ['Making a commit']) # doctest: +ELLIPSIS
+    >>> ui.run(cmd, args=['Making a commit']) # doctest: +ELLIPSIS
     Committed ...
     >>> ui.cleanup()
     >>> bd.cleanup()

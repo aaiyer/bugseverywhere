@@ -223,7 +223,7 @@ class HTMLGen (object):
                 comment_entries.append('<div class="comment root">')
             else:
                 comment_entries.append('<div class="comment">')
-            template_info = {}
+            template_info = {'shortname': comment.id.user()}
             for attr in ['uuid', 'author', 'date', 'body']:
                 value = getattr(comment, attr)
                 if attr == 'body':
@@ -611,7 +611,8 @@ class HTMLGen (object):
               <td class="bug_comment_label">Comment:</td>
               <td class="bug_comment">
             --------- Comment ---------<br/>
-            Name: %(uuid)s<br/>
+            ID: %(uuid)s<br/>
+            Short name: %(shortname)s<br/>
             From: %(author)s<br/>
             Date: %(date)s<br/>
             <br/>

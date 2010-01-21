@@ -749,7 +749,8 @@ os.listdir(self.get_path("bugs")):
         if revision == None:
             id_to_path = self._cached_path_id.path
         else:
-            id_to_path = lambda id : self._vcs_path(id, revision)
+            id_to_path = lambda id : os.path.join(
+                self.repo, self._vcs_path(id, revision))
         if id==None:
             path = self.be_dir
         else:
@@ -772,9 +773,12 @@ os.listdir(self.get_path("bugs")):
             isdir = os.path.isdir
             listdir = os.listdir
         else:
-            id_to_path = lambda id : self._vcs_path(id, revision)
-            isdir = lambda path : self._vcs_isdir(path, revision)
-            listdir = lambda path : self._vcs_listdir(path, revision)
+            id_to_path = lambda id : os.path.join(
+                self.repo, self._vcs_path(id, revision))
+            isdir = lambda path : self._vcs_isdir(
+                self._u_rel_path(path), revision)
+            listdir = lambda path : self._vcs_listdir(
+                self._u_rel_path(path), revision)
         if id==None:
             path = self.be_dir
         else:
@@ -1046,7 +1050,8 @@ os.listdir(self.get_path("bugs")):
         if revision == None: # don't require connection
             return libbe.util.encoding.get_file_contents(
                 path, decode=True).rstrip('\n')
-        contents = self._vcs_get_file_contents(path, revision=revision)
+        relpath = self._u_rel_path(path)
+        contents = self._vcs_get_file_contents(relpath, revision=revision)
         if type(contents) != types.UnicodeType:
             contents = unicode(contents, self.encoding)
         return contents.strip()
