@@ -122,6 +122,11 @@ class Bug (LimitedAttrDict):
             else:
                 self[field.tag] = text
 
+def wrap_id(id):
+    if "@" not in id:
+        return "<%s@%s>" % (id, DEFAULT_DOMAIN)
+    return id
+
 class Comment (LimitedAttrDict):
     _attrs = [u"uuid",
               u"alt-id",
@@ -142,7 +147,9 @@ class Comment (LimitedAttrDict):
         elif "alt-id" in self: id = self["alt-id"]
         else:                  id = None
         if id != None:
-            print "Message-id: <%s@%s>" % (id, DEFAULT_DOMAIN)
+            print "Message-id: %s" % wrap_id(id)
+        if "alt-id" in self:
+            print "Alt-id: %s" % wrap_id(self["alt-id"])
         print "Date: %s" % self["date"]
         print "From: %s" % self["author"]
         subject = ""
@@ -155,7 +162,7 @@ class Comment (LimitedAttrDict):
         print "Subject: %s" % subject
         if "in-reply-to" not in self.keys():
             self["in-reply-to"] = bug["uuid"]
-        print "In-Reply-To: <%s@%s>" % (self["in-reply-to"], DEFAULT_DOMAIN)
+        print "In-Reply-To: %s" % wrap_id(self["in-reply-to"])
         if "extra-strings" in self:
             for estr in self["extra_strings"]:
                 print "X-Extra-String: %s" % estr
