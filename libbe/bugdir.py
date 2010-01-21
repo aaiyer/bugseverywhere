@@ -248,7 +248,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def _clear_bugs(self):
         while len(self) > 0:
             self.pop()
-        del(self._uuids_cache)
+        if hasattr(self, '_uuids_cache'):
+            del(self._uuids_cache)
         self._bug_map_gen()
 
     def _load_bug(self, uuid):
