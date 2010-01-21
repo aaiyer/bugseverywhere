@@ -619,7 +619,7 @@ class Message (object):
         bd = UI.storage_callbacks.get_bugdir()
         writeable = bd.storage.writeable
         bd.storage.writeable = False
-        if bd.vcs.versioned == False: # no way to tell what's changed
+        if bd.storage.versioned == False: # no way to tell what's changed
             bd.storage.writeable = writeable
             raise NotificationFailed('Not versioned')
 
@@ -656,7 +656,7 @@ class Message (object):
             commit_msg = self.commit_command.stdout
             assert commit_msg.startswith('Committed '), commit_msg
             after_revision = commit_msg[len('Committed '):]
-            before_revision = bd.vcs.revision_id(-2)
+            before_revision = bd.storage.revision_id(-2)
         else:
             before_revision = previous_revision
         if before_revision == None:
@@ -664,12 +664,12 @@ class Message (object):
             before_bd = libbe.bugdir.BugDir(from_disk=False,
                                             manipulate_encodings=False)
         else:
-            before_bd = bd.duplicate_bugdir(before_revision)
+            before_bd = libbe.bugdir.RevisionedBugDir(bd, before_revision)
         #after_bd = bd.duplicate_bugdir(after_revision)
         after_bd = bd # assume no changes since commit a few cycles ago
         return (before_bd, after_bd)
     def _subscriber_header(self, bd, previous_revision=None):
-        root_dir = os.path.basename(bd.root)
+        root_dir = os.path.basename(bd.storage.repo)
         if previous_revision == None:
             subject = 'Changes to %s on %s by %s' \
                 % (root_dir, THIS_SERVER, self.author_addr())
@@ -795,7 +795,6 @@ def main(args):
                         print send_pgp_mime.flatten(msg, to_unicode=True)
                     else:
                         send_pgp_mime.mail(msg, send_pgp_mime.sendmail)
-            self.commit_command.cleanup()
             close_logfile()
         UI.cleanup()
         sys.exit(0)
@@ -816,6 +815,7 @@ def main(args):
             LOGFILE.write(u'Uncaught exception:\n%s\n' % (e,))
             traceback.print_tb(sys.exc_traceback, file=LOGFILE)
             close_logfile()
+        m.commit_command.cleanup()
         UI.cleanup()
         sys.exit(1)
     else:
@@ -847,6 +847,7 @@ def main(args):
                     send_pgp_mime.mail(msg, send_pgp_mime.sendmail)
 
     close_logfile()
+    m.commit_command.cleanup()
     UI.cleanup()
 
 class GenerateGlobalTagsTestCase (unittest.TestCase):
