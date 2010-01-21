@@ -46,6 +46,7 @@ class Target (libbe.command.Command):
     >>> ui.io.stdout = StringIO.StringIO()
     >>> ret = ui.run(cmd, {'resolve':True}, ['tomorrow'])
     >>> output = ui.io.get_stdout().strip()
+    >>> bd.flush_reload()
     >>> target = bd.bug_from_uuid(output)
     >>> print target.summary
     tomorrow
