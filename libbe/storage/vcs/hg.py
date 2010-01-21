@@ -34,7 +34,7 @@ try:
 except ImportError:
     try:
         # mercurial <= 1.1.2
-        from mercurial.version import version
+        from mercurial.version import get_version as version
     except ImportError:
         version = None
 
