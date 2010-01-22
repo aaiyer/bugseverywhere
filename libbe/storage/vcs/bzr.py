@@ -98,6 +98,13 @@ class Bzr(base.VCS):
         cmd.outf = StringIO.StringIO()
         cmd.run(file_list=[path], file_ids_from=self.repo)
 
+    def _vcs_exists(self, path, revision=None):
+        manifest = self._vcs_listdir(
+            self.repo, revision=revision, recursive=True)
+        if path in manifest:
+            return True
+        return False
+
     def _vcs_remove(self, path):
         # --force to also remove unversioned files.
         path = os.path.join(self.repo, path)
@@ -131,7 +138,7 @@ class Bzr(base.VCS):
             if 'not present in revision' in str(e):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
-        return cmd.outf.getvalue()        
+        return cmd.outf.getvalue()
 
     def _vcs_path(self, id, revision):
         manifest = self._vcs_listdir(
