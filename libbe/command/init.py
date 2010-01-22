@@ -51,7 +51,6 @@ class Init (libbe.command.Command):
     >>> vcs.disconnect()
     >>> vcs.connect()
     >>> bugdir = libbe.bugdir.BugDir(vcs, from_storage=True)
-    >>> bugdir.settings
     >>> vcs.disconnect()
     >>> vcs.destroy()
     >>> dir.cleanup()

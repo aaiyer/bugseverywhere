@@ -196,7 +196,6 @@ class BugDir (list, settings_object.SavedSettingsObject):
             raise Exception('Invalid settings file for bugdir %s\n'
                             '(BE version missmatch?)' % self.id.user())
         self._setup_saved_settings()
-        #self._setup_user_id(self.user_id)
         self._setup_severities(self.severities)
         self._setup_status(self.active_status, self.inactive_status)
 
