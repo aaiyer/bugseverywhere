@@ -49,6 +49,10 @@ class Init (libbe.command.Command):
     BE repository initialized.
     >>> bd = libbe.bugdir.BugDir(vcs)
     >>> vcs.disconnect()
+    >>> vcs.connect()
+    >>> bugdir = libbe.bugdir.BugDir(vcs, from_storage=True)
+    >>> bugdir.settings
+    >>> vcs.disconnect()
     >>> vcs.destroy()
     >>> dir.cleanup()
 
@@ -65,6 +69,10 @@ class Init (libbe.command.Command):
     ...     print 'Using ... for revision control.\\nDirectory initialized.'
     Using ... for revision control.
     BE repository initialized.
+    >>> vcs.disconnect()
+    >>> vcs.connect()
+    >>> bugdir = libbe.bugdir.BugDir(vcs, from_storage=True)
+    >>> bugdir.settings
     >>> vcs.disconnect()
     >>> vcs.destroy()
     >>> dir.cleanup()
@@ -88,7 +96,6 @@ class Init (libbe.command.Command):
         storage.init()
         storage.connect()
         bd = libbe.bugdir.BugDir(storage, from_storage=False)
-        bd.save()
         if bd.storage.name is not 'None':
             print >> self.stdout, \
                 'Using %s for revision control.' % storage.name
