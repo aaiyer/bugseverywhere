@@ -242,8 +242,6 @@ class Bug(settings_object.SavedSettingsObject):
         if from_storage == False:
             if uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
-            self.settings = {}
-            self._setup_saved_settings()
             self.time = int(time.time()) # only save to second precision
             self.summary = summary
             dummy = self.comment_root
