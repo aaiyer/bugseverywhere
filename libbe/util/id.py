@@ -140,6 +140,8 @@ def _expand(truncated_id, common, other_ids):
     other_ids = list(other_ids)
     for id in other_ids:
         if id.startswith(truncated_id):
+            if id == truncated_id:
+                return id
             matches.append(id)
     if len(matches) > 1:
         raise MultipleIDMatches(truncated_id, common, matches)

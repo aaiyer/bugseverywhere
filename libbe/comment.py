@@ -253,6 +253,23 @@ class Comment(Tree, settings_object.SavedSettingsObject):
             return str(value)
         return value
 
+    def safe_in_reply_to(self):
+        """
+        Return self.in_reply_to, except...
+          * if no comment matches that id, in which case return None.
+          * if that id matches another comments .alt_id, in which case
+            return the matching comments .uuid.
+        """
+        if self.in_reply_to == None:
+            return None
+        else:
+            try:
+                irt_comment = self.bug.comment_from_uuid(
+                    self.in_reply_to, match_alt_id=True)
+                return irt_comment.uuid
+            except KeyError:
+                return None
+
     def xml(self, indent=0):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
@@ -281,7 +298,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         info = [('uuid', self.uuid),
                 ('alt-id', self.alt_id),
                 ('short-name', self.id.user()),
-                ('in-reply-to', self.in_reply_to),
+                ('in-reply-to', self.safe_in_reply_to()),
                 ('author', self._setting_attr_string('author')),
                 ('date', self.date),
                 ('content-type', self.content_type),
