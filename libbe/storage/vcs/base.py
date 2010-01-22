@@ -504,6 +504,12 @@ os.listdir(self.get_path("bugs")):
         """
         pass
 
+    def _vcs_exists(self, path, revision=None):
+        """
+        Does the path exist in a given revision? (True/False)
+        """
+        pass
+
     def _vcs_remove(self, path):
         """
         Remove the file at path from version control.  Optionally
@@ -550,7 +556,7 @@ os.listdir(self.get_path("bugs")):
 
     def _vcs_path(self, id, revision):
         """
-        Return the path to object id as of revision.
+        Return the relative path to object id as of revision.
         
         Revision will not be None.
         """
@@ -694,6 +700,17 @@ os.listdir(self.get_path("bugs")):
     def _disconnect(self):
         self._cached_path_id.disconnect()
 
+    def path(self, id, revision=None, relpath=True):
+        if revision == None:
+            path = self._cached_path_id.path(id)
+            if relpath == True:
+                return self._u_rel_path(path)
+            return path
+        path = self._vcs_path(id, revision)
+        if relpath == True:
+            return path
+        return os.path.join(self.repo, path)
+
     def _add_path(self, path, directory=False):
         relpath = self._u_rel_path(path)
         reldirs = relpath.split(os.path.sep)
@@ -715,6 +732,16 @@ os.listdir(self.get_path("bugs")):
     def _add(self, id, parent=None, **kwargs):
         path = self._cached_path_id.add_id(id, parent)
         self._add_path(path, **kwargs)
+
+    def _exists(self, id, revision=None):
+        if revision == None:
+            try:
+                path = self.path(id, revision, relpath=False)
+            except InvalidID, e:
+                return False
+            return os.path.exists(path)
+        path = self.path(id, revision, relpath=True)
+        return self._vcs_exists(relpath, revision)
 
     def _remove(self, id):
         path = self._cached_path_id.path(id)
@@ -746,15 +773,10 @@ os.listdir(self.get_path("bugs")):
                 self._cached_path_id.remove_id(id)
 
     def _ancestors(self, id=None, revision=None):
-        if revision == None:
-            id_to_path = self._cached_path_id.path
-        else:
-            id_to_path = lambda id : os.path.join(
-                self.repo, self._vcs_path(id, revision))
         if id==None:
             path = self.be_dir
         else:
-            path = id_to_path(id)
+            path = self.path(id, revision, relpath=False)
         ancestors = []
         while True:
             if not path.startswith(self.repo + os.path.sep):
@@ -769,12 +791,9 @@ os.listdir(self.get_path("bugs")):
 
     def _children(self, id=None, revision=None):
         if revision == None:
-            id_to_path = self._cached_path_id.path
             isdir = os.path.isdir
             listdir = os.listdir
         else:
-            id_to_path = lambda id : os.path.join(
-                self.repo, self._vcs_path(id, revision))
             isdir = lambda path : self._vcs_isdir(
                 self._u_rel_path(path), revision)
             listdir = lambda path : self._vcs_listdir(
@@ -782,7 +801,7 @@ os.listdir(self.get_path("bugs")):
         if id==None:
             path = self.be_dir
         else:
-            path = id_to_path(id)
+            path = self.path(id, revision, relpath=False)
         if isdir(path) == False: 
             return []
         children = listdir(path)
@@ -810,25 +829,18 @@ os.listdir(self.get_path("bugs")):
 
     def _get(self, id, default=libbe.util.InvalidObject, revision=None):
         try:
-            path = self._cached_path_id.path(id)
+            relpath = self.path(id, revision, relpath=True)
+            contents = self._vcs_get_file_contents(relpath, revision)
         except InvalidID, e:
             if default == libbe.util.InvalidObject:
                 raise e
             return default
-        relpath = self._u_rel_path(path)
-        try:
-            contents = self._vcs_get_file_contents(relpath, revision)
-        except InvalidID, e:
-            if e.id == None:
-                e.id = id
-            if e.revision == None:
-                e.revision = revision
-            raise
         if contents in [libbe.storage.base.InvalidDirectory,
-                        libbe.util.InvalidObject]:
-            raise InvalidID(id, revision)
-        elif len(contents) == 0:
-            return None
+                        libbe.util.InvalidObject] \
+                or len(contents) == 0:
+            if default == libbe.util.InvalidObject:
+                raise InvalidID(id, revision)
+            return default
         return contents
 
     def _set(self, id, value):
