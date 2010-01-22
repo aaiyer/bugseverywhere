@@ -508,7 +508,7 @@ os.listdir(self.get_path("bugs")):
         """
         Does the path exist in a given revision? (True/False)
         """
-        pass
+        raise NotImplementedError
 
     def _vcs_remove(self, path):
         """
