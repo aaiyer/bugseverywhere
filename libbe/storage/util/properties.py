@@ -303,12 +303,14 @@ def cached_property(generator, initVal=None, mutable=False):
         return funcs
     return decorator
 
-def primed_property(primer, initVal=None):
+def primed_property(primer, initVal=None, unprimeableVal=None):
     """
     Just like a cached_property, except that instead of returning a
-    new value and running fset to cache it, the primer performs some
+    new value and running fset to cache it, the primer attempts some
     background manipulation (e.g. loads data into instance.settings)
-    such that a _second_ pass through fget succeeds.
+    such that a _second_ pass through fget succeeds.  If the second
+    pass doesn't succeed (e.g. no readable storage), we give up and
+    return unprimeableVal.
 
     The 'cache' flag becomes a 'prime' flag, with priming taking place
     whenever ._<name>_prime is True, or is False or missing and
@@ -326,6 +328,8 @@ def primed_property(primer, initVal=None):
             if prime == True or (prime == False and value == initVal):
                 primer(self)
                 value = fget(self)
+                if prime == False and value == initVal:
+                    return unprimeableVal
             return value
         funcs["fget"] = _fget
         return funcs
@@ -543,13 +547,14 @@ if libbe.TESTING == True:
         def testPrimedLocalProperty(self):
             class Test(object):
                 def prime(self):
-                    self.settings["PRIMED"] = "initialized"
+                    self.settings["PRIMED"] = self.primeVal
                 @Property
-                @primed_property(primer=prime, initVal=None)
+                @primed_property(primer=prime, initVal=None, unprimeableVal=2)
                 @settings_property(name="PRIMED")
                 def x(): return {}
                 def __init__(self):
                     self.settings={}
+                    self.primeVal = "initialized"
             t = Test()
             self.failIf("_PRIMED_prime" in dir(t),
                         getattr(t, "_PRIMED_prime", None))
@@ -564,6 +569,10 @@ if libbe.TESTING == True:
             t._PRIMED_prime = False
             t.x = 3
             self.failUnless(t.x == 3, t.x)
+            # test unprimableVal
+            t.x = None
+            t.primeVal = None
+            self.failUnless(t.x == 2, t.x)
         def testChangeHookLocalProperty(self):
             class Test(object):
                 def _hook(self, old, new):
