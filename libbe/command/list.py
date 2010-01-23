@@ -154,7 +154,7 @@ class List (libbe.command.Command):
         writeable = bugdir.storage.writeable
         bugdir.storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \
-            self._parse_params(params)
+            self._parse_params(bugdir, params)
         filter = Filter(status, severity, assigned,
                         extra_strings_regexps=extra_strings_regexps)
         bugs = [bugdir.bug_from_uuid(uuid) for uuid in bugdir.uuids()]
@@ -175,7 +175,7 @@ class List (libbe.command.Command):
         bugdir.storage.writeable = writeable
         return 0
 
-    def _parse_params(self, params):
+    def _parse_params(self, bugdir, params):
         cmp_list = []
         if params['sort'] != None:
             for cmp in params['sort'].sort_by.split(','):
@@ -211,7 +211,7 @@ class List (libbe.command.Command):
                 assigned = 'all'
         else:
             assigned = libbe.command.util.select_values(
-                params['assigned'], libbe.command.util.assignees())
+                params['assigned'], libbe.command.util.assignees(bugdir))
         for i in range(len(assigned)):
             if assigned[i] == '-':
                 assigned[i] = params['user-id']

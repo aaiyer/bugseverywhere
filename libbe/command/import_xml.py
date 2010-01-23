@@ -115,7 +115,7 @@ class Import_XML (libbe.command.Command):
         if params['xml-file'] == '-':
             xml = self.stdin.read().encode(self.stdin.encoding)
         else:
-            self._check_restricted_access(storage, params['xml-file'])
+            self._check_restricted_access(bugdir.storage, params['xml-file'])
             xml = libbe.util.encoding.get_file_contents(
                 params['xml-file'])
 
