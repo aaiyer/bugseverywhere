@@ -107,8 +107,10 @@ class List (libbe.command.Command):
                 libbe.command.Option(name='assigned', short_name='a',
                     help='Only show bugs matching ASSIGNED',
                     arg=libbe.command.Argument(
-                        name='assigned', metavar='ASSIGNED', default='all',
+                        name='assigned', metavar='ASSIGNED', default=None,
                         completion_callback=libbe.command.util.complete_assigned)),
+                libbe.command.Option(name='mine', short_name='m',
+                    help='List bugs assigned to you'),
                 libbe.command.Option(name='extra-strings', short_name='e',
                     help='Only show bugs matching STRINGS, e.g. --extra-strings'
                          ' TAG:working,TAG:xml',
@@ -136,7 +138,6 @@ class List (libbe.command.Command):
 #             ("U", "unconfirmed", "List unconfirmed bugs"),
 #             ("o", "open", "List open bugs"),
 #             ("T", "test", "List bugs in testing"),
-#             ("m", "mine", "List bugs assigned to you"))
 #    for s in bools:
 #        attr = s[1].replace('-','_')
 #        short = "-%c" % s[0]
@@ -160,7 +161,7 @@ class List (libbe.command.Command):
         bugs = [b for b in bugs if filter(bugdir, b) == True]
         self.result = bugs
         if len(bugs) == 0 and params['xml'] == False:
-            print >> self.stdout, "No matching bugs found"
+            print >> self.stdout, 'No matching bugs found'
 
         # sort bugs
         bugs = self._sort_bugs(bugs, cmp_list)
@@ -180,7 +181,7 @@ class List (libbe.command.Command):
             for cmp in params['sort'].sort_by.split(','):
                 if cmp not in AVAILABLE_CMPS:
                     raise libbe.command.UserError(
-                        "Invalid sort on '%s'.\nValid sorts:\n  %s"
+                        'Invalid sort on "%s".\nValid sorts:\n  %s'
                     % (cmp, '\n  '.join(AVAILABLE_CMPS)))
             cmp_list.append(eval('libbe.bug.cmp_%s' % cmp))
         # select status
@@ -203,8 +204,11 @@ class List (libbe.command.Command):
             severity = libbe.command.util.select_values(
                 params['severity'], bug.severity_values)
         # select assigned
-        if params['assigned'] == "all":
-            assigned = "all"
+        if params['assigned'] == None:
+            if params['mine'] == True:
+                assigned = [self._get_user_id()]
+            else:
+                assigned = 'all'
         else:
             assigned = libbe.command.util.select_values(
                 params['assigned'], libbe.command.util.assignees())
