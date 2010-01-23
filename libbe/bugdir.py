@@ -178,12 +178,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
             if self.uuid == None:
                 self.uuid = [c for c in self.storage.children()
                              if c != 'version'][0]
-            self.load_settings()
         else:
             if self.uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
-            self.settings = {}
-            self._setup_saved_settings()
             if self.storage != None and self.storage.is_writeable():
                 self.save()
 
@@ -194,12 +191,11 @@ class BugDir (list, settings_object.SavedSettingsObject):
             settings_mapfile = \
                 self.storage.get(self.id.storage('settings'), default='\n')
         try:
-            self.settings = mapfile.parse(settings_mapfile)
+            settings = mapfile.parse(settings_mapfile)
         except mapfile.InvalidMapfileContents, e:
             raise Exception('Invalid settings file for bugdir %s\n'
                             '(BE version missmatch?)' % self.id.user())
-        self._setup_saved_settings()
-        #self._setup_user_id(self.user_id)
+        self._setup_saved_settings(settings)
         self._setup_severities(self.severities)
         self._setup_status(self.active_status, self.inactive_status)
 
