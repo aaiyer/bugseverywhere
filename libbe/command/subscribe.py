@@ -92,7 +92,7 @@ class Subscribe (libbe.command.Command):
                 libbe.command.Option(name='list', short_name='l',
                     help='List subscribers (read only action).'),
                 libbe.command.Option(name='subscriber', short_name='s',
-                    help='Email address of the subscriber (defaults to bugdir.user_id).',
+                    help='Email address of the subscriber (defaults to your user id).',
                     arg=libbe.command.Argument(
                         name='subscriber', metavar='EMAIL')),
                 libbe.command.Option(name='servers', short_name='S',
