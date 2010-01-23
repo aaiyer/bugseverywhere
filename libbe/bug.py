@@ -121,7 +121,7 @@ def load_status(active_status_def, inactive_status_def):
 load_status(active_status_def, inactive_status_def)
 
 
-class Bug(settings_object.SavedSettingsObject):
+class Bug (settings_object.SavedSettingsObject):
     """
     >>> b = Bug()
     >>> print b.status
@@ -628,11 +628,11 @@ class Bug(settings_object.SavedSettingsObject):
             settings_mapfile = \
                 self.storage.get(self.id.storage('values'), default='\n')
         try:
-            self.settings = mapfile.parse(settings_mapfile)
+            settings = mapfile.parse(settings_mapfile)
         except mapfile.InvalidMapfileContents, e:
             raise Exception('Invalid settings file for bug %s\n'
                             '(BE version missmatch?)' % self.id.user())
-        self._setup_saved_settings()
+        self._setup_saved_settings(settings)
 
     def save_settings(self):
         mf = mapfile.generate(self._get_saved_settings())
