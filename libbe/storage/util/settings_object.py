@@ -193,19 +193,24 @@ class SavedSettingsObject(object):
 
     def load_settings(self):
         """Load the settings from disk."""
-        # Override.  Must call ._setup_saved_settings() after loading.
-        self.settings = {}
-        self._setup_saved_settings()
+        # Override.  Must call ._setup_saved_settings({}) with
+        # from-storage settings.
+        self._setup_saved_settings({})
 
-    def _setup_saved_settings(self):
+    def _setup_saved_settings(self, settings=None):
         """
-        To be run after setting self.settings up from disk.  Fills in
+        Sets up a settings dict loaded from storage.  Fills in
         all missing settings entries with EMPTY.
         """
+        if settings == None:
+            settings = {}
         for property in self.settings_properties:
             if property not in self.settings \
                     or self.settings[property] == UNPRIMED:
-                self.settings[property] = EMPTY
+                if property in settings:
+                    self.settings[property] = settings[property]
+                else:
+                    self.settings[property] = EMPTY
 
     def save_settings(self):
         """Save the settings to disk."""
@@ -263,10 +268,10 @@ if libbe.TESTING == True:
         def load_settings(self):
             self.load_count += 1
             if len(self.storage) == 0:
-                self.settings = {}
+                settings = {}
             else:
-                self.settings = copy.deepcopy(self.storage[-1])
-            self._setup_saved_settings()
+                settings = copy.deepcopy(self.storage[-1])
+            self._setup_saved_settings(settings)
         def save_settings(self):
             settings = self._get_saved_settings()
             self.storage.append(copy.deepcopy(settings))
@@ -408,7 +413,37 @@ if libbe.TESTING == True:
             self.failUnless(t.settings == {}, t.settings)
             self.failUnless(t._get_saved_settings() == settings,
                             t._get_saved_settings())
-            
+        def testSimplePropertySetStorageSave(self):
+            """Set a property, then attach storage and save"""
+            class Test (TestObject):
+                settings_properties = []
+                required_saved_properties = []
+                @versioned_property(
+                    name="prop-a",
+                    doc="A test property",
+                    settings_properties=settings_properties,
+                    required_saved_properties=required_saved_properties)
+                def prop_a(): return {}
+                @versioned_property(
+                    name="prop-b",
+                    doc="Another test property",
+                    settings_properties=settings_properties,
+                    required_saved_properties=required_saved_properties)
+                def prop_b(): return {}
+            t = Test()
+            storage = t.storage
+            t.storage = None
+            t.prop_a = 'text/html'
+            t.storage = storage
+            t.save_settings()
+            self.failUnless(t.prop_a == 'text/html', t.prop_a)
+            self.failUnless(t.settings == {'prop-a':'text/html',
+                                           'prop-b':EMPTY},
+                            t.settings)
+            self.failUnless(t.load_count == 1, t.load_count)
+            self.failUnless(len(t.storage) == 1, len(t.storage))
+            self.failUnless(t.storage == [{'prop-a':'text/html'}],
+                            t.storage)
         def testDefaultingProperty(self):
             """Testing a defaulting versioned property"""
             class Test (TestObject):
