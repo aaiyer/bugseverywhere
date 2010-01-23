@@ -21,3 +21,10 @@ To create bugs, use "be new $DESCRIPTION".  To comment on bugs, you
 can can use "be comment $BUG_ID".  To close a bug, use "be close
 $BUG_ID" or "be status $BUG_ID fixed".  For more commands, see "be
 help".  You can also look at the usage examples in test_usage.sh.
+
+Documentation
+=============
+
+If "be help" isn't scratching your itch, there's also
+  * doc/tutorial        (a gentle introduction to BE)
+  * doc/README.dev      (a guide to hacking BE)
