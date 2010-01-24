@@ -671,4 +671,7 @@ class Diff (object):
         return self._comment_summary_string(new_comment)
     def comment_body_change_string(self, bodies):
         old_body,new_body = bodies
-        return difflib.unified_diff(old_body, new_body)
+        return ''.join(difflib.unified_diff(
+                old_body.splitlines(True),
+                new_body.splitlines(True),
+                'before', 'after'))
