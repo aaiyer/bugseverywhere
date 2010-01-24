@@ -1,1 +1,442 @@
-TODO
+Tutorial
+========
+
+Introduction
+------------
+
+Bugs Everywhere (BE) is a bugtracker built on distributed revision
+control.  The idea is to package the bug information with the source
+code, so that developers working on the code can make appropriate
+changes to the bug repository as they go.  For example, by marking a
+bug as "fixed" and applying the fixing changes in the same commit.
+This makes it easy to see what's been going on in a particular branch
+and helps keep the bug repository in sync with the code.
+
+However, there are some differences compared to centralized
+bugtrackers.  Because bugs and comments can be created by several
+users in parallel, they have globally unique IDs_ rather than numbers.
+There is also a developer-friendly command-line_ interface to
+compliment the user-friendly web_ and email_ interfaces.  This
+tutorial will focus on the command-line interface as the most
+powerful, and leave the web and email interfaces to other documents.
+
+.. _command-line: `Command-line interface`_
+.. _web: ../doc/tutorial-html
+.. _email: ../doc/tutorial-email
+
+Installation
+------------
+
+If your distribution packages BE, it will be easiest to use their package.
+For example, most Debian-based distributions support::
+
+    $ apt-get install bugs-everywhere
+
+Bugs
+----
+
+If you have any problems with BE, you can look for matching bugs::
+
+    $ be --repo http://bugseverywhere.org/bugs list
+
+If your bug isn't listed, please open a new bug::
+
+    $ be --repo http://bugseverywhere.org/bugs new 'bug'
+    Created bug with ID bea/abc
+    $ be --repo http://bugseverywhere.org/bugs comment bea/def
+    <editor spawned for comments>
+
+
+Command-line interface
+----------------------
+
+Help
+~~~~
+
+All of the following information elaborates on the command help text,
+which is stored in the code itself, and therefore more likely to be up
+to date.  You can get a list of commands and topics with::
+
+    $ be help
+
+Or see specific help on ``COMMAND`` with
+
+    $ be help COMMAND
+
+for example::
+
+    $ be help init
+
+will give help on the ``init`` command.
+
+Initialization
+~~~~~~~~~~~~~~
+
+You're happily coding in your Arch_ / Bazaar_ / Darcs_ / Git_ /
+Mercurial_ versioned project and you discover a bug.  "Hmm, I'll need
+a simple way to track these things", you think.  This is where BE
+comes in.  One of the benefits of distributed versioning systems is
+the ease of repository creation, and BE follows this trend.  Just
+type::
+
+    $ be init
+    Using <VCS> for revision control.
+    BE repository initialized.
+
+in your project's root directory.  This will create a ``.be``
+directory containing the bug repository and notify your VCS so it will
+be versioned starting with your next commit.  See::
+
+    $ be help init
+
+for specific details about where the ``.be`` directory will end up
+if you call it from a directory besides your project's root.
+
+.. _Arch: http://www.gnu.org/software/gnu-arch/
+.. _Bazaar: http://bazaar.canonical.com/
+.. _Darcs: http://darcs.net/
+.. _Git: http://git-scm.com/
+.. _Mercurial: http://mercurial.selenic.com/
+
+Inside the ``.be`` directory (among other things) there will be a long
+UUID_ directory.  This is your bug directory.  The idea is that you
+could keep several bug directories in the same repository, using one
+to track bugs, another to track roadmap issues, etc.  See IDs_ for
+details.  For BE itself, the bug directory is
+``bea86499-824e-4e77-b085-2d581fa9ccab``, which is why all the bug and
+comment IDs in this tutorial will start with ``bea/``.
+
+.. _UUID: http://en.wikipedia.org/wiki/Universally_Unique_Identifier
+
+
+Creating bugs
+~~~~~~~~~~~~~
+
+Create new bugs with::
+
+    $ be new <SUMMARY>
+
+For example::
+
+    $ be new 'Missing demuxalizer functionality'
+    Created bug with ID bea/28f
+
+If you are entering a bug reported by another person, take advantage
+of the ``--reporter`` option to give them credit::
+
+    $ be new --reporter 'John Doe <jdoe@example.com>' 'Missing whatsit...'
+    Created bug with ID bea/81a
+
+See ``be help new`` for more details.
+
+While the bug summary should include the appropriate keywords, it
+should also be brief.  You should probably add a comment immediately
+giving a more elaborate explanation of the problem so that the
+developer understands what you want and when the bug can be considered
+fixed.
+
+Commenting on bugs
+~~~~~~~~~~~~~~~~~~
+
+Bugs are like little mailing lists, and you can comment on the bug
+itself or previous comments, attach files, etc.  For example
+
+    $ be comment abc/28f "Thoughts about demuxalizers..."
+    Created comment with ID abc/28f/97a
+    $ be comment abc/def/012 "Oops, I forgot to mention..."
+    Created comment with ID abc/28f/e88
+
+Usually comments will be long enough that you'll want to compose them
+in a text editor, not on the command line itself.  Running ``be
+comment`` without providing a ``COMMENT`` argument will try to spawn
+an editor automatically (using your environment's ``VISUAL`` or
+``EDITOR``, see `Guide to Unix, Environmental Variables`_).
+
+.. _Guide to Unix, Environmental Variables:
+   http://en.wikibooks.org/wiki/Guide_to_Unix/Environment_Variables
+
+You can also pipe the comment body in on stdin, which is especially
+useful for binary attachments, etc.::
+
+    $ cat screenshot.png | be comment --content-type image/png bea/28f
+    Created comment with ID bea/28f/35d
+
+It's polite to insert binary attachments under comments that explain
+the content and why you're attaching it, so the above should have been
+
+    $ be comment bea/28f "Whosit dissapears when you mouse-over whatsit."
+    Created comment with ID bea/28f/41d
+    $ cat screenshot.png | be comment --content-type image/png bea/28f/41d
+    Created comment with ID bea/28f/35d
+
+For more details, see ``be help comment``.
+
+Showing bugs
+~~~~~~~~~~~~
+
+Ok, you understand how to enter bugs, but how do you get that
+information back out?  If you know the ID of the item you're
+interested in (e.g. bug bea/28f), try::
+
+    $ be show bea/28f
+              ID : 28fb711c-5124-4128-88fe-a88a995fc519
+      Short name : bea/28f
+        Severity : minor
+          Status : open
+        Assigned :
+        Reporter :
+         Creator : ...
+         Created : ...
+    Missing demuxalizer functionality
+    --------- Comment ---------
+    Name: bea/28f/97a
+    From: ...
+    Date: ...
+    
+    Thoughts about demuxalizers...
+      --------- Comment ---------
+      Name: bea/28f/e88
+      From: ...
+      Date: ...
+      
+      Thoughts about demuxalizers...
+    --------- Comment ---------
+    Name: bea/28f/41d
+    From: ...
+    Date: ...
+    
+    Whosit dissapears when you mouse-over whatsit.
+      --------- Comment ---------
+      Name: bea/28f/35d
+      From: ...
+      Date: ...
+      
+      Content type image/png not printable.  Try XML output instead
+
+You can also get a single comment body, which is useful for extracting
+binary attachments::
+
+    $ be show --only-raw-body bea/28f/35d > screenshot.png
+
+There is also an XML output format, which can be useful for emailing
+entries around, scripting BE, etc.
+
+    $ be show --xml bea/35d
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <be-xml>
+    ...
+
+Listing bugs
+~~~~~~~~~~~~
+
+If you *don't* know which bug you're interested in, you can query
+the whole bug directory::
+
+    $ be list
+    bea/28f:om: Missing demuxalizer functionality
+    bea/81a:om: Missing whatsit...
+
+There are a whole slew of options for filtering the list of bugs.  See
+``be help list`` for details.
+
+Showing changes
+~~~~~~~~~~~~~~~
+
+Often you will want to see what's going on in another dev's branch or
+remind yourself what you've been working on recently.  All VCSs have
+some sort of ``diff`` command that shows what's changed since revision
+``XYZ``.  BE has it's own command that formats the bug-repository
+portion of those changes in an easy-to-understand summary format.  To
+compare your working tree with the last commit::
+
+    $ be diff
+    New bugs:
+      bea/01c:om: Need command output abstraction for flexible UIs
+    Modified bugs:
+      bea/343:om: Attach tests to bugs
+        Changed bug settings:
+          creator: None -> W. Trevor King <wking@drexel.edu>
+
+Compare with a previous revision ``480``::
+
+    $ be diff 480
+    ...
+
+Compare your BE branch with the trunk::
+
+    $ be diff --repo http://bugseverywhere.org/bugs/
+
+Manipulating bugs
+~~~~~~~~~~~~~~~~~
+
+There are several commands that allow to to set bug properties.  They
+are all fairly straightforward, so we will merely point them out here,
+and refer you to ``be help COMMAND`` for more details.
+
+* ``assign``, Assign an individual or group to fix a bug
+* ``depend``, Add/remove bug dependencies
+* ``due``, Set bug due dates
+* ``status``, Change a bug's status level
+* ``severity``, Change a bug's severity level
+* ``tag``, Tag a bug, or search bugs for tags
+* ``target``, Assorted bug target manipulations and queries
+
+You can also remove bugs you feel are no longer useful with
+``be remove``, and merge duplicate bugs with ``be merge``.
+
+Subscriptions
+~~~~~~~~~~~~~
+
+Since BE bugs act as mini mailing lists, we provide ``be subscribe``
+as a way to manage change notification.  You can subscribe to all
+the changes with::
+
+    $ be subscribe --types all DIR
+
+Subscribe only to bug creaton on bugseverywhere.org with::
+
+    $ be subscribe --server bugseverywhere.org --types new DIR
+
+Subscribe to get all the details about bug ``bea/28f``::
+
+    $ be subscribe --types new bea/28f
+
+To unsubscribe, simply repeat the subscription command adding the
+``--unsubscribe`` option, but be aware that it may take some time for
+these changes to propogate between distributed repositories.  If you
+don't feel confident in your ability to filter email, it's best to
+only subscribe to the repository for which you have direct write
+access.
+
+Managing bug directories
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``be set`` lets you configure a bug directory.  You can set
+
+* ``active_status``
+  The allowed active bug states and their descriptions.
+* ``inactive_status``
+  The allowed inactive bug states and their descriptions.
+* ``severities``
+  The allowed bug severities and their descriptions.
+* ``target``
+  The current project development target (bug UUID).
+* ``extra_strings``
+  Space for an array of extra strings.  You usually won't bother with
+  this directly.
+
+For example, to set the current target to '1.2.3'::
+
+    $ be set target $(be target --resolve '1.2.3')
+
+Import XML
+~~~~~~~~~~
+
+For serializing bug information (e.g. to email to a mailing list), use::
+
+    $ be show --xml bea/28f > bug.xml
+
+This information can be imported into (another) bug directory via
+
+    $ be import-xml bug.xml
+
+Also distributed with BE are some utilities to convert mailboxes
+into BE-XML (``be-mail-to-xml``) and convert BE-XML into mbox_
+format for reading in your mail client.
+
+.. _mbox: http://en.wikipedia.org/wiki/Mbox
+
+Export HTML
+~~~~~~~~~~~
+
+To create a static dump of your bug directory, use::
+
+    $ be html
+
+This is a fairly flexible command, see ``be help html`` for details.
+It works pretty well as the browsable part of a public interface using
+the email_ interface for interactive access.
+
+BE over HTTP
+~~~~~~~~~~~~
+
+Besides using BE to work directly with local VCS-based repositories,
+you can use::
+
+    $ be serve
+
+To serve a repository over HTTP.  For example::
+
+    $ be serve > server.log 2>&1 &
+    $ be --repo http://localhost:8000 list
+
+Of course, be careful about serving over insecure networks, since
+malicous users could fill your disk with endless bugs, etc.  You can
+dissable write access by using the ``--read-only`` option, which would
+make serving on a public network safer.
+
+Driving the VCS through BE
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since BE uses internal storage drivers for its various backends, it
+seemed useful to provide a uniform interface to some of the common
+functionality.  These commands are not intended to replace the usually
+much more powerful native VCS commands, but to provide an easy means
+of simple VCS-agnostic scripting for BE user interfaces, etc.
+
+Currently, we only expose ``be commit``, which commits all currently
+pending changes.
+
+
+IDs
+---
+
+Format
+~~~~~~
+
+BE IDs are formatted::
+
+    <bug-directory>[/<bug>[/<comment>]]
+
+where each ``<..>`` is a UUID.  For example::
+
+    bea86499-824e-4e77-b085-2d581fa9ccab/3438b72c-6244-4f1d-8722-8c8d41484e35
+
+refers to bug ``3438b72c-6244-4f1d-8722-8c8d41484e35`` which is
+located in bug directory ``bea86499-824e-4e77-b085-2d581fa9ccab``.
+This is a bit of a mouthful, so you can truncate each UUID so long as
+it remains unique.  For example::
+
+    bea/343
+
+If there were two bugs ``3438...`` and ``343a...`` in ``bea``, you'd
+have to use::
+
+    bea/3438
+
+BE will only truncate each UUID down to three characters to slightly
+future-proof the short user ids.  However, if you want to save keystrokes
+and you *know* there is only one bug directory, feel free to truncate
+all the way to zero characters::
+
+    /3438
+
+Cross references
+~~~~~~~~~~~~~~~~
+
+To refer to other bug-directories/bugs/comments from bug comments, simply
+enclose the ID in pound signs (``#``).  BE will automatically expand the
+truncations to the full UUIDs before storing the comment, and the reference
+will be appropriately truncated (and hyperlinked, if possible) when the
+comment is displayed.
+
+Scope
+~~~~~
+
+Although bug and comment IDs always appear in compound references,
+UUIDs at each level are globally unique.  For example, comment
+``bea/343/ba96f1c0-ba48-4df8-aaf0-4e3a3144fc46`` will *only* appear
+under ``bea/343``.  The prefix (``bea/343``) allows BE to reduce
+caching global comment-lookup tables and enables easy error messages
+("I couldn't find ``bea/343/ba9`` because I don't know where the
+``bea`` bug directory is located").

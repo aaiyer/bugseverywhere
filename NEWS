@@ -1,5 +1,6 @@
 January 23, 2010
- * Added 'Created comment with ID .../.../...' output to `be comment`
+ * Added 'Created comment with ID .../.../...' output to `be comment`.
+ * Added --important severity shortcut to `be list`.
 
 January 20, 2010
  * Renamed 'be-mbox-to-xml' -> 'be-mail-to-xml' and added support for
