@@ -5,7 +5,7 @@
 >     and commit only those files.  This is doable, but maybe not worth
 >     the trouble.
 
-On the other hand, just attemting to commit evverything after each
+On the other hand, just attemting to commit everything after each
 command would make it nice and easy to commit bug fixes:
   be --auto-commit status XYZ fixed
 which would commit whatever changes you had outstanding with an

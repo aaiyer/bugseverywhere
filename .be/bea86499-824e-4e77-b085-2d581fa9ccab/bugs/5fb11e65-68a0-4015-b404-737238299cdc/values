@@ -1,0 +1,21 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+extra_strings:
+- BLOCKS:52034fd0-ec50-424d-b25d-2beaf2d2c317
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: open
+
+
+summary: Add change hooks to Storage class
+
+
+time: Sat, 23 Jan 2010 19:08:40 +0000
+
