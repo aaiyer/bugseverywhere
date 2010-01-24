@@ -104,6 +104,8 @@ class List (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='severity', metavar='SEVERITY', default='all',
                         completion_callback=libbe.command.util.complete_severity)),
+                libbe.command.Option(name='important',
+                    help='List bugs with >= "serious" severity'),
                 libbe.command.Option(name='assigned', short_name='a',
                     help='Only show bugs matching ASSIGNED',
                     arg=libbe.command.Argument(
@@ -133,7 +135,6 @@ class List (libbe.command.Command):
 #                      help="Adjust bug-sort criteria with comma-separated list SORT-BY.  e.g. \"--sort creator,time\".  Available criteria: %s" % ','.join(AVAILABLE_CMPS), default=None)
 #    # boolean options.  All but ids and xml are special cases of long forms
 #             ("w", "wishlist", "List bugs with 'wishlist' severity"),
-#             ("i", "important", "List bugs with >= 'serious' severity"),
 #             ("A", "active", "List all active bugs"),
 #             ("U", "unconfirmed", "List unconfirmed bugs"),
 #             ("o", "open", "List open bugs"),
@@ -202,7 +203,7 @@ class List (libbe.command.Command):
             severity.append(list(libbe.bug.severity_values[serious:]))
         else:
             severity = libbe.command.util.select_values(
-                params['severity'], bug.severity_values)
+                params['severity'], libbe.bug.severity_values)
         # select assigned
         if params['assigned'] == None:
             if params['mine'] == True:
