@@ -6,7 +6,7 @@ moment, but is easily extensible.  It can also function with no RCS at
 all.
 
 The idea is to package the bug information with the source code, so that
-bugs can be marked 'fixed' in the branches that fix them.  So, instead of
+bugs can be marked "fixed" in the branches that fix them.  So, instead of
 numbers, bugs have globally unique ids.
 
 
@@ -17,7 +17,24 @@ set the bug root to your project root, so that Bugs Everywhere works in any
 part of your project tree.
 $ be init -r $PROJECT_ROOT
 
-To create bugs, use "be new $DESCRIPTION".  To comment on bugs, you
-can can use "be comment $BUG_ID".  To close a bug, use "be close
-$BUG_ID" or "be status $BUG_ID fixed".  For more commands, see "be
-help".  You can also look at the usage examples in test_usage.sh.
+To create bugs, use ``be new $DESCRIPTION``.  To comment on bugs, you
+can can use ``be comment $BUG_ID``.  To close a bug, use
+``be close $BUG_ID`` or ``be status $BUG_ID fixed``.  For more
+commands, see ``be help``.  You can also look at the usage examples in
+``test_usage.sh``.
+
+Documentation
+=============
+
+If ``be help`` isn't scratching your itch, there's also
+
+* doc/tutorial        (a gentle introduction to BE)
+* doc/distributed_bugtracking  (notes on distributed workflows)
+* doc/spam            (notes on removing spam entries from VCSs)
+* doc/README.dev      (a guide to hacking BE)
+
+The documentation is marked up in reStructuredText_, so you can use
+the docutils_ to convert it to other formats if you desire.
+
+.. _reStructuredText: http://docutils.sourceforge.net/docs/user/rst/quickref.html
+.. _docutils: http://docutils.sourceforge.net/

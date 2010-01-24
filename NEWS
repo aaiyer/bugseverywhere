@@ -1,5 +1,6 @@
 January 23, 2010
- * Added `be list --mine`, listing bugs belonging to you.
+ * Added 'Created comment with ID .../.../...' output to `be comment`.
+ * Added --important and --mine to `be list`.
 
 January 20, 2010
  * Renamed 'be-mbox-to-xml' -> 'be-mail-to-xml' and added support for

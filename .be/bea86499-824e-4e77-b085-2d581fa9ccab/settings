@@ -1,6 +1,3 @@
-encoding: utf-8
-
-
 extra_strings:
 - "SUBSCRIBE:W. Trevor King <wking@drexel.edu>\tall\t*"
 
@@ -14,7 +11,4 @@ inactive_status:
   - It's not a bug, it's a feature.
 - - disabled
   - Unknown meaning.  For backwards compatibility with old BE bugs.
-
-
-vcs_name: bzr
 

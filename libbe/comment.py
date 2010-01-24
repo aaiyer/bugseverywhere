@@ -26,6 +26,13 @@ import os.path
 import sys
 import time
 import types
+try:
+    from email.mime.base import MIMEBase
+    from email.encoders import encode_base64
+except ImportError:
+    # adjust to old python 2.4
+    from email.MIMEBase import MIMEBase
+    from email.Encoders import encode_base64
 try: # import core module, Python >= 2.5
     from xml.etree import ElementTree
 except ImportError: # look for non-core module
@@ -289,9 +296,9 @@ class Comment (Tree, settings_object.SavedSettingsObject):
             body = (self.body or '').rstrip('\n')
         else:
             maintype,subtype = self.content_type.split('/',1)
-            msg = email.mime.base.MIMEBase(maintype, subtype)
+            msg = MIMEBase(maintype, subtype)
             msg.set_payload(self.body or '')
-            email.encoders.encode_base64(msg)
+            encode_base64(msg)
             body = base64.encodestring(self.body or '')
         info = [('uuid', self.uuid),
                 ('alt-id', self.alt_id),

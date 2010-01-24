@@ -32,6 +32,7 @@ class Comment (libbe.command.Command):
 
     >>> import time
     >>> import libbe.bugdir
+    >>> import libbe.util.id
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
@@ -39,8 +40,12 @@ class Comment (libbe.command.Command):
     >>> ui.storage_callbacks.set_storage(bd.storage)
     >>> cmd = Comment(ui=ui)
 
+    >>> uuid_gen = libbe.util.id.uuid_gen
+    >>> libbe.util.id.uuid_gen = lambda: 'X'
     >>> ui._user_id = u'Fran\\xe7ois'
     >>> ret = ui.run(cmd, args=['/a', 'This is a comment about a'])
+    Created comment with ID abc/a/X
+    >>> libbe.util.id.uuid_gen = uuid_gen
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
@@ -65,7 +70,10 @@ class Comment (libbe.command.Command):
     UserError: No comment supplied, and EDITOR not specified.
 
     >>> os.environ['EDITOR'] = "echo 'I like cheese' > "
+    >>> libbe.util.id.uuid_gen = lambda: 'Y'
     >>> ret = ui.run(cmd, args=['/b'])
+    Created comment with ID abc/b/Y
+    >>> libbe.util.id.uuid_gen = uuid_gen
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('b')
     >>> bug.load_comments(load_full=False)
@@ -142,7 +150,8 @@ class Comment (libbe.command.Command):
         new = parent.new_reply(body=body)
         for key in ['alt-id', 'author', 'content-type']:
             if params[key] != None:
-                setattr(new, key, params[key])
+                setattr(new, new._setting_name_to_attr_name(key), params[key])
+        print >> self.stdout, 'Created comment with ID %s' % new.id.user()
         return 0
 
     def _long_help(self):

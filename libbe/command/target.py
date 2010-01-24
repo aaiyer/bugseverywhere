@@ -112,7 +112,7 @@ class Target (libbe.command.Command):
 
     def usage(self):
         return 'usage: be %(name)s BUG-ID [TARGET]\nor:    be %(name)s --resolve [TARGET]' \
-            % vars(self)
+            % vars(self.__class__)
 
     def _long_help(self):
         return """

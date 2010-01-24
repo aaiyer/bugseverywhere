@@ -27,7 +27,7 @@ SHELL = /bin/bash
 PATH = /usr/bin:/bin
 
 # Directories with semantic meaning
-DOC_DIR := doc
+DOC_DIR := doc/src
 
 # Variables that will be extended by module include files
 GENERATED_FILES := libbe/_version.py build
