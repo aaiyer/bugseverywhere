@@ -1,0 +1,40 @@
+For example, after merging in a branch with new bugs, the id-cache is
+incomplete.  An example traceback (from `be list`) is
+
+Traceback (most recent call last):
+  File "./be", line 21, in <module>
+    sys.exit(libbe.ui.command_line.main())
+  File ".../be.wtk/libbe/ui/command_line.py", line 327, in main
+    ret = dispatch(ui, command, args)
+  File ".../be.wtk/libbe/ui/command_line.py", line 267, in dispatch
+    ret = ui.run(command, options, args)
+  File ".../be.wtk/libbe/command/base.py", line 504, in run
+    return command.run(options, args)
+  File ".../be.wtk/libbe/command/base.py", line 233, in run
+    self.status = self._run(**params)
+  File ".../be.wtk/libbe/command/list.py", line 168, in _run
+    bugs = self._sort_bugs(bugs, cmp_list)
+  File ".../be.wtk/libbe/command/list.py", line 229, in _sort_bugs
+    bugs.sort(cmp_fn)
+  File ".../be.wtk/libbe/bug.py", line 818, in __call__
+    val = comparison(bug_1, bug_2)
+  File ".../be.wtk/libbe/bug.py", line 798, in cmp_comments
+    comms_1 = sorted(bug_1.comments(), key = lambda comm : comm.uuid)
+  File ".../be.wtk/libbe/bug.py", line 687, in comments
+    for comment in self.comment_root.traverse():
+  File ".../be.wtk/libbe/storage/util/properties.py", line 297, in _fget
+    value = generator(self)
+  File ".../be.wtk/libbe/bug.py", line 225, in _get_comment_root
+    return comment.load_comments(self, load_full=load_full)
+  File ".../be.wtk/libbe/comment.py", line 85, in load_comments
+    bug.id.storage())):
+  File ".../be.wtk/libbe/storage/base.py", line 314, in children
+    return self._children(*args, **kwargs)
+  File ".../be.wtk/libbe/storage/vcs/base.py", line 804, in _children
+    path = self.path(id, revision, relpath=False)
+  File ".../be.wtk/libbe/storage/vcs/base.py", line 705, in path
+    path = self._cached_path_id.path(id)
+  File ".../be.wtk/libbe/storage/vcs/base.py", line 242, in path
+    raise InvalidID(uuid)
+libbe.storage.base.InvalidID: cf56e648-3b09-4131-8847-02dff12b4db2 in revision None
+
