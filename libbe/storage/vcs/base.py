@@ -182,13 +182,16 @@ class CachedPathID (object):
         self._cache_path = os.path.join(
             self._root, self._spacer_dirs[0], 'id-cache')
 
-    def init(self, verbose=True):
+    def init(self, verbose=True, cache=None):
         """
         Create cache file for an existing .be directory.
         File if multiple lines of the form:
           UUID\tPATH
         """
-        self._cache = {}
+        if cache == None:
+            self._cache = {}
+        else:
+            self._cache = cache
         spaced_root = os.path.join(self._root, self._spacer_dirs[0])
         for dirpath, dirnames, filenames in os.walk(spaced_root):
             if dirpath == spaced_root:
@@ -202,8 +205,10 @@ class CachedPathID (object):
                     self._cache[id] = relpath
             except InvalidPath:
                 pass
-        self._changed = True
-        self.disconnect()
+        if self._cache != cache:
+            self._changed = True
+        if cache == None:
+            self.disconnect()
 
     def destroy(self):
         if os.path.exists(self._cache_path):
@@ -239,9 +244,7 @@ class CachedPathID (object):
         else:
             extra = fields[1:]
         if uuid not in self._cache:
-            self.disconnect()
-            self.init(verbose=False)
-            self.connect()
+            self.init(verbose=False, cache=self._cache)
             if uuid not in self._cache:
                 raise InvalidID(uuid)
         if relpath == True:
