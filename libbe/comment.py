@@ -590,6 +590,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
     # methods for saving/loading/acessing settings and properties.
 
     def load_settings(self, settings_mapfile=None):
+        if self.uuid == INVALID_UUID:
+            return
         if settings_mapfile == None:
             settings_mapfile = \
                 self.storage.get(self.id.storage("values"), default="\n")
@@ -601,6 +603,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         self._setup_saved_settings(settings)
 
     def save_settings(self):
+        if self.uuid == INVALID_UUID:
+            return
         mf = mapfile.generate(self._get_saved_settings())
         self.storage.set(self.id.storage("values"), mf)
 

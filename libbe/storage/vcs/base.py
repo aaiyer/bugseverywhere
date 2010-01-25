@@ -239,7 +239,11 @@ class CachedPathID (object):
         else:
             extra = fields[1:]
         if uuid not in self._cache:
-            raise InvalidID(uuid)
+            self.disconnect()
+            self.init()
+            self.connect()
+            if uuid not in self._cache:
+                raise InvalidID(uuid)
         if relpath == True:
             return os.path.join(self._cache[uuid], *extra)
         return os.path.join(self._root, self._cache[uuid], *extra)
