@@ -182,7 +182,7 @@ class CachedPathID (object):
         self._cache_path = os.path.join(
             self._root, self._spacer_dirs[0], 'id-cache')
 
-    def init(self):
+    def init(self, verbose=True):
         """
         Create cache file for an existing .be directory.
         File if multiple lines of the form:
@@ -197,7 +197,7 @@ class CachedPathID (object):
                 id = self.id(dirpath)
                 relpath = dirpath[len(self._root)+1:]
                 if id.count('/') == 0:
-                    if id in self._cache:
+                    if verbose == True and id in self._cache:
                         print >> sys.stderr, 'Multiple paths for %s: \n  %s\n  %s' % (id, self._cache[id], relpath)
                     self._cache[id] = relpath
             except InvalidPath:
@@ -240,7 +240,7 @@ class CachedPathID (object):
             extra = fields[1:]
         if uuid not in self._cache:
             self.disconnect()
-            self.init()
+            self.init(verbose=False)
             self.connect()
             if uuid not in self._cache:
                 raise InvalidID(uuid)
