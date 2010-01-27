@@ -357,9 +357,53 @@ class Arch(base.VCS):
             return None
         return '%s--%s' % (self._archive_project_name(), log)
 
+    def _diff(self, revision):
+        status,output,error = self._u_invoke_client(
+            'diff', '--summary', revision, expect=(0,1))
+        return output
+    
+    def _parse_diff(self, diff_text):
+        """
+        Example diff text:
+        
+        * local directory is at ...
+        * build pristine tree for ...
+        * from import revision: ...
+        * patching for revision: ...
+        * comparing to ...
+        D  .be/dir/bugs/.arch-ids/moved.id
+        D  .be/dir/bugs/.arch-ids/removed.id
+        D  .be/dir/bugs/moved
+        D  .be/dir/bugs/removed
+        A  .be/dir/bugs/.arch-ids/moved2.id
+        A  .be/dir/bugs/.arch-ids/new.id
+        A  .be/dir/bugs/moved2
+        A  .be/dir/bugs/new
+        A  {arch}/bugs-everywhere/bugs-everywhere--mainline/...
+        M  .be/dir/bugs/modified
+        """
+        new = []
+        modified = []
+        removed = []
+        lines = diff_text.splitlines()
+        for i,line in enumerate(lines):
+            if line.startswith('* ') or '/.arch-ids/' in line:
+                continue
+            change,file = line.split('  ',1)
+            print '"%s" "%s"' % (change, file)
+            if  file.startswith('{arch}/'):
+                continue
+            if change == 'A':
+                new.append(file)
+            elif change == 'M':
+                modified.append(file)
+            elif change == 'D':
+                removed.append(file)
+        print new, modified, removed
+        return (new,modified,removed)
+
     def _vcs_changed(self, revision):
-        raise NotImplementedError(
-            'Too little Arch understanding at the moment...')
+        return self._parse_diff(self._diff(revision))
 
 
 if libbe.TESTING == True:
