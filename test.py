@@ -16,17 +16,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""Usage: python test.py [module(s) ...]
-
-When called without optional module names, run the test suites for
-*all* modules.  This may raise lots of errors if you haven't installed
-one of the versioning control systems.
-
-When called with module name arguments, only run the test suites from
-those modules and their submodules.  For example:
-  python test.py libbe.bugdir libbe.storage
-"""
-
 import doctest
 import os
 import os.path
@@ -84,27 +73,48 @@ def add_module_tests(suite, modname):
             pass
     suite.addTest(s)
 
-suite = unittest.TestSuite()
-tree = python_tree()
-if len(sys.argv) <= 1:
-    for node in tree.traverse():
-        add_module_tests(suite, node.modname)
-else:
-    added = []
-    for modname in sys.argv[1:]:
+if __name__ == '__main__':
+    import optparse
+    parser = optparse.OptionParser(usage='%prog [options] [modules ...]',
+                                   description=
+"""When called without optional module names, run the test suites for
+*all* modules.  This may raise lots of errors if you haven't installed
+one of the versioning control systems.
+
+When called with module name arguments, only run the test suites from
+those modules and their submodules.  For example::
+
+    $ python test.py libbe.bugdir libbe.storage
+""")
+    parser.add_option('-q', '--quiet', action='store_true', default=False,
+                      help='Run unittests in quiet mode (verbosity 1).')
+    options,args = parser.parse_args()
+
+    verbosity = 2
+    if options.quiet == True:
+        verbosity = 1
+
+    suite = unittest.TestSuite()
+    tree = python_tree()
+    if len(args) == 0:
         for node in tree.traverse():
-            if node.modname == modname:
-                for n in node.traverse():
-                    if n.modname not in added:
-                        add_module_tests(suite, n.modname)
-                        added.append(n.modname)
-                break
-
-result = unittest.TextTestRunner(verbosity=2).run(suite)
-
-numErrors = len(result.errors)
-numFailures = len(result.failures)
-numBad = numErrors + numFailures
-if numBad > 126:
-    numBad = 1
-sys.exit(numBad)
+            add_module_tests(suite, node.modname)
+    else:
+        added = []
+        for modname in args:
+            for node in tree.traverse():
+                if node.modname == modname:
+                    for n in node.traverse():
+                        if n.modname not in added:
+                            add_module_tests(suite, n.modname)
+                            added.append(n.modname)
+                    break
+    
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+    
+    numErrors = len(result.errors)
+    numFailures = len(result.failures)
+    numBad = numErrors + numFailures
+    if numBad > 126:
+        numBad = 1
+    sys.exit(numBad)
