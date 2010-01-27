@@ -53,7 +53,7 @@ class Darcs(base.VCS):
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
-        return output.rstrip('\n')
+        return output.strip()
 
     def version_cmp(self, *args):
         """
@@ -191,8 +191,8 @@ class Darcs(base.VCS):
             if path in children:
                 return True
             return False
-        # Darcs versions <= 2.3.1 lack the --patch option for 'show files'
-        raise NotImplementedError
+        raise NotImplementedError(
+            'Darcs versions <= 2.3.1 lack the --patch option for "show files"')
 
     def _vcs_listdir(self, path, revision):
         if self.version_cmp(2, 3, 1) == 1:

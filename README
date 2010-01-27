@@ -1,6 +1,7 @@
 Bugs Everywhere
 ===============
-This is Bugs Everywhere, a bugtracker built on distributed revision
+
+This is Bugs Everywhere (BE), a bugtracker built on distributed revision
 control.  It works with Arch, Bazaar, Darcs, Git, and Mercurial at the
 moment, but is easily extensible.  It can also function with no RCS at
 all.
@@ -9,9 +10,32 @@ The idea is to package the bug information with the source code, so that
 bugs can be marked "fixed" in the branches that fix them.  So, instead of
 numbers, bugs have globally unique ids.
 
+Getting BE
+==========
+
+BE is available as a bzr repository::
+
+    $ bzr branch http://bzr.bugseverywhere.org/be
+
+See the homepage_ for details.  If you do branch the bzr repo, you'll
+need to run::
+
+    $ make
+
+to build some auto-generated files (e.g. ``libbe/_version.py``), and::
+
+    $ make install
+
+to install BE.  By default BE will install into your home directory,
+but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
+to another location.
+
+.. _homepage: http://bugseverywhere.org/
+
 
 Getting started
 ===============
+
 To get started, you must set the bugtracker root.  Typically, you will want to
 set the bug root to your project root, so that Bugs Everywhere works in any
 part of your project tree.

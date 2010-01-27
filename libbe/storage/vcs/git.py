@@ -49,7 +49,7 @@ class Git(base.VCS):
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
-        return output
+        return output.strip()
 
     def _vcs_get_user_id(self):
         status,output,error = \

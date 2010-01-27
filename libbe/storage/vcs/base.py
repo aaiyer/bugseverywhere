@@ -515,7 +515,7 @@ os.listdir(self.get_path("bugs")):
         """
         Does the path exist in a given revision? (True/False)
         """
-        raise NotImplementedError
+        raise NotImplementedError('Lazy BE developers')
 
     def _vcs_remove(self, path):
         """

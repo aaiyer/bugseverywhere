@@ -66,6 +66,9 @@ install: doc build
 clean:
 	$(RM) -rf ${GENERATED_FILES}
 
+test : build
+	python test.py
+
 .PHONY: libbe/_version.py
 libbe/_version.py:
 	bzr version-info --format python > $@
