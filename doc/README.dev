@@ -52,6 +52,9 @@ for example:
 For a definition of "any tests", see ``test.py``'s
 ``add_module_tests()`` function.
 
+Note that you will need to run ``make`` before testing a clean BE
+branch to auto-generate required files like ``libbe/_version.py``.
+
 
 Profiling
 =========
