@@ -118,7 +118,6 @@ class Git(base.VCS):
             status,output,error = self._u_invoke_client('show', arg)
             return output
 
-
     def _vcs_path(self, id, revision):
         return self._u_find_id(id, revision)
 

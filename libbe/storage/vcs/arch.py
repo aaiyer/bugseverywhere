@@ -24,6 +24,7 @@ GNU Arch (tla) backend.
 
 import codecs
 import os
+import os.path
 import re
 import shutil
 import sys
@@ -33,6 +34,7 @@ import libbe
 import libbe.ui.util.user
 import libbe.storage.util.config
 from libbe.util.id import uuid_gen
+from libbe.util.subproc import CommandError
 import base
 
 if libbe.TESTING == True:
@@ -301,15 +303,37 @@ class Arch(base.VCS):
         if revision == None:
             return base.VCS._vcs_get_file_contents(self, path, revision)
         else:
+            relpath = self._file_find(path, revision, relpath=True)
+            return base.VCS._vcs_get_file_contents(self, relpath)
+
+    def _file_find(self, path, revision, relpath=False):
+        try:
             status,output,error = \
                 self._invoke_client(
                 'file-find', '--unescaped', path, revision)
-            relpath = output.rstrip('\n').splitlines()[-1]
-            return base.VCS._vcs_get_file_contents(self, relpath)
+            path = output.rstrip('\n').splitlines()[-1]
+        except CommandError, e:
+            if e.status == 2 \
+                    and 'illegally formed changeset index' in e.stderr:
+                raise NotImplementedError(
+"""Outstanding tla bug, see
+  https://bugs.launchpad.net/ubuntu/+source/tla/+bug/513472
+""")
+            raise
+        if relpath == True:
+            return path
+        return os.path.abspath(os.path.join(self.repo, path))
 
     def _vcs_path(self, id, revision):
-        raise NotImplementedError(
-            'Too little Arch understanding at the moment...')
+        return self._u_find_id(id, revision)
+
+    def _vcs_isdir(self, path, revision):
+        abspath = self._file_find(path, revision)
+        return os.path.isdir(abspath)
+
+    def _vcs_listdir(self, path, revision):
+        abspath = self._file_find(path, revision)
+        return [p for p in os.listdir(abspath) if self._vcs_is_versioned(p)]
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         if allow_empty == False:
@@ -359,7 +383,7 @@ class Arch(base.VCS):
 
     def _diff(self, revision):
         status,output,error = self._u_invoke_client(
-            'diff', '--summary', revision, expect=(0,1))
+            'diff', '--summary', '--unescaped', revision, expect=(0,1))
         return output
     
     def _parse_diff(self, diff_text):
@@ -390,7 +414,6 @@ class Arch(base.VCS):
             if line.startswith('* ') or '/.arch-ids/' in line:
                 continue
             change,file = line.split('  ',1)
-            print '"%s" "%s"' % (change, file)
             if  file.startswith('{arch}/'):
                 continue
             if change == 'A':
@@ -399,7 +422,6 @@ class Arch(base.VCS):
                 modified.append(file)
             elif change == 'D':
                 removed.append(file)
-        print new, modified, removed
         return (new,modified,removed)
 
     def _vcs_changed(self, revision):

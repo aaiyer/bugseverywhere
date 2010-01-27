@@ -994,7 +994,7 @@ if TESTING == True:
                 cur_children.append(new_child)
                 children.append(list(cur_children))
             for i in range(10):
-                ret = self.s.children('parent', revision=revs[i])
+                ret = sorted(self.s.children('parent', revision=revs[i]))
                 self.failUnless(ret == children[i],
                                 "%s.get() returned %s not %s for revision %s"
                                 % (vars(self.Class)['name'], ret,
