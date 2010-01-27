@@ -552,20 +552,29 @@ if TESTING == True:
 
         # this class will be the basis of tests for several classes,
         # so make sure we print the name of the class we're dealing with.
+        def _classname(self):
+            version = '?'
+            try:
+                if hasattr(self, 's'):
+                    version = self.s.version()
+            except:
+                pass
+            return '%s:%s' % (self.Class.__name__, version)
+
         def fail(self, msg=None):
             """Fail immediately, with the given message."""
             raise self.failureException, \
-                '(%s) %s' % (self.Class.__name__, msg)
+                '(%s) %s' % (self._classname(), msg)
 
         def failIf(self, expr, msg=None):
             "Fail the test if the expression is true."
             if expr: raise self.failureException, \
-                '(%s) %s' % (self.Class.__name__, msg)
+                '(%s) %s' % (self.classname(), msg)
 
         def failUnless(self, expr, msg=None):
             """Fail the test unless the expression is true."""
             if not expr: raise self.failureException, \
-                '(%s) %s' % (self.Class.__name__, msg)
+                '(%s) %s' % (self.classname(), msg)
 
         def setUp(self):
             """Set up test fixtures for Storage test case."""

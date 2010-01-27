@@ -72,7 +72,8 @@ class Arch(base.VCS):
 
     def _vcs_version(self):
         status,output,error = self._u_invoke_client('--version')
-        return output
+        version = '\n'.join(output.splitlines()[:2])
+        return version
 
     def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
@@ -307,7 +308,8 @@ class Arch(base.VCS):
             return base.VCS._vcs_get_file_contents(self, relpath)
 
     def _vcs_path(self, id, revision):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'Too little Arch understanding at the moment...')
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         if allow_empty == False:
@@ -356,7 +358,8 @@ class Arch(base.VCS):
         return '%s--%s' % (self._archive_project_name(), log)
 
     def _vcs_changed(self, revision):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'Too little Arch understanding at the moment...')
 
 
 if libbe.TESTING == True:
