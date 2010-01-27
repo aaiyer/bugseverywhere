@@ -50,7 +50,7 @@ def get_storage(location):
     """
     Return a Storage instance from a repo location string.
     """
-    if location.startswith('http://'):
+    if location.startswith('http://') or location.startswith('https://'):
         return get_http_storage(location)
     return get_vcs_storage(location)
 
