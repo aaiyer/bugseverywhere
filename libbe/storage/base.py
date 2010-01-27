@@ -569,12 +569,12 @@ if TESTING == True:
         def failIf(self, expr, msg=None):
             "Fail the test if the expression is true."
             if expr: raise self.failureException, \
-                '(%s) %s' % (self.classname(), msg)
+                '(%s) %s' % (self._classname(), msg)
 
         def failUnless(self, expr, msg=None):
             """Fail the test unless the expression is true."""
             if not expr: raise self.failureException, \
-                '(%s) %s' % (self.classname(), msg)
+                '(%s) %s' % (self._classname(), msg)
 
         def setUp(self):
             """Set up test fixtures for Storage test case."""
