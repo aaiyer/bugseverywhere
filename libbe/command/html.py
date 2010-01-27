@@ -28,6 +28,7 @@ import libbe
 import libbe.command
 import libbe.command.util
 import libbe.util.encoding
+import libbe.util.id
 
 
 class HTML (libbe.command.Command):
@@ -222,16 +223,19 @@ class HTMLGen (object):
             if depth == 0:
                 comment_entries.append('<div class="comment root">')
             else:
-                comment_entries.append('<div class="comment">')
+                comment_entries.append(
+                    '<div class="comment" id="%s">' % comment.uuid)
             template_info = {'shortname': comment.id.user()}
             for attr in ['uuid', 'author', 'date', 'body']:
                 value = getattr(comment, attr)
                 if attr == 'body':
+                    link_long_ids = False
                     save_body = False
                     if comment.content_type == 'text/html':
-                        pass # no need to escape html...
+                        link_long_ids = True
                     elif comment.content_type.startswith('text/'):
                         value = '<pre>\n'+self._escape(value)+'\n</pre>'
+                        link_long_ids = True
                     elif comment.content_type.startswith('image/'):
                         save_body = True
                         value = '<img src="./%s/%s" />' \
@@ -240,6 +244,8 @@ class HTMLGen (object):
                         save_body = True
                         value = '<a href="./%s/%s">Link to %s file</a>.' \
                             % (bug.uuid, comment.uuid, comment.content_type)
+                    if link_long_ids == True:
+                        value = self._long_to_linked_user(value)
                     if save_body == True:
                         per_bug_dir = os.path.join(self.out_dir_bugs, bug.uuid)
                         if not os.path.exists(per_bug_dir):
@@ -249,9 +255,7 @@ class HTMLGen (object):
                             '<Files %s>\n  ForceType %s\n</Files>' \
                                 % (comment.uuid, comment.content_type),
                             [per_bug_dir, '.htaccess'], mode='a')
-                        self._write_file( # TODO: long_to_linked_user()
-                            libbe.util.id.long_to_short_text(
-                                [self.bd], comment.body),
+                        self._write_file(comment.body,
                             [per_bug_dir, comment.uuid], mode='wb')
                 else:
                     value = self._escape(value)
@@ -261,6 +265,31 @@ class HTMLGen (object):
             stack.pop(-1)
             comment_entries.append('</div>\n') # close every remaining <div class='comment...
         return '\n'.join(comment_entries)
+
+    def _long_to_linked_user(self, text):
+        replacer = libbe.util.id.IDreplacer(
+            [self.bd], self._long_to_linked_user_replacer, wrap=False)
+        return re.sub(
+            libbe.util.id.REGEXP, replacer, text)
+
+    def _long_to_linked_user_replacer(self, bugdirs, long_id):
+        try:
+            p = libbe.util.id.parse_user(bugdirs[0], long_id)
+            short_id = libbe.util.id.long_to_short_user(bugdirs, long_id)
+        except (libbe.util.id.MultipleIDMatches,
+                libbe.util.id.NoIDMatches,
+                libbe.util.id.InvalidIDStructure), e:
+            return long_id
+        if p['type'] == 'bugdir':
+            return long_id
+        elif p['type'] == 'bug':
+            return '<a href="./%s.html">%s</a>' \
+                % (p['bug'], short_id)
+        elif p['type'] == 'comment':
+            return '<a href="./%s.html#%s">%s</a>' \
+                % (p['bug'], p['comment'], short_id)
+        raise Exception('Invalid id type %s for "%s"'
+                        % (p['type'], long_id))
 
     def _write_index_file(self, bugs, title, index_header, bug_type='active'):
         if self.verbose:

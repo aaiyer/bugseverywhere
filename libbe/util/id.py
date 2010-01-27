@@ -191,10 +191,14 @@ class ID (object):
     Related tools:
       * get uuids back out of the user ids:
         parse_user()
-      * scan text for user ids & convert to long user ids:
+      * convert a single short user id to a long user id:
         short_to_long_user()
-      * scan text for long user ids & convert to short user ids:
+      * convert a single long user id to a short user id:
         long_to_short_user()
+      * scan text for user ids & convert to long user ids:
+        short_to_long_text()
+      * scan text for long user ids & convert to short user ids:
+        long_to_short_text()
 
     Supported types: 'bugdir', 'bug', 'comment'
     """
@@ -277,16 +281,20 @@ def short_to_long_user(bugdirs, id):
 REGEXP = '#([-a-f0-9]*)(/[-a-g0-9]*)?(/[-a-g0-9]*)?#'
 
 class IDreplacer (object):
-    def __init__(self, bugdirs, replace_fn):
+    def __init__(self, bugdirs, replace_fn, wrap=True):
         self.bugdirs = bugdirs
         self.replace_fn = replace_fn
+        self.wrap = wrap
     def __call__(self, match):
         ids = []
         for m in match.groups():
             if m == None:
                 m = ''
             ids.append(m)
-        return '#' + self.replace_fn(self.bugdirs, ''.join(ids)) + '#'
+        replacement = self.replace_fn(self.bugdirs, ''.join(ids))
+        if self.wrap == True:
+            return '#%s#' % replacement
+        return replacement
 
 def short_to_long_text(bugdirs, text):
     return re.sub(REGEXP, IDreplacer(bugdirs, short_to_long_user), text)

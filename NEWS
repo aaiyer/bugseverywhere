@@ -1,3 +1,7 @@
+January 27, 2010
+ * `be html` links (<a href="...) #-delimited references in text/*
+   comment bodies.
+
 January 25, 2010
  * Added --ssl to `be serve` using cherrypy.wsgiserver.
 
