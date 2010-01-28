@@ -60,10 +60,3 @@ to work on with the bug fix, and what branches needed to pull the
 eventual fix.  If the initially reported buggy version wasn't actually
 the root of the bug, oh well :p.  Material for a later related bug
 report or a reopen.
-
--- 
-This email may be signed or encrypted with GPG (http://www.gnupg.org).
-The GPG signature (if present) will be attached as 'signature.asc'.
-For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
-
-My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt
