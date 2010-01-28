@@ -62,6 +62,46 @@ class Bzr(base.VCS):
             return None
         return bzrlib.__version__
 
+    def version_cmp(self, *args):
+        """
+        Compare the installed Bazaar version V_i with another version
+        V_o (given in *args).  Returns
+           1 if V_i > V_o,
+           0 if V_i == V_o, and
+          -1 if V_i < V_o
+        >>> b = Bzr(repo='.')
+        >>> b._vcs_version = lambda : "2.3.1 (release)"
+        >>> b.version_cmp(2,3,1)
+        0
+        >>> b.version_cmp(2,3,2)
+        -1
+        >>> b.version_cmp(2,3,0)
+        1
+        >>> b.version_cmp(3)
+        -1
+        >>> b._vcs_version = lambda : "2.0.0pre2"
+        >>> b._parsed_version = None
+        >>> b.version_cmp(3)
+        Traceback (most recent call last):
+          ...
+        NotImplementedError: Cannot parse "2.0.0pre2" portion of Bazaar version "2.0.0pre2"
+          invalid literal for int() with base 10: '0pre2'
+        """
+        if not hasattr(self, '_parsed_version') \
+                or self._parsed_version == None:
+            num_part = self._vcs_version().split(' ')[0]
+            try:
+                self._parsed_version = [int(i) for i in num_part.split('.')]
+            except ValueError, e:
+                raise NotImplementedError(
+                    'Cannot parse "%s" portion of Bazaar version "%s"\n  %s'
+                    % (num_part, self._vcs_version(), str(e)))
+        cmps = [cmp(a,b) for a,b in zip(self._parsed_version, args)]
+        for c in cmps:
+            if c != 0:
+                return c
+        return 0
+
     def _vcs_get_user_id(self):
         # excerpted from bzrlib.builtins.cmd_whoami.run()
         try:
@@ -160,7 +200,11 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_ls()
         cmd.outf = StringIO.StringIO()
         try:
-            cmd.run(revision=revision, path=path, recursive=recursive)
+            if self.version_cmp(2,0,0) == 1:
+                cmd.run(revision=revision, path=path, recursive=recursive)
+            else: # Pre-2.0 Bazaar
+                cmd.run(revision=revision, path=path,
+                        non_recursive=not recursive)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
