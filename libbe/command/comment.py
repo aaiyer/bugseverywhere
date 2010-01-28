@@ -64,6 +64,8 @@ class Comment (libbe.command.Command):
 
     >>> if 'EDITOR' in os.environ:
     ...     del os.environ['EDITOR']
+    >>> if 'VISUAL' in os.environ:
+    ...     del os.environ['VISUAL']
     >>> ui._user_id = u'Frank'
     >>> ret = ui.run(cmd, args=['/b'])
     Traceback (most recent call last):
@@ -83,6 +85,7 @@ class Comment (libbe.command.Command):
     <BLANKLINE>
     >>> ui.cleanup()
     >>> bd.cleanup()
+    >>> del os.environ("EDITOR")
     """
     name = 'comment'
 
