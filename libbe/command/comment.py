@@ -85,7 +85,7 @@ class Comment (libbe.command.Command):
     <BLANKLINE>
     >>> ui.cleanup()
     >>> bd.cleanup()
-    >>> del os.environ("EDITOR")
+    >>> del os.environ["EDITOR"]
     """
     name = 'comment'
 
