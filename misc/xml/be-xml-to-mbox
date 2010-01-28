@@ -95,7 +95,7 @@ class Bug (LimitedAttrDict):
             print "Content-Transfer-Encoding: 8bit"
             print "Subject: %s: %s" % (self["short-name"], self["summary"])
             if "extra-strings" in self:
-                for estr in self["extra_strings"]:
+                for estr in self["extra-strings"]:
                     print "X-Extra-String: %s" % estr
             print ""
             print self["summary"]
@@ -164,7 +164,7 @@ class Comment (LimitedAttrDict):
             self["in-reply-to"] = bug["uuid"]
         print "In-Reply-To: %s" % wrap_id(self["in-reply-to"])
         if "extra-strings" in self:
-            for estr in self["extra_strings"]:
+            for estr in self["extra-strings"]:
                 print "X-Extra-String: %s" % estr
         if self["content-type"].startswith("text/"):
             print "Content-Transfer-Encoding: 8bit"
