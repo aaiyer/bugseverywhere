@@ -172,12 +172,20 @@ class Bzr(base.VCS):
         revision = self._parse_revision_string(revision)
         cmd = bzrlib.builtins.cmd_cat()
         cmd.outf = StringIO.StringIO()
+        if self.version_cmp(1,6,0) == -1:
+            # old bzrlib cmd_cat uses sys.stdout not self.outf for output.
+            stdout = sys.stdout
+            sys.stdout = cmd.outf
         try:
             cmd.run(filename=path, revision=revision)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
+        finally:
+            if self.version_cmp(2,0,0) == -1:
+                cmd.outf = sys.stdout
+                sys.stdout = stdout
         return cmd.outf.getvalue()
 
     def _vcs_path(self, id, revision):
@@ -200,7 +208,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_ls()
         cmd.outf = StringIO.StringIO()
         try:
-            if self.version_cmp(2,0,0) == 1:
+            if self.version_cmp(2,0,0) >= 0:
                 cmd.run(revision=revision, path=path, recursive=recursive)
             else: # Pre-2.0 Bazaar
                 cmd.run(revision=revision, path=path,
