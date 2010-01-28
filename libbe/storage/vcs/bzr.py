@@ -172,7 +172,7 @@ class Bzr(base.VCS):
         revision = self._parse_revision_string(revision)
         cmd = bzrlib.builtins.cmd_cat()
         cmd.outf = StringIO.StringIO()
-        if self.version_cmp(1,6,0) == -1:
+        if self.version_cmp(1,6,0) < 0:
             # old bzrlib cmd_cat uses sys.stdout not self.outf for output.
             stdout = sys.stdout
             sys.stdout = cmd.outf
@@ -183,7 +183,7 @@ class Bzr(base.VCS):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
         finally:
-            if self.version_cmp(2,0,0) == -1:
+            if self.version_cmp(2,0,0) < 0:
                 cmd.outf = sys.stdout
                 sys.stdout = stdout
         return cmd.outf.getvalue()
@@ -210,15 +210,20 @@ class Bzr(base.VCS):
         try:
             if self.version_cmp(2,0,0) >= 0:
                 cmd.run(revision=revision, path=path, recursive=recursive)
-            else: # Pre-2.0 Bazaar
+            else:
+                # Pre-2.0 Bazaar (non_recursive)
+                # + working around broken non_recursive+path implementation
+                #   (https://bugs.launchpad.net/bzr/+bug/158690)
                 cmd.run(revision=revision, path=path,
-                        non_recursive=not recursive)
+                        non_recursive=False)
         except bzrlib.errors.BzrCommandError, e:
             if 'not present in revision' in str(e):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
         children = cmd.outf.getvalue().rstrip('\n').splitlines()
         children = [self._u_rel_path(c, path) for c in children]
+        if self.version_cmp(2,0,0) < 0 and recursive == False:
+            children = [c for c in children if os.path.sep not in c]
         return children
 
     def _vcs_commit(self, commitfile, allow_empty=False):
