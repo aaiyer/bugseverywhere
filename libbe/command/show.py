@@ -166,7 +166,7 @@ def _xml_footer():
     return ['</be-xml>']
 
 def output(bd, ids, encoding, as_xml=True, with_comments=True):
-    if len(ids) == 0:
+    if ids == None or len(ids) == 0:
         bd.load_all_bugs()
         ids = [bug.id.user() for bug in bd]
     bugs,root_comments = _sort_ids(bd, ids, with_comments)
