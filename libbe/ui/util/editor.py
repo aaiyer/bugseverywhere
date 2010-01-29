@@ -64,13 +64,12 @@ def editor_string(comment=None, encoding=None):
     """
     if encoding == None:
         encoding = libbe.util.encoding.get_filesystem_encoding()
+    editor = None
     for name in ('VISUAL', 'EDITOR'):
-        try:
+        if name in os.environ and os.environ[name] != '':
             editor = os.environ[name]
             break
-        except KeyError:
-            pass
-    else:
+    if editor == None:
         raise CantFindEditor()
     fhandle, fname = tempfile.mkstemp()
     try:
