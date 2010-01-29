@@ -26,6 +26,7 @@ import libbe
 libbe.TESTING = True
 from libbe.util.tree import Tree
 from libbe.util.plugin import import_by_name
+from libbe.version import version
 
 def python_tree(root_path='libbe', root_modname='libbe'):
     tree = Tree()
@@ -89,6 +90,7 @@ those modules and their submodules.  For example::
     parser.add_option('-q', '--quiet', action='store_true', default=False,
                       help='Run unittests in quiet mode (verbosity 1).')
     options,args = parser.parse_args()
+    print >> sys.stderr, 'Testing BE\n%s' % version(verbose=True)
 
     verbosity = 2
     if options.quiet == True:
