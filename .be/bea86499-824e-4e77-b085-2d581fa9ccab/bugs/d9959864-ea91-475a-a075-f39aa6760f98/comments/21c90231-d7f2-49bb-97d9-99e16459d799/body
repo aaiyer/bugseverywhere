@@ -50,13 +50,3 @@ you switch between branches (effectively switching between revisions)?
 Those are the kind of things that don't really apply when CFBE is just  
 a local interface to a single repository.  If anyone has any advice on  
 how a multi-user interface should work I'd love to hear it!
-
---
-Steve Losh
-http://stevelosh.com/
-
-
-_______________________________________________
-Be-devel mailing list
-Be-devel@bugseverywhere.org
-http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

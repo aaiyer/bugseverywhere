@@ -20,6 +20,3 @@ public, read-only interface too.
 
 If the goal is to allow more than one person to add issues, how should  
 commits go? One commit per change? Commit every X minutes if necessary?
-
---
-Steve
