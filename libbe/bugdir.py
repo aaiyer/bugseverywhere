@@ -178,6 +178,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
             if self.uuid == None:
                 self.uuid = [c for c in self.storage.children()
                              if c != 'version'][0]
+            self.load_settings()
         else:
             if self.uuid == None:
                 self.uuid = libbe.util.id.uuid_gen()
