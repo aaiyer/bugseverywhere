@@ -69,7 +69,7 @@ HIERARCHY = ['bugdir', 'bug', 'comment']
 class MultipleIDMatches (ValueError):
     def __init__(self, id, common, matches):
         msg = ('More than one id matches %s.  '
-               'Please be more specific (%s/*).\n%s' % (id, common, matches))
+               'Please be more specific (%s*).\n%s' % (id, common, matches))
         ValueError.__init__(self, msg)
         self.id = id
         self.common = common
@@ -249,7 +249,12 @@ def child_uuids(child_storage_ids):
 
 def long_to_short_user(bugdirs, id):
     ids = _split(id, check_length=True)
-    bugdir = [bd for bd in bugdirs if bd.uuid == ids[0]][0]
+    matching_bugdirs = [bd for bd in bugdirs if bd.uuid == ids[0]]
+    if len(matching_bugdirs) == 0:
+        raise NoIDMatches(id, [bd.uuid for bd in bugdirs])
+    elif len(matching_bugdirs) > 1:
+        raise MultipleIDMatches(id, '', [bd.uuid for bd in bugdirs])
+    bugdir = matching_bugdirs[0]
     objects = [bugdir]
     if len(ids) >= 2:
         bug = bugdir.bug_from_uuid(ids[1])

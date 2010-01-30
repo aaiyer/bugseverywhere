@@ -267,21 +267,53 @@ class HTMLGen (object):
         return '\n'.join(comment_entries)
 
     def _long_to_linked_user(self, text):
+        """
+        >>> import libbe.bugdir
+        >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+        >>> h = HTMLGen(bd)
+        >>> h._long_to_linked_user('A link #abc123/a#, and a non-link #x#y#.')
+        'A link <a href="./a.html">abc/a</a>, and a non-link #x#y#.'
+        >>> bd.cleanup()
+        """
         replacer = libbe.util.id.IDreplacer(
             [self.bd], self._long_to_linked_user_replacer, wrap=False)
         return re.sub(
             libbe.util.id.REGEXP, replacer, text)
 
     def _long_to_linked_user_replacer(self, bugdirs, long_id):
+        """
+        >>> import libbe.bugdir
+        >>> import libbe.util.id
+        >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+        >>> a = bd.bug_from_uuid('a')
+        >>> uuid_gen = libbe.util.id.uuid_gen
+        >>> libbe.util.id.uuid_gen = lambda : '0123'
+        >>> c = a.new_comment('comment for link testing')
+        >>> libbe.util.id.uuid_gen = uuid_gen
+        >>> c.uuid
+        '0123'
+        >>> h = HTMLGen(bd)
+        >>> h._long_to_linked_user_replacer([bd], 'abc123')
+        '#abc123#'
+        >>> h._long_to_linked_user_replacer([bd], 'abc123/a')
+        '<a href="./a.html">abc/a</a>'
+        >>> h._long_to_linked_user_replacer([bd], 'abc123/a/0123')
+        '<a href="./a.html#0123">abc/a/012</a>'
+        >>> h._long_to_linked_user_replacer([bd], 'x')
+        '#x#'
+        >>> h._long_to_linked_user_replacer([bd], '')
+        '##'
+        >>> bd.cleanup()
+        """
         try:
             p = libbe.util.id.parse_user(bugdirs[0], long_id)
             short_id = libbe.util.id.long_to_short_user(bugdirs, long_id)
         except (libbe.util.id.MultipleIDMatches,
                 libbe.util.id.NoIDMatches,
                 libbe.util.id.InvalidIDStructure), e:
-            return long_id
+            return '#%s#' % long_id # re-wrap failures
         if p['type'] == 'bugdir':
-            return long_id
+            return '#%s#' % long_id
         elif p['type'] == 'bug':
             return '<a href="./%s.html">%s</a>' \
                 % (p['bug'], short_id)
