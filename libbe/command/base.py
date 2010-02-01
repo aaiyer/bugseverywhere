@@ -72,10 +72,38 @@ def get_command_class(module=None, command_name=None):
         raise UnknownCommand(command_name)
     return cmd
 
-def commands():
+def modname_to_command_name(modname):
+    """Little hack to replicate
+    >>> import sys
+    >>> def real_modname_to_command_name(modname):
+    ...     mod = libbe.util.plugin.import_by_name(
+    ...         'libbe.command.%s' % modname)
+    ...     attrs = [getattr(mod, name) for name in dir(mod)]
+    ...     commands = []
+    ...     for attr_name in dir(mod):
+    ...         attr = getattr(mod, attr_name)
+    ...         try:
+    ...             if issubclass(attr, Command):
+    ...                 commands.append(attr)
+    ...         except TypeError, e:
+    ...             pass
+    ...     if len(commands) == 0:
+    ...         raise Exception('No Command classes in %s' % dir(mod))
+    ...     return commands[0].name
+    >>> real_modname_to_command_name('new')
+    'new'
+    >>> real_modname_to_command_name('import_xml')
+    'import-xml'
+    """
+    return modname.replace('_', '-')
+
+def commands(command_names=False):
     for modname in libbe.util.plugin.modnames('libbe.command'):
         if modname not in ['base', 'util']:
-            yield modname
+            if command_names == False:
+                yield modname
+            else:
+                yield modname_to_command_name(modname)
 
 class CommandInput (object):
     def __init__(self, name, help=''):
@@ -393,9 +421,10 @@ class StringInputOutput (InputOutput):
     >>> s.stdin.read()
     'hello'
     >>> s.stdin.read()
+    ''
     >>> print >> s.stdout, 'goodbye'
     >>> s.get_stdout()
-    'goodbye\n'
+    'goodbye\\n'
     >>> s.get_stdout()
     ''
 
@@ -406,7 +435,7 @@ class StringInputOutput (InputOutput):
     u'hello'
     >>> print >> s.stdout, u'goodbye'
     >>> s.get_stdout()
-    u'goodbye\n'
+    u'goodbye\\n'
     """
     def __init__(self):
         stdin = StringIO.StringIO()

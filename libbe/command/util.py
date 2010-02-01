@@ -32,7 +32,7 @@ def complete_command(command, argument, fragment=None):
 
     command argument is not used.
     """
-    return list(libbe.command.commands())
+    return list(libbe.command.commands(command_names=True))
 
 def comp_path(fragment=None):
     """List possible path completions for fragment."""
