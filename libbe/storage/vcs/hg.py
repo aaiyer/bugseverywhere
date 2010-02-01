@@ -87,7 +87,11 @@ class Hg(base.VCS):
         return tmp_stdout.getvalue().rstrip('\n')
 
     def _vcs_get_user_id(self):
-        return self._u_invoke_client('showconfig', 'ui.username')
+        output = self._u_invoke_client(
+            'showconfig', 'ui.username').rstrip('\n')
+        if output != '':
+            return output
+        return None
 
     def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Mercurial"""
