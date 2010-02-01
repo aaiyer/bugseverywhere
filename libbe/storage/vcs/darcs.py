@@ -25,6 +25,7 @@ import re
 import shutil
 import sys
 import time # work around http://mercurial.selenic.com/bts/issue618
+import types
 try: # import core module, Python >= 2.5
     from xml.etree import ElementTree
 except ImportError: # look for non-core module
@@ -75,22 +76,27 @@ class Darcs(base.VCS):
         >>> d._vcs_version = lambda : "2.0.0pre2"
         >>> d._parsed_version = None
         >>> d.version_cmp(3)
+        -1
+        >>> d.version_cmp(2,0,1)
         Traceback (most recent call last):
           ...
-        NotImplementedError: Cannot parse "2.0.0pre2" portion of Darcs version "2.0.0pre2"
-          invalid literal for int() with base 10: '0pre2'
+        NotImplementedError: Cannot parse non-integer portion "0pre2" of Darcs version "2.0.0pre2"
         """
         if not hasattr(self, '_parsed_version') \
                 or self._parsed_version == None:
             num_part = self._vcs_version().split(' ')[0]
-            try:
-                self._parsed_version = [int(i) for i in num_part.split('.')]
-            except ValueError, e:
+            self._parsed_version = []
+            for num in num_part.split('.'):
+                try:
+                    self._parsed_version.append(int(num))
+                except ValueError, e:
+                    self._parsed_version.append(num)
+        for current,other in zip(self._parsed_version, args):
+            if type(current) != types.IntType:
                 raise NotImplementedError(
-                    'Cannot parse "%s" portion of Darcs version "%s"\n  %s'
-                    % (num_part, self._vcs_version(), str(e)))
-        cmps = [cmp(a,b) for a,b in zip(self._parsed_version, args)]
-        for c in cmps:
+                    'Cannot parse non-integer portion "%s" of Darcs version "%s"'
+                    % (current, self._vcs_version()))
+            c = cmp(current,other)
             if c != 0:
                 return c
         return 0
