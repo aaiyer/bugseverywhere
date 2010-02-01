@@ -267,6 +267,14 @@ def dispatch(ui, command, args):
         ret = ui.run(command, options, args)
     except CallbackExit:
         return 0
+    except UnicodeDecodeError, e:
+        print >> ui.io.stdout, '\n'.join([
+                'ERROR:', str(e),
+                'You should set a locale that supports unicode, e.g.',
+                '  export LANG=en_US.utf8',
+                'See http://docs.python.org/library/locale.html for details',
+                ])
+        return 1
     except libbe.command.UserError, e:
         print >> ui.io.stdout, 'ERROR:\n', e
         return 1
