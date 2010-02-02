@@ -523,14 +523,6 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         Comment in the thread.  The method must take the arguments
         indent and shortname.
 
-        SIDE-EFFECT: if auto_name_map==True, calls comment_shortnames()
-        which will sort the tree by comment.time.  Avoid by calling
-          name_map = {}
-          for shortname,comment in comm.comment_shortnames(bug_shortname):
-              name_map[comment.uuid] = shortname
-          comm.sort(key=lambda c : c.author) # your sort
-          comm.string_thread(name_map=name_map)
-
         >>> a = Comment(bug=None, uuid="a", body="Insightful remarks")
         >>> a.time = utility.str_to_time("Thu, 20 Nov 2008 01:00:00 +0000")
         >>> b = a.new_reply("Critique original comment")

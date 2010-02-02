@@ -27,6 +27,7 @@ import xml.sax.saxutils
 import libbe
 import libbe.command
 import libbe.command.util
+import libbe.comment
 import libbe.util.encoding
 import libbe.util.id
 
@@ -212,6 +213,7 @@ class HTMLGen (object):
 
         stack = []
         comment_entries = []
+        bug.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
         for depth,comment in bug.comment_root.thread(flatten=False):
             while len(stack) > depth:
                 # pop non-parents off the stack
