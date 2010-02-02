@@ -150,8 +150,8 @@ class Comment (libbe.command.Command):
         if params['author'] == None:
             params['author'] = self._get_user_id()
 
-        new = parent.new_reply(body=body)
-        for key in ['alt-id', 'author', 'content-type']:
+        new = parent.new_reply(body=body, content_type=params['content-type'])
+        for key in ['alt-id', 'author']:
             if params[key] != None:
                 setattr(new, new._setting_name_to_attr_name(key), params[key])
         print >> self.stdout, 'Created comment with ID %s' % new.id.user()

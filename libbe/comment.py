@@ -162,7 +162,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
                 decode=self.content_type.startswith("text/"))
     def _set_comment_body(self, old=None, new=None, force=False):
         assert self.uuid != INVALID_UUID, self
-        if self.bug != None and self.bug.bugdir != None:
+        if self.content_type.startswith('text/') \
+                and self.bug != None and self.bug.bugdir != None:
             new = libbe.util.id.short_to_long_text([self.bug.bugdir], new)
         if (self.storage != None and self.storage.writeable == True) \
                 or force==True:
@@ -191,16 +192,19 @@ class Comment (Tree, settings_object.SavedSettingsObject):
     def extra_strings(): return {}
 
     def __init__(self, bug=None, uuid=None, from_storage=False,
-                 in_reply_to=None, body=None):
+                 in_reply_to=None, body=None, content_type=None):
         """
         Set from_storage=True to load an old comment.
         Set from_storage=False to create a new comment.
 
         The uuid option is required when from_storage==True.
 
-        The in_reply_to and body options are only used if
-        from_storage==False (the default).  When from_storage==True,
-        they are loaded from the bug database.
+        The in_reply_to, body, and content_type options are only used
+        if from_storage==False (the default).  When
+        from_storage==True, they are loaded from the bug database.
+        content_type decides if the body should be run through
+        libbe.util.id.short_to_long_text() before saving.  See
+        ._set_comment_body() for details.
 
         in_reply_to should be the uuid string of the parent comment.
         """
@@ -215,6 +219,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
                 self.uuid = libbe.util.id.uuid_gen()
             self.time = int(time.time()) # only save to second precision
             self.in_reply_to = in_reply_to
+            if content_type != None:
+                self.content_type = content_type
             self.body = body
         if self.bug != None:
             self.storage = self.bug.storage
@@ -291,6 +297,17 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         insightful
         remarks</body>
           </comment>
+        >>> comm.content_type = 'image/png'
+        >>> print comm.xml()
+        <comment>
+          <uuid>0123</uuid>
+          <short-name>//012</short-name>
+          <author></author>
+          <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
+          <content-type>image/png</content-type>
+          <body>U29tZQppbnNpZ2h0ZnVsCnJlbWFya3MK
+        </body>
+        </comment>
         """
         if self.content_type.startswith('text/'):
             body = (self.body or '').rstrip('\n')
@@ -644,7 +661,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
             reply.in_reply_to = self.uuid
         self.append(reply)
 
-    def new_reply(self, body=None):
+    def new_reply(self, body=None, content_type=None):
         """
         >>> comm = Comment(bug=None, body="Some insightful remarks")
         >>> repA = comm.new_reply("Critique original comment")
@@ -652,7 +669,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         >>> repB.in_reply_to == repA.uuid
         True
         """
-        reply = Comment(self.bug, body=body)
+        reply = Comment(self.bug, body=body, content_type=content_type)
         self.add_reply(reply)
         return reply
 
