@@ -91,7 +91,8 @@ class Bug (LimitedAttrDict):
             print "Message-id: <%s@%s>" % (self["uuid"], DEFAULT_DOMAIN)
             print "Date: %s" % self["created"]
             print "From: %s" % self["creator"]
-            print "Content-Type: %s; charset=%s" % ("text/plain", DEFAULT_ENCODING)
+            print "Content-Type: %s; charset=%s" \
+                % ("text/plain", DEFAULT_ENCODING)
             print "Content-Transfer-Encoding: 8bit"
             print "Subject: %s: %s" % (self["short-name"], self["summary"])
             if "extra-strings" in self:
@@ -168,11 +169,13 @@ class Comment (LimitedAttrDict):
                 print "X-Extra-String: %s" % estr
         if self["content-type"].startswith("text/"):
             print "Content-Transfer-Encoding: 8bit"
-            print "Content-Type: %s; charset=%s" % (self["content-type"], DEFAULT_ENCODING)
-            print ""
-            print self["body"]
-        else: # content type and transfer encoding already in XML MIME output
-            print self["body"]
+            print "Content-Type: %s; charset=%s" \
+                % (self["content-type"], DEFAULT_ENCODING)
+        else:
+            print "Content-Transfer-Encoding: base64"
+            print "Content-Type: %s;" % (self["content-type"])
+        print ""
+        print self["body"]
         print ""
     def init_from_etree(self, element):
         assert element.tag == "comment", element.tag
