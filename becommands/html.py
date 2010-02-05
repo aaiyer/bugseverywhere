@@ -107,12 +107,7 @@ def complete(options, args, parser):
 def escape(string):
     if string == None:
         return ""
-    chars = []
-    for char in xml.sax.saxutils.escape(string):
-        codepoint = ord(char)
-        if codepoint in htmlentitydefs.codepoint2name:
-            char = "&%s;" % htmlentitydefs.codepoint2name[codepoint]
-        chars.append(char)
+    chars = xml.sax.saxutils.escape(string)
     return "".join(chars)
 
 class BEHTMLGen():
