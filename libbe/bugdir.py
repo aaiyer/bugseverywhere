@@ -19,8 +19,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Define the BugDir class for representing bug comments.
+"""Define the :class:`BugDir` class for storing a collection of bugs.
 """
 
 import copy
@@ -89,8 +88,10 @@ class DiskAccessRequired (Exception):
 
 
 class BugDir (list, settings_object.SavedSettingsObject):
-    """
-    TODO: simple bugdir manipulation examples...
+    """A BugDir is a container for :class:`libbe.bug.Bug`\s, with some
+    additional attributes.
+
+    See :class:`SimpleBugDir` for some bugdir manipulation exampes.
     """
 
     settings_properties = []
@@ -344,7 +345,8 @@ class RevisionedBugDir (BugDir):
 if libbe.TESTING == True:
     class SimpleBugDir (BugDir):
         """
-        For testing.  Set memory=True for a memory-only bugdir.
+        For testing.  Set ``memory=True`` for a memory-only bugdir.
+
         >>> bugdir = SimpleBugDir()
         >>> uuids = list(bugdir.uuids())
         >>> uuids.sort()

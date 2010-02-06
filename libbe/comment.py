@@ -16,8 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Define the Comment class for representing bug comments.
+"""Define the :class:`Comment` class for representing bug comments.
 """
 
 import base64
@@ -101,7 +100,10 @@ def save_comments(bug):
 
 
 class Comment (Tree, settings_object.SavedSettingsObject):
-    """
+    """Comments are a notes that attach to :class:`libbe.bug.Bug`\s in
+    threaded trees.  In mailing-list terms, a comment is analogous to
+    a single part of an email.
+
     >>> c = Comment()
     >>> c.uuid != None
     True
@@ -194,19 +196,19 @@ class Comment (Tree, settings_object.SavedSettingsObject):
     def __init__(self, bug=None, uuid=None, from_storage=False,
                  in_reply_to=None, body=None, content_type=None):
         """
-        Set from_storage=True to load an old comment.
-        Set from_storage=False to create a new comment.
+        Set ``from_storage=True`` to load an old comment.
+        Set ``from_storage=False`` to create a new comment.
 
-        The uuid option is required when from_storage==True.
+        The ``uuid`` option is required when ``from_storage==True``.
 
         The in_reply_to, body, and content_type options are only used
-        if from_storage==False (the default).  When
-        from_storage==True, they are loaded from the bug database.
-        content_type decides if the body should be run through
-        libbe.util.id.short_to_long_text() before saving.  See
-        ._set_comment_body() for details.
+        if ``from_storage==False`` (the default).  When
+        ``from_storage==True``, they are loaded from the bug database.
+        ``content_type`` decides if the body should be run through
+        :func:`util.id.short_to_long_text` before saving.  See
+        :meth:`_set_comment_body` for details.
 
-        in_reply_to should be the uuid string of the parent comment.
+        ``in_reply_to`` should be the uuid string of the parent comment.
         """
         Tree.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)
@@ -267,6 +269,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
     def safe_in_reply_to(self):
         """
         Return self.in_reply_to, except...
+
           * if no comment matches that id, in which case return None.
           * if that id matches another comments .alt_id, in which case
             return the matching comments .uuid.
@@ -337,7 +340,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         return istring + sep.join(lines).rstrip('\n')
 
     def from_xml(self, xml_string, verbose=True):
-        """
+        u"""
         Note: If alt-id is not given, translates any <uuid> fields to
         <alt-id> fields.
         >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
@@ -412,6 +415,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         """
         Merge info from other into this comment.  Overrides any
         attributes in self that are listed in other.explicit_attrs.
+
         >>> commA = Comment(bug=None, body='Some insightful remarks')
         >>> commA.uuid = '0123'
         >>> commA.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
@@ -621,7 +625,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         """
         Save any loaded contents to storage.
 
-        However, if self.storage.is_writeable() == True, then any
+        However, if ``self.storage.is_writeable() == True``, then any
         changes are automatically written to storage as soon as they
         happen, so calling this method will just waste time (unless
         something else has been messing with your stored files).
@@ -666,8 +670,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         return reply
 
     def comment_from_uuid(self, uuid, match_alt_id=True):
-        """
-        Use a uuid to look up a comment.
+        """Use a uuid to look up a comment.
+
         >>> a = Comment(bug=None, uuid="a")
         >>> b = a.new_reply()
         >>> b.uuid = "b"
@@ -708,6 +712,7 @@ def cmp_attr(comment_1, comment_2, attr, invert=False):
     Compare a general attribute between two comments using the conventional
     comparison rule for that attribute type.  If invert == True, sort
     *against* that convention.
+
     >>> attr="author"
     >>> commentA = Comment()
     >>> commentB = Comment()
