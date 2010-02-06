@@ -293,9 +293,6 @@ class AuthenticationApp (WSGI_Object):
     def authenticate(self, environ):
         """Handle user-authentication sent in the 'Authorization' header.
         
-        Basic HTTP/1.0 Authentication
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
         This function implements ``Basic`` authentication as described in
         HTTP/1.0 specification [1]_ .  Do not use this module unless you
         are using SSL, as it transmits unencrypted passwords.

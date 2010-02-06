@@ -88,7 +88,7 @@ class DiskAccessRequired (Exception):
 
 
 class BugDir (list, settings_object.SavedSettingsObject):
-    """A BugDir is a container for :class:`libbe.bug.Bug`\s, with some
+    """A BugDir is a container for :class:`~libbe.bug.Bug`\s, with some
     additional attributes.
 
     See :class:`SimpleBugDir` for some bugdir manipulation exampes.

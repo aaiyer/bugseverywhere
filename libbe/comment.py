@@ -100,7 +100,7 @@ def save_comments(bug):
 
 
 class Comment (Tree, settings_object.SavedSettingsObject):
-    """Comments are a notes that attach to :class:`libbe.bug.Bug`\s in
+    """Comments are a notes that attach to :class:`~libbe.bug.Bug`\s in
     threaded trees.  In mailing-list terms, a comment is analogous to
     a single part of an email.
 

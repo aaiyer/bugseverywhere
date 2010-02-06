@@ -122,9 +122,9 @@ load_status(active_status_def, inactive_status_def)
 
 class Bug (settings_object.SavedSettingsObject):
     """A bug (or issue) is a place to store attributes and attach
-    :class:`libbe.comment.Comment`\s.  In mailing-list terms, a bug is
+    :class:`~libbe.comment.Comment`\s.  In mailing-list terms, a bug is
     analogous to a thread.  Bugs are normally stored in
-    :class:`libbe.bugdir.BugDir`\s.
+    :class:`~libbe.bugdir.BugDir`\s.
 
     >>> b = Bug()
     >>> print b.status

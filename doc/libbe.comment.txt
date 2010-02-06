@@ -1,7 +1,0 @@
-********************
-:mod:`libbe.comment`
-********************
-
-.. automodule:: libbe.comment
-   :members:
-   :undoc-members:
