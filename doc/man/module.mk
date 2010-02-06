@@ -23,7 +23,7 @@
 
 # Makefile module for documentation
 
-MODULE_DIR := doc/src
+MODULE_DIR := doc/man
 
 MANPAGES = be.1
 manpage_files = $(patsubst %,${MODULE_DIR}/%,${MANPAGES})
