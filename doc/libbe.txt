@@ -1,0 +1,12 @@
+************
+:mod:`libbe`
+************
+
+.. automodule:: libbe
+   :members:
+   :undoc-members:
+
+.. toctree::
+   :maxdepth: 2
+
+   libbe.bug.txt

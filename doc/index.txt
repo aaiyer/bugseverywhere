@@ -29,7 +29,7 @@ Contents:
    distributed_bugtracking.txt
    hacking.txt
    spam.txt
-
+   libbe.txt
 
 Indices and tables
 ==================

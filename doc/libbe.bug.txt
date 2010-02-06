@@ -1,0 +1,7 @@
+****************
+:mod:`libbe.bug`
+****************
+
+.. automodule:: libbe.bug
+   :members:
+   :undoc-members:

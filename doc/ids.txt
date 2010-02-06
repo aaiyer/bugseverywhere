@@ -1,0 +1,53 @@
+**********
+Object IDs
+**********
+
+Format
+======
+
+BE IDs are formatted::
+
+    <bug-directory>[/<bug>[/<comment>]]
+
+where each ``<..>`` is a UUID.  For example::
+
+    bea86499-824e-4e77-b085-2d581fa9ccab/3438b72c-6244-4f1d-8722-8c8d41484e35
+
+refers to bug ``3438b72c-6244-4f1d-8722-8c8d41484e35`` which is
+located in bug directory ``bea86499-824e-4e77-b085-2d581fa9ccab``.
+This is a bit of a mouthful, so you can truncate each UUID so long as
+it remains unique.  For example::
+
+    bea/343
+
+If there were two bugs ``3438...`` and ``343a...`` in ``bea``, you'd
+have to use::
+
+    bea/3438
+
+BE will only truncate each UUID down to three characters to slightly
+future-proof the short user ids.  However, if you want to save keystrokes
+and you *know* there is only one bug directory, feel free to truncate
+all the way to zero characters::
+
+    /3438
+
+Cross references
+================
+
+To refer to other bug-directories/bugs/comments from bug comments, simply
+enclose the ID in pound signs (``#``).  BE will automatically expand the
+truncations to the full UUIDs before storing the comment, and the reference
+will be appropriately truncated (and hyperlinked, if possible) when the
+comment is displayed.
+
+Scope
+=====
+
+Although bug and comment IDs always appear in compound references,
+UUIDs at each level are globally unique.  For example, comment
+``bea/343/ba96f1c0-ba48-4df8-aaf0-4e3a3144fc46`` will *only* appear
+under ``bea/343``.  The prefix (``bea/343``) allows BE to reduce
+caching global comment-lookup tables and enables easy error messages
+("I couldn't find ``bea/343/ba9`` because I don't know where the
+``bea`` bug directory is located").
