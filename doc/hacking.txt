@@ -1,8 +1,9 @@
-Extending BE
-============
+**********
+Hacking BE
+**********
 
 Adding commands
----------------
+===============
 
 To write a plugin, you simply create a new file in the
 ``libbe/commands/`` directory.  Take a look at one of the simpler
@@ -17,7 +18,7 @@ be important.
 
 
 Command completion
-~~~~~~~~~~~~~~~~~~
+------------------
 
 BE implements a general framework to make it easy to support command
 completion for arbitrary plugins.  In order to support this system,
@@ -31,7 +32,7 @@ completion function from scratch.
 
 
 Adding user interfaces
-----------------------
+======================
 
 Take a look at ``libbe/ui/command_line.py`` for an example.  Basically
 you'll need to setup a ``UserInterface`` instance for running commands.
