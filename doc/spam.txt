@@ -2,38 +2,59 @@
 Dealing with spam
 *****************
 
-
-Removing spam commits from the history
-======================================
-
-arch bzr darcs git hg none
-
 In the case that some spam or inappropriate comment makes its way
-through you interface, you can remove the offending commit XYZ with:
+through you interface, you can (sometimes) remove the offending commit
+``XYZ``.
 
-  If the offending commit is the last commit:
 
-    arch:  
-    bzr:   bzr uncommit && bzr revert
-    darcs: darcs obliterate --last=1
-    git:   git reset --hard HEAD^
-    hg:    hg rollback && hg revert
+If the offending commit is the last commit
+==========================================
 
-  If the offending commit is not the last commit:
++-------+----------------------------+
+| arch  |                            |
++-------+----------------------------+
+| bzr   | bzr uncommit && bzr revert |
++-------+----------------------------+
+| darcs | darcs obliterate --last=1  |
++-------+----------------------------+
+| git   | git reset --hard HEAD^     |
++-------+----------------------------+
+| hg    | hg rollback && hg revert   |
++-------+----------------------------+
 
-    arch:  
-    bzr:   bzr rebase -r <XYZ+1>..-1 --onto before:XYZ .
-      (requires bzr-rebase plugin, note, you have to increment XYZ by
-      hand for <XYZ+1>, because bzr does not support "after:XYZ".)
-    darcs: darcs obliterate --matches 'name XYZ'
-    git:   git rebase --onto XYZ~1 XYZ
-    hg:     -not-supported-
-      (From http://hgbook.red-bean.com/read/finding-and-fixing-mistakes.html#id394667
-      "Mercurial also does not provide a way to make a file or
-      changeset completely disappear from history, because there is no
-      way to enforce its disappearance")
+If the offending commit is not the last commit
+==============================================
 
-Note that all of these _change_the_repo_history_, so only do this on
++----------+-----------------------------------------------+
+| arch     |                                               |
++----------+-----------------------------------------------+
+| bzr [#]_ | bzr rebase -r <XYZ+1>..-1 --onto before:XYZ . |
++----------+-----------------------------------------------+
+| darcs    | darcs obliterate --matches 'name XYZ'         |
++----------+-----------------------------------------------+
+| git      | git rebase --onto XYZ~1 XYZ                   |
++----------+-----------------------------------------------+
+| hg [#]_  |                                               |
++----------+-----------------------------------------------+
+
+.. [#] Requires the ```bzr-rebase`` plugin`_.  Note, you have to
+   increment ``XYZ`` by hand for ``<XYZ+1>``, because ``bzr`` does not
+   support ``after:XYZ``.
+
+.. [#] From `Mercurial: The Definitive Guide`:
+
+     "Mercurial also does not provide a way to make a file or
+     changeset completely disappear from history, because there is no
+     way to enforce its disappearance"
+
+.. _bzr-rebase plugin: http://wiki.bazaar.canonical.com/Rebase
+.. _Mercurial: The Definitive Guide:
+  http://hgbook.red-bean.com/read/finding-and-fixing-mistakes.html#id394667
+
+Warnings about changing history
+===============================
+
+Note that all of these *change the repo history* , so only do this on
 your interface-specific repo before it interacts with any other repo.
 Otherwise, you'll have to survive by cherry-picking only the good
 commits.

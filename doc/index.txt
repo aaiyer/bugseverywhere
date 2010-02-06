@@ -1,10 +1,10 @@
 Welcome to the bugs-everywhere documentation!
 =============================================
 
-Bugs Everywhere (BE) is a bugtracker built on distributed revision
+Bugs Everywhere (BE) is a bugtracker built on distributed version
 control.  It works with Arch_ , Bazaar_ , Darcs_ , Git_ , and
 Mercurial_ at the moment, but is easily extensible.  It can also
-function with no RCS at all.
+function with no VCS at all.
 
 .. _Arch: http://www.gnu.org/software/gnu-arch/
 .. _Bazaar: http://bazaar.canonical.com/
@@ -13,14 +13,15 @@ function with no RCS at all.
 .. _Mercurial: http://mercurial.selenic.com/
 
 The idea is to package the bug information with the source code, so
-that bugs can be marked "fixed" in the branches that fix them.  So,
-instead of numbers, bugs have globally unique ids.
+that bugs can be marked "fixed" in the branches that fix them.
+
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   install.txt
    tutorial.txt
    ids.txt
    email.txt
@@ -36,57 +37,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-Getting BE
-==========
-
-BE is available as a bzr repository::
-
-    $ bzr branch http://bzr.bugseverywhere.org/be
-
-See the homepage_ for details.  If you do branch the bzr repo, you'll
-need to run::
-
-    $ make
-
-to build some auto-generated files (e.g. ``libbe/_version.py``), and::
-
-    $ make install
-
-to install BE.  By default BE will install into your home directory,
-but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
-to another location.
-
-.. _homepage: http://bugseverywhere.org/
-
-
-Getting started
-===============
-
-To get started, you must set the bugtracker root.  Typically, you will
-want to set the bug root to your project root, so that Bugs Everywhere
-works in any part of your project tree.::
-
-    $ be init -r $PROJECT_ROOT
-
-To create bugs, use ``be new $DESCRIPTION``.  To comment on bugs, you
-can can use ``be comment $BUG_ID``.  To close a bug, use
-``be close $BUG_ID`` or ``be status $BUG_ID fixed``.  For more
-commands, see ``be help``.  You can also look at the usage examples in
-``test_usage.sh``.
-
-Documentation
-=============
-
-If ``be help`` isn't scratching your itch, there's also
-
-* doc/tutorial        (a gentle introduction to BE)
-* doc/distributed_bugtracking  (notes on distributed workflows)
-* doc/spam            (notes on removing spam entries from VCSs)
-* doc/README.dev      (a guide to hacking BE)
-
-The documentation is marked up in reStructuredText_, so you can use
-the docutils_ to convert it to other formats if you desire.
-
-.. _reStructuredText: http://docutils.sourceforge.net/docs/user/rst/quickref.html
-.. _docutils: http://docutils.sourceforge.net/
