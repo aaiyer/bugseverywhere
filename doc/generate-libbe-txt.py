@@ -31,7 +31,7 @@ def toctree(children):
             '   :maxdepth: 2',
             '',
             ] + [
-            '   %s.txt' % c for c in children
+            '   %s.txt' % c for c in sorted(children)
             ] + ['', ''])
 
 def make_module_txt(modname, children):

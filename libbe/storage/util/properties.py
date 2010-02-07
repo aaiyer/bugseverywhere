@@ -16,16 +16,24 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-This module provides a series of useful decorators for defining
-various types of properties.  For example usage, consider the
-unittests at the end of the module.
+"""Provides a series of useful decorators for defining various types
+of properties.
 
-See
-  http://www.python.org/dev/peps/pep-0318/
-and
-  http://www.phyast.pitt.edu/~micheles/python/documentation.html
-for more information on decorators.
+For example usage, consider the unittests at the end of the module.
+
+Notes
+-----
+
+See `PEP 318` and Michele Simionato's `decorator documentation` for
+more information on decorators.
+
+.. _PEP 318: http://www.python.org/dev/peps/pep-0318/
+.. _decorator documentation: http://www.phyast.pitt.edu/~micheles/python/documentation.html
+
+See Also
+--------
+:mod:`libbe.storage.util.settings_object` : bundle properties into a convenient package
+
 """
 
 import copy
@@ -336,12 +344,11 @@ def primed_property(primer, initVal=None, unprimeableVal=None):
     return decorator
 
 def change_hook_property(hook, mutable=False, default=None):
-    """
-    Call the function hook(instance, old_value, new_value) whenever a
-    value different from the current value is set (instance is a a
-    reference to the class instance to which this property belongs).
+    """Call the function `hook` whenever a value different from the
+    current value is set.
+
     This is useful for saving changes to disk, etc.  This function is
-    called _after_ the new value has been stored, allowing you to
+    called *after* the new value has been stored, allowing you to
     change the stored value if you want.
 
     In the case of mutables, things are slightly trickier.  Because
@@ -350,11 +357,19 @@ def change_hook_property(hook, mutable=False, default=None):
     mutable value, and checking for changes whenever the property is
     set (obviously) or retrieved (to check for external changes).  So
     long as you're conscientious about accessing the property after
-    making external modifications, mutability won't be a problem.
+    making external modifications, mutability won't be a problem::
+
       t.x.append(5) # external modification
       t.x           # dummy access notices change and triggers hook
-    See testChangeHookMutableProperty for an example of the expected
-    behavior.
+
+    See :class:`testChangeHookMutableProperty` for an example of the
+    expected behavior.
+
+    Parameters
+    ----------
+    hook : fn
+      `hook(instance, old_value, new_value)`, where `instance` is a
+      reference to the class instance to which this property belongs.
     """
     def decorator(funcs):
         if hasattr(funcs, "__call__"):

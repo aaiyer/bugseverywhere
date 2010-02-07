@@ -21,8 +21,13 @@
 # A dictionary of response codes is available in
 #   httplib.responses
 
-"""
-Access bug repository data over HTTP.
+"""Define an HTTP-based :class:`~libbe.storage.base.VersionedStorage`
+implementation.
+
+See Also
+--------
+:mod:`libbe.command.serve` : the associated server
+
 """
 
 import sys
@@ -50,6 +55,13 @@ HTTP_OK = 200
 HTTP_FOUND = 302
 HTTP_TEMP_REDIRECT = 307
 HTTP_USER_ERROR = 418
+"""Status returned to indicate exceptions on the server side.
+
+A BE-specific extension to the HTTP/1.1 protocol (See `RFC 2616`_).
+
+.. _RFC 2616: http://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html#sec6.1.1
+"""
+
 HTTP_VALID = [HTTP_OK, HTTP_FOUND, HTTP_TEMP_REDIRECT, HTTP_USER_ERROR]
 
 class InvalidURL (Exception):
@@ -66,9 +78,18 @@ class InvalidURL (Exception):
         return self.msg
 
 def get_post_url(url, get=True, data_dict=None, headers=[]):
-    """
-    get:        use GET if True, otherwise use POST.
-    data_dict:  dict of data to send.
+    """Execute a GET or POST transaction.
+
+    Parameters
+    ----------
+    url : str
+      The base URL (query portion added internally, if necessary).
+    get : bool
+      Use GET if True, otherwise use POST.
+    data_dict : dict
+      Data to send, either by URL query (if GET) or by POST (if POST).
+    headers : list
+      Extra HTTP headers to add to the request.
     """
     if data_dict == None:
         data_dict = {}
@@ -101,9 +122,10 @@ def get_post_url(url, get=True, data_dict=None, headers=[]):
 
 
 class HTTP (base.VersionedStorage):
-    """
-    This class implements a Storage interface over HTTP, using GET to
-    retrieve information and POST to set information.
+    """:class:`~libbe.storage.base.VersionedStorage` implementation over
+    HTTP.
+
+    Uses GET to retrieve information and POST to set information.
     """
     name = 'HTTP'
 
@@ -113,6 +135,10 @@ class HTTP (base.VersionedStorage):
 
     def parse_repo(self, repo):
         """Grab username and password (if any) from the repo URL.
+
+        Examples
+        --------
+
         >>> s = HTTP('http://host.com/path/to/repo')
         >>> s.repo
         'http://host.com/path/to/repo'
@@ -249,15 +275,18 @@ class HTTP (base.VersionedStorage):
         return page.rstrip('\n')
 
     def revision_id(self, index=None):
-        """
-        Return the name of the <index>th revision.  The choice of
-        which branch to follow when crossing branches/merges is not
-        defined.  Revision indices start at 1; ID 0 is the blank
-        repository.
+        """Return the name of the <index>th revision.
+
+        The choice of which branch to follow when crossing
+        branches/merges is not defined.  Revision indices start at 1;
+        ID 0 is the blank repository.
 
         Return None if index==None.
 
-        If the specified revision does not exist, raise InvalidRevision.
+        Raises
+        ------
+        InvalidRevision
+          If the specified revision does not exist.
         """
         if index == None:
             return None

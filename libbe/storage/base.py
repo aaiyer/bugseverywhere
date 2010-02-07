@@ -519,10 +519,8 @@ class VersionedStorage (Storage):
         raise InvalidRevision(i)
 
     def changed(self, revision):
-        """
-        Return a tuple of lists of ids
-          (new, modified, removed)
-        from the specified revision to the current situation.
+        """Return a tuple of lists of ids `(new, modified, removed)` from the
+        specified revision to the current situation.
         """
         new = []
         modified = []

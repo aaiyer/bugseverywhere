@@ -48,31 +48,6 @@ if libbe.TESTING == True:
     import libbe.storage.base
 
 
-class NoBugDir(Exception):
-    def __init__(self, path):
-        msg = "The directory \"%s\" has no bug directory." % path
-        Exception.__init__(self, msg)
-        self.path = path
-
-class NoRootEntry(Exception):
-    def __init__(self, path):
-        self.path = path
-        Exception.__init__(self, "Specified root does not exist: %s" % path)
-
-class AlreadyInitialized(Exception):
-    def __init__(self, path):
-        self.path = path
-        Exception.__init__(self,
-                           "Specified root is already initialized: %s" % path)
-
-class MultipleBugMatches(ValueError):
-    def __init__(self, shortname, matches):
-        msg = ("More than one bug matches %s.  "
-               "Please be more specific.\n%s" % (shortname, matches))
-        ValueError.__init__(self, msg)
-        self.shortname = shortname
-        self.matches = matches
-
 class NoBugMatches(libbe.util.id.NoIDMatches):
     def __init__(self, *args, **kwargs):
         libbe.util.id.NoIDMatches.__init__(self, *args, **kwargs)
@@ -81,17 +56,27 @@ class NoBugMatches(libbe.util.id.NoIDMatches):
             return 'No bug matches %s' % self.id
         return self.msg
 
-class DiskAccessRequired (Exception):
-    def __init__(self, goal):
-        msg = "Cannot %s without accessing the disk" % goal
-        Exception.__init__(self, msg)
-
 
 class BugDir (list, settings_object.SavedSettingsObject):
     """A BugDir is a container for :class:`~libbe.bug.Bug`\s, with some
     additional attributes.
 
-    See :class:`SimpleBugDir` for some bugdir manipulation exampes.
+    Parameters
+    ----------
+    storage : :class:`~libbe.storage.base.Storage`
+       Storage instance containing the bug directory.  If
+       `from_storage` is `False`, `storage` may be `None`.
+    uuid : str, optional
+       Set the bugdir UUID (see :mod:`libbe.util.id`).
+       Useful if you are loading one of several bugdirs
+       stored in a single Storage instance.
+    from_storage : bool, optional
+       If `True`, attempt to load from storage.  Otherwise,
+       setup in memory, saving to `storage` if it is not `None`.
+
+    See Also
+    --------
+    :class:`SimpleBugDir` for some bugdir manipulation exampes.
     """
 
     settings_properties = []

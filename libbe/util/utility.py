@@ -33,11 +33,16 @@ if libbe.TESTING == True:
     import doctest
 
 class InvalidXML(ValueError):
-    """
-    Invalid XML while parsing for a *.from_xml() method.
-    type    - string identifying *, e.g. "bug", "comment", ...
-    element - ElementTree.Element instance which caused the error
-    error   - string describing the error
+    """Invalid XML while parsing for a `*.from_xml()` method.
+
+    Parameters
+    ----------
+    type : str
+        String identifying `*`, e.g. "bug", "comment", ...
+    element : :class:`ElementTree.Element`
+        ElementTree.Element instance which caused the error.
+    error : str
+        Error description.
     """
     def __init__(self, type, element, error):
         msg = 'Invalid %s xml: %s\n  %s\n' \
@@ -50,16 +55,18 @@ class InvalidXML(ValueError):
 def search_parent_directories(path, filename):
     """
     Find the file (or directory) named filename in path or in any
-    of path's parents.
+    of path's parents.  For example::
 
-    e.g.
-    search_parent_directories("/a/b/c", ".be")
-    will return the path to the first existing file from
-    /a/b/c/.be
-    /a/b/.be
-    /a/.be
-    /.be
-    or None if none of those files exist.
+         search_parent_directories("/a/b/c", ".be")
+
+    will return the path to the first existing file from::
+
+        /a/b/c/.be
+        /a/b/.be
+        /a/.be
+        /.be
+
+    or `None` if none of those files exist.
     """
     path = os.path.realpath(path)
     assert os.path.exists(path)
@@ -74,7 +81,11 @@ def search_parent_directories(path, filename):
         path = os.path.dirname(path)
 
 class Dir (object):
-    "A temporary directory for testing use"
+    """A temporary directory for testing use.
+
+    Make sure you run :meth:`cleanup` after you're done using the
+    directory.
+    """
     def __init__(self):
         self.path = tempfile.mkdtemp(prefix="BEtest")
         self.removed = False
@@ -86,18 +97,47 @@ class Dir (object):
         return self.path
 
 RFC_2822_TIME_FMT = "%a, %d %b %Y %H:%M:%S +0000"
+"""RFC 2822 [#]_ format string for :func:`time.strftime` and
+:func:`time.strptime`.
 
+.. [#] See `RFC 2822`_, sections 3.3 and A.1.1.
+.. _RFC 2822: http://www.faqs.org/rfcs/rfc2822.html
+"""
 
 def time_to_str(time_val):
-    """Convert a time value into an RFC 2822-formatted string.  This format
-    lacks sub-second data.
+    """Convert a time number into an RFC 2822-formatted string.
+
+    Parameters
+    ----------
+    time_val : float
+      Float seconds since the Epoc, see :func:`time.time`.
+      Note that while `time_val` may contain sub-second data,
+      the output string will not.
+
+    Examples
+    --------
+
     >>> time_to_str(0)
     'Thu, 01 Jan 1970 00:00:00 +0000'
+
+    See Also
+    --------
+    str_to_time : inverse
+    handy_time : localtime string
     """
     return time.strftime(RFC_2822_TIME_FMT, time.gmtime(time_val))
 
 def str_to_time(str_time):
     """Convert an RFC 2822-fomatted string into a time value.
+
+    Parameters
+    ----------
+    str_time : str
+      An RFC 2822-formatted string.
+
+    Examples
+    --------
+
     >>> str_to_time("Thu, 01 Jan 1970 00:00:00 +0000")
     0
     >>> q = time.time()
@@ -105,6 +145,10 @@ def str_to_time(str_time):
     True
     >>> str_to_time("Thu, 01 Jan 1970 00:00:00 -1000")
     36000
+
+    See Also
+    --------
+    time_to_str : inverse
     """
     timezone_str = str_time[-5:]
     if timezone_str != "+0000":
@@ -116,10 +160,29 @@ def str_to_time(str_time):
     return time_val + timesign*timezone
 
 def handy_time(time_val):
+    """Convert a time number into a useful localtime.
+
+    Where :func:`time_to_str` returns GMT +0000, `handy_time` returns
+    a string in local time.  This may be more accessible for the user.
+
+    Parameters
+    ----------
+    time_val : float
+      Float seconds since the Epoc, see :func:`time.time`.
+    """
     return time.strftime("%a, %d %b %Y %H:%M", time.localtime(time_val))
 
 def time_to_gmtime(str_time):
     """Convert an RFC 2822-fomatted string to a GMT string.
+
+    Parameters
+    ----------
+    str_time : str
+      An RFC 2822-formatted string.
+
+    Examples
+    --------
+
     >>> time_to_gmtime("Thu, 01 Jan 1970 00:00:00 -1000")
     'Thu, 01 Jan 1970 10:00:00 +0000'
     """
@@ -127,8 +190,23 @@ def time_to_gmtime(str_time):
     return time_to_str(time_val)
 
 def iterable_full_of_strings(value, alternative=None):
-    """
-    Require an iterable full of strings.
+    """Require an iterable full of strings.
+
+    This is useful, for example, in validating `*.extra_strings`.
+    See :attr:`libbe.bugdir.BugDir.extra_strings`
+
+    Parameters
+    ----------
+    value : list or None
+      The potential list of strings.
+    alternative
+      Allow a default (e.g. `None`), such that::
+
+        iterable_full_of_strings(value=x, alternative=x) -> True
+
+    Examples
+    --------
+
     >>> iterable_full_of_strings([])
     True
     >>> iterable_full_of_strings(["abc", "def", u"hij"])
@@ -140,21 +218,31 @@ def iterable_full_of_strings(value, alternative=None):
     """
     if value == alternative:
         return True
-    elif not hasattr(value, "__iter__"):
+    elif not hasattr(value, '__iter__'):
         return False
     for x in value:
         if type(x) not in types.StringTypes:
             return False
     return True
 
-def underlined(instring):
-    """Produces a version of a string that is underlined with '='
+def underlined(string, char='='):
+    """Produces a version of a string that is underlined.
+
+    Parameters
+    ----------
+    string : str
+      The string to underline
+    char : str
+      The character to use for the underlining.
+
+    Examples
+    --------
 
     >>> underlined("Underlined String")
     'Underlined String\\n================='
     """
-
-    return "%s\n%s" % (instring, "="*len(instring))
+    assert len(char) == 0, char
+    return '%s\n%s' % (string, char*len(string))
 
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()

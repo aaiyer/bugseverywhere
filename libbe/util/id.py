@@ -15,8 +15,57 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Handle ID creation and parsing.
+"""Handle ID creation and parsing.
+
+Format
+======
+
+BE IDs are formatted::
+
+    <bug-directory>[/<bug>[/<comment>]]
+
+where each ``<..>`` is a UUID.  For example::
+
+    bea86499-824e-4e77-b085-2d581fa9ccab/3438b72c-6244-4f1d-8722-8c8d41484e35
+
+refers to bug ``3438b72c-6244-4f1d-8722-8c8d41484e35`` which is
+located in bug directory ``bea86499-824e-4e77-b085-2d581fa9ccab``.
+This is a bit of a mouthful, so you can truncate each UUID so long as
+it remains unique.  For example::
+
+    bea/343
+
+If there were two bugs ``3438...`` and ``343a...`` in ``bea``, you'd
+have to use::
+
+    bea/3438
+
+BE will only truncate each UUID down to three characters to slightly
+future-proof the short user ids.  However, if you want to save keystrokes
+and you *know* there is only one bug directory, feel free to truncate
+all the way to zero characters::
+
+    /3438
+
+Cross references
+================
+
+To refer to other bug-directories/bugs/comments from bug comments, simply
+enclose the ID in pound signs (``#``).  BE will automatically expand the
+truncations to the full UUIDs before storing the comment, and the reference
+will be appropriately truncated (and hyperlinked, if possible) when the
+comment is displayed.
+
+Scope
+=====
+
+Although bug and comment IDs always appear in compound references,
+UUIDs at each level are globally unique.  For example, comment
+``bea/343/ba96f1c0-ba48-4df8-aaf0-4e3a3144fc46`` will *only* appear
+under ``bea/343``.  The prefix (``bea/343``) allows BE to reduce
+caching global comment-lookup tables and enables easy error messages
+("I couldn't find ``bea/343/ba9`` because I don't know where the
+``bea`` bug directory is located").
 """
 
 import os.path
@@ -64,9 +113,21 @@ except ImportError:
 
 
 HIERARCHY = ['bugdir', 'bug', 'comment']
-
+"""Keep track of the object type hierarchy.
+"""
 
 class MultipleIDMatches (ValueError):
+    """Multiple IDs match the given user ID.
+
+    Parameters
+    ----------
+    id : str
+      The not-specific-enough truncated UUID.
+    common : str
+      The initial characters common to all matching UUIDs.
+    matches : list of str
+      The list of possibly matching UUIDs.
+    """
     def __init__(self, id, common, matches):
         msg = ('More than one id matches %s.  '
                'Please be more specific (%s*).\n%s' % (id, common, matches))
@@ -76,6 +137,17 @@ class MultipleIDMatches (ValueError):
         self.matches = matches
 
 class NoIDMatches (KeyError):
+    """No IDs match the given user ID.
+
+    Parameters
+    ----------
+    id : str
+      The not-matching, possibly truncated UUID.
+    possible_ids : list of str
+      The list of potential UUIDs at that level.
+    msg : str, optional
+      A helpful message explaining what went wrong.
+    """
     def __init__(self, id, possible_ids, msg=None):
         KeyError.__init__(self, id)
         self.id = id
@@ -87,6 +159,15 @@ class NoIDMatches (KeyError):
         return self.msg
 
 class InvalidIDStructure (KeyError):
+    """A purported ID does not have the appropriate syntax.
+
+    Parameters
+    ----------
+    id : str
+      The purported ID.
+    msg : str, optional
+      A helpful message explaining what went wrong.
+    """
     def __init__(self, id, msg=None):
         KeyError.__init__(self, id)
         self.id = id
@@ -97,6 +178,12 @@ class InvalidIDStructure (KeyError):
         return self.msg
 
 def _assemble(args, check_length=False):
+    """Join a bunch of level UUIDs into a single ID.
+
+    See Also
+    --------
+    _split : inverse
+    """
     args = list(args)
     for i,arg in enumerate(args):
         if arg == None:
@@ -104,22 +191,47 @@ def _assemble(args, check_length=False):
     id = '/'.join(args)
     if check_length == True:
         assert len(args) > 0, args
-        if len(args) > 3:
-            raise InvalidIDStructure(id, '%d > 3 levels in "%s"' % (len(args), id))
+        if len(args) > len(HIERARCHY):
+            raise InvalidIDStructure(
+                id, '%d > %d levels in "%s"' % (len(args), len(HIERARCHY), id))
     return id
 
 def _split(id, check_length=False):
+    """Split an ID into a list of level UUIDs.
+
+    See Also
+    --------
+    _assemble : inverse
+    """
     args = id.split('/')
     for i,arg in enumerate(args):
         if arg == '':
             args[i] = None
     if check_length == True:
         assert len(args) > 0, args
-        if len(args) > 3:
-            raise InvalidIDStructure(id, '%d > 3 levels in "%s"' % (len(args), id))
+        if len(args) > len(HIERARCHY):
+            raise InvalidIDStructure(
+                id, '%d > %d levels in "%s"' % (len(args), len(HIERARCHY), id))
     return args
 
 def _truncate(uuid, other_uuids, min_length=3):
+    """Truncate a UUID to the shortest length >= `min_length` such that it
+    is *not* a truncated form of a UUID in `other_uuids`.
+
+    Parameters
+    ----------
+    uuid : str
+      The UUID to truncate.
+    other_uuids : list of str
+      The other UUIDs which the truncation *might* (but doesn't) refer
+      to.
+    min_length : int
+      Avoid rapidly outdated truncations, even if they are unique now.
+
+    See Also
+    --------
+    _expand : inverse
+    """
     chars = min_length
     for id in other_uuids:
         if id == uuid:
@@ -129,6 +241,29 @@ def _truncate(uuid, other_uuids, min_length=3):
     return uuid[:chars]
 
 def _expand(truncated_id, common, other_ids):
+    """Expand a truncated UUID.
+
+    Parameters
+    ----------
+    truncated_id : str
+      The ID to expand.
+    common : str
+      The common portion `truncated_id` shares with the UUIDs in
+      `other_ids`.  Not used by ``_expand``, but passed on to the
+      matching exceptions if they occur.
+    other_uuids : list of str
+      The other UUIDs which the truncation *might* (but doesn't) refer
+      to.
+
+    Raises
+    ------
+    NoIDMatches
+    MultipleIDMatches
+
+    See Also
+    --------
+    _expand : inverse
+    """
     other_ids = list(other_ids)
     if len(other_ids) == 0:
         raise NoIDMatches(truncated_id, other_ids)
@@ -151,7 +286,18 @@ def _expand(truncated_id, common, other_ids):
 
 
 class ID (object):
-    """
+    """Store an object ID and produce various representations.
+
+    Parameters
+    ----------
+    object : :class:`~libbe.bugdir.BugDir` or :class:`~libbe.bug.Bug` or :class:`~libbe.comment.Comment`
+      The object that the ID applies to.
+    type : 'bugdir' or 'bug' or 'comment'
+      The type of the object.
+
+    Notes
+    -----
+
     IDs have several formats specialized for different uses.
 
     In storage, all objects are represented by their uuid alone,
@@ -166,41 +312,39 @@ class ID (object):
     them while retaining local uniqueness (with regards to the other
     objects currently in storage).  We also prepend truncated parent
     ids for two reasons:
-      (1) so that a user can locate the repository containing the
-          referenced object.  It would be hard to find bug 'XYZ' if
-          that's all you knew.  Much easier with 'ABC/XYZ', where ABC
-          is the bugdir.  Each project can publish a list of bugdir-id
-          - to - location mappings, e.g.
-            ABC...(full uuid)...DEF   https://server.com/projectX/be/
-          which is easier than publishing all-object-ids-to-location
-          mappings.
-      (2) because it's easier to generate and parse truncated ids if
-          you don't have to fetch all the ids in the storage
-          repository, but can restrict yourself to a specific branch.
-    You can generate ids of this sort with the .user() method,
-    although in order to preform the truncation, your object (and its
-    parents must define a .sibling_uuids() method.
 
+    1. So that a user can locate the repository containing the
+       referenced object.  It would be hard to find bug ``XYZ`` if
+       that's all you knew.  Much easier with ``ABC/XYZ``, where
+       ``ABC`` is the bugdir.  Each project can publish a list of
+       bugdir-id-to-location mappings, e.g.::
+
+            ABC...(full uuid)...DEF   https://server.com/projectX/be/
+
+       which is easier than publishing all-object-ids-to-location
+       mappings.
+
+    2. Because it's easier to generate and parse truncated ids if you
+       don't have to fetch all the ids in the storage repository but
+       can restrict yourself to a specific branch.
+
+    You can generate ids of this sort with the :meth:`user` method,
+    although in order to preform the truncation, your object (and its
+    parents must define a `sibling_uuids` method.
 
     While users can use the convenient short user ids in the short
     term, the truncation will inevitably lead to name collision.  To
     avoid that, we provide a non-truncated form of the short user ids
-    via the .long_user() method.  These long user ids should be
+    via the :meth:`long_user` method.  These long user ids should be
     converted to short user ids by intelligent user interfaces.
 
-    Related tools:
-      * get uuids back out of the user ids:
-        parse_user()
-      * convert a single short user id to a long user id:
-        short_to_long_user()
-      * convert a single long user id to a short user id:
-        long_to_short_user()
-      * scan text for user ids & convert to long user ids:
-        short_to_long_text()
-      * scan text for long user ids & convert to short user ids:
-        long_to_short_text()
-
-    Supported types: 'bugdir', 'bug', 'comment'
+    See Also
+    --------
+    parse_user : get uuids back out of the user ids.
+    short_to_long_user : convert a single short user id to a long user id.
+    long_to_short_user : convert a single long user id to a short user id.
+    short_to_long_text : scan text for user ids & convert to long user ids.
+    long_to_short_text : scan text for long user ids & convert to short user ids.
     """
     def __init__(self, object, type):
         self._object = object
@@ -236,9 +380,17 @@ class ID (object):
         return _assemble(ids, check_length=True)
 
 def child_uuids(child_storage_ids):
-    """
-    Extract uuid children from other children generated by the
-    ID.storage() method.
+    """Extract uuid children from other children generated by
+    :meth:`ID.storage`.
+
+    This is useful for separating data belonging to a particular
+    object directly from entries for its child objects.  Since the
+    :class:`~libbe.storage.base.Storage` backend doesn't distinguish
+    between the two.
+
+    Examples
+    --------
+
     >>> list(child_uuids(['abc123/values', '123abc', '123def']))
     ['123abc', '123def']
     """
@@ -248,6 +400,15 @@ def child_uuids(child_storage_ids):
             yield fields[0]
 
 def long_to_short_user(bugdirs, id):
+    """Convert a long user ID to a short user ID (see :class:`ID`).
+    The list of bugdirs allows uniqueness-maintaining truncation of
+    the bugdir portion of the ID.
+
+    See Also
+    --------
+    short_to_long_user : inverse
+    long_to_short_text : conversion on a block of text
+    """
     ids = _split(id, check_length=True)
     matching_bugdirs = [bd for bd in bugdirs if bd.uuid == ids[0]]
     if len(matching_bugdirs) == 0:
@@ -267,6 +428,15 @@ def long_to_short_user(bugdirs, id):
     return _assemble(ids)
 
 def short_to_long_user(bugdirs, id):
+    """Convert a short user ID to a long user ID (see :class:`ID`).  The
+    list of bugdirs allows uniqueness-checking during expansion of the
+    bugdir portion of the ID.
+
+    See Also
+    --------
+    long_to_short_user : inverse
+    short_to_long_text : conversion on a block of text
+    """
     ids = _split(id, check_length=True)
     ids[0] = _expand(ids[0], common=None,
                      other_ids=[bd.uuid for bd in bugdirs])
@@ -284,8 +454,19 @@ def short_to_long_user(bugdirs, id):
 
 
 REGEXP = '#([-a-f0-9]*)(/[-a-g0-9]*)?(/[-a-g0-9]*)?#'
+"""Regular expression for matching IDs (both short and long) in text.
+"""
 
 class IDreplacer (object):
+    """Helper class for ID replacement in text.
+
+    Reassembles the match elements from :data:`REGEXP` matching
+    into the original ID, for easier replacement.
+
+    See Also
+    --------
+    short_to_long_text, long_to_short_text
+    """
     def __init__(self, bugdirs, replace_fn, wrap=True):
         self.bugdirs = bugdirs
         self.replace_fn = replace_fn
@@ -302,13 +483,36 @@ class IDreplacer (object):
         return replacement
 
 def short_to_long_text(bugdirs, text):
+    """Convert short user IDs to long user IDs in text (see :class:`ID`).
+    The list of bugdirs allows uniqueness-checking during expansion of
+    the bugdir portion of the ID.
+
+    See Also
+    --------
+    short_to_long_user : conversion on a single ID
+    long_to_short_text : inverse
+    """
     return re.sub(REGEXP, IDreplacer(bugdirs, short_to_long_user), text)
 
 def long_to_short_text(bugdirs, text):
+    """Convert long user IDs to short user IDs in text (see :class:`ID`).
+    The list of bugdirs allows uniqueness-maintaining truncation of
+    the bugdir portion of the ID.
+
+    See Also
+    --------
+    long_to_short_user : conversion on a single ID
+    short_to_long_text : inverse
+    """
     return re.sub(REGEXP, IDreplacer(bugdirs, long_to_short_user), text)
 
 def residual(base, fragment):
-    """
+    """Split the short ID `fragment` into a portion corresponding
+    to `base`, and a portion inside `base`.
+
+    Examples
+    --------
+
     >>> residual('ABC/DEF/', '//GHI')
     ('//', 'GHI')
     >>> residual('ABC/DEF/', '/D/GHI')
@@ -326,7 +530,15 @@ def residual(base, fragment):
     return ('/'.join(root_ids), '/'.join(residual_ids))
 
 def _parse_user(id):
-    """
+    """Parse a user ID (see :class:`ID`), returning a dict of parsed
+    information.
+
+    The returned dict will contain a value for "type" (from
+    :data:`HIERARCHY`) and values for the levels that are defined.
+
+    Examples
+    --------
+
     >>> _parse_user('ABC/DEF/GHI') == \\
     ...     {'bugdir':'ABC', 'bug':'DEF', 'comment':'GHI', 'type':'comment'}
     True
@@ -361,6 +573,17 @@ def _parse_user(id):
     return ret
 
 def parse_user(bugdir, id):
+    """Parse a user ID (see :class:`ID`), returning a dict of parsed
+    information.
+
+    The returned dict will contain a value for "type" (from
+    :data:`HIERARCHY`) and values for the levels that are defined.
+
+    Notes
+    -----
+    This function tries to expand IDs before parsing, so it can handle
+    both short and long IDs successfully.
+    """
     long_id = short_to_long_user([bugdir], id)
     return _parse_user(long_id)
 

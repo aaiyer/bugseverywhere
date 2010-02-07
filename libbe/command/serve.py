@@ -14,6 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""Define the :class:`Serve` serving BE Storage over HTTP.
+
+See Also
+--------
+:mod:`libbe.storage.http` : the associated client
+"""
+
 import hashlib
 import logging
 import os.path
@@ -156,9 +163,10 @@ class Users (dict):
 
 class WSGI_Object (object):
     """Utility class for WGSI clients and middleware.
+
     For details on WGSI, see `PEP 333`_
 
-    .. PEP 333: http://www.python.org/dev/peps/pep-0333/
+    .. _PEP 333: http://www.python.org/dev/peps/pep-0333/
     """
     def __init__(self, logger=None, log_level=logging.INFO, log_format=None):
         self.logger = logger
@@ -223,6 +231,7 @@ class WSGI_Object (object):
 
 class ExceptionApp (WSGI_Object):
     """Some servers (e.g. cherrypy) eat app-raised exceptions.
+
     Work around that by logging tracebacks by hand.
     """
     def __init__(self, app, *args, **kwargs):
@@ -242,7 +251,9 @@ class ExceptionApp (WSGI_Object):
             raise
 
 class UppercaseHeaderApp (WSGI_Object):
-    """From PEP 333, `The start_response() Callable`_ :
+    """WSGI middleware that uppercases incoming HTTP headers.
+
+    From PEP 333, `The start_response() Callable`_ :
 
         A reminder for server/gateway authors: HTTP
         header names are case-insensitive, so be sure
@@ -291,7 +302,7 @@ class AuthenticationApp (WSGI_Object):
                               e.code, e.msg, e.headers)
 
     def authenticate(self, environ):
-        """Handle user-authentication sent in the 'Authorization' header.
+        """Handle user-authentication sent in the "Authorization" header.
         
         This function implements ``Basic`` authentication as described in
         HTTP/1.0 specification [1]_ .  Do not use this module unless you
@@ -299,12 +310,18 @@ class AuthenticationApp (WSGI_Object):
 
         .. [1] http://www.w3.org/Protocols/HTTP/1.0/draft-ietf-http-spec.html#BasicAA
 
+        Examples
+        --------
+
         >>> users = Users()
         >>> users.add_user(User('Aladdin', 'Big Al', password='open sesame'))
         >>> app = AuthenticationApp(app=None, realm='Dummy Realm', users=users)
         >>> app.authenticate({'HTTP_AUTHORIZATION':'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})
         'Aladdin'
         >>> app.authenticate({'HTTP_AUTHORIZATION':'Basic AAAAAAAAAAAAAAAAAAAAAAAAAA=='})
+
+        Notes
+        -----
 
         Code based on authkit/authenticate/basic.py
         (c) 2005 Clark C. Evans.
@@ -339,8 +356,7 @@ class AuthenticationApp (WSGI_Object):
         return False
 
 class WSGI_AppObject (WSGI_Object):
-    """Utility class for WGSI clients and middleware with
-    useful utilities for handling data (POST, QUERY) and
+    """Useful WSGI utilities for handling data (POST, QUERY) and
     returning responses.
     """
     def __init__(self, *args, **kwargs):
@@ -469,16 +485,21 @@ class AdminApp (WSGI_AppObject):
         return self.ok_response(environ, start_response, None)
 
 class ServerApp (WSGI_AppObject):
-    """RESTful_ WSGI request handler for serving the
+    """WSGI server for a BE Storage instance over HTTP.
+
+    RESTful_ WSGI request handler for serving the
     libbe.storage.http.HTTP backend with GET, POST, and HEAD commands.
-    For more information on authentication and REST, see John Calcote's
-    `Open Sourcery article`_
+    For more information on authentication and REST, see John
+    Calcote's `Open Sourcery article`_
 
     .. _RESTful: http://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm
     .. _Open Sourcery article: http://jcalcote.wordpress.com/2009/08/10/restful-authentication/
 
     This serves files from a connected storage instance, usually
     a VCS-based repository located on the local machine.
+
+    Notes
+    -----
 
     The GET and HEAD requests are identical except that the HEAD
     request omits the actual content of the file.
@@ -505,10 +526,12 @@ class ServerApp (WSGI_AppObject):
             ]
 
     def __call__(self, environ, start_response):
-        """The main WSGI application.  Dispatch the current request to
-        the functions from above and store the regular expression
-        captures in the WSGI environment as `be-server.url_args` so
-        that the functions from above can access the url placeholders.
+        """The main WSGI application.
+
+        Dispatch the current request to the functions from above and
+        store the regular expression captures in the WSGI environment
+        as `be-server.url_args` so that the functions from above can
+        access the url placeholders.
 
         URL dispatcher from Armin Ronacher's "Getting Started with WSGI"
           http://lucumr.pocoo.org/2007/5/21/getting-started-with-wsgi
@@ -678,7 +701,8 @@ class ServerApp (WSGI_AppObject):
 
 
 class Serve (libbe.command.Command):
-    """Serve a Storage backend for the HTTP storage client
+    """:class:`~libbe.command.base.Command` wrapper around
+    :class:`ServerApp`.
     """
 
     name = 'serve'
@@ -1041,33 +1065,45 @@ def get_cert_filenames(server_name, autogenerate=True, logger=None):
     return (pkey_file, cert_file)
 
 def createKeyPair(type, bits):
-    """
-    Create a public/private key pair.
+    """Create a public/private key pair.
 
-    Arguments: type - Key type, must be one of TYPE_RSA and TYPE_DSA
-               bits - Number of bits to use in the key
-    Returns:   The public/private key pair in a PKey object
+    Returns the public/private key pair in a PKey object.
+
+    Parameters
+    ----------
+    type : TYPE_RSA or TYPE_DSA
+      Key type.
+    bits : int
+      Number of bits to use in the key.
     """
     pkey = OpenSSL.crypto.PKey()
     pkey.generate_key(type, bits)
     return pkey
 
 def createCertRequest(pkey, digest="md5", **name):
-    """
-    Create a certificate request.
+    """Create a certificate request.
 
-    Arguments: pkey   - The key to associate with the request
-               digest - Digestion method to use for signing, default is md5
-               **name - The name of the subject of the request, possible
-                        arguments are:
-                          C     - Country name
-                          ST    - State or province name
-                          L     - Locality name
-                          O     - Organization name
-                          OU    - Organizational unit name
-                          CN    - Common name
-                          emailAddress - E-mail address
-    Returns:   The certificate request in an X509Req object
+    Returns the certificate request in an X509Req object.
+
+    Parameters
+    ----------
+    pkey : PKey
+      The key to associate with the request.
+    digest : "md5" or ?
+      Digestion method to use for signing, default is "md5",
+    `**name` :
+      The name of the subject of the request, possible.
+      Arguments are:
+
+      ============ ========================
+      C            Country name
+      ST           State or province name
+      L            Locality name
+      O            Organization name
+      OU           Organizational unit name
+      CN           Common name
+      emailAddress E-mail address
+      ============ ========================
     """
     req = OpenSSL.crypto.X509Req()
     subj = req.get_subject()
@@ -1080,19 +1116,28 @@ def createCertRequest(pkey, digest="md5", **name):
     return req
 
 def createCertificate(req, (issuerCert, issuerKey), serial, (notBefore, notAfter), digest="md5"):
-    """
-    Generate a certificate given a certificate request.
+    """Generate a certificate given a certificate request.
 
-    Arguments: req        - Certificate reqeust to use
-               issuerCert - The certificate of the issuer
-               issuerKey  - The private key of the issuer
-               serial     - Serial number for the certificate
-               notBefore  - Timestamp (relative to now) when the certificate
-                            starts being valid
-               notAfter   - Timestamp (relative to now) when the certificate
-                            stops being valid
-               digest     - Digest method to use for signing, default is md5
-    Returns:   The signed certificate in an X509 object
+    Returns the signed certificate in an X509 object.
+
+    Parameters
+    ----------
+    req :
+      Certificate reqeust to use
+    issuerCert :
+      The certificate of the issuer
+    issuerKey :
+      The private key of the issuer
+    serial :
+      Serial number for the certificate
+    notBefore :
+      Timestamp (relative to now) when the certificate
+      starts being valid
+    notAfter :
+      Timestamp (relative to now) when the certificate
+      stops being valid
+    digest :
+      Digest method to use for signing, default is md5
     """
     cert = OpenSSL.crypto.X509()
     cert.set_serial_number(serial)
@@ -1105,9 +1150,9 @@ def createCertificate(req, (issuerCert, issuerKey), serial, (notBefore, notAfter
     return cert
 
 def make_certs(server_name, logger=None) :
-    """
-    Generate private key and certification files.
-    mk_certs(server_name) -> (pkey_filename, cert_filename)
+    """Generate private key and certification files.
+
+    `mk_certs(server_name) -> (pkey_filename, cert_filename)`
     """
     if OpenSSL == None:
         raise libbe.command.UserError, \

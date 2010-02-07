@@ -23,7 +23,6 @@ Contents:
 
    install.txt
    tutorial.txt
-   ids.txt
    email.txt
    html.txt
    distributed_bugtracking.txt

@@ -24,7 +24,7 @@ powerful, and leave the web and email interfaces to other documents.
 .. _command-line: `Command-line interface`_
 .. _web: tutorial-html.txt
 .. _email: tutorial-email.txt
-.. _IDs: ids.txt
+.. _IDs: libbe/libbe.util.id.txt
 
 Installation
 ============

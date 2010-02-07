@@ -16,7 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""Compare two bug trees."""
+"""Tools for comparing two :class:`libbe.bug.BugDir`\s.
+"""
 
 import difflib
 import types
@@ -30,8 +31,7 @@ from libbe.util.utility import time_to_str
 
 
 class SubscriptionType (libbe.util.tree.Tree):
-    """
-    Trees of subscription types to allow users to select exactly what
+    """Trees of subscription types to allow users to select exactly what
     notifications they want to subscribe to.
     """
     def __init__(self, type_name, *args, **kwargs):
@@ -80,7 +80,11 @@ def type_from_name(name, type_root, default=None, default_ok=False):
     raise InvalidType(name, type_root)
 
 class Subscription (object):
-    """
+    """A user subscription.
+
+    Examples
+    --------
+
     >>> subscriptions = [Subscription('XYZ', 'all'),
     ...                  Subscription('DIR', 'new'),
     ...                  Subscription('ABC', BUG_TYPE_ALL),]
@@ -112,7 +116,11 @@ class Subscription (object):
         return '<Subscription: %s (%s)>' % (self.id, self.type)
 
 def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
-    """
+    """Provide a simple way for non-Python interfaces to read in subscriptions.
+
+    Examples
+    --------
+
     >>> subscriptions_from_string(None)
     [<Subscription: DIR (all)>]
     >>> subscriptions_from_string('DIR:new,DIR:rem,ABC:all,XYZ:all')
@@ -135,8 +143,11 @@ def subscriptions_from_string(string=None, subscription_sep=',', id_sep=':'):
     return subscriptions
 
 class DiffTree (libbe.util.tree.Tree):
-    """
-    A tree holding difference data for easy report generation.
+    """A tree holding difference data for easy report generation.
+
+    Examples
+    --------
+
     >>> bugdir = DiffTree('bugdir')
     >>> bdsettings = DiffTree('settings', data='target: None -> 1.0')
     >>> bugdir.append(bdsettings)
@@ -251,8 +262,11 @@ class DiffTree (libbe.util.tree.Tree):
         return data_part
 
 class Diff (object):
-    """
-    Difference tree generator for BugDirs.
+    """Difference tree generator for BugDirs.
+
+    Examples
+    --------
+
     >>> import copy
     >>> bd = libbe.bugdir.SimpleBugDir(memory=True)
     >>> bd_new = copy.deepcopy(bd)
