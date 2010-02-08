@@ -14,6 +14,20 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""Define the :class:`~libbe.storage.base.Storage` and
+:class:`~libbe.storage.base.VersionedStorage` classes for storing BE
+data.
+
+Also define assorted implementations for the Storage classes:
+
+* :mod:`libbe.storage.vcs`
+* :mod:`libbe.storage.http`
+
+Also define an assortment of storage-related tools and utilities:
+
+* :mod:`libbe.storage.util`
+"""
+
 import base
 
 ConnectionError = base.ConnectionError

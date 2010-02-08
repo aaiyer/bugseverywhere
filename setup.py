@@ -21,6 +21,6 @@ setup(
               'libbe.util'],
     scripts=['be'],
     data_files=[
-        ('share/man/man1', ['doc/src/be.1']),
+        ('share/man/man1', ['doc/man/be.1']),
         ]
     )

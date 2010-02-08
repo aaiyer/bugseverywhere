@@ -17,8 +17,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Git backend.
+"""Git_ backend.
+
+.. _Git: http://git-scm.com/
 """
 
 import os
@@ -40,6 +41,8 @@ def new():
     return Git()
 
 class Git(base.VCS):
+    """:class:`base.VCS` implementation for Git.
+    """
     name='git'
     client='git'
 
@@ -179,55 +182,58 @@ class Git(base.VCS):
         return output
 
     def _parse_diff(self, diff_text):
-        """
-        Example diff text:
-        
-        diff --git a/dir/changed b/dir/changed
-        index 6c3ea8c..2f2f7c7 100644
-        --- a/dir/changed
-        +++ b/dir/changed
-        @@ -1,3 +1,3 @@
-         hi
-        -there
-        +everyone and
-         joe
-        diff --git a/dir/deleted b/dir/deleted
-        deleted file mode 100644
-        index 225ec04..0000000
-        --- a/dir/deleted
-        +++ /dev/null
-        @@ -1,3 +0,0 @@
-        -in
-        -the
-        -beginning
-        diff --git a/dir/moved b/dir/moved
-        deleted file mode 100644
-        index 5ef102f..0000000
-        --- a/dir/moved
-        +++ /dev/null
-        @@ -1,4 +0,0 @@
-        -the
-        -ants
-        -go
-        -marching
-        diff --git a/dir/moved2 b/dir/moved2
-        new file mode 100644
-        index 0000000..5ef102f
-        --- /dev/null
-        +++ b/dir/moved2
-        @@ -0,0 +1,4 @@
-        +the
-        +ants
-        +go
-        +marching
-        diff --git a/dir/new b/dir/new
-        new file mode 100644
-        index 0000000..94954ab
-        --- /dev/null
-        +++ b/dir/new
-        @@ -0,0 +1,2 @@
-        +hello
-        +world
+        """_parse_diff(diff_text) -> (new,modified,removed)
+
+        `new`, `modified`, and `removed` are lists of files.
+
+        Example diff text::
+
+          diff --git a/dir/changed b/dir/changed
+          index 6c3ea8c..2f2f7c7 100644
+          --- a/dir/changed
+          +++ b/dir/changed
+          @@ -1,3 +1,3 @@
+           hi
+          -there
+          +everyone and
+           joe
+          diff --git a/dir/deleted b/dir/deleted
+          deleted file mode 100644
+          index 225ec04..0000000
+          --- a/dir/deleted
+          +++ /dev/null
+          @@ -1,3 +0,0 @@
+          -in
+          -the
+          -beginning
+          diff --git a/dir/moved b/dir/moved
+          deleted file mode 100644
+          index 5ef102f..0000000
+          --- a/dir/moved
+          +++ /dev/null
+          @@ -1,4 +0,0 @@
+          -the
+          -ants
+          -go
+          -marching
+          diff --git a/dir/moved2 b/dir/moved2
+          new file mode 100644
+          index 0000000..5ef102f
+          --- /dev/null
+          +++ b/dir/moved2
+          @@ -0,0 +1,4 @@
+          +the
+          +ants
+          +go
+          +marching
+          diff --git a/dir/new b/dir/new
+          new file mode 100644
+          index 0000000..94954ab
+          --- /dev/null
+          +++ b/dir/new
+          @@ -0,0 +1,2 @@
+          +hello
+          +world
         """
         new = []
         modified = []

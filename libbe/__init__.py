@@ -15,7 +15,39 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# To reduce module load time, test suite generation is turned of by
-# default.  If you _do_ want to generate the test suites, set
-# TESTING=True before loading any libbe or becommands submodules.
+"""The libbe module does all the legwork for bugs-everywhere_ (BE).
+
+.. _bugs-everywhere: http://bugseverywhere.org
+
+To facilitate faster loading, submodules are not imported by default.
+The available submodules are:
+
+* :mod:`libbe.bugdir`
+* :mod:`libbe.bug`
+* :mod:`libbe.comment`
+* :mod:`libbe.command`
+* :mod:`libbe.diff`
+* :mod:`libbe.error`
+* :mod:`libbe.storage`
+* :mod:`libbe.ui`
+* :mod:`libbe.util`
+* :mod:`libbe.version`
+* :mod:`libbe._version`
+"""
+
 TESTING = False
+"""Flag controlling test-suite generation.
+
+To reduce module load time, test suite generation is turned of by
+default.  If you *do* want to generate the test suites, set
+``TESTING=True`` before loading any :mod:`libbe` submodules.
+
+Examples
+--------
+
+>>> import libbe
+>>> libbe.TESTING = True
+>>> import libbe.bugdir
+>>> 'SimpleBugDir' in dir(libbe.bugdir)
+True
+"""

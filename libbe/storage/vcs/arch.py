@@ -18,8 +18,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-GNU Arch (tla) backend.
+"""GNU Arch_ (tla) backend.
+
+.. _Arch: http://www.gnu.org/software/gnu-arch/
 """
 
 import codecs
@@ -56,6 +57,8 @@ def new():
     return Arch()
 
 class Arch(base.VCS):
+    """:class:`base.VCS` implementation for GNU Arch.
+    """
     name = 'arch'
     client = client
     _archive_name = None
@@ -90,10 +93,10 @@ class Arch(base.VCS):
         self._add_project_code(path)
 
     def _create_archive(self, path):
-        """
-        Create a temporary Arch archive in the directory PATH.  This
-        archive will be removed by
-          destroy->_vcs_destroy->_remove_archive
+        """Create a temporary Arch archive in the directory PATH.  This
+        archive will be removed by::
+
+            destroy->_vcs_destroy->_remove_archive
         """
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
@@ -109,8 +112,7 @@ class Arch(base.VCS):
                               self._archive_dir, cwd=path)
 
     def _invoke_client(self, *args, **kwargs):
-        """
-        Invoke the client on our archive.
+        """Invoke the client on our archive.
         """
         assert self._archive_name != None
         command = args[0]
@@ -164,16 +166,20 @@ class Arch(base.VCS):
         return '%s/%s' % (self._archive_name, self._project_name)
 
     def _adjust_naming_conventions(self, path):
-        """
-        By default, Arch restricts source code filenames to
-          ^[_=a-zA-Z0-9].*$
-        See
-          http://regexps.srparish.net/tutorial-tla/naming-conventions.html
-        Since our bug directory '.be' doesn't satisfy these conventions,
-        we need to adjust them.
+        """Adjust `Arch naming conventions`_ so ``.be`` is considered source
+        code.
 
-        The conventions are specified in
-          project-root/{arch}/=tagging-method
+        By default, Arch restricts source code filenames to::
+
+            ^[_=a-zA-Z0-9].*$
+
+        Since our bug directory ``.be`` doesn't satisfy these conventions,
+        we need to adjust them.  The conventions are specified in::
+
+            project-root/{arch}/=tagging-method
+
+        .. _Arch naming conventions:
+          http://regexps.srparish.net/tutorial-tla/naming-conventions.html
         """
         tagpath = os.path.join(path, '{arch}', '=tagging-method')
         lines_out = []

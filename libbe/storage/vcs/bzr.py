@@ -18,8 +18,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Bazaar (bzr) backend.
+"""Bazaar_ (bzr) backend.
+
+.. _Bazaar: http://bazaar.canonical.com/
 """
 
 try:
@@ -51,6 +52,8 @@ def new():
     return Bzr()
 
 class Bzr(base.VCS):
+    """:class:`base.VCS` implementation for Bazaar.
+    """
     name = 'bzr'
     client = None # bzrlib module
 
@@ -64,12 +67,18 @@ class Bzr(base.VCS):
         return bzrlib.__version__
 
     def version_cmp(self, *args):
-        """
-        Compare the installed Bazaar version V_i with another version
-        V_o (given in *args).  Returns
-           1 if V_i > V_o,
-           0 if V_i == V_o, and
-          -1 if V_i < V_o
+        """Compare the installed Bazaar version `V_i` with another version
+        `V_o` (given in `*args`).  Returns
+
+           === ===============
+            1  if `V_i > V_o`
+            0  if `V_i == V_o`
+           -1  if `V_i < V_o`
+           === ===============
+
+        Examples
+        --------
+
         >>> b = Bzr(repo='.')
         >>> b._vcs_version = lambda : "2.3.1 (release)"
         >>> b.version_cmp(2,3,1)
@@ -275,51 +284,54 @@ class Bzr(base.VCS):
         return cmd.outf.getvalue()
 
     def _parse_diff(self, diff_text):
-        """
-        Example diff text:
-                
-        === modified file 'dir/changed'
-        --- dir/changed	2010-01-16 01:54:53 +0000
-        +++ dir/changed	2010-01-16 01:54:54 +0000
-        @@ -1,3 +1,3 @@
-         hi
-        -there
-        +everyone and
-         joe
-        
-        === removed file 'dir/deleted'
-        --- dir/deleted	2010-01-16 01:54:53 +0000
-        +++ dir/deleted	1970-01-01 00:00:00 +0000
-        @@ -1,3 +0,0 @@
-        -in
-        -the
-        -beginning
-        
-        === removed file 'dir/moved'
-        --- dir/moved	2010-01-16 01:54:53 +0000
-        +++ dir/moved	1970-01-01 00:00:00 +0000
-        @@ -1,4 +0,0 @@
-        -the
-        -ants
-        -go
-        -marching
-        
-        === added file 'dir/moved2'
-        --- dir/moved2	1970-01-01 00:00:00 +0000
-        +++ dir/moved2	2010-01-16 01:54:34 +0000
-        @@ -0,0 +1,4 @@
-        +the
-        +ants
-        +go
-        +marching
-        
-        === added file 'dir/new'
-        --- dir/new	1970-01-01 00:00:00 +0000
-        +++ dir/new	2010-01-16 01:54:54 +0000
-        @@ -0,0 +1,2 @@
-        +hello
-        +world
-        
+        """_parse_diff(diff_text) -> (new,modified,removed)
+
+        `new`, `modified`, and `removed` are lists of files.
+
+        Example diff text::
+
+          === modified file 'dir/changed'
+          --- dir/changed	2010-01-16 01:54:53 +0000
+          +++ dir/changed	2010-01-16 01:54:54 +0000
+          @@ -1,3 +1,3 @@
+           hi
+          -there
+          +everyone and
+           joe
+          
+          === removed file 'dir/deleted'
+          --- dir/deleted	2010-01-16 01:54:53 +0000
+          +++ dir/deleted	1970-01-01 00:00:00 +0000
+          @@ -1,3 +0,0 @@
+          -in
+          -the
+          -beginning
+          
+          === removed file 'dir/moved'
+          --- dir/moved	2010-01-16 01:54:53 +0000
+          +++ dir/moved	1970-01-01 00:00:00 +0000
+          @@ -1,4 +0,0 @@
+          -the
+          -ants
+          -go
+          -marching
+          
+          === added file 'dir/moved2'
+          --- dir/moved2	1970-01-01 00:00:00 +0000
+          +++ dir/moved2	2010-01-16 01:54:34 +0000
+          @@ -0,0 +1,4 @@
+          +the
+          +ants
+          +go
+          +marching
+          
+          === added file 'dir/new'
+          --- dir/new	1970-01-01 00:00:00 +0000
+          +++ dir/new	2010-01-16 01:54:54 +0000
+          @@ -0,0 +1,2 @@
+          +hello
+          +world
+          
         """
         new = []
         modified = []

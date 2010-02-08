@@ -16,11 +16,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-This module provides a base class implementing settings-dict based
-property storage useful for BE objects with saved properties
-(e.g. BugDir, Bug, Comment).  For example usage, consider the
-unittests at the end of the module.
+"""Provides :class:`SavedSettingsObject` implementing settings-dict
+based property storage.
+
+See Also
+--------
+:mod:`libbe.storage.util.properties` : underlying property definitions
 """
 
 import libbe
@@ -33,9 +34,10 @@ if libbe.TESTING == True:
     import unittest
 
 class _Token (object):
-    """
-    `Control' value class for properties.  We want values that only
-    mean something to the settings_object module.
+    """`Control' value class for properties.
+
+    We want values that only mean something to the `settings_object`
+    module.
     """
     pass
 
@@ -44,45 +46,58 @@ class UNPRIMED (_Token):
     pass
 
 class EMPTY (_Token):
-    """
-    Property has been primed but has no user-set value, so use
+    """Property has been primed but has no user-set value, so use
     default/generator value.
     """
     pass
 
 
 def prop_save_settings(self, old, new):
-    """
-    The default action undertaken when a property changes.
+    """The default action undertaken when a property changes.
     """
     if self.storage != None and self.storage.is_writeable():
         self.save_settings()
 
 def prop_load_settings(self):
-    """
-    The default action undertaken when an UNPRIMED property is
-    accessed.  Attempt to run .load_settings(), which calls
-    ._setup_saved_settings() internally.  If .storage is inaccessible,
-    don't do anything.
+    """The default action undertaken when an UNPRIMED property is
+    accessed.
+
+    Attempt to run `.load_settings()`, which calls
+    `._setup_saved_settings()` internally.  If `.storage` is
+    inaccessible, don't do anything.
     """
     if self.storage != None and self.storage.is_readable():
         self.load_settings()
 
 # Some name-mangling routines for pretty printing setting names
 def setting_name_to_attr_name(self, name):
-    """
-    Convert keys to the .settings dict into their associated
+    """Convert keys to the `.settings` dict into their associated
     SavedSettingsObject attribute names.
+
+    Examples
+    --------
+
     >>> print setting_name_to_attr_name(None,"User-id")
     user_id
+
+    See Also
+    --------
+    attr_name_to_setting_name : inverse
     """
     return name.lower().replace('-', '_')
 
 def attr_name_to_setting_name(self, name):
-    """
-    The inverse of setting_name_to_attr_name.
+    """Convert SavedSettingsObject attribute names to `.settings` dict
+    keys.
+
+    Examples:
+
     >>> print attr_name_to_setting_name(None, "user_id")
     User-id
+
+    See Also
+    --------
+    setting_name_to_attr_name : inverse
     """
     return name.capitalize().replace('_', '-')
 
@@ -96,8 +111,7 @@ def versioned_property(name, doc,
                        settings_properties=[],
                        required_saved_properties=[],
                        require_save=False):
-    """
-    Combine the common decorators in a single function.
+    """Combine the common decorators in a single function.
 
     Use zero or one (but not both) of default or generator, since a
     working default will keep the generator from functioning.  Use the
@@ -124,17 +138,20 @@ def versioned_property(name, doc,
     into our local scope.  Don't mess with them.
 
     Set mutable=True if:
-      * default is a mutable
-      * your generator function may return mutables
-      * you set change_hook and might have mutable property values
-    See the docstrings in libbe.properties for details on how each of
+
+    * default is a mutable
+    * your generator function may return mutables
+    * you set change_hook and might have mutable property values
+
+    See the docstrings in `libbe.properties` for details on how each of
     these cases are handled.
 
-    The value stored in .settings[name] will be
-       * no value (or UNPRIMED) if the property has been neither set,
-         nor loaded as blank.
-       * EMPTY if the value has been loaded as blank.
-       * some value if the property has been either loaded or set.
+    The value stored in `.settings[name]` will be
+
+    * no value (or UNPRIMED) if the property has been neither set,
+      nor loaded as blank.
+    * EMPTY if the value has been loaded as blank.
+    * some value if the property has been either loaded or set.
     """
     settings_properties.append(name)
     if require_save == True:
@@ -175,7 +192,19 @@ def versioned_property(name, doc,
     return decorator
 
 class SavedSettingsObject(object):
+    """Setup a framework for lazy saving and loading of `.settings`
+    properties.
 
+    This is useful for BE objects with saved properties
+    (e.g. :class:`~libbe.bugdir.BugDir`, :class:`~libbe.bug.Bug`,
+    :class:`~libbe.comment.Comment`).  For example usage, consider the
+    unittests at the end of the module.
+
+    See Also
+    --------
+    versioned_property, prop_save_settings, prop_load_settings
+    setting_name_to_attr_name, attr_name_to_setting_name
+    """
     # Keep a list of properties that may be stored in the .settings dict.
     #settings_properties = []
 

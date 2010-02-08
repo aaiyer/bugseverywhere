@@ -24,7 +24,7 @@ import libbe.command.util
 
 
 class Assign (libbe.command.Command):
-    """Assign an individual or group to fix a bug
+    u"""Assign an individual or group to fix a bug
 
     >>> import sys
     >>> import libbe.bugdir

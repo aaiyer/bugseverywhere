@@ -16,8 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Define the Bug class for representing bugs.
+"""Define the :class:`Bug` class for representing bugs.
 """
 
 import copy
@@ -122,7 +121,11 @@ load_status(active_status_def, inactive_status_def)
 
 
 class Bug (settings_object.SavedSettingsObject):
-    """
+    """A bug (or issue) is a place to store attributes and attach
+    :class:`~libbe.comment.Comment`\s.  In mailing-list terms, a bug is
+    analogous to a thread.  Bugs are normally stored in
+    :class:`~libbe.bugdir.BugDir`\s.
+
     >>> b = Bug()
     >>> print b.status
     open
@@ -132,6 +135,7 @@ class Bug (settings_object.SavedSettingsObject):
     There are two formats for time, int and string.  Setting either
     one will adjust the other appropriately.  The string form is the
     one stored in the bug's settings file on disk.
+
     >>> print type(b.time)
     <type 'int'>
     >>> print type(b.time_string)
@@ -333,7 +337,7 @@ class Bug (settings_object.SavedSettingsObject):
         return istring + sep.join(lines).rstrip('\n')
 
     def from_xml(self, xml_string, verbose=True):
-        """
+        u"""
         Note: If a bug uuid is given, set .alt_id to it's value.
         >>> bugA = Bug(uuid="0123", summary="Need to test Bug.from_xml()")
         >>> bugA.date = "Thu, 01 Jan 1970 00:00:00 +0000"
@@ -410,6 +414,7 @@ class Bug (settings_object.SavedSettingsObject):
         Add a comment too the current bug, under the parent specified
         by comment.in_reply_to.
         Note: If a bug uuid is given, set .alt_id to it's value.
+
         >>> bugA = Bug(uuid='0123', summary='Need to test Bug.add_comment()')
         >>> bugA.creator = 'Jack'
         >>> commA = bugA.comment_root.new_reply(body='comment A')
@@ -506,6 +511,7 @@ class Bug (settings_object.SavedSettingsObject):
         """
         Merge info from other into this bug.  Overrides any attributes
         in self that are listed in other.explicit_attrs.
+
         >>> bugA = Bug(uuid='0123', summary='Need to test Bug.merge()')
         >>> bugA.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
         >>> bugA.creator = 'Frank'
@@ -712,6 +718,7 @@ def cmp_severity(bug_1, bug_2):
     """
     Compare the severity levels of two bugs, with more severe bugs
     comparing as less.
+
     >>> bugA = Bug()
     >>> bugB = Bug()
     >>> bugA.severity = bugB.severity = "wishlist"
@@ -730,8 +737,9 @@ def cmp_severity(bug_1, bug_2):
 
 def cmp_status(bug_1, bug_2):
     """
-    Compare the status levels of two bugs, with more 'open' bugs
+    Compare the status levels of two bugs, with more "open" bugs
     comparing as less.
+
     >>> bugA = Bug()
     >>> bugB = Bug()
     >>> bugA.status = bugB.status = "open"
@@ -751,9 +759,10 @@ def cmp_status(bug_1, bug_2):
 
 def cmp_attr(bug_1, bug_2, attr, invert=False):
     """
-    Compare a general attribute between two bugs using the conventional
-    comparison rule for that attribute type.  If invert == True, sort
-    *against* that convention.
+    Compare a general attribute between two bugs using the
+    conventional comparison rule for that attribute type.  If
+    ``invert==True``, sort *against* that convention.
+
     >>> attr="severity"
     >>> bugA = Bug()
     >>> bugB = Bug()

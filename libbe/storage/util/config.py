@@ -16,8 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Create, save, and load the per-user config file at path().
+"""Create, save, and load the per-user config file at :func:`path`.
 """
 
 import ConfigParser
@@ -31,17 +30,29 @@ if libbe.TESTING == True:
 
 
 default_encoding = libbe.util.encoding.get_filesystem_encoding()
+"""Default filesystem encoding.
+
+Initialized with :func:`libbe.util.encoding.get_filesystem_encoding`.
+"""
 
 def path():
-    """Return the path to the per-user config file"""
+    """Return the path to the per-user config file.
+    """
     return os.path.expanduser("~/.bugs_everywhere")
 
 def set_val(name, value, section="DEFAULT", encoding=None):
-    """Set a value in the per-user config file
+    """Set a value in the per-user config file.
 
-    :param name: The name of the value to set
-    :param value: The new value to set (or None to delete the value)
-    :param section: The section to store the name/value in
+    Parameters
+    ----------
+    name : str
+      The name of the value to set.
+    value : str or None
+      The new value to set (or None to delete the value).
+    section : str
+      The section to store the name/value in.
+    encoding : str
+      The config file's encoding, defaults to :data:`default_encoding`.
     """
     if encoding == None:
         encoding = default_encoding
@@ -60,12 +71,22 @@ def set_val(name, value, section="DEFAULT", encoding=None):
     f.close()
 
 def get_val(name, section="DEFAULT", default=None, encoding=None):
-    """
-    Get a value from the per-user config file
+    """Get a value from the per-user config file
 
-    :param name: The name of the value to get
-    :section: The section that the name is in
-    :return: The value, or None
+    Parameters
+    ----------
+    name : str
+      The name of the value to set.
+    section : str
+      The section to store the name/value in.
+    default :
+      The value to return if `name` is not set.
+    encoding : str
+      The config file's encoding, defaults to :data:`default_encoding`.
+
+    Examples
+    --------
+
     >>> get_val("junk") is None
     True
     >>> set_val("junk", "random")

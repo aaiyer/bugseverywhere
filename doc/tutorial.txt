@@ -1,8 +1,9 @@
+********
 Tutorial
-========
+********
 
 Introduction
-------------
+============
 
 Bugs Everywhere (BE) is a bugtracker built on distributed revision
 control.  The idea is to package the bug information with the source
@@ -21,11 +22,12 @@ tutorial will focus on the command-line interface as the most
 powerful, and leave the web and email interfaces to other documents.
 
 .. _command-line: `Command-line interface`_
-.. _web: ../doc/tutorial-html
-.. _email: ../doc/tutorial-email
+.. _web: tutorial-html.txt
+.. _email: tutorial-email.txt
+.. _IDs: libbe/libbe.util.id.txt
 
 Installation
-------------
+============
 
 If your distribution packages BE, it will be easiest to use their package.
 For example, most Debian-based distributions support::
@@ -33,7 +35,7 @@ For example, most Debian-based distributions support::
     $ apt-get install bugs-everywhere
 
 Bugs
-----
+====
 
 If you have any problems with BE, you can look for matching bugs::
 
@@ -48,10 +50,10 @@ If your bug isn't listed, please open a new bug::
 
 
 Command-line interface
-----------------------
+======================
 
 Help
-~~~~
+----
 
 All of the following information elaborates on the command help text,
 which is stored in the code itself, and therefore more likely to be up
@@ -70,7 +72,7 @@ for example::
 will give help on the ``init`` command.
 
 Initialization
-~~~~~~~~~~~~~~
+--------------
 
 You're happily coding in your Arch_ / Bazaar_ / Darcs_ / Git_ /
 Mercurial_ versioned project and you discover a bug.  "Hmm, I'll need
@@ -110,7 +112,7 @@ comment IDs in this tutorial will start with ``bea/``.
 
 
 Creating bugs
-~~~~~~~~~~~~~
+-------------
 
 Create new bugs with::
 
@@ -136,7 +138,7 @@ developer understands what you want and when the bug can be considered
 fixed.
 
 Commenting on bugs
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Bugs are like little mailing lists, and you can comment on the bug
 itself or previous comments, attach files, etc.  For example
@@ -172,7 +174,7 @@ the content and why you're attaching it, so the above should have been
 For more details, see ``be help comment``.
 
 Showing bugs
-~~~~~~~~~~~~
+------------
 
 Ok, you understand how to enter bugs, but how do you get that
 information back out?  If you know the ID of the item you're
@@ -227,7 +229,7 @@ entries around, scripting BE, etc.
     ...
 
 Listing bugs
-~~~~~~~~~~~~
+------------
 
 If you *don't* know which bug you're interested in, you can query
 the whole bug directory::
@@ -240,7 +242,7 @@ There are a whole slew of options for filtering the list of bugs.  See
 ``be help list`` for details.
 
 Showing changes
-~~~~~~~~~~~~~~~
+---------------
 
 Often you will want to see what's going on in another dev's branch or
 remind yourself what you've been working on recently.  All VCSs have
@@ -267,7 +269,7 @@ Compare your BE branch with the trunk::
     $ be diff --repo http://bugseverywhere.org/bugs/
 
 Manipulating bugs
-~~~~~~~~~~~~~~~~~
+-----------------
 
 There are several commands that allow to to set bug properties.  They
 are all fairly straightforward, so we will merely point them out here,
@@ -285,7 +287,7 @@ You can also remove bugs you feel are no longer useful with
 ``be remove``, and merge duplicate bugs with ``be merge``.
 
 Subscriptions
-~~~~~~~~~~~~~
+-------------
 
 Since BE bugs act as mini mailing lists, we provide ``be subscribe``
 as a way to manage change notification.  You can subscribe to all
@@ -309,7 +311,7 @@ only subscribe to the repository for which you have direct write
 access.
 
 Managing bug directories
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 ``be set`` lets you configure a bug directory.  You can set
 
@@ -330,7 +332,7 @@ For example, to set the current target to '1.2.3'::
     $ be set target $(be target --resolve '1.2.3')
 
 Import XML
-~~~~~~~~~~
+----------
 
 For serializing bug information (e.g. to email to a mailing list), use::
 
@@ -347,7 +349,7 @@ format for reading in your mail client.
 .. _mbox: http://en.wikipedia.org/wiki/Mbox
 
 Export HTML
-~~~~~~~~~~~
+-----------
 
 To create a static dump of your bug directory, use::
 
@@ -358,7 +360,7 @@ It works pretty well as the browsable part of a public interface using
 the email_ interface for interactive access.
 
 BE over HTTP
-~~~~~~~~~~~~
+------------
 
 Besides using BE to work directly with local VCS-based repositories,
 you can use::
@@ -376,7 +378,7 @@ dissable write access by using the ``--read-only`` option, which would
 make serving on a public network safer.
 
 Driving the VCS through BE
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Since BE uses internal storage drivers for its various backends, it
 seemed useful to provide a uniform interface to some of the common
@@ -384,59 +386,8 @@ functionality.  These commands are not intended to replace the usually
 much more powerful native VCS commands, but to provide an easy means
 of simple VCS-agnostic scripting for BE user interfaces, etc.
 
-Currently, we only expose ``be commit``, which commits all currently
-pending changes.
-
-
-IDs
----
-
-Format
+Commit
 ~~~~~~
 
-BE IDs are formatted::
-
-    <bug-directory>[/<bug>[/<comment>]]
-
-where each ``<..>`` is a UUID.  For example::
-
-    bea86499-824e-4e77-b085-2d581fa9ccab/3438b72c-6244-4f1d-8722-8c8d41484e35
-
-refers to bug ``3438b72c-6244-4f1d-8722-8c8d41484e35`` which is
-located in bug directory ``bea86499-824e-4e77-b085-2d581fa9ccab``.
-This is a bit of a mouthful, so you can truncate each UUID so long as
-it remains unique.  For example::
-
-    bea/343
-
-If there were two bugs ``3438...`` and ``343a...`` in ``bea``, you'd
-have to use::
-
-    bea/3438
-
-BE will only truncate each UUID down to three characters to slightly
-future-proof the short user ids.  However, if you want to save keystrokes
-and you *know* there is only one bug directory, feel free to truncate
-all the way to zero characters::
-
-    /3438
-
-Cross references
-~~~~~~~~~~~~~~~~
-
-To refer to other bug-directories/bugs/comments from bug comments, simply
-enclose the ID in pound signs (``#``).  BE will automatically expand the
-truncations to the full UUIDs before storing the comment, and the reference
-will be appropriately truncated (and hyperlinked, if possible) when the
-comment is displayed.
-
-Scope
-~~~~~
-
-Although bug and comment IDs always appear in compound references,
-UUIDs at each level are globally unique.  For example, comment
-``bea/343/ba96f1c0-ba48-4df8-aaf0-4e3a3144fc46`` will *only* appear
-under ``bea/343``.  The prefix (``bea/343``) allows BE to reduce
-caching global comment-lookup tables and enables easy error messages
-("I couldn't find ``bea/343/ba9`` because I don't know where the
-``bea`` bug directory is located").
+Currently, we only expose ``be commit``, which commits all currently
+pending changes.

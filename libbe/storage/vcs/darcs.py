@@ -15,8 +15,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Darcs backend.
+"""Darcs_ backend.
+
+.. _Darcs: http://darcs.net/
 """
 
 import codecs
@@ -44,6 +45,8 @@ def new():
     return Darcs()
 
 class Darcs(base.VCS):
+    """:class:`base.VCS` implementation for Darcs.
+    """
     name='darcs'
     client='darcs'
 
@@ -57,12 +60,18 @@ class Darcs(base.VCS):
         return output.strip()
 
     def version_cmp(self, *args):
-        """
-        Compare the installed darcs version V_i with another version
-        V_o (given in *args).  Returns
-           1 if V_i > V_o,
-           0 if V_i == V_o, and
-          -1 if V_i < V_o
+        """Compare the installed Darcs version `V_i` with another version
+        `V_o` (given in `*args`).  Returns
+
+           === ===============
+            1  if `V_i > V_o`
+            0  if `V_i == V_o`
+           -1  if `V_i < V_o`
+           === ===============
+
+        Examples
+        --------
+
         >>> d = Darcs(repo='.')
         >>> d._vcs_version = lambda : "2.3.1 (release)"
         >>> d.version_cmp(2,3,1)
@@ -295,44 +304,47 @@ class Darcs(base.VCS):
         return output
 
     def _parse_diff(self, diff_text):
-        """
-        Example diff text:
+        """_parse_diff(diff_text) -> (new,modified,removed)
 
-        Mon Jan 18 15:19:30 EST 2010  None <None@invalid.com>
-          * Final state
-        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/modified new-BEtestgQtDuD/.be/dir/bugs/modified
-        --- old-BEtestgQtDuD/.be/dir/bugs/modified      2010-01-18 15:19:30.000000000 -0500
-        +++ new-BEtestgQtDuD/.be/dir/bugs/modified      2010-01-18 15:19:30.000000000 -0500
-        @@ -1 +1 @@
-        -some value to be modified
-        \ No newline at end of file
-        +a new value
-        \ No newline at end of file
-        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/moved new-BEtestgQtDuD/.be/dir/bugs/moved
-        --- old-BEtestgQtDuD/.be/dir/bugs/moved 2010-01-18 15:19:30.000000000 -0500
-        +++ new-BEtestgQtDuD/.be/dir/bugs/moved 1969-12-31 19:00:00.000000000 -0500
-        @@ -1 +0,0 @@
-        -this entry will be moved
-        \ No newline at end of file
-        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/moved2 new-BEtestgQtDuD/.be/dir/bugs/moved2
-        --- old-BEtestgQtDuD/.be/dir/bugs/moved2        1969-12-31 19:00:00.000000000 -0500
-        +++ new-BEtestgQtDuD/.be/dir/bugs/moved2        2010-01-18 15:19:30.000000000 -0500
-        @@ -0,0 +1 @@
-        +this entry will be moved
-        \ No newline at end of file
-        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/new new-BEtestgQtDuD/.be/dir/bugs/new
-        --- old-BEtestgQtDuD/.be/dir/bugs/new   1969-12-31 19:00:00.000000000 -0500
-        +++ new-BEtestgQtDuD/.be/dir/bugs/new   2010-01-18 15:19:30.000000000 -0500
-        @@ -0,0 +1 @@
-        +this entry is new
-        \ No newline at end of file
-        diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/removed new-BEtestgQtDuD/.be/dir/bugs/removed
-        --- old-BEtestgQtDuD/.be/dir/bugs/removed       2010-01-18 15:19:30.000000000 -0500
-        +++ new-BEtestgQtDuD/.be/dir/bugs/removed       1969-12-31 19:00:00.000000000 -0500
-        @@ -1 +0,0 @@
-        -this entry will be deleted
-        \ No newline at end of file
-        
+        `new`, `modified`, and `removed` are lists of files.
+
+        Example diff text::
+
+          Mon Jan 18 15:19:30 EST 2010  None <None@invalid.com>
+            * Final state
+          diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/modified new-BEtestgQtDuD/.be/dir/bugs/modified
+          --- old-BEtestgQtDuD/.be/dir/bugs/modified      2010-01-18 15:19:30.000000000 -0500
+          +++ new-BEtestgQtDuD/.be/dir/bugs/modified      2010-01-18 15:19:30.000000000 -0500
+          @@ -1 +1 @@
+          -some value to be modified
+          \ No newline at end of file
+          +a new value
+          \ No newline at end of file
+          diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/moved new-BEtestgQtDuD/.be/dir/bugs/moved
+          --- old-BEtestgQtDuD/.be/dir/bugs/moved 2010-01-18 15:19:30.000000000 -0500
+          +++ new-BEtestgQtDuD/.be/dir/bugs/moved 1969-12-31 19:00:00.000000000 -0500
+          @@ -1 +0,0 @@
+          -this entry will be moved
+          \ No newline at end of file
+          diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/moved2 new-BEtestgQtDuD/.be/dir/bugs/moved2
+          --- old-BEtestgQtDuD/.be/dir/bugs/moved2        1969-12-31 19:00:00.000000000 -0500
+          +++ new-BEtestgQtDuD/.be/dir/bugs/moved2        2010-01-18 15:19:30.000000000 -0500
+          @@ -0,0 +1 @@
+          +this entry will be moved
+          \ No newline at end of file
+          diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/new new-BEtestgQtDuD/.be/dir/bugs/new
+          --- old-BEtestgQtDuD/.be/dir/bugs/new   1969-12-31 19:00:00.000000000 -0500
+          +++ new-BEtestgQtDuD/.be/dir/bugs/new   2010-01-18 15:19:30.000000000 -0500
+          @@ -0,0 +1 @@
+          +this entry is new
+          \ No newline at end of file
+          diff -rN --unified old-BEtestgQtDuD/.be/dir/bugs/removed new-BEtestgQtDuD/.be/dir/bugs/removed
+          --- old-BEtestgQtDuD/.be/dir/bugs/removed       2010-01-18 15:19:30.000000000 -0500
+          +++ new-BEtestgQtDuD/.be/dir/bugs/removed       1969-12-31 19:00:00.000000000 -0500
+          @@ -1 +0,0 @@
+          -this entry will be deleted
+          \ No newline at end of file
+          
         """
         new = []
         modified = []

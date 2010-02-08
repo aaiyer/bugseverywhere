@@ -17,8 +17,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Mercurial (hg) backend.
+"""Mercurial_ (hg) backend.
+
+.. _Mercurial: http://mercurial.selenic.com/
 """
 
 try:
@@ -58,6 +59,8 @@ def new():
     return Hg()
 
 class Hg(base.VCS):
+    """:class:`base.VCS` implementation for Mercurial.
+    """
     name='hg'
     client=None # mercurial module
 
@@ -177,45 +180,48 @@ class Hg(base.VCS):
             'diff', '-r', revision, '--git')
 
     def _parse_diff(self, diff_text):
-        """
-        Example diff text:
+        """_parse_diff(diff_text) -> (new,modified,removed)
+
+        `new`, `modified`, and `removed` are lists of files.
+
+        Example diff text::
                 
-        diff --git a/.be/dir/bugs/modified b/.be/dir/bugs/modified
-        --- a/.be/dir/bugs/modified
-        +++ b/.be/dir/bugs/modified
-        @@ -1,1 +1,1 @@ some value to be modified
-        -some value to be modified
-        \ No newline at end of file
-        +a new value
-        \ No newline at end of file
-        diff --git a/.be/dir/bugs/moved b/.be/dir/bugs/moved
-        deleted file mode 100644
-        --- a/.be/dir/bugs/moved
-        +++ /dev/null
-        @@ -1,1 +0,0 @@
-        -this entry will be moved
-        \ No newline at end of file
-        diff --git a/.be/dir/bugs/moved2 b/.be/dir/bugs/moved2
-        new file mode 100644
-        --- /dev/null
-        +++ b/.be/dir/bugs/moved2
-        @@ -0,0 +1,1 @@
-        +this entry will be moved
-        \ No newline at end of file
-        diff --git a/.be/dir/bugs/new b/.be/dir/bugs/new
-        new file mode 100644
-        --- /dev/null
-        +++ b/.be/dir/bugs/new
-        @@ -0,0 +1,1 @@
-        +this entry is new
-        \ No newline at end of file
-        diff --git a/.be/dir/bugs/removed b/.be/dir/bugs/removed
-        deleted file mode 100644
-        --- a/.be/dir/bugs/removed
-        +++ /dev/null
-        @@ -1,1 +0,0 @@
-        -this entry will be deleted
-        \ No newline at end of file
+          diff --git a/.be/dir/bugs/modified b/.be/dir/bugs/modified
+          --- a/.be/dir/bugs/modified
+          +++ b/.be/dir/bugs/modified
+          @@ -1,1 +1,1 @@ some value to be modified
+          -some value to be modified
+          \ No newline at end of file
+          +a new value
+          \ No newline at end of file
+          diff --git a/.be/dir/bugs/moved b/.be/dir/bugs/moved
+          deleted file mode 100644
+          --- a/.be/dir/bugs/moved
+          +++ /dev/null
+          @@ -1,1 +0,0 @@
+          -this entry will be moved
+          \ No newline at end of file
+          diff --git a/.be/dir/bugs/moved2 b/.be/dir/bugs/moved2
+          new file mode 100644
+          --- /dev/null
+          +++ b/.be/dir/bugs/moved2
+          @@ -0,0 +1,1 @@
+          +this entry will be moved
+          \ No newline at end of file
+          diff --git a/.be/dir/bugs/new b/.be/dir/bugs/new
+          new file mode 100644
+          --- /dev/null
+          +++ b/.be/dir/bugs/new
+          @@ -0,0 +1,1 @@
+          +this entry is new
+          \ No newline at end of file
+          diff --git a/.be/dir/bugs/removed b/.be/dir/bugs/removed
+          deleted file mode 100644
+          --- a/.be/dir/bugs/removed
+          +++ /dev/null
+          @@ -1,1 +0,0 @@
+          -this entry will be deleted
+          \ No newline at end of file
         """
         new = []
         modified = []

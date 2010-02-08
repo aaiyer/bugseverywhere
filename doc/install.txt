@@ -1,0 +1,55 @@
+*************
+Installing BE
+*************
+
+Bazaar repository
+=================
+
+BE is available as a bzr repository::
+
+    $ bzr branch http://bzr.bugseverywhere.org/be
+
+See the homepage_ for details.  If you do branch the bzr repo, you'll
+need to run::
+
+    $ make
+
+to build some auto-generated files (e.g. ``libbe/_version.py``), and::
+
+    $ make install
+
+to install BE.  By default BE will install into your home directory,
+but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
+to another location.
+
+.. _homepage: http://bugseverywhere.org/
+
+
+Release tarballs
+================
+
+For those not interested in the cutting edge, or those who don't want
+to worry about installing Bazaar, we'll post release tarballs somewhere
+(once we actually make a release).  After you've downloaded the release
+tarball, unpack it with::
+
+    $ tar -xzvf be-<VERSION>.tar.gz
+
+And install it with:::
+
+    $ cd be-<VERSION>
+    $ make install
+
+
+Distribution packages
+=====================
+
+Some distributions (Debian_ , Ubuntu_ , others?) package BE.  If
+you're running one of those distributions, you can install the package
+with your regular package manager.  For Debian, Ubuntu, and related
+distros, that's::
+
+    $ apt-get install bugs-everywhere
+
+.. _Debian: http://packages.debian.org/sid/bugs-everywhere
+.. _Ubuntu: http://packages.ubuntu.com/lucid/bugs-everywhere

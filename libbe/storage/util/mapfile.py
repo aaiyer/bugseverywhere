@@ -16,10 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Provide a means of saving and loading dictionaries of parameters.  The
-saved "mapfiles" should be clear, flat-text files, and allow easy merging of
-independent/conflicting changes.
+"""Serializing and deserializing dictionaries of parameters.
+
+The serialized "mapfiles" should be clear, flat-text strings, and allow
+easy merging of independent/conflicting changes.
 """
 
 import errno
@@ -49,6 +49,10 @@ class InvalidMapfileContents(Exception):
 
 def generate(map):
     """Generate a YAML mapfile content string.
+
+    Examples
+    --------
+
     >>> generate({'q':'p'})
     'q: p\\n\\n'
     >>> generate({'q':u'Fran\u00e7ais'})
@@ -73,6 +77,10 @@ def generate(map):
     >>> generate({'q':'p\\n'})
     Traceback (most recent call last):
     IllegalValue: Illegal value "p\\n"
+
+    See Also
+    --------
+    parse : inverse
     """
     keys = map.keys()
     keys.sort()
@@ -97,8 +105,11 @@ def generate(map):
     return '\n'.join(lines)
 
 def parse(contents):
-    """
-    Parse a YAML mapfile string.
+    """Parse a YAML mapfile string.
+
+    Examples
+    --------
+
     >>> parse('q: p\\n\\n')['q']
     'p'
     >>> parse('q: \\'p\\'\\n\\n')['q']
@@ -119,6 +130,11 @@ def parse(contents):
     Traceback (most recent call last):
       ...
     InvalidMapfileContents: Invalid YAML contents
+
+    See Also
+    --------
+    generate : inverse
+
     """
     c = yaml.load(contents)
     if type(c) == types.StringType:

@@ -16,8 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Define a traversable tree structure.
+"""Define :class:`Tree`, a traversable tree structure.
 """
 
 import libbe
@@ -25,12 +24,19 @@ if libbe.TESTING == True:
     import doctest
 
 class Tree(list):
-    """
-    Construct
+    """A traversable tree structure.
+
+    Examples
+    --------
+
+    Construct::
+
                +-b---d-g
              a-+   +-e
                +-c-+-f-h-i
+
     with
+
     >>> i = Tree();       i.n = "i"
     >>> h = Tree([i]);    h.n = "h"
     >>> f = Tree([h]);    f.n = "f"
@@ -43,16 +49,31 @@ class Tree(list):
     >>> a.append(c)
     >>> a.append(b)
 
+    Get the longest branch length with
+
     >>> a.branch_len()
     5
+
+    Sort the tree recursively.  Here we sort longest branch length
+    first.
+
     >>> a.sort(key=lambda node : -node.branch_len())
     >>> "".join([node.n for node in a.traverse()])
     'acfhiebdg'
+
+    And here we sort shortest branch length first.
+
     >>> a.sort(key=lambda node : node.branch_len())
     >>> "".join([node.n for node in a.traverse()])
     'abdgcefhi'
+
+    We can also do breadth-first traverses.
+
     >>> "".join([node.n for node in a.traverse(depth_first=False)])
     'abcdefghi'
+
+    Serialize the tree with depth marking branches.
+
     >>> for depth,node in a.thread():
     ...     print "%*s" % (2*depth+1, node.n)
     a
@@ -64,6 +85,10 @@ class Tree(list):
         f
           h
             i
+
+    Flattening the thread disables depth increases except at
+    branch splits.
+
     >>> for depth,node in a.thread(flatten=True):
     ...     print "%*s" % (2*depth+1, node.n)
     a
@@ -75,6 +100,9 @@ class Tree(list):
     f
     h
     i
+
+    We can also check if a node is contained in a tree.
+
     >>> a.has_descendant(g)
     True
     >>> c.has_descendant(g)
@@ -94,17 +122,22 @@ class Tree(list):
         return self.__cmp__(other) != 0
 
     def branch_len(self):
-        """
-        Exhaustive search every time == SLOW.
+        """Return the largest number of nodes from root to leaf (inclusive).
 
-        Use only on small trees, or reimplement by overriding
-        child-addition methods to allow accurate caching.
+        For the tree::
 
-        For the tree
                +-b---d-g
              a-+   +-e
                +-c-+-f-h-i
+
         this method returns 5.
+
+        Notes
+        -----
+        Exhaustive search every time == *slow*.
+
+        Use only on small trees, or reimplement by overriding
+        child-addition methods to allow accurate caching.
         """
         if len(self) == 0:
             return 1
@@ -112,18 +145,30 @@ class Tree(list):
             return 1 + max([child.branch_len() for child in self])
 
     def sort(self, *args, **kwargs):
-        """
-        This method can be slow, e.g. on a branch_len() sort, since a
-        node at depth N from the root has it's branch_len() method
-        called N times.
+        """Sort the tree recursively.
+
+        This method extends :meth:`list.sort` to Trees.
+
+        Notes
+        -----
+        This method can be slow, e.g. on a :meth:`branch_len` sort,
+        since a node at depth `N` from the root has it's
+        :meth:`branch_len` method called `N` times.
         """
         list.sort(self, *args, **kwargs)
         for child in self:
             child.sort(*args, **kwargs)
 
     def traverse(self, depth_first=True):
-        """
-        Note: you might want to sort() your tree first.
+        """Generate all the nodes in a tree, starting with the root node.
+
+        Parameters
+        ----------
+        depth_first : bool
+          Depth first by default, but you can set `depth_first` to
+          `False` for breadth first ordering.  Siblings are returned
+          in the order they are stored, so you might want to
+          :meth:`sort` your tree first.
         """
         if depth_first == True:
             yield self
@@ -139,25 +184,31 @@ class Tree(list):
                 queue.extend(node)
 
     def thread(self, flatten=False):
-        """
-        When flatten==False, the depth of any node is one greater than
-        the depth of its parent.  That way the inheritance is
-        explicit, but you can end up with highly indented threads.
+        """Generate a (depth, node) tuple for every node in the tree.
 
-        When flatten==True, the depth of any node is only greater than
-        the depth of its parent when there is a branch, and the node
-        is not the last child.  This can lead to ancestry ambiguity,
-        but keeps the total indentation down.  E.g.
+        When `flatten` is `False`, the depth of any node is one
+        greater than the depth of its parent.  That way the
+        inheritance is explicit, but you can end up with highly
+        indented threads.
+
+        When `flatten` is `True`, the depth of any node is only
+        greater than the depth of its parent when there is a branch,
+        and the node is not the last child.  This can lead to ancestry
+        ambiguity, but keeps the total indentation down.  For example::
+
                       +-b                  +-b-c
                     a-+-c        and     a-+
                       +-d-e-f              +-d-e-f
-        would both produce (after sorting by branch_len())
-        (0, a)
-        (1, b)
-        (1, c)
-        (0, d)
-        (0, e)
-        (0, f)
+
+        would both produce (after sorting by :meth:`branch_len`)::
+
+            (0, a)
+            (1, b)
+            (1, c)
+            (0, d)
+            (0, e)
+            (0, f)
+
         """
         stack = [] # ancestry of the current node
         if flatten == True:
@@ -182,6 +233,20 @@ class Tree(list):
             stack.append(node)
 
     def has_descendant(self, descendant, depth_first=True, match_self=False):
+        """Check if a node is contained in a tree.
+
+        Parameters
+        ----------
+        descendant : Tree
+          The potential descendant.
+        depth_first : bool
+          The search order.  Set this if you feel depth/breadth would
+          be a faster search.
+        match_self : bool
+          Set to `True` for::
+
+              x.has_descendant(x, match_self=True) -> True
+        """
         if descendant == self:
             return match_self
         for d in self.traverse(depth_first):
