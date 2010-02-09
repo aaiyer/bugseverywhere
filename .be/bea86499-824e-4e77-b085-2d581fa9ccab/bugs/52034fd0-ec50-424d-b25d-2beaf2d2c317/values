@@ -1,0 +1,21 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+extra_strings:
+- BLOCKED-BY:5fb11e65-68a0-4015-b404-737238299cdc
+
+
+reporter: Martin F Krafft <madduck@debian.org>
+
+
+severity: wishlist
+
+
+status: open
+
+
+summary: Allow autocommit option for command line interface?
+
+
+time: Fri, 24 Jul 2009 12:04:08 +0000
+

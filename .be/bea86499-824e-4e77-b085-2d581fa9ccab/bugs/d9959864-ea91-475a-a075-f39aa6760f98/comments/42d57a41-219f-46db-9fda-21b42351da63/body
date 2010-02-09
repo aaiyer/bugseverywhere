@@ -1,0 +1,25 @@
+Hi Steve,
+
+   > Hi everyone.  I found Bugs Everywhere and really like the idea of
+   > distributed bug tracking.  I felt like practicing building a
+   > CherryPy site so I put together a quick web interface to BE.  I
+   > know there's already a TurboGears one in the works, but I needed an
+   > excuse to try out CherryPy again after working with Django for a
+   > while.
+
+This looks awesome, thanks!  I've taken some screenshots for others to
+see:
+
+http://chris.printf.net/cfbe-main.png
+http://chris.printf.net/cfbe-detail.png
+
+My initial impression is that this looks good enough already to merge as
+a replacement for the turbogears site.  What does everyone else think?
+
+Could you explain a little about how you handle authorship of bug
+changes at the moment, and if it looks plausible to try making it
+multiuser?  (Having it handle more than one "user" logged in at once.)
+
+Great work, thanks!
+
+- Chris.

@@ -1,0 +1,17 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: be crashes on outdated id-cache
+
+
+time: Sun, 24 Jan 2010 16:28:06 +0000
+

@@ -1,0 +1,62 @@
+On Thu, Jun 25, 2009 at 10:23:04AM -0400, Steve Losh wrote:
+> I'm still curious as to what people think the role of a web interface like 
+> this should be. When I wrote it I meant it as a single-user interface like 
+> the command line one. It could definitely work as a public, read-only 
+> interface too.
+
+I think the multi-user/public is the way to go.  I'd also like to see
+a procmail-able script to handle multi-user/public access via email,
+which would have all the same issues we're worrying about here.
+
+On Sat, Feb 07, 2009 at 05:48:06PM -0500, Steve Losh wrote:
+> I haven't used CherryPy's session/authentication support before.  This 
+> might be a good time for me to learn.  One way it might be able to handle 
+> multiple users hitting a central server:
+>
+> * Each user has to register with the server and be approved by an admin.
+> * Each account would be mapped to a contributor string, the same one that 
+> would show up if you were going to commit to the repository.
+> * Once you have an account, you'd login to make any changes.
+
+This sounds good to me.  Yay spam reduction ;).
+
+> If it's not read-only, what happens when a user changes/adds/whatevers a 
+> bug?  Should CFBE commit that change to the repository right then and 
+> there?  Should it never commit, just update the bugdir and let the commits 
+> happen manually?
+
+On Thu, Jun 25, 2009 at 10:23:04AM -0400, Steve Losh wrote:
+> One commit per change? Commit every X minutes if necessary?
+
+On Sat, Feb 07, 2009 at 05:48:06PM -0500, Steve Losh wrote:
+> What happens when you have multiple branches for a repository?  Should 
+> there be one CFBE instance for each branch, or a single one that lets you 
+> switch between branches (effectively switching between revisions)?
+
+There are interesting discussions about the role of distributed
+bugtracking here (I'm sure there are others):
+  http://lwn.net/Articles/281849/
+  http://community.livejournal.com/evan_tech/248736.html
+
+Personally, I've never done much cherry-picking or anything that would
+require me to determine exactly which parts of someone's work I want
+and which I don't want.  I just merge someone's head and edit out the
+bits I don't like, a process that also works well for our current
+"commit however you want" BE development model ;).  Maybe that just
+shows that I only work on minor branches of small projects :p.  In the
+absence of big-project advice, I think we just limit the web front end
+to our current model, and let the web interface commit however it
+wants as well ;).  +1 for adding a <commit> button to the web
+interface ;).
+
+One caveat about a multi-user interface would be that it would allow
+the casual users to commit bugs about whatever version they had
+installed onto the head of the public-bug branch.  In order to figure
+out what version of the project they were talking about, the project
+should have a way for the user to get a unique version string, ideally
+be the bzr-revision-id/git-commit/etc. of the commit for the version
+they were using.  This would allow developers to determine what branch
+to work on with the bug fix, and what branches needed to pull the
+eventual fix.  If the initially reported buggy version wasn't actually
+the root of the bug, oh well :p.  Material for a later related bug
+report or a reopen.

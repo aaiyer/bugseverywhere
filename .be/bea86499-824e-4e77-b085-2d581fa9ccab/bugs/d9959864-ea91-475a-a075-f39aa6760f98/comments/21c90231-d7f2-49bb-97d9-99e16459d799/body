@@ -1,0 +1,52 @@
+Hey Chris, thanks for the comments.
+
+>
+> My initial impression is that this looks good enough already to  
+> merge as
+> a replacement for the turbogears site.  What does everyone else think?
+>
+
+I'm not quite sure it's there yet.  There are a bunch of bugs I've got  
+marked as "beta" that I'd like to see fixed before it's ready for real  
+use.  Hopefully they shouldn't be too tough to fix.  You can point  
+CFBE at itself to see them.  :)
+
+> Could you explain a little about how you handle authorship of bug
+> changes at the moment, and if it looks plausible to try making it
+> multiuser?  (Having it handle more than one "user" logged in at once.)
+>
+
+That's something I need advice on.  Right now CFBE is pretty much only  
+suitable for local use - you check out whatever you're working on and  
+use it as a local interface to the bugs in the repository.  Change  
+those, check in, etc.  It's effectively just a pretty version of the  
+command line be tool.
+
+I haven't used CherryPy's session/authentication support before.  This  
+might be a good time for me to learn.  One way it might be able to  
+handle multiple users hitting a central server:
+
+* Each user has to register with the server and be approved by an admin.
+* Each account would be mapped to a contributor string, the same one  
+that would show up if you were going to commit to the repository.
+* Once you have an account, you'd login to make any changes.
+
+
+Aside from all that, I'm a little fuzzy on how a centralized interface  
+to a distributed bug tracking system should work.  A read-only  
+interface to a central "main" repository would be easy.  Run the  
+server in read-only mode pointing at the main repository.  People can  
+use it to look at the bugs in the tip of that repository.
+
+If it's not read-only, what happens when a user changes/adds/whatevers  
+a bug?  Should CFBE commit that change to the repository right then  
+and there?  Should it never commit, just update the bugdir and let the  
+commits happen manually?
+
+What happens when you have multiple branches for a repository?  Should  
+there be one CFBE instance for each branch, or a single one that lets  
+you switch between branches (effectively switching between revisions)?
+
+Those are the kind of things that don't really apply when CFBE is just  
+a local interface to a single repository.  If anyone has any advice on  
+how a multi-user interface should work I'd love to hear it!

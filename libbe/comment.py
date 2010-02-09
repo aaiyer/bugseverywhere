@@ -1,5 +1,4 @@
-# Bugs Everywhere, a distributed bugtracker
-# Copyright (C) 2008-2009 Chris Ball <cjb@laptop.org>
+# Copyright (C) 2008-2010 Gianluca Montecchi <gian@grys.it>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         W. Trevor King <wking@drexel.edu>
 #
@@ -17,8 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-Define the Comment class for representing bug comments.
+"""Define the :class:`Comment` class for representing bug comments.
 """
 
 import base64
@@ -27,21 +25,31 @@ import os.path
 import sys
 import time
 import types
+try:
+    from email.mime.base import MIMEBase
+    from email.encoders import encode_base64
+except ImportError:
+    # adjust to old python 2.4
+    from email.MIMEBase import MIMEBase
+    from email.Encoders import encode_base64
 try: # import core module, Python >= 2.5
     from xml.etree import ElementTree
 except ImportError: # look for non-core module
     from elementtree import ElementTree
 import xml.sax.saxutils
-import doctest
 
-from beuuid import uuid_gen
-from properties import Property, doc_property, local_property, \
-    defaulting_property, checked_property, cached_property, \
+import libbe
+import libbe.util.id
+from libbe.storage.util.properties import Property, doc_property, \
+    local_property, defaulting_property, checked_property, cached_property, \
     primed_property, change_hook_property, settings_property
-import settings_object
-import mapfile
-from tree import Tree
-import utility
+import libbe.storage.util.settings_object as settings_object
+import libbe.storage.util.mapfile as mapfile
+from libbe.util.tree import Tree
+import libbe.util.utility as utility
+
+if libbe.TESTING == True:
+    import doctest
 
 
 class InvalidShortname(KeyError):
@@ -50,14 +58,6 @@ class InvalidShortname(KeyError):
         KeyError.__init__(self, msg)
         self.shortname = shortname
         self.shortnames = shortnames
-
-class InvalidXML(ValueError):
-    def __init__(self, element, comment):
-        msg = "Invalid comment xml: %s\n  %s\n" \
-            % (comment, ElementTree.tostring(element))
-        ValueError.__init__(self, msg)
-        self.element = element
-        self.comment = comment
 
 class MissingReference(ValueError):
     def __init__(self, comment):
@@ -73,84 +73,37 @@ class DiskAccessRequired (Exception):
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 
-def list_to_root(comments, bug, root=None,
-                 ignore_missing_references=False):
-    """
-    Convert a raw list of comments to single root comment.  We use a
-    dummy root comment by default, because there can be several
-    comment threads rooted on the same parent bug.  To simplify
-    comment interaction, we condense these threads into a single
-    thread with a Comment dummy root.  Can also be used to append
-    a list of subcomments to a non-dummy root comment, so long as
-    all the new comments are descendants of the root comment.
-    
-    No Comment method should use the dummy comment.
-    """
-    root_comments = []
-    uuid_map = {}
-    for comment in comments:
-        assert comment.uuid != None
-        uuid_map[comment.uuid] = comment
-    for comment in comments:
-        if comment.alt_id != None and comment.alt_id not in uuid_map:
-            uuid_map[comment.alt_id] = comment
-    if root == None:
-        root = Comment(bug, uuid=INVALID_UUID)
-    else:
-        uuid_map[root.uuid] = root
-    for comm in comments:
-        if comm.in_reply_to == INVALID_UUID:
-            comm.in_reply_to = None
-        rep = comm.in_reply_to
-        if rep == None or rep == bug.uuid:
-            root_comments.append(comm)
-        else:
-            parentUUID = comm.in_reply_to
-            try:
-                parent = uuid_map[parentUUID]
-                parent.add_reply(comm)
-            except KeyError, e:
-                if ignore_missing_references == True:
-                    print >> sys.stderr, \
-                        "Ignoring missing reference to %s" % parentUUID
-                    comm.in_reply_to = None
-                    root_comments.append(comm)
-                else:
-                    raise MissingReference(comm)
-    root.extend(root_comments)
-    return root
-
-def loadComments(bug, load_full=False):
+def load_comments(bug, load_full=False):
     """
     Set load_full=True when you want to load the comment completely
     from disk *now*, rather than waiting and lazy loading as required.
     """
-    if bug.sync_with_disk == False:
-        raise DiskAccessRequired("load comments")
-    path = bug.get_path("comments")
-    if not os.path.exists(path):
-        return Comment(bug, uuid=INVALID_UUID)
+    uuids = []
+    for id in libbe.util.id.child_uuids(
+                  bug.storage.children(
+                      bug.id.storage())):
+        uuids.append(id)
     comments = []
-    for uuid in os.listdir(path):
-        if uuid.startswith('.'):
-            continue
-        comm = Comment(bug, uuid, from_disk=True)
-        comm.set_sync_with_disk(bug.sync_with_disk)
+    for uuid in uuids:
+        comm = Comment(bug, uuid, from_storage=True)
         if load_full == True:
             comm.load_settings()
             dummy = comm.body # force the body to load
         comments.append(comm)
-    return list_to_root(comments, bug)
+    bug.comment_root = Comment(bug, uuid=INVALID_UUID)
+    bug.add_comments(comments, ignore_missing_references=True)
+    return bug.comment_root
 
-def saveComments(bug):
-    if bug.sync_with_disk == False:
-        raise DiskAccessRequired("save comments")
+def save_comments(bug):
     for comment in bug.comment_root.traverse():
         comment.save()
 
 
-class Comment(Tree, settings_object.SavedSettingsObject):
-    """
+class Comment (Tree, settings_object.SavedSettingsObject):
+    """Comments are a notes that attach to :class:`~libbe.bug.Bug`\s in
+    threaded trees.  In mailing-list terms, a comment is analogous to
+    a single part of an email.
+
     >>> c = Comment()
     >>> c.uuid != None
     True
@@ -205,15 +158,19 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                     doc="An integer version of .date")
 
     def _get_comment_body(self):
-        if self.vcs != None and self.sync_with_disk == True:
-            import vcs
-            binary = not self.content_type.startswith("text/")
-            return self.vcs.get_file_contents(self.get_path("body"), binary=binary)
+        if self.storage != None and self.storage.is_readable() \
+                and self.uuid != INVALID_UUID:
+            return self.storage.get(self.id.storage("body"),
+                decode=self.content_type.startswith("text/"))
     def _set_comment_body(self, old=None, new=None, force=False):
-        if (self.vcs != None and self.sync_with_disk == True) or force==True:
+        assert self.uuid != INVALID_UUID, self
+        if self.content_type.startswith('text/') \
+                and self.bug != None and self.bug.bugdir != None:
+            new = libbe.util.id.short_to_long_text([self.bug.bugdir], new)
+        if (self.storage != None and self.storage.writeable == True) \
+                or force==True:
             assert new != None, "Can't save empty comment"
-            binary = not self.content_type.startswith("text/")
-            self.vcs.set_file_contents(self.get_path("body"), new, binary=binary)
+            self.storage.set(self.id.storage("body"), new)
 
     @Property
     @change_hook_property(hook=_set_comment_body)
@@ -221,16 +178,6 @@ class Comment(Tree, settings_object.SavedSettingsObject):
     @local_property("body")
     @doc_property(doc="The meat of the comment")
     def body(): return {}
-
-    def _get_vcs(self):
-        if hasattr(self.bug, "vcs"):
-            return self.bug.vcs
-
-    @Property
-    @cached_property(generator=_get_vcs)
-    @local_property("vcs")
-    @doc_property(doc="A revision control system instance.")
-    def vcs(): return {}
 
     def _extra_strings_check_fn(value):
         return utility.iterable_full_of_strings(value, \
@@ -246,35 +193,42 @@ class Comment(Tree, settings_object.SavedSettingsObject):
                          mutable=True)
     def extra_strings(): return {}
 
-    def __init__(self, bug=None, uuid=None, from_disk=False,
-                 in_reply_to=None, body=None):
+    def __init__(self, bug=None, uuid=None, from_storage=False,
+                 in_reply_to=None, body=None, content_type=None):
         """
-        Set from_disk=True to load an old comment.
-        Set from_disk=False to create a new comment.
+        Set ``from_storage=True`` to load an old comment.
+        Set ``from_storage=False`` to create a new comment.
 
-        The uuid option is required when from_disk==True.
-        
-        The in_reply_to and body options are only used if
-        from_disk==False (the default).  When from_disk==True, they are
-        loaded from the bug database.
-        
-        in_reply_to should be the uuid string of the parent comment.
+        The ``uuid`` option is required when ``from_storage==True``.
+
+        The in_reply_to, body, and content_type options are only used
+        if ``from_storage==False`` (the default).  When
+        ``from_storage==True``, they are loaded from the bug database.
+        ``content_type`` decides if the body should be run through
+        :func:`util.id.short_to_long_text` before saving.  See
+        :meth:`_set_comment_body` for details.
+
+        ``in_reply_to`` should be the uuid string of the parent comment.
         """
         Tree.__init__(self)
         settings_object.SavedSettingsObject.__init__(self)
         self.bug = bug
-        self.uuid = uuid 
-        if from_disk == True: 
-            self.sync_with_disk = True
-        else:
-            self.sync_with_disk = False
+        self.storage = None
+        self.uuid = uuid
+        self.id = libbe.util.id.ID(self, 'comment')
+        if from_storage == False:
             if uuid == None:
-                self.uuid = uuid_gen()
+                self.uuid = libbe.util.id.uuid_gen()
             self.time = int(time.time()) # only save to second precision
-            if self.vcs != None:
-                self.author = self.vcs.get_user_id()
             self.in_reply_to = in_reply_to
+            if content_type != None:
+                self.content_type = content_type
             self.body = body
+        if self.bug != None:
+            self.storage = self.bug.storage
+        if from_storage == False:
+            if self.storage != None and self.storage.is_writeable():
+                self.save()
 
     def __cmp__(self, other):
         return cmp_full(self, other)
@@ -287,7 +241,7 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> comm.author = "Jane Doe <jdoe@example.com>"
         >>> print comm
         --------- Comment ---------
-        Name: com-1
+        Name: //com
         From: Jane Doe <jdoe@example.com>
         Date: Thu, 20 Nov 2008 15:55:11 +0000
         <BLANKLINE>
@@ -308,17 +262,37 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         value = getattr(self, setting)
         if value == None:
             return ""
-        return str(value)
+        if type(value) not in types.StringTypes:
+            return str(value)
+        return value
 
-    def xml(self, indent=0, shortname=None):
+    def safe_in_reply_to(self):
+        """
+        Return self.in_reply_to, except...
+
+          * if no comment matches that id, in which case return None.
+          * if that id matches another comments .alt_id, in which case
+            return the matching comments .uuid.
+        """
+        if self.in_reply_to == None:
+            return None
+        else:
+            try:
+                irt_comment = self.bug.comment_from_uuid(
+                    self.in_reply_to, match_alt_id=True)
+                return irt_comment.uuid
+            except KeyError:
+                return None
+
+    def xml(self, indent=0):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
         >>> comm.uuid = "0123"
         >>> comm.date = "Thu, 01 Jan 1970 00:00:00 +0000"
-        >>> print comm.xml(indent=2, shortname="com-1")
+        >>> print comm.xml(indent=2)
           <comment>
             <uuid>0123</uuid>
-            <short-name>com-1</short-name>
+            <short-name>//012</short-name>
             <author></author>
             <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
             <content-type>text/plain</content-type>
@@ -326,101 +300,197 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         insightful
         remarks</body>
           </comment>
+        >>> comm.content_type = 'image/png'
+        >>> print comm.xml()
+        <comment>
+          <uuid>0123</uuid>
+          <short-name>//012</short-name>
+          <author></author>
+          <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
+          <content-type>image/png</content-type>
+          <body>U29tZQppbnNpZ2h0ZnVsCnJlbWFya3MK
+        </body>
+        </comment>
         """
-        if shortname == None:
-            shortname = self.uuid
-        if self.content_type.startswith("text/"):
-            body = (self.body or "").rstrip('\n')
+        if self.content_type.startswith('text/'):
+            body = (self.body or '').rstrip('\n')
         else:
             maintype,subtype = self.content_type.split('/',1)
-            msg = email.mime.base.MIMEBase(maintype, subtype)
-            msg.set_payload(self.body or "")
-            email.encoders.encode_base64(msg)
-            body = base64.encodestring(self.body or "")
-        info = [("uuid", self.uuid),
-                ("alt-id", self.alt_id),
-                ("short-name", shortname),
-                ("in-reply-to", self.in_reply_to),
-                ("author", self._setting_attr_string("author")),
-                ("date", self.date),
-                ("content-type", self.content_type),
-                ("body", body)]
-        lines = ["<comment>"]
+            msg = MIMEBase(maintype, subtype)
+            msg.set_payload(self.body or '')
+            encode_base64(msg)
+            body = base64.encodestring(self.body or '')
+        info = [('uuid', self.uuid),
+                ('alt-id', self.alt_id),
+                ('short-name', self.id.user()),
+                ('in-reply-to', self.safe_in_reply_to()),
+                ('author', self._setting_attr_string('author')),
+                ('date', self.date),
+                ('content-type', self.content_type),
+                ('body', body)]
+        lines = ['<comment>']
         for (k,v) in info:
             if v != None:
                 lines.append('  <%s>%s</%s>' % (k,xml.sax.saxutils.escape(v),k))
-        lines.append("</comment>")
+        for estr in self.extra_strings:
+            lines.append('  <extra-string>%s</extra-string>' % estr)
+        lines.append('</comment>')
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
     def from_xml(self, xml_string, verbose=True):
-        """
+        u"""
         Note: If alt-id is not given, translates any <uuid> fields to
         <alt-id> fields.
         >>> commA = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
         >>> commA.uuid = "0123"
         >>> commA.date = "Thu, 01 Jan 1970 00:00:00 +0000"
-        >>> xml = commA.xml(shortname="com-1")
+        >>> commA.author = u'Fran\xe7ois'
+        >>> commA.extra_strings += ['TAG: very helpful']
+        >>> xml = commA.xml()
         >>> commB = Comment()
-        >>> commB.from_xml(xml)
-        >>> attrs=['uuid','alt_id','in_reply_to','author','date','content_type','body']
-        >>> for attr in attrs: # doctest: +ELLIPSIS
-        ...     if getattr(commB, attr) != getattr(commA, attr):
-        ...         estr = "Mismatch on %s: '%s' should be '%s'"
-        ...         args = (attr, getattr(commB, attr), getattr(commA, attr))
-        ...         print estr % args
-        Mismatch on uuid: '...' should be '0123'
-        Mismatch on alt_id: '0123' should be 'None'
-        >>> print commB.alt_id
-        0123
-        >>> commA.author
-        >>> commB.author
+        >>> commB.from_xml(xml, verbose=True)
+        >>> commB.explicit_attrs
+        ['author', 'date', 'content_type', 'body', 'alt_id']
+        >>> commB.xml() == xml
+        False
+        >>> commB.uuid = commB.alt_id
+        >>> commB.alt_id = None
+        >>> commB.xml() == xml
+        True
         """
         if type(xml_string) == types.UnicodeType:
-            xml_string = xml_string.strip().encode("unicode_escape")
-        comment = ElementTree.XML(xml_string)
-        if comment.tag != "comment":
-            raise InvalidXML(comment, "root element must be <comment>")
-        tags=['uuid','alt-id','in-reply-to','author','date','content-type','body']
+            xml_string = xml_string.strip().encode('unicode_escape')
+        if hasattr(xml_string, 'getchildren'): # already an ElementTree Element
+            comment = xml_string
+        else:
+            comment = ElementTree.XML(xml_string)
+        if comment.tag != 'comment':
+            raise utility.InvalidXML( \
+                'comment', comment, 'root element must be <comment>')
+        tags=['uuid','alt-id','in-reply-to','author','date','content-type',
+              'body','extra-string']
+        self.explicit_attrs = []
         uuid = None
         body = None
+        estrs = []
         for child in comment.getchildren():
-            if child.tag == "short-name":
+            if child.tag == 'short-name':
                 pass
             elif child.tag in tags:
                 if child.text == None or len(child.text) == 0:
                     text = settings_object.EMPTY
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
-                    text = unicode(text).decode("unicode_escape").strip()
-                if child.tag == "uuid":
+                    text = text.decode('unicode_escape').strip()
+                if child.tag == 'uuid':
                     uuid = text
-                    continue # don't set the bug's uuid tag.
-                if child.tag == "body":
+                    continue # don't set the comment's uuid tag.
+                elif child.tag == 'body':
                     body = text
-                    continue # don't set the bug's body yet.
-                else:
-                    attr_name = child.tag.replace('-','_')
+                    self.explicit_attrs.append(child.tag)
+                    continue # don't set the comment's body yet.
+                elif child.tag == 'extra-string':
+                    estrs.append(text)
+                    continue # don't set the comment's extra_string yet.
+                attr_name = child.tag.replace('-','_')
+                self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
-                print >> sys.stderr, "Ignoring unknown tag %s in %s" \
+                print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
                     % (child.tag, comment.tag)
-        if self.alt_id == None and uuid not in [None, self.uuid]:
+        if uuid != self.uuid and self.alt_id == None:
+            self.explicit_attrs.append('alt_id')
             self.alt_id = uuid
         if body != None:
-            if self.content_type.startswith("text/"):
-                self.body = body+"\n" # restore trailing newline
+            if self.content_type.startswith('text/'):
+                self.body = body+'\n' # restore trailing newline
             else:
                 self.body = base64.decodestring(body)
+        self.extra_strings = estrs
 
-    def string(self, indent=0, shortname=None):
+    def merge(self, other, accept_changes=True,
+              accept_extra_strings=True, change_exception=False):
+        """
+        Merge info from other into this comment.  Overrides any
+        attributes in self that are listed in other.explicit_attrs.
+
+        >>> commA = Comment(bug=None, body='Some insightful remarks')
+        >>> commA.uuid = '0123'
+        >>> commA.date = 'Thu, 01 Jan 1970 00:00:00 +0000'
+        >>> commA.author = 'Frank'
+        >>> commA.extra_strings += ['TAG: very helpful']
+        >>> commA.extra_strings += ['TAG: favorite']
+        >>> commB = Comment(bug=None, body='More insightful remarks')
+        >>> commB.uuid = '3210'
+        >>> commB.date = 'Fri, 02 Jan 1970 00:00:00 +0000'
+        >>> commB.author = 'John'
+        >>> commB.explicit_attrs = ['author', 'body']
+        >>> commB.extra_strings += ['TAG: very helpful']
+        >>> commB.extra_strings += ['TAG: useful']
+        >>> commA.merge(commB, accept_changes=False,
+        ...             accept_extra_strings=False, change_exception=False)
+        >>> commA.merge(commB, accept_changes=False,
+        ...             accept_extra_strings=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would change author "Frank"->"John" for comment 0123
+        >>> commA.merge(commB, accept_changes=True,
+        ...             accept_extra_strings=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add extra string "TAG: useful" to comment 0123
+        >>> print commA.author
+        John
+        >>> print commA.extra_strings
+        ['TAG: favorite', 'TAG: very helpful']
+        >>> commA.merge(commB, accept_changes=True,
+        ...             accept_extra_strings=True, change_exception=True)
+        >>> print commA.extra_strings
+        ['TAG: favorite', 'TAG: useful', 'TAG: very helpful']
+        >>> print commA.xml()
+        <comment>
+          <uuid>0123</uuid>
+          <short-name>//012</short-name>
+          <author>John</author>
+          <date>Thu, 01 Jan 1970 00:00:00 +0000</date>
+          <content-type>text/plain</content-type>
+          <body>More insightful remarks</body>
+          <extra-string>TAG: favorite</extra-string>
+          <extra-string>TAG: useful</extra-string>
+          <extra-string>TAG: very helpful</extra-string>
+        </comment>
+        """
+        for attr in other.explicit_attrs:
+            old = getattr(self, attr)
+            new = getattr(other, attr)
+            if old != new:
+                if accept_changes == True:
+                    setattr(self, attr, new)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would change %s "%s"->"%s" for comment %s' \
+                        % (attr, old, new, self.uuid)
+        if self.alt_id == self.uuid:
+            self.alt_id = None
+        for estr in other.extra_strings:
+            if not estr in self.extra_strings:
+                if accept_extra_strings == True:
+                    self.extra_strings.append(estr)
+                elif change_exception == True:
+                    raise ValueError, \
+                        'Merge would add extra string "%s" to comment %s' \
+                        % (estr, self.uuid)
+
+    def string(self, indent=0):
         """
         >>> comm = Comment(bug=None, body="Some\\ninsightful\\nremarks\\n")
+        >>> comm.uuid = 'abcdef'
         >>> comm.date = "Thu, 01 Jan 1970 00:00:00 +0000"
-        >>> print comm.string(indent=2, shortname="com-1")
+        >>> print comm.string(indent=2)
           --------- Comment ---------
-          Name: com-1
+          Name: //abc
           From: 
           Date: Thu, 01 Jan 1970 00:00:00 +0000
         <BLANKLINE>
@@ -428,42 +498,34 @@ class Comment(Tree, settings_object.SavedSettingsObject):
           insightful
           remarks
         """
-        if shortname == None:
-            shortname = self.uuid
         lines = []
         lines.append("--------- Comment ---------")
-        lines.append("Name: %s" % shortname)
+        lines.append("Name: %s" % self.id.user())
         lines.append("From: %s" % (self._setting_attr_string("author")))
         lines.append("Date: %s" % self.date)
         lines.append("")
         if self.content_type.startswith("text/"):
-            lines.extend((self.body or "").splitlines())
+            body = (self.body or "")
+            if self.bug != None and self.bug.bugdir != None:
+                body = libbe.util.id.long_to_short_text([self.bug.bugdir], body)
+            lines.extend(body.splitlines())
         else:
             lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)
-        
+
         istring = ' '*indent
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def string_thread(self, string_method_name="string", name_map={},
-                      indent=0, flatten=True,
-                      auto_name_map=False, bug_shortname=None):
+    def string_thread(self, string_method_name="string",
+                      indent=0, flatten=True):
         """
         Return a string displaying a thread of comments.
         bug_shortname is only used if auto_name_map == True.
-        
+
         string_method_name (defaults to "string") is the name of the
         Comment method used to generate the output string for each
         Comment in the thread.  The method must take the arguments
         indent and shortname.
-        
-        SIDE-EFFECT: if auto_name_map==True, calls comment_shortnames()
-        which will sort the tree by comment.time.  Avoid by calling
-          name_map = {}
-          for shortname,comment in comm.comment_shortnames(bug_shortname):
-              name_map[comment.uuid] = shortname
-          comm.sort(key=lambda c : c.author) # your sort
-          comm.string_thread(name_map=name_map)
 
         >>> a = Comment(bug=None, uuid="a", body="Insightful remarks")
         >>> a.time = utility.str_to_time("Thu, 20 Nov 2008 01:00:00 +0000")
@@ -479,125 +541,116 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> a.sort(key=lambda comm : comm.time)
         >>> print a.string_thread(flatten=True)
         --------- Comment ---------
-        Name: a
+        Name: //a
         From: 
         Date: Thu, 20 Nov 2008 01:00:00 +0000
         <BLANKLINE>
         Insightful remarks
           --------- Comment ---------
-          Name: b
+          Name: //b
           From: 
           Date: Thu, 20 Nov 2008 02:00:00 +0000
         <BLANKLINE>
           Critique original comment
           --------- Comment ---------
-          Name: c
+          Name: //c
           From: 
           Date: Thu, 20 Nov 2008 03:00:00 +0000
         <BLANKLINE>
           Begin flamewar :p
         --------- Comment ---------
-        Name: d
+        Name: //d
         From: 
         Date: Thu, 20 Nov 2008 04:00:00 +0000
         <BLANKLINE>
         Useful examples
-        >>> print a.string_thread(auto_name_map=True, bug_shortname="bug-1")
+        >>> print a.string_thread()
         --------- Comment ---------
-        Name: bug-1:1
+        Name: //a
         From: 
         Date: Thu, 20 Nov 2008 01:00:00 +0000
         <BLANKLINE>
         Insightful remarks
           --------- Comment ---------
-          Name: bug-1:2
+          Name: //b
           From: 
           Date: Thu, 20 Nov 2008 02:00:00 +0000
         <BLANKLINE>
           Critique original comment
           --------- Comment ---------
-          Name: bug-1:3
+          Name: //c
           From: 
           Date: Thu, 20 Nov 2008 03:00:00 +0000
         <BLANKLINE>
           Begin flamewar :p
         --------- Comment ---------
-        Name: bug-1:4
+        Name: //d
         From: 
         Date: Thu, 20 Nov 2008 04:00:00 +0000
         <BLANKLINE>
         Useful examples
         """
-        if auto_name_map == True:
-            name_map = {}
-            for shortname,comment in self.comment_shortnames(bug_shortname):
-                name_map[comment.uuid] = shortname
         stringlist = []
         for depth,comment in self.thread(flatten=flatten):
             ind = 2*depth+indent
-            if comment.uuid in name_map:
-                sname = name_map[comment.uuid]
-            else:
-                sname = None
             string_fn = getattr(comment, string_method_name)
-            stringlist.append(string_fn(indent=ind, shortname=sname))
+            stringlist.append(string_fn(indent=ind))
         return '\n'.join(stringlist)
 
-    def xml_thread(self, name_map={}, indent=0,
-                   auto_name_map=False, bug_shortname=None):
-        return self.string_thread(string_method_name="xml", name_map=name_map,
-                                  indent=indent, auto_name_map=auto_name_map,
-                                  bug_shortname=bug_shortname)
+    def xml_thread(self, indent=0):
+        return self.string_thread(string_method_name="xml", indent=indent)
 
     # methods for saving/loading/acessing settings and properties.
 
-    def get_path(self, *args):
-        dir = os.path.join(self.bug.get_path("comments"), self.uuid)
-        if len(args) == 0:
-            return dir
-        assert args[0] in ["values", "body"], str(args)
-        return os.path.join(dir, *args)
-
-    def set_sync_with_disk(self, value):
-        self.sync_with_disk = value
-
-    def load_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("load settings")
-        self.settings = mapfile.map_load(self.vcs, self.get_path("values"))
-        self._setup_saved_settings()
+    def load_settings(self, settings_mapfile=None):
+        if self.uuid == INVALID_UUID:
+            return
+        if settings_mapfile == None:
+            settings_mapfile = \
+                self.storage.get(self.id.storage("values"), default="\n")
+        try:
+            settings = mapfile.parse(settings_mapfile)
+        except mapfile.InvalidMapfileContents, e:
+            raise Exception('Invalid settings file for comment %s\n'
+                            '(BE version missmatch?)' % self.id.user())
+        self._setup_saved_settings(settings)
 
     def save_settings(self):
-        if self.sync_with_disk == False:
-            raise DiskAccessRequired("save settings")
-        self.vcs.mkdir(self.get_path())
-        path = self.get_path("values")
-        mapfile.map_save(self.vcs, path, self._get_saved_settings())
+        if self.uuid == INVALID_UUID:
+            return
+        mf = mapfile.generate(self._get_saved_settings())
+        self.storage.set(self.id.storage("values"), mf)
 
     def save(self):
         """
-        Save any loaded contents to disk.
-        
-        However, if self.sync_with_disk = True, then any changes are
-        automatically written to disk as soon as they happen, so
-        calling this method will just waste time (unless something
-        else has been messing with your on-disk files).
+        Save any loaded contents to storage.
+
+        However, if ``self.storage.is_writeable() == True``, then any
+        changes are automatically written to storage as soon as they
+        happen, so calling this method will just waste time (unless
+        something else has been messing with your stored files).
         """
-        sync_with_disk = self.sync_with_disk
-        if sync_with_disk == False:
-            self.set_sync_with_disk(True)
+        if self.uuid == INVALID_UUID:
+            return
+        assert self.storage != None, "Can't save without storage"
         assert self.body != None, "Can't save blank comment"
+        if self.bug != None:
+            parent = self.bug.id.storage()
+        else:
+            parent = None
+        self.storage.add(self.id.storage(), parent=parent, directory=True)
+        self.storage.add(self.id.storage('values'), parent=self.id.storage(),
+                         directory=False)
+        self.storage.add(self.id.storage('body'), parent=self.id.storage(),
+                         directory=False)
         self.save_settings()
         self._set_comment_body(new=self.body, force=True)
-        if sync_with_disk == False:
-            self.set_sync_with_disk(False)
 
     def remove(self):
-        if self.sync_with_disk == False and self.uuid != INVALID_UUID:
-            raise DiskAccessRequired("remove")
-        for comment in self.traverse():
-            path = comment.get_path()
-            self.vcs.recursive_remove(path)
+        for comment in self:
+            comment.remove()
+        if self.uuid != INVALID_UUID:
+            self.storage.recursive_remove(self.id.storage())
 
     def add_reply(self, reply, allow_time_inversion=False):
         if self.uuid != INVALID_UUID:
@@ -612,22 +665,12 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> repB.in_reply_to == repA.uuid
         True
         """
-        reply = Comment(self.bug, body=body)
-        if content_type != None: # set before saving body to decide binary format
-            reply.content_type = content_type
-        if self.bug != None:
-            reply.set_sync_with_disk(self.bug.sync_with_disk)
-        if reply.sync_with_disk == True:
-            reply.save()
+        reply = Comment(self.bug, body=body, content_type=content_type)
         self.add_reply(reply)
         return reply
 
-    def comment_shortnames(self, bug_shortname=None):
-        """
-        Iterate through (id, comment) pairs, in time order.
-        (This is a user-friendly id, not the comment uuid).
-
-        SIDE-EFFECT : will sort the comment tree by comment.time
+    def comment_from_uuid(self, uuid, match_alt_id=True):
+        """Use a uuid to look up a comment.
 
         >>> a = Comment(bug=None, uuid="a")
         >>> b = a.new_reply()
@@ -636,63 +679,40 @@ class Comment(Tree, settings_object.SavedSettingsObject):
         >>> c.uuid = "c"
         >>> d = a.new_reply()
         >>> d.uuid = "d"
-        >>> for id,name in a.comment_shortnames("bug-1"):
-        ...     print id, name.uuid
-        bug-1:1 a
-        bug-1:2 b
-        bug-1:3 c
-        bug-1:4 d
-        """
-        if bug_shortname == None:
-            bug_shortname = ""
-        self.sort(key=lambda comm : comm.time)
-        for num,comment in enumerate(self.traverse()):
-            yield ("%s:%d" % (bug_shortname, num+1), comment)
-
-    def comment_from_shortname(self, comment_shortname, *args, **kwargs):
-        """
-        Use a comment shortname to look up a comment.
-        >>> a = Comment(bug=None, uuid="a")
-        >>> b = a.new_reply()
-        >>> b.uuid = "b"
-        >>> c = b.new_reply()
-        >>> c.uuid = "c"
-        >>> d = a.new_reply()
-        >>> d.uuid = "d"
-        >>> comm = a.comment_from_shortname("bug-1:3", bug_shortname="bug-1")
-        >>> id(comm) == id(c)
-        True
-        """
-        for cur_name, comment in self.comment_shortnames(*args, **kwargs):
-            if comment_shortname == cur_name:
-                return comment
-        raise InvalidShortname(comment_shortname,
-                               list(self.comment_shortnames(*args, **kwargs)))
-
-    def comment_from_uuid(self, uuid):
-        """
-        Use a comment shortname to look up a comment.
-        >>> a = Comment(bug=None, uuid="a")
-        >>> b = a.new_reply()
-        >>> b.uuid = "b"
-        >>> c = b.new_reply()
-        >>> c.uuid = "c"
-        >>> d = a.new_reply()
-        >>> d.uuid = "d"
+        >>> d.alt_id = "d-alt"
         >>> comm = a.comment_from_uuid("d")
         >>> id(comm) == id(d)
         True
+        >>> comm = a.comment_from_uuid("d-alt")
+        >>> id(comm) == id(d)
+        True
+        >>> comm = a.comment_from_uuid(None, match_alt_id=False)
+        Traceback (most recent call last):
+          ...
+        KeyError: None
         """
         for comment in self.traverse():
             if comment.uuid == uuid:
                 return comment
+            if match_alt_id == True and uuid != None \
+                    and comment.alt_id == uuid:
+                return comment
         raise KeyError(uuid)
+
+    # methods for id generation
+
+    def sibling_uuids(self):
+        if self.bug != None:
+            return self.bug.uuids()
+        return []
+
 
 def cmp_attr(comment_1, comment_2, attr, invert=False):
     """
     Compare a general attribute between two comments using the conventional
     comparison rule for that attribute type.  If invert == True, sort
     *against* that convention.
+
     >>> attr="author"
     >>> commentA = Comment()
     >>> commentB = Comment()
@@ -712,7 +732,7 @@ def cmp_attr(comment_1, comment_2, attr, invert=False):
     val_2 = getattr(comment_2, attr)
     if val_1 == None: val_1 = None
     if val_2 == None: val_2 = None
-    
+
     if invert == True :
         return -cmp(val_1, val_2)
     else :
@@ -724,12 +744,14 @@ cmp_author = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "autho
 cmp_in_reply_to = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "in_reply_to")
 cmp_content_type = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "content_type")
 cmp_body = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "body")
+cmp_extra_strings = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "extra_strings")
 # chronological rankings (newer < older)
 cmp_time = lambda comment_1, comment_2 : cmp_attr(comment_1, comment_2, "time", invert=True)
 
+
 DEFAULT_CMP_FULL_CMP_LIST = \
     (cmp_time, cmp_author, cmp_content_type, cmp_body, cmp_in_reply_to,
-     cmp_uuid)
+     cmp_uuid, cmp_extra_strings)
 
 class CommentCompoundComparator (object):
     def __init__(self, cmp_list=DEFAULT_CMP_FULL_CMP_LIST):
@@ -740,7 +762,8 @@ class CommentCompoundComparator (object):
             if val != 0 :
                 return val
         return 0
-        
+
 cmp_full = CommentCompoundComparator()
 
-suite = doctest.DocTestSuite()
+if libbe.TESTING == True:
+    suite = doctest.DocTestSuite()

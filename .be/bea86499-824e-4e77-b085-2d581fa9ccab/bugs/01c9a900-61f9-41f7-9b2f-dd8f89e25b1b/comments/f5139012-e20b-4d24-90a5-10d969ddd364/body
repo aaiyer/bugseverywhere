@@ -1,0 +1,76 @@
+On Wed, Jan 20, 2010 at 09:34:44AM -0500, W. Trevor King wrote:
+> On Sun, Dec 06, 2009 at 04:47:23AM -0500, W. Trevor King wrote:
+> > Steve, I've caught my CFBE branch up to my current pre-trunk BE and
+> > added dependency links to the bug page, so you should be all set once
+> > you get back to CFBE.
+> 
+> And I haven't pulled it up to date with my recent reorganization.  As
+> far as release tarballs go though, we don't have to port to Bazaar at
+> all, we can stuff a recent CFBE snapshot into the BE tarball.  How
+> do people feel about that?
+
+Ok, I've got CFBE working with my BE head:
+  http://www.physics.drexel.edu/~wking/code/hg/cfbe/
+However, I haven't reworked CFBE to take advantage of the new command
+structure.
+
+We'll need to extend libbe.command.base.Argument a bit as we work this
+out, but I expect we can auto-generate handlers for various commands
+with something along the lines of:
+
+<snip web.py>
+
+class CommandHandler (object):
+    def __init__(self, command):
+        self.command = command
+    def __call__(self, *args, **kwargs):
+        if GET:
+            template = self.env.get_template('command.html')
+            return template.render(command=self.command)
+	else:
+            try:
+                ret = libbe.ui.command_line.dispatch(
+                    self.command.ui, self.command, *args, **kwargs)
+            except libbe.command.UserError, e:
+                HANDLE ERROR
+            stdout = self.command.ui.get_stdout()
+            DISPLAY STDOUT OR REDIRECT...
+
+class WebInterface (libbe.command.UserInterface):
+    ...
+    def add_commands(self):
+        for command_name in libbe.command.commands():
+            Class = libbe.command.get_command_class(
+                command_name=command_name)
+            command = Class(ui=self)
+            self.command_name = cherrypy.expose(
+                CommandHandler(command))
+
+</snip web.py>
+
+<snip command.html>
+
+<form id="command-form" action="/command" method="post">
+    <fieldset>
+        {% for option in command.options %}
+	  {{ option_form_html(option) }}
+        {% endfor %}
+        {% for argument in command.args %}
+	  {{ argument_form_html(argument) }}
+        {% endfor %}
+    </fieldset>
+</form>
+
+{{ command.help() }}
+
+</snip command.html>
+
+Of course, incorperating interactive functionality in command output
+(i.e. changing the bug target from the bug-show page), doesn't fit
+into this model.  To do that, we'd have to abstract the default
+command output the way we've already abstracted the commands and their
+input...  This sounds like a lot of work, and it is, but the goal is
+that BE adds functionality (new commands, option, etc.), and CFBE,
+be-handle-mail, etc. automatically incorperate the new stuff.
+
+Thoughts?

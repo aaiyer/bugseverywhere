@@ -1,0 +1,17 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+reporter: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: open
+
+
+summary: Where should the vcs-name and encoding configuration options live?
+
+
+time: Mon, 01 Feb 2010 14:28:13 +0000
+

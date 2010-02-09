@@ -1,0 +1,14 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Slow and ugly diff implementation
+
+
+time: Sat, 02 Jan 2010 22:56:08 +0000
+

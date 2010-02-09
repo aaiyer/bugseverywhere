@@ -1,0 +1,20 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+extra_strings:
+- BLOCKED-BY:47c8fd5f-1f5a-4048-bef7-bb4c9a37c411
+- BLOCKED-BY:ee681951-f254-43d3-a53a-1b36ae415d5c
+- BLOCKS:bd0ebb56-fb46-45bc-af08-1e4a94e8ef3c
+
+
+severity: target
+
+
+status: closed
+
+
+summary: patch-52
+
+
+time: Sun, 06 Dec 2009 00:37:16 +0000
+

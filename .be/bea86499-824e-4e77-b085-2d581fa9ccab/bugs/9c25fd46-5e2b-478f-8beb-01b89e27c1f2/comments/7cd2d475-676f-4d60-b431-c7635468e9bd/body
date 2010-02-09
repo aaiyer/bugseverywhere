@@ -1,0 +1,9 @@
+The comment class could be streamlined and standardized by making it
+subclass (Tree, email.Message).  This should make the per-bug, mini
+mailing list more expressive, and add support for fancy email
+features.  On the other hand, it could make the Comment/xml interface,
+HTML production, etc. more awkward.
+
+Time for another look at Debian's tracker, or do they only allow
+text/plain, single-part messages?
+

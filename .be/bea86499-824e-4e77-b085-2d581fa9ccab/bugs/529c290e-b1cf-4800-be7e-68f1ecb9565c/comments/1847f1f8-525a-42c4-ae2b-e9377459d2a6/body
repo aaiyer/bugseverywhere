@@ -1,0 +1,27 @@
+"W. Trevor King" <wking@drexel.edu> writes:
+
+> On Tue, Nov 17, 2009 at 01:41:26PM -0300, Nicolas Alvarez wrote:
+> > I'm using the latest version available on Debian
+> > (0.0.193+bzr.r217-2). I should ask for an updated package...
+>
+[…]
+
+> There is also an outstanding Debian bug for updating the Debian package
+>   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=544515
+> so there may be a more current package on the way, but I don't know
+> about timeframes for that sort of thing.
+
+It would make it much easier on the Debian package maintainer if the
+Bugs Everywhere project would make conventional tarball releases, with
+conventional version numbers, with a changelog describing what has
+changed between versions.
+
+Trying to maintain a package of a project that is only made available by
+undifferentiated VCS revision numbers is a lot more effort, and so
+doesn't happen very often.
+
+-- 
+ \             “Roll dice!” “Why?” “Shut up! I don't need your fucking |
+  `\     *input*, I need you to roll dice!” —Luke Crane, demonstrating |
+_o__)                       his refined approach to play testing, 2009 |
+Ben Finney

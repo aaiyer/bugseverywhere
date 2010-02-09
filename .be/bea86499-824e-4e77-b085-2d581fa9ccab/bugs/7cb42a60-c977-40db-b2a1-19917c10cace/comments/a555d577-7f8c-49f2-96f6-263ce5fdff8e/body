@@ -1,0 +1,23 @@
+Usage case:
+  * User A installs version 1.0 which contains bug /abc.
+  * Development continues, fixing bug /abc.
+  * User A wants to see which bugs affect their version, and query the
+    main bug repository.
+      $ be --repo http://bugseverywhere.org/bugs list --this-version
+      bea/abc:om: Whatsit not implemented.
+      $ be --repo http://bugseverywhere.org/bugs show bea/abc
+                ID : abc...
+        Short name : bea/abc
+          Severity : minor
+            Status : fixed
+	    ...
+      Whatsit not implemented.
+      --------- Comment ---------
+      Name: bea/abc/def
+      From: ...
+      Date: Sat, 23 Jan 2010 14:00 ...
+      
+      Whatsit implemented.
+    "Aha!", says the user, "I need to upgrade to a version of BE
+    that's more recent than 2010/01/23 to get Whatsit functionality."
+

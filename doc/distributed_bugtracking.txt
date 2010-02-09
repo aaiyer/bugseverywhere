@@ -1,0 +1,57 @@
+***********************
+Distributed Bugtracking
+***********************
+
+Usage Cases
+===========
+
+Case 1: Tracking the status of bugs in remote repo branches
+-----------------------------------------------------------
+
+See the discussion in
+#bea86499-824e-4e77-b085-2d581fa9ccab/12c986be-d19a-4b8b-b1b5-68248ff4d331#.
+Here, it doesn't matter whether the remote repository is a branch of
+the local repository, or a completely separate project
+(e.g. upstream, ...).  So long as the remote project provides access
+via some REPO format, you can use::
+
+    $ be --repo REPO ...
+
+to run your query, or::
+
+    $ be diff REPO
+
+to see the changes between the local and remote repositories.
+
+
+Case 2: Importing bugs from other repositories
+----------------------------------------------
+
+Case 2.1: If the remote repository is a branch of the local repository::
+
+     $ <VCS> merge <REPO>
+
+Case 2.2: If the remote repository is not a branch of the local repository
+(Hypothetical command)::
+
+    $ be import <REPO> <ID>
+
+
+Notes
+=====
+
+Providing public repositories
+-----------------------------
+
+e.g. for non-dev users.  These are just branches that expose a public
+interface (HTML, email, ...).  Merge and query like any other
+development branch.
+
+
+Managing permissions
+--------------------
+
+Many bugtrackers implement some sort of permissions system, and they
+are certainly required for a central system with diverse user roles.
+However DVCSs also support the "pull my changes" workflow, where
+permissions are irrelevant.

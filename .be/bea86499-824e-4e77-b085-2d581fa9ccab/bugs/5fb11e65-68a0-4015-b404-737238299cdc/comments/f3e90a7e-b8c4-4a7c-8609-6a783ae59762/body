@@ -1,0 +1,18 @@
+Provide hooks so users can easily setup auto-commits, subscriber
+notification, etc.  Probably either Darcs-style options:
+  $ be COMMAND --help
+  ...
+    --posthook=COMMAND   Specify command to run after this command.
+    --no-posthook        Do not run posthook command.
+    --prompt-posthook    Prompt before running posthook. [DEFAULT]
+    --run-posthook       Run posthook command without prompting.
+  ...
+or a Git-style hooks directory:
+  $ tree .be
+  .be/
+  |-- version
+  |-- hooks
+  .   |-- post-commit.sh
+  .   |-- pre-commit.sh
+      `-- update.sh
+

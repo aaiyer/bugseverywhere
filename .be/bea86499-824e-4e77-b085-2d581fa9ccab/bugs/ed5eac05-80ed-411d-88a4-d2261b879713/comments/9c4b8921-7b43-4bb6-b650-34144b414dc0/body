@@ -1,0 +1,23 @@
+Ok, time to fix the issue I mentioned in this commit message:
+
+revno: 473.1.63
+revision-id: wking@drexel.edu-20091215114420-sbdnvm5jlx0ampbg
+
+...
+duplicate_bugdir() works, but for the vcs backends, it could require
+shelling out for _every_ file read.  This could, and probably will, be
+horribly slow.  Still it works ;).
+    
+I'm not sure what a better implementation would be.  The old
+implementation checked out the entire earlier state into a temporary
+directory
+  pros: single shell out, simple upgrade implementation
+  cons: wouldn't work well for HTTP backens
+    
+I think a good solution would run along the lines of the currently
+commented out code in duplicate_bugdir(), where a
+  VersionedStorage.changed_since(revision)
+call would give you a list of changed files.  diff could work off of
+that directly, without the need to generate a whole duplicate bugdir.
+I'm stuck on how to handle upgrades though...
+...

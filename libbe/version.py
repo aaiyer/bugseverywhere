@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2009 W. Trevor King <wking@drexel.edu>
+# Copyright (C) 2009-2010 W. Trevor King <wking@drexel.edu>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,10 @@ be bothered setting version strings" and the "I want complete control
 over the version strings" workflows.
 """
 
+import copy
+
 import libbe._version as _version
+import libbe.storage
 
 # Manually set a version string (optional, defaults to bzr revision id)
 #_VERSION = "1.2.3"
@@ -39,11 +42,14 @@ def version(verbose=False):
     else:
         string = _version.version_info["revision_id"]
     if verbose == True:
+        info = copy.copy(_version.version_info)
+        info['storage'] = libbe.storage.STORAGE_VERSION
         string += ("\n"
                    "revision: %(revno)d\n"
                    "nick: %(branch_nick)s\n"
-                   "revision id: %(revision_id)s"
-                   % _version.version_info)
+                   "revision id: %(revision_id)s\n"
+                   "storage version: %(storage)s"
+                   % info)
     return string
 
 if __name__ == "__main__":

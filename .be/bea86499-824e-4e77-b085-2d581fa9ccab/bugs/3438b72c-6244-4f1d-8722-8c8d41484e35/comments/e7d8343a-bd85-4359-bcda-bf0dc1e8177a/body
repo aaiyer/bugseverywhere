@@ -1,0 +1,42 @@
+> It would be nice if we could store tests.
+>   .be/BUGDIR/tests/...
+> and link them from bugs.
+
+Better: have them be comments with a TEST tag.
+
+The mime type could hint at the execution mechanism:
+  text/x-python
+  application/x-sh
+  ...
+
+> Then running
+>   test.py BUGDIR/BUG
+> would run the tests for that particular bug.
+> 
+> This would provide regression testing via
+>   test.py $(be list --ids --status fixed)
+
+This should be a 'test' command (libbe.command.test.Test), since
+people will want to test bugs for their own projects, and out current
+test.py is for testing BE specifically.  It should be
+  be test BUGDIR/BUG
+  be test $(be list --ids --status fixed)
+
+We _should_ add be
+  test $(be list --ids --status fixed)
+to test.py for regression testing.
+
+This whole thing would make the fixed/closed distinction more clear,
+since fixed bugs would get tests run and expect success, while closed
+bugs' tests would be skipped.
+
+Finally, if users are submitting tests on their own, it would be a
+good idea to sandbox them, but a portable way for sandboxing scripts
+sounds very complicated.  It would probably be easier to sandbox
+python scripts, but I don't know what that would look like...
+
+A work around would be to allow users to post tests, but not allow
+them to set the TEST flag.  Then the bugdir maintainer could set the
+flag themselves once they'd vetted the test.  Much uglier than
+sandboxing, but also much more easily implemented.
+

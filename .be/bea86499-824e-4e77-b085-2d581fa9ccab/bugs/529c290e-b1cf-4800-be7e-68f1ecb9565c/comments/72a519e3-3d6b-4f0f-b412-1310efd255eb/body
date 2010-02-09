@@ -1,0 +1,22 @@
+Hi,
+
+   > It would make it much easier on the Debian package maintainer if
+   > the Bugs Everywhere project would make conventional tarball
+   > releases, with conventional version numbers, with a changelog
+   > describing what has changed between versions.
+
+Fair point.
+
+How do people feel about pushing for a 1.0 release, with Trevor's tree
+plus a finished cfbe merge?  Or would we rather wait until afterwards
+to try for cfbe?
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>
+One Laptop Per Child
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

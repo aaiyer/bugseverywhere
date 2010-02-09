@@ -1,0 +1,28 @@
+Hi,
+
+   > Works for me.  I've done this now, which closes the last open bug
+   > in my repo :D.
+
+Wow.  Congrats!  I've merged your branch.
+
+   > All the new functionality comes from bug.extra_strings, which
+   > provides a list for storing arbitrary strings in the bug's
+   > permanent state.
+
+That's going to be really useful.
+
+   > Next up: regexp searching for list --extra-strings! ;).
+
+Awesome.
+
+   > Oh, and obviously there must still be bugs in BE.  Please submit
+   > more ;).
+
+Perhaps it's a good time to merge Steve Losh's CherryPy web interface?
+
+http://void.printf.net/pipermail/be-devel/2009-February/000095.html
+http://bitbucket.org/sjl/cherryflavoredbugseverywhere/
+
+Thanks,
+
+- Chris.

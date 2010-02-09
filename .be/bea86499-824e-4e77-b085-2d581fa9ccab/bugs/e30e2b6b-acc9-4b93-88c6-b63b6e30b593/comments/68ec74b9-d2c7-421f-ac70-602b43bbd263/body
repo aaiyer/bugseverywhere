@@ -1,0 +1,5 @@
+On the other hand, since encoding decisions seem to be locale-driven,
+so you can just setup the appropriate locale environmental variables
+in your cron job:
+  export LANG=en_US.utf8
+and that should do it...

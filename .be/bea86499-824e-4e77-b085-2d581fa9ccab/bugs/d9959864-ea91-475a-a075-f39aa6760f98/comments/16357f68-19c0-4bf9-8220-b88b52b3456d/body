@@ -1,0 +1,26 @@
+Hi everyone.  I found Bugs Everywhere and really like the idea of  
+distributed bug tracking.  I felt like practicing building a CherryPy  
+site so I put together a quick web interface to BE.  I know there's  
+already a TurboGears one in the works, but I needed an excuse to try  
+out CherryPy again after working with Django for a while.
+
+Would any of you be willing to take a look at what I've got so far and  
+tell me what you think I could improve?
+
+To install and use it:
+
+* Install CherryPy from http://cherrypy.org/ if you don't have it.
+* Install Jinja2 from http://jinja.pocoo.org/2/ if you don't have it.
+* Install BugsEverywhere - you probably know how to do this :)
+* Download a zip/tar of my project (or hg clone) from http://bitbucket.org/sjl/cherryflavoredbugseverywhere/
+* Unzip my project and put the folder in your Python site-packages  
+directory.
+* Symlink site-packages/cherryflavoredbugseverywhere/cfbe.py to /usr/ 
+local/bin/cfbe
+* Use the "cfbe [project_root]" command to start up the web interface  
+for that project.
+* Visit http://localhost:8080/ in a browser.
+
+I know that's a lot of steps.  I'd like to streamline it quite a bit,  
+but first I wanted to see if you have any feedback on the system  
+itself. Thanks!

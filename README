@@ -1,39 +1,71 @@
 Bugs Everywhere
 ===============
-This is Bugs Everywhere, a bugtracker built on distributed revision
+
+This is Bugs Everywhere (BE), a bugtracker built on distributed version
 control.  It works with Arch, Bazaar, Darcs, Git, and Mercurial at the
-moment, but is easily extensible.  It can also function with no RCS at
+moment, but is easily extensible.  It can also function with no VCS at
 all.
 
 The idea is to package the bug information with the source code, so that
-bugs can be marked 'fixed' in the branches that fix them.  So, instead of
+bugs can be marked "fixed" in the branches that fix them.  So, instead of
 numbers, bugs have globally unique ids.
+
+
+Getting BE
+==========
+
+BE is available as a bzr repository::
+
+    $ bzr branch http://bzr.bugseverywhere.org/be
+
+See the homepage_ for details.  If you do branch the bzr repo, you'll
+need to run::
+
+    $ make
+
+to build some auto-generated files (e.g. ``libbe/_version.py``), and::
+
+    $ make install
+
+to install BE.  By default BE will install into your home directory,
+but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
+to another location.
+
+.. _homepage: http://bugseverywhere.org/
 
 
 Getting started
 ===============
+
 To get started, you must set the bugtracker root.  Typically, you will want to
 set the bug root to your project root, so that Bugs Everywhere works in any
-part of your project tree.
-$ be init $PROJECT_ROOT
+part of your project tree.::
 
-To create bugs, use "be new $DESCRIPTION".  To comment on bugs, you
-can can use "be comment $BUG_ID".  To close a bug, use "be close
-$BUG_ID" or "be status $BUG_ID fixed".  For more commands, see "be
-help".  You can also look at the usage examples in test_usage.sh.
+    $ be init -r $PROJECT_ROOT
+
+To create bugs, use ``be new $DESCRIPTION``.  To comment on bugs, you
+can can use ``be comment $BUG_ID``.  To close a bug, use
+``be close $BUG_ID`` or ``be status $BUG_ID fixed``.  For more
+commands, see ``be help``.  You can also look at the usage examples in
+``test_usage.sh``.
 
 
-Using BeWeb, the web UI
-=======================
-BeWeb uses the Turbogears framework: http://www.turbogears.org/
-Please ensure you have Turbogears 0.8a5 or a compatible release installed.
-Because it uses BE data, the web UI does not require a database.
+Documentation
+=============
 
-To use BeWeb, first create a configuration file, telling it which projects
-to track, and what to call them.  An example configuration file 
-(beweb/beweb/config.py.example) is provided.
+If ``be help`` isn't scratching your itch, the full documentation is
+available in the doc directory as reStructuredText_ .  You can build
+the full documentation with Sphinx_ , convert single files with
+docutils_ , or browse through the doc directory by hand.
+doc/index.txt is a good place to start.  If you do use Sphinx, you'll
+need to install numpydoc_ for automatically generating API
+documentation.  See the ``NumPy/SciPy documentation guide``_ for an
+introduction to the syntax.
 
-Next, cd to beweb, and run ./beweb-start.py
-
-BeWeb allows you to create, view and edit bugs, but it is in an early stage of
-development, so some features are missing.
+.. _reStructuredText:
+  http://docutils.sourceforge.net/docs/user/rst/quickref.html
+.. _Sphinx: http://sphinx.pocoo.org/
+.. _docutils: http://docutils.sourceforge.net/
+.. _numpydoc: http://pypi.python.org/pypi/numpydoc
+.. _NumPy/SciPy documentation guide:
+  http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines

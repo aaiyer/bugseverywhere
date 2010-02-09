@@ -1,0 +1,22 @@
+On Jun 25, 2009, at 10:02 AM, Chris Ball <cjb@laptop.org> wrote:
+>
+>> Oh, and obviously there must still be bugs in BE.  Please submit
+>> more ;).
+>
+> Perhaps it's a good time to merge Steve Losh's CherryPy web interface?
+>
+> http://void.printf.net/pipermail/be-devel/2009-February/000095.html
+> http://bitbucket.org/sjl/cherryflavoredbugseverywhere/
+>
+
+Hey, I haven't touched the web interface in a while, but I should have  
+some time to fix some stuff up tonight and tomorrow. Hold off on  
+merging it in until then.
+
+I'm still curious as to what people think the role of a web interface  
+like this should be. When I wrote it I meant it as a single-user  
+interface like the command line one. It could definitely work as a  
+public, read-only interface too.
+
+If the goal is to allow more than one person to add issues, how should  
+commits go? One commit per change? Commit every X minutes if necessary?
