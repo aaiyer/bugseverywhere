@@ -368,14 +368,7 @@ class HTMLGen (object):
     def _escape(self, string):
         if string == None:
             return ''
-        chars = []
-        for char in string:
-            codepoint = ord(char)
-            if codepoint in htmlentitydefs.codepoint2name:
-                char = '&%s;' % htmlentitydefs.codepoint2name[codepoint]
-            #else: xml.sax.saxutils.escape(char)
-            chars.append(char)
-        return ''.join(chars)
+        return xml.sax.saxutils.escape(char)
 
     def _load_user_templates(self):
         for filename,attr in [('style.css','css_file'),
