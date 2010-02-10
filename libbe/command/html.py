@@ -368,7 +368,7 @@ class HTMLGen (object):
     def _escape(self, string):
         if string == None:
             return ''
-        return xml.sax.saxutils.escape(char)
+        return xml.sax.saxutils.escape(string)
 
     def _load_user_templates(self):
         for filename,attr in [('style.css','css_file'),
