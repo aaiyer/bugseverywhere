@@ -142,7 +142,8 @@ class HTMLGen (object):
         self._load_default_templates()
         if template != None:
             self._load_user_templates()
-
+        self.bug_list_dict = {}
+        
     def run(self, out_dir):
         if self.verbose == True:
             print >> self.stdout, \
@@ -163,13 +164,40 @@ class HTMLGen (object):
                 up_link = '../index.html'
             else:
                 up_link = '../index_inactive.html'
-            self._write_bug_file(b, up_link)
+            fname = self._create_file_name(b.uuid)
+            self._write_bug_file(b, up_link, fname)
         self._write_index_file(
             bugs_active, title=self.title,
             index_header=self.index_header, bug_type='active')
         self._write_index_file(
             bugs_inactive, title=self.title,
             index_header=self.index_header, bug_type='inactive')
+
+    def _create_file_name(self, bugid):
+        s = 4
+        if not self.bug_list_dict.has_key(bugid[0:3]):
+            self.bug_list_dict[bugid[0:3]] = bugid
+            fname = bugid[0:3]
+        else:
+            for i in range(s, s+6):
+                if not self.bug_list_dict.has_key(bugid[0:s]):
+                    self.bug_list_dict[bugid[0:s]] = bugid
+                    fname = bugid[0:s]
+                    break
+                if s == 8:
+                    self.bug_list_dict[bugid] = bugid
+                    fname = bugid
+        fpath = os.path.join(self.out_dir_bugs, fname)
+        return fpath
+        
+    def _find_file_name(self, bugid):
+        name = ""
+        for k in self.bug_list_dict:
+            if self.bug_list_dict[k] == bugid:
+                name = k
+                self.bug_list_dict.pop(k)
+                break
+        return name 
 
     def _create_output_directories(self, out_dir):
         if self.verbose:
@@ -186,7 +214,7 @@ class HTMLGen (object):
         self._write_file(self.css_file,
                          [self.out_dir,'style.css'])
 
-    def _write_bug_file(self, bug, up_link):
+    def _write_bug_file(self, bug, up_link, fname):
         if self.verbose:
             print >> self.stdout, '\tCreating bug file for %s' % bug.id.user()
         assert hasattr(self, 'out_dir_bugs'), \
@@ -194,7 +222,7 @@ class HTMLGen (object):
 
         bug.load_comments(load_full=True)
         comment_entries = self._generate_bug_comment_entries(bug)
-        filename = '%s.html' % bug.uuid
+        filename = '%s.html' % fname
         fullpath = os.path.join(self.out_dir_bugs, filename)
         template_info = {'title':self.title,
                          'charset':self.encoding,
@@ -359,9 +387,11 @@ class HTMLGen (object):
             if self.verbose:
                 print >> self.stdout, '\tCreating bug entry for %s' % bug.id.user()
             template_info = {'shortname':bug.id.user()}
+            fn = self._find_file_name(bug.uuid)
             for attr in ['uuid', 'severity', 'status', 'assigned',
                          'reporter', 'creator', 'time_string', 'summary']:
                 template_info[attr] = self._escape(getattr(bug, attr))
+            template_info['uuid'] = fn
             bug_entries.append(self.index_bug_entry % template_info)
         return '\n'.join(bug_entries)
 
