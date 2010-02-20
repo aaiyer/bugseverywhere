@@ -1,0 +1,9 @@
+I'm not sure that changing the URLs is a good idea.  I'd rather use
+.htaccess and mod_rewrite to redirect short URLs to their permanent
+long equivalents.  Nobody else seems to mind though, so I've merged
+Gianluca's solution with a few changes:
+  * Since we're truncating bug IDs, truncate comment IDs too.
+  * Use libbe.util.id._truncate to generate the short IDs, so that `be
+    html` truncation is consistent with general BE truncation.
+  * Updated cross-linking code to match.
+

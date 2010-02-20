@@ -53,9 +53,9 @@ class HTML (libbe.command.Command):
     True
     >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'a.html'))
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'a', 'index.html'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'b.html'))
+    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'b', 'index.html'))
     True
     >>> ui.cleanup()
     >>> bd.cleanup()
@@ -124,6 +124,7 @@ class HTMLGen (object):
     def __init__(self, bd, template=None,
                  title="Site Title", index_header="Index Header",
                  verbose=False, encoding=None, stdout=None,
+                 min_id_length=3
                  ):
         self.generation_time = time.ctime()
         self.bd = bd
@@ -142,6 +143,7 @@ class HTMLGen (object):
         self._load_default_templates()
         if template != None:
             self._load_user_templates()
+        self.min_id_length = min_id_length
 
     def run(self, out_dir):
         if self.verbose == True:
@@ -171,6 +173,16 @@ class HTMLGen (object):
             bugs_inactive, title=self.title,
             index_header=self.index_header, bug_type='inactive')
 
+    def _truncated_bug_id(self, bug):
+        return libbe.util.id._truncate(
+            bug.uuid, bug.sibling_uuids(),
+            min_length=self.min_id_length)
+
+    def _truncated_comment_id(self, comment):
+        return libbe.util.id._truncate(
+            comment.uuid, comment.sibling_uuids(),
+            min_length=self.min_id_length)
+
     def _create_output_directories(self, out_dir):
         if self.verbose:
             print >> self.stdout, 'Creating output directories'
@@ -194,8 +206,8 @@ class HTMLGen (object):
 
         bug.load_comments(load_full=True)
         comment_entries = self._generate_bug_comment_entries(bug)
-        filename = '%s.html' % bug.uuid
-        fullpath = os.path.join(self.out_dir_bugs, filename)
+        dirname = self._truncated_bug_id(bug)
+        fullpath = os.path.join(self.out_dir_bugs, dirname, 'index.html')
         template_info = {'title':self.title,
                          'charset':self.encoding,
                          'up_link':up_link,
@@ -205,6 +217,9 @@ class HTMLGen (object):
         for attr in ['uuid', 'severity', 'status', 'assigned',
                      'reporter', 'creator', 'time_string', 'summary']:
             template_info[attr] = self._escape(getattr(bug, attr))
+        fulldir = os.path.join(self.out_dir_bugs, dirname)
+        if not os.path.exists(fulldir):
+            os.mkdir(fulldir)
         self._write_file(self.bug_file % template_info, [fullpath])
 
     def _generate_bug_comment_entries(self, bug):
@@ -227,7 +242,9 @@ class HTMLGen (object):
             else:
                 comment_entries.append(
                     '<div class="comment" id="%s">' % comment.uuid)
-            template_info = {'shortname': comment.id.user()}
+            template_info = {
+                'shortname': comment.id.user(),
+                'truncated_id': self._truncated_comment_id(comment)}
             for attr in ['uuid', 'author', 'date', 'body']:
                 value = getattr(comment, attr)
                 if attr == 'body':
@@ -241,11 +258,14 @@ class HTMLGen (object):
                     elif comment.content_type.startswith('image/'):
                         save_body = True
                         value = '<img src="./%s/%s" />' \
-                            % (bug.uuid, comment.uuid)
+                            % (self._truncated_bug_id(bug),
+                               self._truncated_comment_id(comment))
                     else:
                         save_body = True
                         value = '<a href="./%s/%s">Link to %s file</a>.' \
-                            % (bug.uuid, comment.uuid, comment.content_type)
+                            % (self._truncated_bug_id(bug),
+                               self._truncated_comment_id(comment),
+                               comment.content_type)
                     if link_long_ids == True:
                         value = self._long_to_linked_user(value)
                     if save_body == True:
@@ -274,7 +294,7 @@ class HTMLGen (object):
         >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
         >>> h = HTMLGen(bd)
         >>> h._long_to_linked_user('A link #abc123/a#, and a non-link #x#y#.')
-        'A link <a href="./a.html">abc/a</a>, and a non-link #x#y#.'
+        'A link <a href="./a/">abc/a</a>, and a non-link #x#y#.'
         >>> bd.cleanup()
         """
         replacer = libbe.util.id.IDreplacer(
@@ -298,9 +318,9 @@ class HTMLGen (object):
         >>> h._long_to_linked_user_replacer([bd], 'abc123')
         '#abc123#'
         >>> h._long_to_linked_user_replacer([bd], 'abc123/a')
-        '<a href="./a.html">abc/a</a>'
+        '<a href="./a/">abc/a</a>'
         >>> h._long_to_linked_user_replacer([bd], 'abc123/a/0123')
-        '<a href="./a.html#0123">abc/a/012</a>'
+        '<a href="./a/#012">abc/a/012</a>'
         >>> h._long_to_linked_user_replacer([bd], 'x')
         '#x#'
         >>> h._long_to_linked_user_replacer([bd], '')
@@ -309,7 +329,6 @@ class HTMLGen (object):
         """
         try:
             p = libbe.util.id.parse_user(bugdirs[0], long_id)
-            short_id = libbe.util.id.long_to_short_user(bugdirs, long_id)
         except (libbe.util.id.MultipleIDMatches,
                 libbe.util.id.NoIDMatches,
                 libbe.util.id.InvalidIDStructure), e:
@@ -317,11 +336,17 @@ class HTMLGen (object):
         if p['type'] == 'bugdir':
             return '#%s#' % long_id
         elif p['type'] == 'bug':
-            return '<a href="./%s.html">%s</a>' \
-                % (p['bug'], short_id)
+            bug,comment = libbe.command.util.bug_comment_from_user_id(
+                bugdirs[0], long_id)
+            return '<a href="./%s/">%s</a>' \
+                % (self._truncated_bug_id(bug), bug.id.user())
         elif p['type'] == 'comment':
-            return '<a href="./%s.html#%s">%s</a>' \
-                % (p['bug'], p['comment'], short_id)
+            bug,comment = libbe.command.util.bug_comment_from_user_id(
+                bugdirs[0], long_id)
+            return '<a href="./%s/#%s">%s</a>' \
+                % (self._truncated_bug_id(bug),
+                   self._truncated_comment_id(comment),
+                   comment.id.user())
         raise Exception('Invalid id type %s for "%s"'
                         % (p['type'], long_id))
 
@@ -362,6 +387,7 @@ class HTMLGen (object):
             for attr in ['uuid', 'severity', 'status', 'assigned',
                          'reporter', 'creator', 'time_string', 'summary']:
                 template_info[attr] = self._escape(getattr(bug, attr))
+            template_info['dir'] = self._truncated_bug_id(bug)
             bug_entries.append(self.index_bug_entry % template_info)
         return '\n'.join(bug_entries)
 
@@ -594,11 +620,11 @@ class HTMLGen (object):
 
         self.index_bug_entry ="""
             <tr class="%(severity)s">
-              <td><a href="bugs/%(uuid)s.html">%(shortname)s</a></td>
-              <td><a href="bugs/%(uuid)s.html">%(status)s</a></td>
-              <td><a href="bugs/%(uuid)s.html">%(severity)s</a></td>
-              <td><a href="bugs/%(uuid)s.html">%(summary)s</a></td>
-              <td><a href="bugs/%(uuid)s.html">%(time_string)s</a></td>
+              <td><a href="bugs/%(dir)s/">%(shortname)s</a></td>
+              <td><a href="bugs/%(dir)s/">%(status)s</a></td>
+              <td><a href="bugs/%(dir)s/">%(severity)s</a></td>
+              <td><a href="bugs/%(dir)s/">%(summary)s</a></td>
+              <td><a href="bugs/%(dir)s/">%(time_string)s</a></td>
             </tr>
         """
 

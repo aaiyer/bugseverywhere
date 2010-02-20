@@ -1,3 +1,6 @@
+February 20, 2010
+ * `be html` uses truncated IDs in comment and bug URLs and anchors.
+
 January 27, 2010
  * `be html` links (<a href="...) #-delimited references in text/*
    comment bodies.

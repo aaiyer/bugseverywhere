@@ -7,7 +7,7 @@ reporter: Gianluca Montecchi <gian@grys.it>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Short the files name used by the be html command
