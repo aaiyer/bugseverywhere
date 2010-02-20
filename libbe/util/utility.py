@@ -241,7 +241,7 @@ def underlined(string, char='='):
     >>> underlined("Underlined String")
     'Underlined String\\n================='
     """
-    assert len(char) == 0, char
+    assert len(char) == 1, char
     return '%s\n%s' % (string, char*len(string))
 
 if libbe.TESTING == True:
