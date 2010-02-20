@@ -232,6 +232,8 @@ def _truncate(uuid, other_uuids, min_length=3):
     --------
     _expand : inverse
     """
+    if min_length == -1:
+        return uuid
     chars = min_length
     for id in other_uuids:
         if id == uuid:

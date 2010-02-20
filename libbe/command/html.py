@@ -93,6 +93,11 @@ class HTML (libbe.command.Command):
                         name='export-template-dir', metavar='DIR',
                         default='./default-templates/',
                         completion_callback=libbe.command.util.complete_path)),
+                libbe.command.Option(name='min-id-length', short_name='l',
+                    help='Attempt to truncate bug and comment IDs to this length.  Set to -1 for non-truncated IDs (%default)',
+                    arg=libbe.command.Argument(
+                        name='min-id-length', metavar='INT',
+                        default=-1, type='int')),
                 libbe.command.Option(name='verbose', short_name='v',
                     help='Verbose output, default is %default'),
                 ])
@@ -107,6 +112,7 @@ class HTML (libbe.command.Command):
                            template=params['template-dir'],
                            title=params['title'],
                            index_header=params['index-header'],
+                           min_id_length=params['min-id-length'],
                            verbose=params['verbose'],
                            stdout=self.stdout)
         html_gen.run(params['output'])
@@ -123,8 +129,8 @@ Html = HTML # alias for libbe.command.base.get_command_class()
 class HTMLGen (object):
     def __init__(self, bd, template=None,
                  title="Site Title", index_header="Index Header",
+                 min_id_length=-1,
                  verbose=False, encoding=None, stdout=None,
-                 min_id_length=3
                  ):
         self.generation_time = time.ctime()
         self.bd = bd
@@ -320,7 +326,7 @@ class HTMLGen (object):
         >>> h._long_to_linked_user_replacer([bd], 'abc123/a')
         '<a href="./a/">abc/a</a>'
         >>> h._long_to_linked_user_replacer([bd], 'abc123/a/0123')
-        '<a href="./a/#012">abc/a/012</a>'
+        '<a href="./a/#0123">abc/a/012</a>'
         >>> h._long_to_linked_user_replacer([bd], 'x')
         '#x#'
         >>> h._long_to_linked_user_replacer([bd], '')
