@@ -243,14 +243,15 @@ class HTMLGen (object):
                 comment_entries.append('</div>\n')
             assert len(stack) == depth
             stack.append(comment)
+            template_info = {
+                'shortname': comment.id.user(),
+                'truncated_id': self._truncated_comment_id(comment)}
             if depth == 0:
                 comment_entries.append('<div class="comment root">')
             else:
                 comment_entries.append(
-                    '<div class="comment" id="%s">' % comment.uuid)
-            template_info = {
-                'shortname': comment.id.user(),
-                'truncated_id': self._truncated_comment_id(comment)}
+                    '<div class="comment" id="%s">'
+                    % template_info['truncated_id'])
             for attr in ['uuid', 'author', 'date', 'body']:
                 value = getattr(comment, attr)
                 if attr == 'body':
