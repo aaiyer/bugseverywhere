@@ -168,9 +168,9 @@ class HTMLGen (object):
         self._write_css_file()
         for b in bugs:
             if b.active:
-                up_link = '../index.html'
+                up_link = '../../index.html'
             else:
-                up_link = '../index_inactive.html'
+                up_link = '../../index_inactive.html'
             self._write_bug_file(b, up_link)
         self._write_index_file(
             bugs_active, title=self.title,
@@ -642,7 +642,7 @@ class HTMLGen (object):
             <head>
             <title>%(title)s</title>
             <meta http-equiv="Content-Type" content="text/html; charset=%(charset)s" />
-            <link rel="stylesheet" href="../style.css" type="text/css" />
+            <link rel="stylesheet" href="../../style.css" type="text/css" />
             </head>
             <body>
 
