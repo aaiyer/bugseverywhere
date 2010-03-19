@@ -1,0 +1,40 @@
+When I try to create bug with utf8 string I get error:
+
+$ be new 'utf8 string'
+Traceback (most recent call last):
+  File "/usr/bin/be", line 64, in <module>
+    sys.exit(cmdutil.execute(args[0], args[1:]))
+  File "/usr/lib/python2.6/site-packages/libbe/cmdutil.py", line 82, in execute
+    manipulate_encodings=manipulate_encodings)
+  File "/usr/lib/python2.6/site-packages/becommands/new.py", line 54, in execute
+    bug = bd.new_bug(summary=summary.strip())
+  File "/usr/lib/python2.6/site-packages/libbe/bugdir.py", line 584, in new_bug
+    bg.save()
+  File "/usr/lib/python2.6/site-packages/libbe/bug.py", line 388, in save
+    self.save_settings()
+  File "/usr/lib/python2.6/site-packages/libbe/bug.py", line 373, in save_settings
+    mapfile.map_save(self.vcs, path, self._get_saved_settings())
+  File "/usr/lib/python2.6/site-packages/libbe/mapfile.py", line 110, in map_save
+    vcs.set_file_contents(path, contents, allow_no_vcs)
+  File "/usr/lib/python2.6/site-packages/libbe/vcs.py", line 354, in set_file_contents
+    f.write(contents)
+  File "/usr/lib/python2.6/codecs.py", line 686, in write
+    return self.writer.write(data)
+  File "/usr/lib/python2.6/codecs.py", line 351, in write
+    data, consumed = self.encode(object, self.errors)
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xd0 in position 95: ordinal not in range(128)
+---
+
+$ python
+Python 2.6.1 (r261:67515, Jan  8 2010, 16:07:38)
+[GCC 4.3.2] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import sys
+>>> import locale
+>>> sys.getdefaultencoding()
+'ascii'
+>>> locale.getdefaultlocale()
+('ru_RU', 'UTF-8')
+
+I think it is more correct to use UTF-8 everywhere or use locale.getdefaultlocale() instead sys.getdefaultencoding().
+

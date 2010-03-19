@@ -1,0 +1,21 @@
+> $ be new 'utf8 string'
+> Traceback (most recent call last):
+>   ...
+> UnicodeDecodeError: 'ascii' codec can't decode byte 0xd0 in position 95: ordinal not in range(128)
+
+(bug reported against cjb@laptop.org-20091006145647-kqkmoh481tl5hvt4)
+
+This was fixed with revision
+  wking@drexel.edu-20091117145118-jltbju9thsn5xvkv
+in my branch on Nov. 17, 2009.
+
+> I think it is more correct to use UTF-8 everywhere or use
+> locale.getdefaultlocale() instead sys.getdefaultencoding().
+
+We try to use unicode strings internally, it's input/output that's
+difficult.  This particular bug turned out to be related to our
+mapfile storage handling.  Take a look at the be.unicode-hg branch
+leading up to revision
+  wking@drexel.edu-20091117145118-jltbju9thsn5xvkv
+for details.
+
