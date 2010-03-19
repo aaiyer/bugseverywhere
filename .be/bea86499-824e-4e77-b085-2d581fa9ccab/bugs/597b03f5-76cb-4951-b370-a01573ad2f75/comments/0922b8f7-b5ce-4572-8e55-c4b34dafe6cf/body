@@ -1,0 +1,9 @@
+Hello!
+
+--- 8< ---
+$ be comment b35
+ERROR:
+No comment supplied, and EDITOR not specified.
+--- >8 ---
+
+When EDITOR enviroment variable not set try to use vi editor as default editor

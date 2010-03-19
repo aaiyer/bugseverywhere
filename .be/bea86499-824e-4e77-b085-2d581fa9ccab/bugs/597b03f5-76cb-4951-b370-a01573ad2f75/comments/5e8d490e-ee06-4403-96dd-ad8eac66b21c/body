@@ -1,0 +1,17 @@
+Anton Batenev <antonbatenev@yandex.ru> writes:
+
+> --- 8< ---
+> $ be comment b35
+> ERROR:
+> No comment supplied, and EDITOR not specified.
+> --- >8 ---
+>
+> When EDITOR enviroment variable not set try to use vi editor as
+> default editor
+
+-1. It's up to the local operating system configuration to set a default
+EDITOR value, and up to the user to over-ride that if they want to. An
+application shouldn't be guessing in the absence of those conventions.
+
+The behaviour is clear and the message provides a way for the user to
+rectify the problem in a standard way. It doesn't need to change.

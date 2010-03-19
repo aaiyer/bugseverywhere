@@ -1,0 +1,17 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+reporter: Anton Batenev <abbat@abbat>
+
+
+severity: minor
+
+
+status: wontfix
+
+
+summary: Set a default EDITOR incase the user has not
+
+
+time: Fri, 19 Mar 2010 06:11:12 +0000
+

@@ -159,7 +159,7 @@ class Import_XML (libbe.command.Command):
         accept_comments = True
         if len(root_comments) > 0:
             if croot_bug == None:
-                raise UserError(
+                raise libbe.command.UserError(
                     '--comment-root option is required for your root comments:\n%s'
                     % '\n\n'.join([c.string() for c in root_comments]))
             try:
