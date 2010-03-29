@@ -1,0 +1,4 @@
+If I have just "foo@example.com" in _darcs/prefs/author, be is perfectly happy.
+
+But having instead "Foo Bar <foo@example.com>" causes this error on be new:
+libbe.mapfile.IllegalValue: Illegal value "Foo Bar <foo@example.com>\n"
