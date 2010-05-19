@@ -1,0 +1,3 @@
+> libbe.mapfile.IllegalValue: Illegal value "Foo Bar <foo@example.com>\n"
+
+The trailing endline was the problem.  Fixed now.

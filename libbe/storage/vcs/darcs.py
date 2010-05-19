@@ -120,7 +120,7 @@ class Darcs(base.VCS):
             for pref_file in ['author', 'email']:
                 pref_path = os.path.join(darcs_dir, 'prefs', pref_file)
                 if os.path.exists(pref_path):
-                    return self._vcs_get_file_contents(pref_path)
+                    return self._vcs_get_file_contents(pref_path).strip()
         for env_variable in ['DARCS_EMAIL', 'EMAIL']:
             if env_variable in os.environ:
                 return os.environ[env_variable]

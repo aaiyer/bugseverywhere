@@ -7,7 +7,7 @@ reporter: Eric Kow <eric.kow@gmail.com>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Fancy _darcs/prefs/author contents confuse be
