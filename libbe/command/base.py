@@ -408,7 +408,7 @@ class StdInputOutput (InputOutput):
             input_encoding = libbe.util.encoding.get_input_encoding()
         if output_encoding == None:
             output_encoding = libbe.util.encoding.get_output_encoding()
-        stdin = codecs.getwriter(input_encoding)(sys.stdin)
+        stdin = codecs.getreader(input_encoding)(sys.stdin)
         stdin.encoding = input_encoding
         stdout = codecs.getwriter(output_encoding)(sys.stdout)
         stdout.encoding = output_encoding
