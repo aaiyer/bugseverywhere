@@ -1,0 +1,15 @@
+Before Bugs Everywhere Directory v1.4 we kept
+  "encoding"
+  "vcs_name"
+and other bugdir-wide configuration options in ./be/settings
+
+Now we don't store them anymore, but we should keep some.  For
+example, the encoding setting is useful when running `be html` in a
+cron job.  The settings are repository wide, so they should _still_ go
+in ./be/settings (since there may, eventually, be several bugdirs in a
+repo), but who's job is it to read that file?
+
+The user interface takes care of encoding, but the storage object 
+would be checking for a bug repository and reading the settings file.
+How/when does it notify the UI?
+

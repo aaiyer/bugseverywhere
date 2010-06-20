@@ -1,0 +1,30 @@
+Rather than all the hackery that goes on with email-bugs, the email
+interface, etc., it would be nice for distribution if be provided a
+uniform issue/bug tracking library and a number of interfaces and
+backends.
+
+Current backends:
+  filesystem (with assorted VCSs)
+Current UIs:
+  command line (be)
+  email (be-handle-mail)
+  web (CFBE)
+
+Future backend architecture:
+  be --repo REPO ...
+where --repo REPO replaces and extends the current --dir DIR.  Example
+REPOs could be
+  path/to/repo                              (the current DIR)
+  http://some-server.com:port/path/to/repo  (http interface)
+  mysql://user@server:port/?db=db-name;pwd=password
+  ...
+Each repo would have to support a few get/set commands at the bugdir,
+bug, and comment level.
+
+The UIs would all load BugDir(REPO), and thus be backend agnostic.
+This way a GUI app that let you work on your own machine could also be
+used to work on a public repository.  Setting up a public repository
+would just consist of exposing one of the wire-capable REPO formats
+(e.g. http via a future `be serve MY-URL`) with public write
+permissions.
+

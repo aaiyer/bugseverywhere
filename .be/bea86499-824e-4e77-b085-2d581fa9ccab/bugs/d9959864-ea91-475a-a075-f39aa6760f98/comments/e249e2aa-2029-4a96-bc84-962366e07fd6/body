@@ -1,0 +1,26 @@
+On Sat, Feb 07, 2009 at 05:48:06PM -0500, Steve Losh wrote:
+>> My initial impression is that this looks good enough already to merge as
+>> a replacement for the turbogears site.  What does everyone else think?
+>
+> I'm not quite sure it's there yet.  There are a bunch of bugs I've
+> got marked as "beta" that I'd like to see fixed before it's ready
+> for real use.  Hopefully they shouldn't be too tough to fix.  You
+> can point CFBE at itself to see them.  :)
+
+Steve's also versioning it with Mercurial.  Will he mind changing to
+Bazaar?
+
+Steve, I've touched up CFBE to work with my current BE branch.  Some
+of the changes apply to the trunk BE, and hopefully the rest will
+soon.  I think the version-naming issue is what's currently blocking
+their adoption ;).  I've put up my CFBE branch at
+  static-http://www.physics.drexel.edu/~wking/code/hg/cfbe
+for Mercurial.
+
+Everyone, should CFBE-specific discussions move off-list?  More
+generally, I've been sending in lots of what-I'm-working on messages,
+but not hearing much back, so let me know if I'm being too obnoxious,
+and I'll shut up (or at least move more off-list) ;).
+
+Cheers,
+Trevor

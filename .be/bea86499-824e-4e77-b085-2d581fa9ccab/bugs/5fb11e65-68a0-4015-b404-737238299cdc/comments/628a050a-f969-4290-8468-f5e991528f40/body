@@ -1,0 +1,11 @@
+Either of these could be added at the
+  libbe.command.base.Command.run
+level.
+
+The Git hooks would be 'pre-<command-name>' and 'post-<command-name>'.
+
+Oh, and the hooks are therefore command-level hooks, not storage-level
+hooks.  We still want storage-level hooks for notification emails, etc,
+and they would definately have to follow the Git directory approach.
+Hmm.  Storage level hooks will be awkward...
+

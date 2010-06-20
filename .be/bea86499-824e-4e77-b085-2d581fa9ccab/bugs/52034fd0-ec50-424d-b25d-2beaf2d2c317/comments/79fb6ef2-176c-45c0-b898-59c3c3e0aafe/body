@@ -1,0 +1,13 @@
+>   * Determining what to commit.
+> 
+>     You'd have to have RCS keep a log of all versioned files it
+>     touched, and extend .commit() to accept the keyword list "files"
+>     and commit only those files.  This is doable, but maybe not worth
+>     the trouble.
+
+On the other hand, just attemting to commit everything after each
+command would make it nice and easy to commit bug fixes:
+  be --auto-commit status XYZ fixed
+which would commit whatever changes you had outstanding with an
+appropriate commit message.
+

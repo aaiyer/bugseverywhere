@@ -1,0 +1,24 @@
+assigned: W. Trevor King <wking@drexel.edu>
+
+
+creator: W. Trevor King <wking@drexel.edu>
+
+
+extra_strings:
+- BLOCKED-BY:51930348-9ccc-4165-af41-6c7450de050e
+
+
+reporter: Gianluca Montecchi <gian@grys.it>
+
+
+severity: wishlist
+
+
+status: fixed
+
+
+summary: Sorting targets chronologically
+
+
+time: Tue, 21 Jul 2009 18:34:25 +0000
+

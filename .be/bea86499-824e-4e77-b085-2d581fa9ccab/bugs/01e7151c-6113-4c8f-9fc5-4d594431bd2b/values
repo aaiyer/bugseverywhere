@@ -1,0 +1,17 @@
+creator: Gianluca Montecchi <gian@grys.it>
+
+
+reporter: Gianluca Montecchi <gian@grys.it>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Short the files name used by the be html command
+
+
+time: Tue, 09 Feb 2010 23:03:33 +0000
+

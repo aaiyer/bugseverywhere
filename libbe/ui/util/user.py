@@ -1,0 +1,134 @@
+# Copyright (C) 2009-2010 W. Trevor King <wking@drexel.edu>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""Tools for getting, setting, creating, and parsing the user's ID.
+
+IDs will look like 'John Doe <jdoe@example.com>'.  Note that the
+:mod:`libbe.storage.vcs.arch <Arch VCS backend>` *enforces* IDs with
+this format.
+
+Do not confuse the user IDs discussed in this module, which refer to
+humans, with the "user IDs" discussed in :mod:`libbe.util.id`, which
+are human-readable tags refering to objects.
+"""
+
+try:
+    from email.utils import formataddr, parseaddr
+except ImportErrror: # adjust to old python < 2.5
+    from email.Utils import formataddr, parseaddr
+import os
+import re
+from socket import gethostname
+
+import libbe
+import libbe.storage.util.config
+
+def get_fallback_username():
+    """Return a username extracted from environmental variables.
+    """
+    name = None
+    for env in ["LOGNAME", "USERNAME"]:
+        if os.environ.has_key(env):
+            name = os.environ[env]
+            break
+    assert name != None
+    return name
+
+def get_fallback_email():
+    """Return an email address extracted from environmental variables.
+    """
+    hostname = gethostname()
+    name = get_fallback_username()
+    return "%s@%s" % (name, hostname)
+
+def create_user_id(name, email=None):
+    """Create a user ID string from given `name` and `email` strings.
+
+    Examples
+    --------
+
+    >>> create_user_id("John Doe", "jdoe@example.com")
+    'John Doe <jdoe@example.com>'
+    >>> create_user_id("John Doe")
+    'John Doe'
+
+    See Also
+    --------
+    parse_user_id : inverse
+    """
+    assert len(name) > 0
+    if email == None or len(email) == 0:
+        return name
+    else:
+        return formataddr((name, email))
+
+def parse_user_id(value):
+    """Parse a user ID string into `name` and `email` strings.
+
+    Examples
+    --------
+
+    >>> parse_user_id("John Doe <jdoe@example.com>")
+    ('John Doe', 'jdoe@example.com')
+    >>> parse_user_id("John Doe")
+    ('John Doe', None)
+    >>> parse_user_id("John Doe <jdoe@example.com><what?>")
+    ('John Doe', 'jdoe@example.com')
+ 
+    See Also
+    --------
+    create_user_id : inverse
+    """
+    if '<' not in value:
+        return (value, None)
+    return parseaddr(value)
+
+def get_user_id(storage=None):
+    """Return a user ID, checking a list of possible sources.
+
+    The source order is:
+
+    1. Global BE configuration.
+    2. `storage.get_user_id`, if that function is defined.
+    3. :func:`get_fallback_username` and :func:`get_fallback_email`.
+
+    Notes
+    -----
+    Sometimes the storage will keep track of the user ID (e.g. most
+    VCSs, see :meth:`libbe.storage.vcs.base.VCS.get_user_id`).  If so,
+    we prefer that ID to the fallback, since the user has likely
+    configured it directly.
+    """
+    user = libbe.storage.util.config.get_val('user')
+    if user != None:
+        return user
+    if storage != None and hasattr(storage, 'get_user_id'):
+        user = storage.get_user_id()
+        if user != None:
+            return user
+    name = get_fallback_username()
+    email = get_fallback_email()
+    user = create_user_id(name, email)
+    return user
+
+def set_user_id(user_id):
+    """Set the user ID in a user's BE configuration.
+
+    See Also
+    --------
+    libbe.storage.util.config.set_val
+    """
+    user = libbe.storage.util.config.set_val('user', user_id)

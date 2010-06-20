@@ -1,0 +1,67 @@
+The Roundup issue tracker
+  http://roundup.sourceforge.net/
+has been around for a while, and provides a nice, flexible design
+  http://roundup.sourceforge.net/docs/design.html
+What ideas from Roundup are worth incorperating in our setup?
+
+Roundup's great strength is the flexibility of its data model and
+range of generic support.  It's very easy to extend.  However, there
+is only so far you can go with generic support.  Roundup lacks analogs
+to the following Command subclasses (as far as I know):
+  Diff
+    Has per-issue logs, but no repository-wide summary
+  Merge
+  Commit
+    No VCS backends, see http://issues.roundup-tracker.org/issue2550547
+  Import_xml
+  Serve
+    Has HTML server, but no remote command-line access
+Of course, none of these would be particularly hard to add to Roundup,
+with the possible exception of VCS backends, which appears to be
+in-progress anyway.  However, I really like the simplicity of
+  `be init`
+and the ability to postpone repository customization until you need
+it.  So, can we trim down the BE internals to make BE more extensible
+without sacrificing our nice default setup and its tools?  The problem
+is, how to the commands do their thing if they don't know what they're
+working with?
+
+Say, for example, I want to run `be depend bugA bugB`, but my bugs
+don't have blocks or blocked_by link properties.  That could be easily
+handled by having each command would have to keep track of which
+properties it needed and raise appropriate exceptions.
+
+List, Show, Import_xml, etc. would presumably use templates to define
+their output/input formats.
+
+As far as postponed customization goes, it would be easy enough to
+duplicate Roundup's schema.py and provide a default schema.py for
+bugtracking.  This would improve our current system by keeping all the
+configurable bits under version control from the start (equivalent to
+setting _versioned_property(require_save=True) for all properties).
+
+Another part of the difference between BE and Roundup seems to be due
+to the initial backend selection.  Roundup is built on databases,
+which encourages their keyed-Class approach with (property, value)
+pairs of predefined types.  They use Classes for everything, down to
+status values, etc., while we've built those sorts of things into
+_versioned_property()s.
+Benefits of Roundup approach:
+  * easy to configure/alter/retrieve list of allowed values
+  * no need to hard-code properties or resort to extra_strings
+  * assigned values are actually links to centralized definitions
+    - easy updates
+Benefits of BE approach:
+  * single file for all properties
+    - one read and you're done
+    - many file systems don't handle 'lots of tiny files' well
+  * assigned values are actual values, not links to centralized defs.
+    - easy to merge by hand, no need to look up references.
+Since it would be fairly simple to add a merging tool that handled the
+reference lookup transparently, we can move to a Roundup-like Class
+structure by using our current mapfile implementation to store small
+Classes.
+
+Finally, would it be easier to merge these Roundup features into BE,
+or merge the BE features into Roundup...
+

@@ -1,0 +1,37 @@
+From jdoe@example.com Fri Apr 18 12:00:00 2008
+Content-Type: text/xml; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+From: jdoe@example.com
+To: a@b.com
+Date: Fri, 18 Apr 2008 12:00:00 +0000
+Subject: [be-bug:xml] Updates to a, b
+
+<?xml version="1.0" encoding="utf-8" ?>
+<be-xml>
+ <version>
+   <tag>1.0.0</tag>
+   <branch-nick>be</branch-nick>
+   <revno>446</revno>
+   <revision-id>wking@drexel.edu-20091119214553-iqyw2cpqluww3zna</revision-id>
+ </version>
+ <bug>
+   <uuid>a</uuid>
+   <short-name>a</short-name>
+   <severity>minor</severity>
+   <status>open</status>
+   <creator>John Doe &lt;jdoe@example.com&gt;</creator>
+   <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+   <summary>Bug A</summary>
+ </bug>
+ <bug>
+   <uuid>b</uuid>
+   <short-name>b</short-name>
+   <severity>minor</severity>
+   <status>closed</status>
+   <creator>Jane Doe &lt;jdoe@example.com&gt;</creator>
+   <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+   <summary>Bug B</summary>
+ </bug>
+</be-xml>
+

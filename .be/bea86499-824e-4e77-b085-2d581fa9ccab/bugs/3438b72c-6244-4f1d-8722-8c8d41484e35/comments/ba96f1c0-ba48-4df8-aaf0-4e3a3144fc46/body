@@ -1,0 +1,11 @@
+It would be nice if we could store tests.
+  .be/BUGDIR/tests/...
+and link them from bugs.
+
+Then running
+  test.py BUGDIR/BUG
+would run the tests for that particular bug.
+
+This would provide regression testing via
+  test.py $(be list --ids --status fixed)
+

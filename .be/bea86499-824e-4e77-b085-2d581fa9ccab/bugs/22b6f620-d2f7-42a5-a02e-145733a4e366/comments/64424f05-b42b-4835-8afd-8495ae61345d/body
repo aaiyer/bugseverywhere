@@ -1,0 +1,8 @@
+Implemented.
+
+You can now list targets by dependency (not by date, but better for
+most cases) with
+  be depend -t-1 --severity target ID
+where ID is the uuid of any target bug, or with
+  be depend -t-1 --severity target $(be target --resolve TARGET)
+where TARGET is the summary of any target bug.

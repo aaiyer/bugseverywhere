@@ -1,0 +1,22 @@
+This is an outgrowth of #bea86499-824e-4e77-b085-2d581fa9ccab/1100c966-9671-4bc6-8b68-6d408a910da1/bd1207ef-f97e-4078-8c5d-046072012082#:
+> All of this makes me wonder how much we care about being able to
+> see bug diffs for any repository format older than the current one.
+> I think that we don't really care ;).  After all, the on-disk
+> format should settle down as BE matures :p.  When you _do_ want
+> to see the long-term history of a particular bug, there's always
+>   bzr log .be/123/bugs/456/values
+> or the equivalent for your VCS.  If access to the raw log ends
+> up being important, it should be very easy to add
+>   libbe.storage.base.VersionedStorage.log(id)
+>   libbe.command.log
+
+Access to the (parsed) logs will be important for pretty-printing
+bugdir/bug/comment change logs.  Since we do version the bug
+repository, users will expect us to be able to list the history for
+any particular item (e.g. for "last activity" timestamps, automatic
+reminder emails, whatever).  While it does not necessarily need to be
+able to delve into old storage formats, it does need to get
+implemented.  It's probably worth encapsulating changes in something
+like a list of Diff() objects, although it might be worth linking
+along bug lines, etc., like VCS annotation.
+

@@ -1,0 +1,14 @@
+> Roundup's great strength is the flexibility of its data model and
+> range of generic support.  It's very easy to extend...
+> ...
+> As far as postponed customization goes, it would be easy enough to
+> duplicate Roundup's schema.py and provide a default schema.py for
+> bugtracking.  This would improve our current system by keeping all the
+> configurable bits under version control from the start (equivalent to
+> setting _versioned_property(require_save=True) for all properties).
+
+How will we handle diffs between with revisions with different
+schema.py?  This re-raises #bea86499-824e-4e77-b085-2d581fa9ccab/ed5eac05-80ed-411d-88a4-d2261b879713/c664b7be-ded5-42dd-a16a-82b2bdb52e36# (#bea86499-824e-4e77-b085-2d581fa9ccab/1100c966-9671-4bc6-8b68-6d408a910da1/bd1207ef-f97e-4078-8c5d-046072012082#), but we
+_expect_ schema.py to evolve, while before we had expected on-disk
+versions to stabilize.
+

@@ -1,0 +1,36 @@
+I've written up a little release script that bundles all the steps
+we've mentioned so far into a single command.  Of course, we'll still
+have to keep NEWS up to date on our own.
+
+The output prints a trace of what's going on:
+
+  $ ./release.py 1.0.0
+  set libbe.version._VERSION = '1.0.0'
+  updating AUTHORS
+  updating ./becommands/assign.py
+  updating ./becommands/html.py
+  ...
+  commit current status: Bumped to version 1.0.0
+  tag current revision 1.0.0
+  export current revision to be-1.0.0
+  generate libbe/_version.py
+  copy libbe/_version.py to be-1.0.0/libbe/_version.py
+  generate ChangeLog file be-1.0.0/ChangeLog up to tag 1.0.0
+  set vcs_name in be-1.0.0/.be/settings to None
+  create tarball be-1.0.0.tar.gz
+  remove be-1.0.0
+
+Since we'll be distributing a non-bzr-repo version, it would be nice
+to adapt our 'submit bug' procedure (outlined on the main page) to one
+that works with this setup.  Without guaranteed versioning, that would
+probably be something along the lines of
+  be email-bugs [--to be-devel@bugseverywhere.org] BUG-ID ...
+With interfaces/email/interactive listening on the recieving end to
+grab new-bug emails and import them into an incoming bug repository.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

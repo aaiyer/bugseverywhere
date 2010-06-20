@@ -1,0 +1,14 @@
+creator: W. Trevor King <wking@drexel.edu>
+
+
+severity: minor
+
+
+status: open
+
+
+summary: Need command output abstraction for flexible UIs
+
+
+time: Wed, 20 Jan 2010 20:35:12 +0000
+

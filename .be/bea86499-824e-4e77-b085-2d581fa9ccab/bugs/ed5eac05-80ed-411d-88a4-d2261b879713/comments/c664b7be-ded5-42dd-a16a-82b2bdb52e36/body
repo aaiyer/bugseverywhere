@@ -1,0 +1,7 @@
+> I'm stuck on how to handle upgrades though...
+
+I've satisfied myself with the solution mentioned in #bea86499-824e-4e77-b085-2d581fa9ccab/1100c966-9671-4bc6-8b68-6d408a910da1/bd1207ef-f97e-4078-8c5d-046072012082#,
+namely, upgrading on disk the way we've always done, and not
+supporting on-the-fly upgrading at all.  This isn't important for this
+bug, but I didn't want to just ignore that part of the commit message.
+

@@ -1,0 +1,12 @@
+Added rudimentary authorization with `be serve --auth FILE`.
+
+Special username 'guest' is not allowed to change name,password or
+write to the repository.  All other users in the auth file are allowed
+to do all of that.  A more robust solution would be to have POSIX
+permissions on each storage item, or something.
+
+Note that while the server supports name/password changes for
+non-guest users, there is no command-line interface to this
+functionality.  There is also no automatic way to register
+(i.e. create entries).
+

@@ -1,0 +1,102 @@
+On Tue, Nov 17, 2009 at 05:53:31PM -0500, Chris Ball wrote:
+>   > It would make it much easier on the Debian package maintainer if
+>   > the Bugs Everywhere project would make conventional tarball
+>   > releases, with conventional version numbers, with a changelog
+>   > describing what has changed between versions.
+> How do people feel about pushing for a 1.0 release, with Trevor's tree
+> plus a finished cfbe merge?  Or would we rather wait until afterwards
+> to try for cfbe?
+
+Sounds good to me.  Not that my tree is much ahead of the trunk at the
+moment.  We've talked over most of these issues a few times, so I'll
+just summarize where I think we stand on the steps needed to make a
+release.
+
+** cfbe integration
+
+Postpone until we work out bzr/hg versioning [1]?
+
+** Conventional version number
+
+Set to "1.0.0" using libbe.version._VERSION.
+
+** NEWS file
+
+Depending on our level of masochism, either something starting out
+along the lines of [2]
+  bzr log --gnu-changelog -n1 -r 200..
+(commit 200, or
+  aaron.bentley@utoronto.ca-20060411035623-9b8d222282a26ce1
+ was the last time anyone touched the NEWS file),
+or a much abbreviated entry [3,4], along the lines of my current NEWS
+file (changed just a few minutes ago).
+
+** Tag bzr commit
+
+  bzr tag 1.0.0
+
+** Create tarball
+
+From Ben[5]:
+  bzr export /tmp/be-1.0.0.tar.gz
+
+
+References:
+
+[1]
+On Thu, Jul 23, 2009 at 05:38:03PM -0400, Steve Losh wrote:
+> On Jul 21, 2009, at 9:59 AM, W. Trevor King wrote:
+> > Steve's also versioning it with Mercurial.  Will he mind changing to
+> > Bazaar?
+>
+> Yeah, I've tried bazaar but really don't like the interface at all.  If 
+> everyone else really wants me to move it over I guess I can though.
+
+[2]
+On Tue, Jul 14, 2009 at 11:05:38AM -0400, Chris Ball wrote:
+> Actually, there's a `bzr log --gnu-changelog` now, and `bzr help
+> log-formats` offers some more styles.  (None of them seem to match
+> my preferred style for release announcements exactly, which would
+> be `git shortlog`-style.)
+
+[3]
+On Thu, Jul 16, 2009 at 07:21:10PM +1000, Ben Finney wrote:
+> I actually don't think the commit log needs to be part of the release at
+> all. It's of interest only to those who want fine-level detail about
+> changes to every file, and for that purpose I think read access to the
+> VCS is much better. Packaging a static copy of the commit log as plain
+> text seems pointless.
+> 
+> Rather, we should treat a user-changes level “NEWS” file (or whatever
+> name we choose for it) as part of the documentation, and set the
+> expectation among the team that it will be updated for each user-visible
+> change being worked on, like any other documentation.
+
+[4]
+On Tue, Jul 14, 2009 at 11:11:31AM -0400, Chris Ball wrote:
+> Hi,
+> 
+>    > That's not a changelog, that's a commit log of every source-level
+>    > commit made. Far too much detail for a changelog of
+>    > *user-visible* changes associated with a release.
+> 
+> I think I agree with both of you. :) It seems like it's both true that
+> there's no point in keeping a GNU-style ChangeLog these days, and that
+> if we make a release we should write an announce mail that directly
+> mentions new user-visible changes as well as attaching the commit log.
+> That smaller list of highly user-visible changes could live in NEWS,
+> or in the announce mail, or both.
+
+[5]
+On Wed, Jul 15, 2009 at 12:54:05AM +1000, Ben Finney wrote:
+> Even better: ‘bzr export /tmp/foo.tar.gz’ will create a source tarball
+> of all the files in the branch's VCS inventory. All we need to do is
+> start the practice of tagging a release in the VCS, and export the
+> tarball at that time.
+
+-- 
+This email may be signed or encrypted with GPG (http://www.gnupg.org).
+The GPG signature (if present) will be attached as 'signature.asc'.
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+My public key is at http://www.physics.drexel.edu/~wking/pubkey.txt

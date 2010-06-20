@@ -4,8 +4,9 @@
 # Makefile
 # Part of Bugs Everywhere, a distributed bug tracking system.
 #
-# Copyright (C) 2008-2009 Ben Finney <benf@cybersource.com.au>
+# Copyright (C) 2008-2010 Ben Finney <benf@cybersource.com.au>
 #                         Chris Ball <cjb@laptop.org>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -23,48 +24,58 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 SHELL = /bin/bash
-PATH = /usr/bin:/bin
-
-# Directories with semantic meaning
-DOC_DIR := doc
-
-# Variables that will be extended by module include files
-GENERATED_FILES := libbe/_version.py build
-CODE_MODULES :=
-CODE_PROGRAMS :=
-
-# List of modules (directories) that comprise our 'make' project
-MODULES += ${DOC_DIR}
-
 RM = rm
+#PATH = /usr/bin:/bin  # must include sphinx-build for 'sphinx' target.
 
 #PREFIX = /usr/local
 PREFIX = ${HOME}
 INSTALL_OPTIONS = "--prefix=${PREFIX}"
 
+# Directories with semantic meaning
+DOC_DIR := doc
+MAN_DIR := ${DOC_DIR}/man
+
+MANPAGES = be.1
+GENERATED_FILES := build libbe/_version.py
+
+MANPAGE_FILES = $(patsubst %,${MAN_DIR}/%,${MANPAGES})
+GENERATED_FILES += ${MANPAGE_FILES}
+
 
 .PHONY: all
 all: build
-
-# Include the make data for each module
-include $(patsubst %,%/module.mk,${MODULES})
 
 
 .PHONY: build
 build: libbe/_version.py
 	python setup.py build
 
-.PHONY: install
-install: doc build
-	python setup.py install ${INSTALL_OPTIONS}
-#cp -v interfaces/xml/* ${PREFIX}/bin
-#cp -v interfaces/email/catmutt ${PREFIX}/bin
+.PHONY: doc
+doc: sphinx man
 
-
+.PHONY: install
+install: build doc
+	python setup.py install ${INSTALL_OPTIONS}
+
+test: build
+	python test.py
+
 .PHONY: clean
 clean:
 	$(RM) -rf ${GENERATED_FILES}
+	$(MAKE) -C ${DOC_DIR} clean
 
+
 .PHONY: libbe/_version.py
 libbe/_version.py:
 	bzr version-info --format python > $@
+
+.PHONY: man
+man: ${MANPAGE_FILES}
+
+%.1: %.1.sgml
+	docbook-to-man $< > $@
+
+.PHONY: sphinx
+sphinx:
+	$(MAKE) -C ${DOC_DIR} html

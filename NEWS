@@ -1,3 +1,125 @@
+February 20, 2010
+ * `be html` uses truncated IDs in comment and bug URLs and anchors.
+
+January 27, 2010
+ * `be html` links (<a href="...) #-delimited references in text/*
+   comment bodies.
+
+January 25, 2010
+ * Added --ssl to `be serve` using cherrypy.wsgiserver.
+
+January 23, 2010
+ * Added 'Created comment with ID .../.../...' output to `be comment`.
+ * Added --important and --mine to `be list`.
+
+January 20, 2010
+ * Renamed 'be-mbox-to-xml' -> 'be-mail-to-xml' and added support for
+   several mailbox formats.
+
+January 3, 2010
+ * Changed `be list --uuids` -> `be list --ids`
+   Instead of UUIDs, it now outputs user ids: BUGDIR/BUG
+
+January 1, 2010
+ * Added HTTP storage backend and server
+   Serve a local repo on http://localhost:8000
+     be --repo REPO serve
+   Then connect from other be calls, for example
+     be --repo http://localhost:8000 list
+
+December 31, 2009
+ * New bugdir/bug/comment ID format replaces old bug:comment format.
+ * Deprecated support for `be diff` on Arch and Darcs <= 2.3.1.  A new
+   backend abstraction (Storage) makes the former implementation
+   ungainly.
+ * Improved command completion.
+ * Removed commands close, open, email_bugs, 
+ * Flipped some arguments
+   `be assign BUG-ID [ASSIGNEE]` -> `be status ASSIGNED BUG-ID ...`
+   `be severity BUG-ID SEVERITY` -> `be severity SEVERITY BUG-ID ...`
+   `be status BUG-ID STATUS` -> `be status STATUS BUG-ID ...`
+
+December 7, 2009
+ * added --paginate and --no-pager to be.
+ * be --dir DIR COMMAND now roots the bugdir in DIR _without_ changing
+   directories.
+ * `be init --root DIR` should now be `be --dir DIR init`.
+
+December 5, 2009
+ * targets are now a special type of bug (severity 'target'), so you
+   can do all the things you do with normal bugs to them as well
+   (e.g. comment on them, link them into dependency trees, etc.)
+ * new command `be due` to get/set bug due dates.
+ * changes to `be diff`
+   * exits with an error if required revision control is not possible.
+     Previously it printed a message, but exitted with status 0.
+   * removed options --new, --removed, --modified, --all
+   * added options --uuids, --subscribe
+   Replace:
+     '--new' with '--uuids --subscribe DIR:new'
+     '--removed' with '--uuids --subscribe DIR:rem'
+     '--modified' with '--uuids --subscribe DIR:mod'
+     '--all' with '--uuids'
+ * changes to `be depend`
+   * added options --status, --severity
+ * changes to `be list`
+   * added blacklist capability to --status, --severity, --assigned
+   * removed options --target, --cur-target
+   Replace:
+     'be list --target TARGET' with
+     'be depend --status -closed,fixed,wontfix --severity -target \
+        $(be target --resolve TARGET)'
+     'be list --cur-target' with
+     'be depend --status -closed,fixed,wontfix --severity -target \
+        $(be target --resolve)'
+ * changes to `be target`
+   * added option --resolve
+   * removed option --list
+   Replace:
+     'be target --list' with 'be list --status all --severity target'
+ * assorted cleanups and bugfixes
+
+December 4, 2009
+ * new commands:
+   email-bugs
+ * broke `be comment --xml` out and extended into `be import-xml`
+ * added --dir option to `be diff'
+ * new XML format <be-xml>
+ * interfaces/email/interactive:
+   * added support for [be-bug:xml] interface
+   * improved security with restrict_file_access
+ * assorted cleanups, bugfixes, and optimizations
+
+November 17, 2009
+ * new becommands:
+   commit
+   depend
+   html
+   merge
+   remove
+   status
+   subscribe
+   tag
+ * renamed becommands:
+   set_root => init
+ * removed becommands:
+   inprogress
+   upgrade
+ * new interfaces:
+   email:
+     interactive
+     catmutt
+   xml:
+     be-mbox-to-xml
+     be-xml-to-mbox
+ * deprecated interfaces:
+   gui:
+     beg
+     wxbe
+   web:
+     Bugs-Everywhere-Web
+ * lots of bugfixes and cleanups, see `be diff 200` for details.
+
 April 10, 2006
  * Updated BeWeb to TurboGear 0.9
 

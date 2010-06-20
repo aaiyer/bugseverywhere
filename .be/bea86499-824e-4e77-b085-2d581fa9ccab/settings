@@ -1,0 +1,14 @@
+extra_strings:
+- "SUBSCRIBE:W. Trevor King <wking@drexel.edu>\tall\t*"
+
+
+inactive_status:
+- - closed
+  - The bug is no longer relevant.
+- - fixed
+  - The bug should no longer occur.
+- - wontfix
+  - It's not a bug, it's a feature.
+- - disabled
+  - Unknown meaning.  For backwards compatibility with old BE bugs.
+
