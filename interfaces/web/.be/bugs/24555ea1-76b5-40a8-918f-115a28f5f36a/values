@@ -1,0 +1,20 @@
+assigned: Steve Losh <steve@stevelosh.com>
+
+
+creator: Steve Losh <steve@stevelosh.com>
+
+
+severity: critical
+
+
+status: wontfix
+
+
+summary: Fix the extra severity problem.
+
+
+target: beta
+
+
+time: Thu, 25 Jun 2009 21:39:38 +0000
+
