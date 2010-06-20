@@ -1,5 +1,6 @@
 import cherrypy
-from libbe import bugdir, settings_object
+from libbe import bugdir
+from libbe.storage.util import settings_object
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 

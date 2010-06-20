@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import cherrypy
-from cherryflavoredbugseverywhere import web
+import web
 from optparse import OptionParser
 from os import path
 
