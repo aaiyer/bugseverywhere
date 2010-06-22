@@ -38,13 +38,13 @@ Bugs
 
 If you have any problems with BE, you can look for matching bugs::
 
-    $ be --repo http://bugseverywhere.org/bugs list
+    $ be --repo http://bugs.bugseverywhere.org/ list
 
 If your bug isn't listed, please open a new bug::
 
-    $ be --repo http://bugseverywhere.org/bugs new 'bug'
+    $ be --repo http://bugs.bugseverywhere.org/ new 'bug'
     Created bug with ID bea/abc
-    $ be --repo http://bugseverywhere.org/bugs comment bea/def
+    $ be --repo http://bugs.bugseverywhere.org/ comment bea/def
     <editor spawned for comments>
 
 
@@ -265,7 +265,7 @@ Compare with a previous revision ``480``::
 
 Compare your BE branch with the trunk::
 
-    $ be diff --repo http://bugseverywhere.org/bugs/
+    $ be diff --repo http://bugs.bugseverywhere.org/
 
 Manipulating bugs
 -----------------
