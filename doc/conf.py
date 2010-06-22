@@ -25,7 +25,8 @@ import libbe.version
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.coverage',
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
+              'sphinx.ext.doctest', 'sphinx.ext.coverage',
               'numpydoc']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -196,3 +197,9 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+# -- Options for Intersphinx ---------------------------------------------------
+
+intersphinx_mapping = {
+    'http://docs.python.org/dev': None,
+    }

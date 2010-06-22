@@ -68,6 +68,10 @@ class New (libbe.command.Command):
                     help='The user who reported the bug',
                     arg=libbe.command.Argument(
                         name='reporter', metavar='NAME')),
+                libbe.command.Option(name='creator', short_name='c',
+                    help='The user who created the bug',
+                    arg=libbe.command.Argument(
+                        name='creator', metavar='NAME')),
                 libbe.command.Option(name='assigned', short_name='a',
                     help='The developer in charge of the bug',
                     arg=libbe.command.Argument(
@@ -85,7 +89,10 @@ class New (libbe.command.Command):
             summary = params['summary']
         bugdir = self._get_bugdir()
         bug = bugdir.new_bug(summary=summary.strip())
-        bug.creator = self._get_user_id()
+        if params['creator'] != None:
+            bug.creator = params['creator']
+        else:
+            bug.creator = self._get_user_id()
         if params['reporter'] != None:
             bug.reporter = params['reporter']
         else:
