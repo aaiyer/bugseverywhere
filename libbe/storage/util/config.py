@@ -37,8 +37,10 @@ Initialized with :func:`libbe.util.encoding.get_filesystem_encoding`.
 
 def path():
     """Return the path to the per-user config file.
+
+    Defaults to :file:`~/.bugs_everywhere`.
     """
-    return os.path.expanduser("~/.bugs_everywhere")
+    return os.path.expanduser(os.path.join('~','.bugs_everywhere'))
 
 def set_val(name, value, section="DEFAULT", encoding=None):
     """Set a value in the per-user config file.
