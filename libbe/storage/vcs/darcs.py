@@ -116,11 +116,11 @@ class Darcs(base.VCS):
         if self.repo == None:
             return None
         for pref_file in ['author', 'email']:
-            for darcs_dir in [os.path.join(self.repo, '_darcs'),
+            for prefs_dir in [os.path.join(self.repo, '_darcs', 'prefs'),
                               os.path.expanduser(os.path.join('~', '.darcs'))]:
-                if darcs_dir == None:
+                if prefs_dir == None:
                     continue
-                pref_path = os.path.join(darcs_dir, 'prefs', pref_file)
+                pref_path = os.path.join(prefs_dir, pref_file)
                 if os.path.exists(pref_path):
                     return self._vcs_get_file_contents(pref_path).strip()
         for env_variable in ['DARCS_EMAIL', 'EMAIL']:
