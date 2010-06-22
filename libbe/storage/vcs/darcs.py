@@ -112,13 +112,15 @@ class Darcs(base.VCS):
 
     def _vcs_get_user_id(self):
         # following http://darcs.net/manual/node4.html#SECTION00410030000000000000
-        # as of June 29th, 2009
+        # as of June 22th, 2010
         if self.repo == None:
             return None
-        darcs_dir = os.path.join(self.repo, '_darcs')
-        if darcs_dir != None:
-            for pref_file in ['author', 'email']:
-                pref_path = os.path.join(darcs_dir, 'prefs', pref_file)
+        for pref_file in ['author', 'email']:
+            for prefs_dir in [os.path.join(self.repo, '_darcs', 'prefs'),
+                              os.path.expanduser(os.path.join('~', '.darcs'))]:
+                if prefs_dir == None:
+                    continue
+                pref_path = os.path.join(prefs_dir, pref_file)
                 if os.path.exists(pref_path):
                     return self._vcs_get_file_contents(pref_path).strip()
         for env_variable in ['DARCS_EMAIL', 'EMAIL']:
@@ -153,7 +155,10 @@ class Darcs(base.VCS):
     def _vcs_add(self, path):
         if os.path.isdir(path):
             return
-        self._u_invoke_client('add', path)
+        if self.version_cmp(0, 9, 10) == 1:
+            self._u_invoke_client('add', '--boring', path)
+        else:  # really old versions <= 0.9.10 lack --boring
+            self._u_invoke_client('add', path)
 
     def _vcs_remove(self, path):
         if not os.path.isdir(self._u_abspath(path)):

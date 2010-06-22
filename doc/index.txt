@@ -21,15 +21,15 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   install.txt
-   tutorial.txt
-   email.txt
-   html.txt
-   distributed_bugtracking.txt
-   hacking.txt
-   spam.txt
-   libbe/libbe.txt
-   doc.txt
+   install
+   tutorial
+   email
+   html
+   distributed_bugtracking
+   hacking
+   spam
+   libbe/libbe
+   doc
 
 Indices and tables
 ==================

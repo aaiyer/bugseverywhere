@@ -14,7 +14,7 @@ need to run::
 
     $ make
 
-to build some auto-generated files (e.g. ``libbe/_version.py``), and::
+to build some auto-generated files (e.g. :mod:`libbe._version`), and::
 
     $ make install
 

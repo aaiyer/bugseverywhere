@@ -6,15 +6,19 @@ Adding commands
 ===============
 
 To write a plugin, you simply create a new file in the
-``libbe/commands/`` directory.  Take a look at one of the simpler
-plugins (e.g. ``remove.py``) for an example of how that looks, and to
-start getting a feel for the libbe interface.
+:file:`libbe/command/` directory.  Take a look at one of the simpler
+plugins (e.g. :mod:`libbe.command.remove`) for an example of how that
+looks, and to start getting a feel for the libbe interface.
 
-See ``libbe/commands/base.py`` for the definition of the important
-classes ``Option``, ``Argument``, ``Command``, ``InputOutput``,
-``StorageCallbacks``, and ``UserInterface`` classes.  You'll be
-subclassing ``Command`` for your command, but all those classes will
-be important.
+See :mod:`libbe.command.base` for the definition of the important
+classes :class:`~libbe.command.base.Option`,
+:class:`~libbe.command.base.Argument`,
+:class:`~libbe.command.base.Command`,
+:class:`~libbe.command.base.InputOutput`,
+:class:`~libbe.command.base.StorageCallbacks`, and
+:class:`~libbe.command.base.UserInterface`.  You'll be subclassing
+:class:`~libbe.command.base.Command` for your command, but all those
+classes will be important.
 
 
 Command completion
@@ -22,21 +26,22 @@ Command completion
 
 BE implements a general framework to make it easy to support command
 completion for arbitrary plugins.  In order to support this system,
-any of your completable ``Argument()`` instances (in your command's
-``.options`` or ``.args``) should be initialized with some valid
-completion_callback function.  Some common cases are defined in
-``libbe.command.util``.  If you need more flexibility, see
-``libbe.command.list``'s ``--sort`` option for an example of
-extensions via ``libbe.command.util.Completer``, or write a custom
-completion function from scratch.
+any of your completable :class:`~libbe.command.base.Argument`
+instances (in your command's ``.options`` or ``.args``) should be
+initialized with some valid completion_callback function.  Some common
+cases are defined in :mod:`libbe.command.util`.  If you need more
+flexibility, see :mod:`libbe.command.list`\'s ``--sort`` option for an
+example of extensions via :class:`libbe.command.util.Completer`, or
+write a custom completion function from scratch.
 
 
 Adding user interfaces
 ======================
 
-Take a look at ``libbe/ui/command_line.py`` for an example.  Basically
-you'll need to setup a ``UserInterface`` instance for running commands.
-More details to come after I write an HTML UI...
+Take a look at :mod:`libbe.ui.command_line` for an example.
+Basically you'll need to setup a
+:class:`~libbe.command.base.UserInterface` instance for running
+commands.  More details to come after I write an HTML UI...
 
 
 Testing
@@ -50,11 +55,11 @@ for example:
 
     be$ python test.py libbe.command.merge
 
-For a definition of "any tests", see ``test.py``'s
+For a definition of "any tests", see :file:`test.py`'s
 ``add_module_tests()`` function.
 
 Note that you will need to run ``make`` before testing a clean BE
-branch to auto-generate required files like ``libbe/_version.py``.
+branch to auto-generate required files like :file:`libbe/_version.py`.
 
 
 Profiling
@@ -71,5 +76,5 @@ It's often useful to toss::
     import sys, traceback
     print >> sys.stderr, '-'*60, '\n', '\n'.join(traceback.format_stack()[-10:])
 
-into expensive functions (e.g. ``libbe.util.subproc.invoke()``) if
+into expensive functions (e.g. :func:`libbe.util.subproc.invoke`) if
 you're not sure why they're being called.

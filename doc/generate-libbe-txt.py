@@ -34,10 +34,10 @@ def toctree(children):
             '   %s.txt' % c for c in sorted(children)
             ] + ['', ''])
 
-def make_module_txt(modname, children):
-    filename = os.path.join('libbe', '%s.txt' % modname)
-    if not os.path.exists('libbe'):
-        os.mkdir('libbe')
+def make_module_txt(modname, children, subdir='libbe'):
+    filename = os.path.join(subdir, '%s.txt' % modname)
+    if not os.path.exists(subdir):
+        os.mkdir(subdir)
     if os.path.exists(filename):
         return None # don't overwrite potentially hand-written files.
     f = file(filename, 'w')
