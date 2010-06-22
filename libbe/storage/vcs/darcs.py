@@ -153,7 +153,10 @@ class Darcs(base.VCS):
     def _vcs_add(self, path):
         if os.path.isdir(path):
             return
-        self._u_invoke_client('add', path)
+        if self.version_cmp(0, 9, 10) == 1:
+            self._u_invoke_client('add', '--boring', path)
+        else:  # really old versions <= 0.9.10 lack --boring
+            self._u_invoke_client('add', path)
 
     def _vcs_remove(self, path):
         if not os.path.isdir(self._u_abspath(path)):
