@@ -35,19 +35,19 @@ def version(verbose=False):
     """
     Returns the version string for this BE installation.  If
     verbose==True, the string will include extra lines with more
-    detail (e.g. bzr branch nickname, etc.).
+    detail (e.g. last committer's name, etc.).
     """
     if "_VERSION" in globals():
         string = _VERSION
     else:
-        string = _version.version_info["revision_id"]
+        string = _version.version_info['revision']
     if verbose == True:
         info = copy.copy(_version.version_info)
         info['storage'] = libbe.storage.STORAGE_VERSION
         string += ("\n"
-                   "revision: %(revno)d\n"
-                   "nick: %(branch_nick)s\n"
-                   "revision id: %(revision_id)s\n"
+                   "revision: %(revision)s\n"
+                   "date: %(date)s\n"
+                   "committer: %(committer)s\n"
                    "storage version: %(storage)s"
                    % info)
     return string
