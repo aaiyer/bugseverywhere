@@ -196,3 +196,9 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+# -- Options for Intersphinx ---------------------------------------------------
+
+intersphinx_mapping = {
+    'http://docs.python.org/dev': None,
+    }
