@@ -1,4 +1,5 @@
 import cherrypy
+from libbe import storage
 from libbe import bugdir
 from libbe.storage.util import settings_object
 from jinja2 import Environment, FileSystemLoader
@@ -17,8 +18,12 @@ class WebInterface:
     def __init__(self, bug_root, template_root):
         """Initialize the bug repository for this web interface."""
         self.bug_root = bug_root
-        self.bd = bugdir.BugDir(root=self.bug_root)
-        self.repository_name = self.bd.root.split('/')[-1]
+        store = storage.get_storage(self.bug_root)
+        store.connect()
+        version = store.storage_version()
+        print version
+        self.bd = bugdir.BugDir(store, from_storage=True)
+        self.repository_name = "foo" # self.bd.root.split('/')[-1]
         self.env = Environment(loader=FileSystemLoader(template_root))
         self.env.filters['datetimeformat'] = datetimeformat
     
