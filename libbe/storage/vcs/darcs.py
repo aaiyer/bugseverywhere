@@ -112,12 +112,14 @@ class Darcs(base.VCS):
 
     def _vcs_get_user_id(self):
         # following http://darcs.net/manual/node4.html#SECTION00410030000000000000
-        # as of June 29th, 2009
+        # as of June 22th, 2010
         if self.repo == None:
             return None
-        darcs_dir = os.path.join(self.repo, '_darcs')
-        if darcs_dir != None:
-            for pref_file in ['author', 'email']:
+        for pref_file in ['author', 'email']:
+            for darcs_dir in [os.path.join(self.repo, '_darcs'),
+                              os.path.expanduser(os.path.join('~', '.darcs'))]:
+                if darcs_dir == None:
+                    continue
                 pref_path = os.path.join(darcs_dir, 'prefs', pref_file)
                 if os.path.exists(pref_path):
                     return self._vcs_get_file_contents(pref_path).strip()
