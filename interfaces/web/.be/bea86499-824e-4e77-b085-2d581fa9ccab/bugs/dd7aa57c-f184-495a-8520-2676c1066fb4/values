@@ -1,0 +1,21 @@
+assigned: Steve Losh <steve@stevelosh.com>
+
+
+creator: Steve Losh <steve@stevelosh.com>
+
+
+extra_strings:
+- BLOCKS:76a6140e-0800-453c-9720-29cc161663d1
+
+
+severity: minor
+
+
+status: open
+
+
+summary: The external pane sometimes loads in the wrong place.
+
+
+time: Mon, 02 Feb 2009 01:11:47 +0000
+

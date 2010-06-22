@@ -1,0 +1,21 @@
+assigned: Steve Losh <steve@stevelosh.com>
+
+
+creator: Steve Losh <steve@stevelosh.com>
+
+
+extra_strings:
+- BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7
+
+
+severity: fatal
+
+
+status: closed
+
+
+summary: Get a basic template mocked up for the list page.  Go further from there.
+
+
+time: Fri, 30 Jan 2009 03:16:26 +0000
+

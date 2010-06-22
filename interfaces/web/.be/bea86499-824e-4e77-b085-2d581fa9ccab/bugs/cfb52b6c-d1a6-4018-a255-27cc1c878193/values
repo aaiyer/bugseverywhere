@@ -1,0 +1,21 @@
+assigned: Steve Losh <steve@stevelosh.com>
+
+
+creator: Steve Losh <steve@stevelosh.com>
+
+
+extra_strings:
+- BLOCKS:76a6140e-0800-453c-9720-29cc161663d1
+
+
+severity: minor
+
+
+status: open
+
+
+summary: Change the write operations to be inline/AJAJ operations.
+
+
+time: Sun, 01 Feb 2009 21:15:35 +0000
+
