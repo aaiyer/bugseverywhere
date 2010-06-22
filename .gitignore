@@ -1,0 +1,5 @@
+*.pyc
+./build
+./doc/man/*.1
+./doc/.build/
+libbe/_version.py
