@@ -14,7 +14,7 @@ severity: minor
 status: open
 
 
-summary: The CherryPy server seems to drop connections randomly.
+summary: CFBE. The CherryPy server seems to drop connections randomly.
 
 
 time: Mon, 02 Feb 2009 01:12:37 +0000

@@ -14,7 +14,7 @@ severity: minor
 status: open
 
 
-summary: Fix the overflow problem in the comments.
+summary: CFBE. Fix the overflow problem in the comments.
 
 
 time: Sat, 07 Feb 2009 21:32:51 +0000

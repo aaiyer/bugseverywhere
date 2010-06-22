@@ -14,7 +14,7 @@ severity: minor
 status: closed
 
 
-summary: Implement bug updating (not comments).  Check on the whitespace of the summary
+summary: CFBE. Implement bug updating (not comments).  Check on the whitespace of the summary
   field while you're at it.
 
 

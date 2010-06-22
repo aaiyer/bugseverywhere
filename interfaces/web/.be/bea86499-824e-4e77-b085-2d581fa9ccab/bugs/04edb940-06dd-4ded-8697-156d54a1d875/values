@@ -14,7 +14,7 @@ severity: minor
 status: open
 
 
-summary: Assignee default selection is broken if two people have the same name but
+summary: CFBE. Assignee default selection is broken if two people have the same name but
   different emails.
 
 

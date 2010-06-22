@@ -14,7 +14,7 @@ severity: minor
 status: open
 
 
-summary: Fix the null creation date bug.  See bug ee6 in the BE repo for an example
+summary: CFBE. Fix the null creation date bug.  See bug ee6 in the BE repo for an example
   that breaks things.
 
 

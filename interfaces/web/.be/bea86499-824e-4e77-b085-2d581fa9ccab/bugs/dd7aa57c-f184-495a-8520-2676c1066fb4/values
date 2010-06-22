@@ -14,7 +14,7 @@ severity: minor
 status: open
 
 
-summary: The external pane sometimes loads in the wrong place.
+summary: CFBE. The external pane sometimes loads in the wrong place.
 
 
 time: Mon, 02 Feb 2009 01:11:47 +0000
