@@ -15,8 +15,8 @@
         </tr>
         {% for bug in bugs %}
         <tr>
-            <td>{{ bd.bug_shortname(bug) }}</td>
-            <td><a href="/bug?id={{ bd.bug_shortname(bug)}}">
+            <td>{{ bug.id.user() }}</td>
+            <td><a href="/bug?id={{ bug.id.user() }}">
                 {{ bug.summary|e|truncate(70) }}</a></td>
             <td>{{ bug.status }}</td>
             <td>{{ bug.target }}</td>
