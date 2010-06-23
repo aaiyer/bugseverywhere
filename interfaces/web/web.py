@@ -34,7 +34,9 @@ class WebInterface:
         possible_assignees.sort(key=unicode.lower)
         
         possible_targets = list(set(
-          [unicode(bug.target) for bug in self.bd if bug.target != EMPTY]))
+          [unicode(bug.summary.rstrip("\n")) for bug in self.bd \
+                if bug.severity == u"target"]))
+
         possible_targets.sort(key=unicode.lower)
         
         possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed', 
