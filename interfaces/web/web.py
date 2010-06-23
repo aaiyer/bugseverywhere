@@ -1,6 +1,7 @@
 import cherrypy
 from libbe import storage
 from libbe import bugdir
+from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
@@ -106,7 +107,7 @@ class WebInterface:
         
         self.bd.load_all_bugs()
         
-        bug = self.bd.bug_from_shortname(id)
+        bug, comment = bug_comment_from_user_id(self.bd, id)
         
         template = self.env.get_template('bug.html')
         common_info = self.get_common_information()
