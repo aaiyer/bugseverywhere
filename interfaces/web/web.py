@@ -23,7 +23,7 @@ class WebInterface:
         version = store.storage_version()
         print version
         self.bd = bugdir.BugDir(store, from_storage=True)
-        self.repository_name = "foo" # self.bd.root.split('/')[-1]
+        self.repository_name = self.bug_root.split('/')[-1]
         self.env = Environment(loader=FileSystemLoader(template_root))
         self.env.filters['datetimeformat'] = datetimeformat
     
