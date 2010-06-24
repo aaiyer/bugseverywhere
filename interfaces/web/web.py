@@ -1,6 +1,7 @@
 import cherrypy
 from libbe import storage
 from libbe import bugdir
+from libbe.command.depend import get_blocks
 from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
 from jinja2 import Environment, FileSystemLoader
@@ -111,9 +112,20 @@ class WebInterface:
         
         template = self.env.get_template('bug.html')
         common_info = self.get_common_information()
+
+        # Determine which targets a bug has.
+        # First, is this bug blocking any other bugs?
+        targets = ''
+        blocks = get_blocks(self.bd, bug)
+        for targetbug in blocks:
+            # Are any of those blocked bugs targets?
+            blocker = self.bd.bug_from_uuid(targetbug.uuid)
+            if blocker.severity == "target":
+                targets += "%s " % blocker.summary
+        
         return template.render(bug=bug, bd=self.bd, 
                                assignee='' if bug.assigned == EMPTY else bug.assigned,
-                               target='' if bug.target == EMPTY else bug.target,
+                               target=targets,
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
                                statuses=common_info['possible_statuses'],
