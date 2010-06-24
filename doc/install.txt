@@ -2,14 +2,14 @@
 Installing BE
 *************
 
-Bazaar repository
-=================
+Git repository
+==============
 
-BE is available as a bzr repository::
+BE is available as a Git repository::
 
-    $ bzr branch http://bzr.bugseverywhere.org/be
+    $ git clone git://gitorious.org/be/be.git be
 
-See the homepage_ for details.  If you do branch the bzr repo, you'll
+See the homepage_ for details.  If you do branch the Git repo, you'll
 need to run::
 
     $ make
@@ -29,9 +29,9 @@ Release tarballs
 ================
 
 For those not interested in the cutting edge, or those who don't want
-to worry about installing Bazaar, we'll post release tarballs somewhere
-(once we actually make a release).  After you've downloaded the release
-tarball, unpack it with::
+to worry about installing Git, we'll post release tarballs somewhere
+(once we actually make a release).  After you've downloaded the
+release tarball, unpack it with::
 
     $ tar -xzvf be-<VERSION>.tar.gz
 

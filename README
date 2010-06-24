@@ -14,11 +14,11 @@ numbers, bugs have globally unique ids.
 Getting BE
 ==========
 
-BE is available as a bzr repository::
+BE is available as a Git repository::
 
-    $ bzr branch http://bzr.bugseverywhere.org/be
+    $ git clone git://gitorious.org/be/be.git be
 
-See the homepage_ for details.  If you do branch the bzr repo, you'll
+See the homepage_ for details.  If you do branch the Git repo, you'll
 need to run::
 
     $ make
