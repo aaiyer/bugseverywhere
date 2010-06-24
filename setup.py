@@ -3,8 +3,8 @@
 from distutils.core import setup
 from libbe import _version
 
-rev_id = _version.version_info["revision_id"]
-rev_date = rev_id.split("-")[1]
+rev_id = _version.version_info["revision"]
+rev_date = _version.version_info["date"]
 
 setup(
     name='Bugs Everywhere',
