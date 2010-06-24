@@ -1,0 +1,7 @@
+When loading a bug containing UTF-8 (bea/12c), I see:
+
+Traceback (most recent call last):
+   File "/usr/lib/python2.6/site-packages/cherrypy/_cpwsgi.py", line 168, in next
+      chunk = chunk.encode("ISO-8859-1")
+UnicodeEncodeError: 'latin-1' codec can't encode character u'\u201c' in position 11563: ordinal not in range(256)
+
