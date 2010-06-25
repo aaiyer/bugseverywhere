@@ -1,0 +1,22 @@
+# .mailfilter
+#
+# see man maildrop, maildropfilter, and maildropex
+#
+# If you already have a ~/.mailfilterc file, you probably only need to
+# insert the bug-email grabbing stanza in your ~/.mailfilter.
+#
+# This file is released to the Public Domain.
+
+MAILDIR=$HOME/be-mail
+LOGFILE=$MAILDIR/maildrop.log
+
+# Grab all incoming bug emails (but not replies).  This rule eats
+# matching emails (i.e. no further procmail processing).
+
+if (/^Subject:.*\[be-bug/ && !/^Subject:.*\[be-bug\].*Re:/) 
+   to "| be-handle-mail/"
+
+# drop everything else
+if (/*/)
+  to /dev/null
+
