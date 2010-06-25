@@ -15,7 +15,7 @@ severity: minor
 status: closed
 
 
-summary: CFBE. Reset the state of the values when choosing "Discard Changes."
+summary: Reset the state of the values when choosing "Discard Changes."
 
 
 time: Sun, 01 Feb 2009 22:55:13 +0000

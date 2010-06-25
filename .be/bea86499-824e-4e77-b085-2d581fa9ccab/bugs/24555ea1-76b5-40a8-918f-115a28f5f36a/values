@@ -15,7 +15,7 @@ severity: critical
 status: wontfix
 
 
-summary: CFBE. Fix the extra severity problem.
+summary: Fix the extra severity problem.
 
 
 time: Thu, 25 Jun 2009 21:39:38 +0000

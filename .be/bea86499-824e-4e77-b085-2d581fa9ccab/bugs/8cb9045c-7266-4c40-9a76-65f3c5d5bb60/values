@@ -15,7 +15,7 @@ severity: minor
 status: closed
 
 
-summary: CFBE. Refactor the web interface into its own file.
+summary: Refactor the web interface into its own file.
 
 
 time: Sat, 07 Feb 2009 17:27:48 +0000
