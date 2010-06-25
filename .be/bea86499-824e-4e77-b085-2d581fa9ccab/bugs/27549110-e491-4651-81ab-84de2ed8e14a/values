@@ -12,7 +12,7 @@ reporter: Chris Ball <cjb@laptop.org>
 severity: minor
 
 
-status: open
+status: closed
 
 
 summary: Fix Unicode handling.
