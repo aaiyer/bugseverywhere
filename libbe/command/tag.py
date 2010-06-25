@@ -108,14 +108,7 @@ class Tag (libbe.command.Command):
                 'Do not specify a bug id with the --list option.')
         bugdir = self._get_bugdir()
         if params['list'] == True:
-            bugdir.load_all_bugs()
-            tags = []
-            for bug in bugdir:
-                for estr in bug.extra_strings:
-                    if estr.startswith(TAG_TAG):
-                        tag = estr[len(TAG_TAG):]
-                        if tag not in tags:
-                            tags.append(tag)
+            tags = get_all_tags(bugdir)
             tags.sort()
             if len(tags) > 0:
                 print >> self.stdout, '\n'.join(tags)
@@ -124,14 +117,13 @@ class Tag (libbe.command.Command):
         bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
             bugdir, params['id'])
         if len(params['tag']) > 0:
-            estrs = bug.extra_strings
+            tags = get_tags(bug)
             for tag in params['tag']:
-                tag_string = '%s%s' % (TAG_TAG, tag)
                 if params['remove'] == True:
-                    estrs.remove(tag_string)
+                    tags.remove(tag)
                 else: # add the tag
-                    estrs.append(tag_string)
-            bug.extra_strings = estrs # reassign to notice change
+                    tags.append(tag)
+            set_tags(bug, tags)
 
         tags = []
         for estr in bug.extra_strings:
@@ -151,3 +143,43 @@ print the tags for BUG-ID.
 To search for bugs with a particular tag, try
   $ be list --extra-strings %s<your-tag>
 """ % TAG_TAG
+
+# functions exposed to other modules
+
+def get_all_tags(bugdir):
+    bugdir.load_all_bugs()
+    tags = []
+    for bug in bugdir:
+        for tag in get_tags(bug):
+            if tag not in tags:
+                tags.append(tag)
+    return tags
+
+def get_tags(bug):
+    tags = []
+    for estr in bug.extra_strings:
+        if estr.startswith(TAG_TAG):
+            tag = estr[len(TAG_TAG):]
+            if tag not in tags:
+                tags.append(tag)
+    return tags
+
+def set_tags(bug, tags):
+    estrs = bug.extra_strings
+    new_estrs = []
+    for estr in estrs:
+        if not estr.startswith(TAG_TAG):
+            new_estrs.append(estr)
+    for tag in tags:
+        new_estrs.append('%s%s' % (TAG_TAG, tag))
+    bug.extra_strings = new_estrs # reassign to notice change
+
+def append_tag(bug, tag):
+    estrs = bug.extra_strings
+    estrs.append('%s%s' % (TAG_TAG, tag))
+    bug.extra_strings = estrs # reassign to notice change
+
+def remove_tag(bug, tag):
+    estrs = bug.extra_strings
+    estrs.remove('%s%s' % (TAG_TAG, tag))
+    bug.extra_strings = estrs # reassign to notice change
