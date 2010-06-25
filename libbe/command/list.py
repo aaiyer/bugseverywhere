@@ -63,10 +63,16 @@ class Filter (object):
             if len(self.extra_strings_regexps) > 0:
                 return False
         else:
+            matched = False
             for string in bug.extra_strings:
                 for regexp in self.extra_strings_regexps:
-                    if not regexp.match(string):
-                        return False
+                    if regexp.match(string):
+                        matched = True
+                        break
+                if matched == True:
+                    break
+            if matched == False:
+                return False
         return True
 
 class List (libbe.command.Command):
