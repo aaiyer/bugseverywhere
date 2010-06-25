@@ -32,7 +32,11 @@ options = parse_arguments()
 
 WebInterface = web.WebInterface(path.abspath(options['bug_root']), template_dir)
 
-cherrypy.config.update({'tools.staticdir.root': path.join(module_dir, 'static')})
+cherrypy.config.update({
+        'tools.encode.on': True,
+        'tools.encode.encoding': 'utf8',
+        'tools.staticdir.root': path.join(module_dir, 'static'),
+        })
 app_config = { '/static': { 'tools.staticdir.on': True,
                             'tools.staticdir.dir': '', } }
 cherrypy.quickstart(WebInterface, '/', app_config)
