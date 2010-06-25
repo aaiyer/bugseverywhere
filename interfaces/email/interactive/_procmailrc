@@ -1,11 +1,11 @@
+# Copyright
+
 # .procmailrc
 #
 # see man procmail, procmailrc, and procmailex
 #
 # If you already have a ~/.procmailrc file, you probably only need to
 # insert the bug-email grabbing stanza in your ~/.procmailrc.
-#
-# This file is released to the Public Domain.
 
 MAILDIR=$HOME/be-mail
 LOGFILE=$MAILDIR/procmail.log

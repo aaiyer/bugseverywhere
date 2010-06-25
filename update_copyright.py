@@ -70,7 +70,7 @@ EXCLUDES = [
 
 
 IGNORED_PATHS = ['./.be/', './.bzr/', './build/']
-IGNORED_FILES = ['COPYING', 'update_copyright.py', 'catmutt', '_mailfilterrc']
+IGNORED_FILES = ['COPYING', 'update_copyright.py', 'catmutt']
 
 def _strip_email(*args):
     """
