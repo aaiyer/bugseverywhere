@@ -6,6 +6,7 @@ creator: Steve Losh <steve@stevelosh.com>
 
 extra_strings:
 - BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7
+- TAG:CFBE
 
 
 severity: critical

@@ -4,6 +4,10 @@ assigned: Steve Losh <steve@stevelosh.com>
 creator: Steve Losh <steve@stevelosh.com>
 
 
+extra_strings:
+- TAG:CFBE
+
+
 severity: minor
 
 
