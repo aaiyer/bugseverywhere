@@ -1,0 +1,7 @@
+Same output here, so it doesn't feel like locale:
+
+UTF-8
+UTF-8
+
+Note that bea/12c is the only bug that I've found to trigger this
+(because it's the only one containing UTF-8 in a comment).
