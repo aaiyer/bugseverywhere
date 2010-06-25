@@ -1,0 +1,21 @@
+assigned: Steve Losh <steve@stevelosh.com>
+
+
+creator: Steve Losh <steve@stevelosh.com>
+
+
+extra_strings:
+- BLOCKS:76a6140e-0800-453c-9720-29cc161663d1
+
+
+severity: minor
+
+
+status: open
+
+
+summary: CFBE. Figure out how to best fix the column widths.
+
+
+time: Sat, 31 Jan 2009 03:07:32 +0000
+
