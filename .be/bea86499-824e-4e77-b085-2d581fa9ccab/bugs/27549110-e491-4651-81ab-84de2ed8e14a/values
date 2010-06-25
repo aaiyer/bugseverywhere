@@ -14,7 +14,7 @@ severity: minor
 status: open
 
 
-summary: 'cfbe: Fix Unicode handling.'
+summary: 'CFBE. Fix Unicode handling.'
 
 
 time: Thu, 24 Jun 2010 22:17:35 +0000
