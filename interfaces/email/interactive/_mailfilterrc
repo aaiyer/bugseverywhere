@@ -5,7 +5,7 @@
 # If you already have a ~/.mailfilterc file, you probably only need to
 # insert the bug-email grabbing stanza in your ~/.mailfilter.
 #
-# This file is released to the Public Domain.
+# This file is released under GPLv2+ license.
 
 MAILDIR=$HOME/be-mail
 LOGFILE=$MAILDIR/maildrop.log
