@@ -10,7 +10,7 @@ reporter: Steve Losh <steve@stevelosh.com>
 severity: wishlist
 
 
-status: assigned
+status: fixed
 
 
 summary: CherryPy interface "Cherry-flavored BE"

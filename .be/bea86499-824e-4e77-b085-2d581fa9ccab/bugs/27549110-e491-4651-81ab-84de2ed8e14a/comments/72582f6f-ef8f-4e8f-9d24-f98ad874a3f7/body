@@ -1,0 +1,12 @@
+Hmm, it works for me.  Maybe your locale is funny.  I get:
+
+  $ python -c 'import libbe.util.encoding as e;
+               import libbe.ui.util.pager as p;
+               print e.get_encoding();
+               p.run_pager();
+               print e.get_encoding()'
+  UTF-8
+  UTF-8
+
+but perhaps you're getting ISO-8859-1 for one of those?
+
