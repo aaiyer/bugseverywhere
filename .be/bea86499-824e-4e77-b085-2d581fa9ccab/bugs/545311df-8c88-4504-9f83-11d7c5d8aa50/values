@@ -6,6 +6,7 @@ creator: Steve Losh <steve@stevelosh.com>
 
 extra_strings:
 - BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7
+- TAG:CFBE
 
 
 severity: minor
@@ -14,8 +15,8 @@ severity: minor
 status: closed
 
 
-summary: CFBE. Implement bug updating (not comments).  Check on the whitespace of the summary
-  field while you're at it.
+summary: Implement bug updating (not comments).  Check on the whitespace of
+  the summary field while you're at it.
 
 
 time: Sat, 31 Jan 2009 02:59:54 +0000

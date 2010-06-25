@@ -25,6 +25,7 @@ import libbe
 import libbe.bug
 import libbe.command
 import libbe.command.depend
+import libbe.command.tag
 import libbe.command.target
 import libbe.command.util
 
@@ -62,10 +63,16 @@ class Filter (object):
             if len(self.extra_strings_regexps) > 0:
                 return False
         else:
+            matched = False
             for string in bug.extra_strings:
                 for regexp in self.extra_strings_regexps:
-                    if not regexp.match(string):
-                        return False
+                    if regexp.match(string):
+                        matched = True
+                        break
+                if matched == True:
+                    break
+            if matched == False:
+                return False
         return True
 
 class List (libbe.command.Command):
@@ -127,6 +134,8 @@ class List (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='sort', metavar='SORT', default=None,
                         completion_callback=libbe.command.util.Completer(AVAILABLE_CMPS))),
+                libbe.command.Option(name='tags', short_name='t',
+                    help='Add TAGS: field to standard listing format.'),
                 libbe.command.Option(name='ids', short_name='i',
                     help='Only print the bug IDS'),
                 libbe.command.Option(name='xml', short_name='x',
@@ -173,7 +182,7 @@ class List (libbe.command.Command):
             for bug in bugs:
                 print >> self.stdout, bug.id.user()
         else:
-            self._list_bugs(bugs, xml=params['xml'])
+            self._list_bugs(bugs, show_tags=params['tags'], xml=params['xml'])
         bugdir.storage.writeable = writeable
         return 0
 
@@ -230,7 +239,7 @@ class List (libbe.command.Command):
         bugs.sort(cmp_fn)
         return bugs
 
-    def _list_bugs(self, bugs, xml=False):
+    def _list_bugs(self, bugs, show_tags=False, xml=False):
         if xml == True:
             print >> self.stdout, \
                 '<?xml version="1.0" encoding="%s" ?>' % self.stdout.encoding
@@ -240,18 +249,27 @@ class List (libbe.command.Command):
                 if xml == True:
                     print >> self.stdout, bug.xml(show_comments=True)
                 else:
-                    print >> self.stdout, bug.string(shortlist=True)
+                    bug_string = bug.string(shortlist=True)
+                    if show_tags == True:
+                        attrs,summary = bug_string.split(' ', 1)
+                        bug_string = (
+                            '%s%s: %s'
+                            % (attrs,
+                               ','.join(libbe.command.tag.get_tags(bug)),
+                               summary))
+                    print >> self.stdout, bug_string
         if xml == True:
             print >> self.stdout, '</be-xml>'
 
     def _long_help(self):
         return """
 This command lists bugs.  Normally it prints a short string like
-  bea/576:om: Allow attachments
+  bea/576:om:[TAGS:] Allow attachments
 Where
   bea/576   the bug id
   o         the bug status is 'open' (first letter)
   m         the bug severity is 'minor' (first letter)
+  TAGS      comma-separated list of bug tags (if --tags is set)
   Allo...   the bug summary string
 
 You can optionally (-u) print only the bug ids.

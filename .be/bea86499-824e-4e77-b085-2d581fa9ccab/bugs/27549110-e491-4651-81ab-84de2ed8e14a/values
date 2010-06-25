@@ -3,6 +3,7 @@ creator: Chris Ball <cjb@laptop.org>
 
 extra_strings:
 - BLOCKS:77399855-6300-41a8-91a3-decbb915a3ff
+- TAG:CFBE
 
 
 reporter: Chris Ball <cjb@laptop.org>
@@ -14,7 +15,7 @@ severity: minor
 status: open
 
 
-summary: 'CFBE. Fix Unicode handling.'
+summary: Fix Unicode handling.
 
 
 time: Thu, 24 Jun 2010 22:17:35 +0000

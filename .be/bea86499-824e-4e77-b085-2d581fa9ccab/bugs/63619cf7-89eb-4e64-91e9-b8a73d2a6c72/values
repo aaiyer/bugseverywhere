@@ -6,6 +6,7 @@ creator: Steve Losh <steve@stevelosh.com>
 
 extra_strings:
 - BLOCKS:76a6140e-0800-453c-9720-29cc161663d1
+- TAG:CFBE
 
 
 severity: minor
@@ -14,7 +15,7 @@ severity: minor
 status: open
 
 
-summary: CFBE. Implement sorting.
+summary: Implement sorting.
 
 
 time: Sat, 31 Jan 2009 02:59:11 +0000

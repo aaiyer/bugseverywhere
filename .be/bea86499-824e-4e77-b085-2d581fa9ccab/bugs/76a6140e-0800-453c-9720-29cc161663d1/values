@@ -13,6 +13,7 @@ extra_strings:
 - BLOCKED-BY:9bc14860-b2bb-4442-85ea-0b8e7083457b
 - BLOCKED-BY:cfb52b6c-d1a6-4018-a255-27cc1c878193
 - BLOCKED-BY:dd7aa57c-f184-495a-8520-2676c1066fb4
+- TAG:CFBE
 
 
 severity: target
@@ -21,7 +22,7 @@ severity: target
 status: open
 
 
-summary: CFBE. beta
+summary: beta
 
 
 time: Tue, 22 Jun 2010 18:12:21 +0000
