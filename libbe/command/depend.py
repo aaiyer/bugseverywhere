@@ -119,14 +119,14 @@ class Depend (libbe.command.Command):
 
     def _run(self, **params):
         if params['repair'] == True and params['bug-id'] != None:
-            raise libbe.command.UsageError(
+            raise libbe.command.UserError(
                 'No arguments with --repair calls.')
         if params['repair'] == False and params['bug-id'] == None:
-            raise libbe.command.UsageError(
+            raise libbe.command.UserError(
                 'Must specify either --repair or a BUG-ID')
         if params['tree-depth'] != None \
                 and params['blocking-bug-id'] != None:
-            raise libbe.command.UsageError(
+            raise libbe.command.UserError(
                 'Only one bug id used in tree mode.')
         bugdir = self._get_bugdir()
         if params['repair'] == True:

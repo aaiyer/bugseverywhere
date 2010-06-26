@@ -101,12 +101,12 @@ class Show (libbe.command.Command):
         bugdir = self._get_bugdir()
         if params['only-raw-body'] == True:
             if len(params['id']) != 1:
-                raise libbe.command.UsageError(
+                raise libbe.command.UserError(
                     'only one ID accepted with --only-raw-body')
             bug,comment = libbe.command.util.bug_comment_from_user_id(
                 bugdir, params['id'][0])
             if comment == bug.comment_root:
-                raise libbe.command.UsageError(
+                raise libbe.command.UserError(
                     "--only-raw-body requires a comment ID, not '%s'"
                     % params['id'][0])
             sys.__stdout__.write(comment.body)

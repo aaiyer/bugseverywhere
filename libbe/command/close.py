@@ -41,9 +41,9 @@ def execute(args, manipulate_encodings=True):
     cmdutil.default_complete(options, args, parser,
                              bugid_args={0: lambda bug : bug.active==True})
     if len(args) == 0:
-        raise cmdutil.UsageError("Please specify a bug id.")
+        raise cmdutil.UserError("Please specify a bug id.")
     if len(args) > 1:
-        raise cmdutil.UsageError("Too many arguments.")
+        raise cmdutil.UserError("Too many arguments.")
     bd = bugdir.BugDir(from_disk=True,
                        manipulate_encodings=manipulate_encodings)
     bug = cmdutil.bug_from_shortname(bd, args[0])
