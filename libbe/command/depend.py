@@ -32,10 +32,10 @@ class BrokenLink (Exception):
     def __init__(self, blocked_bug, blocking_bug, blocks=True):
         if blocks == True:
             msg = "Missing link: %s blocks %s" \
-                % (blocking_bug.uuid, blocked_bug.uuid)
+                % (blocking_bug.id.user(), blocked_bug.id.user())
         else:
             msg = "Missing link: %s blocked by %s" \
-                % (blocked_bug.uuid, blocking_bug.uuid)
+                % (blocked_bug.id.user(), blocking_bug.id.user())
         Exception.__init__(self, msg)
         self.blocked_bug = blocked_bug
         self.blocking_bug = blocking_bug
@@ -53,28 +53,28 @@ class Depend (libbe.command.Command):
     >>> cmd = Depend(ui=ui)
 
     >>> ret = ui.run(cmd, args=['/a', '/b'])
-    a blocked by:
-    b
+    abc/a blocked by:
+    abc/b
     >>> ret = ui.run(cmd, args=['/a'])
-    a blocked by:
-    b
+    abc/a blocked by:
+    abc/b
     >>> ret = ui.run(cmd, {'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
-    a blocked by:
-    b closed
+    abc/a blocked by:
+    abc/b closed
     >>> ret = ui.run(cmd, args=['/b', '/a'])
-    b blocked by:
-    a
-    b blocks:
-    a
+    abc/b blocked by:
+    abc/a
+    abc/b blocks:
+    abc/a
     >>> ret = ui.run(cmd, {'show-status':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
-    a blocked by:
-    b closed
-    a blocks:
-    b closed
+    abc/a blocked by:
+    abc/b closed
+    abc/a blocks:
+    abc/b closed
     >>> ret = ui.run(cmd, {'repair':True})
     >>> ret = ui.run(cmd, {'remove':True}, ['/b', '/a'])
-    b blocks:
-    a
+    abc/b blocks:
+    abc/a
     >>> ret = ui.run(cmd, {'remove':True}, ['/a', '/b'])
     >>> ui.cleanup()
     >>> bd.cleanup()
@@ -135,7 +135,7 @@ class Depend (libbe.command.Command):
             if len(fixed) > 0:
                 print >> self.stdout, 'Fixed the following links:'
                 print >> self.stdout, \
-                    '\n'.join(['%s |-- %s' % (blockee.uuid, blocker.uuid)
+                    '\n'.join(['%s |-- %s' % (blockee.id.user(), blocker.id.user())
                                for blockee,blocker in fixed])
             return 0
         allowed_status_values = \
@@ -153,14 +153,14 @@ class Depend (libbe.command.Command):
                                    allowed_status_values,
                                    allowed_severity_values)
             if len(dtree.blocked_by_tree()) > 0:
-                print >> self.stdout, '%s blocked by:' % bugA.uuid
+                print >> self.stdout, '%s blocked by:' % bugA.id.user()
                 for depth,node in dtree.blocked_by_tree().thread():
                     if depth == 0: continue
                     print >> self.stdout, \
                         '%s%s' % (' '*(depth),
                         node.bug.string(shortlist=True))
             if len(dtree.blocks_tree()) > 0:
-                print >> self.stdout, '%s blocks:' % bugA.uuid
+                print >> self.stdout, '%s blocks:' % bugA.id.user()
                 for depth,node in dtree.blocks_tree().thread():
                     if depth == 0: continue
                     print >> self.stdout, \
@@ -178,24 +178,24 @@ class Depend (libbe.command.Command):
 
         blocked_by = get_blocked_by(bugdir, bugA)
         if len(blocked_by) > 0:
-            print >> self.stdout, '%s blocked by:' % bugA.uuid
+            print >> self.stdout, '%s blocked by:' % bugA.id.user()
             if params['show-status'] == True:
                 print >> self.stdout, \
-                    '\n'.join(['%s\t%s' % (_bug.uuid, _bug.status)
+                    '\n'.join(['%s\t%s' % (_bug.id.user(), _bug.status)
                                for _bug in blocked_by])
             else:
                 print >> self.stdout, \
-                    '\n'.join([_bug.uuid for _bug in blocked_by])
+                    '\n'.join([_bug.id.user() for _bug in blocked_by])
         blocks = get_blocks(bugdir, bugA)
         if len(blocks) > 0:
-            print >> self.stdout, '%s blocks:' % bugA.uuid
+            print >> self.stdout, '%s blocks:' % bugA.id.user()
             if params['show-status'] == True:
                 print >> self.stdout, \
-                    '\n'.join(['%s\t%s' % (_bug.uuid, _bug.status)
+                    '\n'.join(['%s\t%s' % (_bug.id.user(), _bug.status)
                                for _bug in blocks])
             else:
                 print >> self.stdout, \
-                    '\n'.join([_bug.uuid for _bug in blocks])
+                    '\n'.join([_bug.id.user() for _bug in blocks])
         return 0
 
     def _long_help(self):
