@@ -136,7 +136,7 @@ class Monotone (base.VCS):
         else:
             dirname = path
         if self.version_cmp(8, 0) >= 0:
-            status,output,error = self._u_invoke_client(
+            status,output,error = self._invoke_client(
                 'automate', 'get_workspace_root', cwd=dirname)
         else:
             mtn_dir = self._u_search_parent_directories(path, '_MTN')
