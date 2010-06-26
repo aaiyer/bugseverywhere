@@ -10,17 +10,19 @@ through you interface, you can (sometimes) remove the offending commit
 If the offending commit is the last commit
 ==========================================
 
-+-------+----------------------------+
-| arch  |                            |
-+-------+----------------------------+
-| bzr   | bzr uncommit && bzr revert |
-+-------+----------------------------+
-| darcs | darcs obliterate --last=1  |
-+-------+----------------------------+
-| git   | git reset --hard HEAD^     |
-+-------+----------------------------+
-| hg    | hg rollback && hg revert   |
-+-------+----------------------------+
++-------+--------------------------------------------------------------+
+| arch  |                                                              |
++-------+--------------------------------------------------------------+
+| bzr   | bzr uncommit && bzr revert                                   |
++-------+--------------------------------------------------------------+
+| darcs | darcs obliterate --last=1                                    |
++-------+--------------------------------------------------------------+
+| git   | git reset --hard HEAD^                                       |
++-------+--------------------------------------------------------------+
+| hg    | hg rollback && hg revert                                     |
++-------+--------------------------------------------------------------+
+| mtn   | mnt db kill_rev_locally $(mnt automate get_base_revision_id) |
++-------+--------------------------------------------------------------+
 
 If the offending commit is not the last commit
 ==============================================
@@ -36,20 +38,26 @@ If the offending commit is not the last commit
 +----------+-----------------------------------------------+
 | hg [#]_  |                                               |
 +----------+-----------------------------------------------+
+| mtn [#]_ |                                               |
++----------+-----------------------------------------------+
 
 .. [#] Requires the ```bzr-rebase`` plugin`_.  Note, you have to
    increment ``XYZ`` by hand for ``<XYZ+1>``, because ``bzr`` does not
    support ``after:XYZ``.
 
-.. [#] From `Mercurial: The Definitive Guide`:
+.. [#] From `Mercurial: The Definitive Guide`_:
 
      "Mercurial also does not provide a way to make a file or
      changeset completely disappear from history, because there is no
      way to enforce its disappearance"
 
+.. [#] See `Rebuilding ancestry`_ in the Monotone documentation.
+
 .. _bzr-rebase plugin: http://wiki.bazaar.canonical.com/Rebase
 .. _Mercurial: The Definitive Guide:
   http://hgbook.red-bean.com/read/finding-and-fixing-mistakes.html#id394667
+.. _Rebuilding ancestry:
+  http://www.monotone.ca/docs/Rebuilding-ancestry.html
 
 Warnings about changing history
 ===============================
