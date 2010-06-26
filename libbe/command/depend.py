@@ -376,7 +376,7 @@ class DependencyTree (object):
         self.allowed_severity_values = allowed_severity_values
 
     def _build_tree(self, child_fn):
-        root = tree.Tree()
+        root = libbe.util.tree.Tree()
         root.bug = self.root_bug
         root.depth = 0
         stack = [root]
@@ -391,7 +391,7 @@ class DependencyTree (object):
                 if self.allowed_severity_values != None \
                         and not bug.severity in self.allowed_severity_values:
                     continue
-                child = tree.Tree()
+                child = libbe.util.tree.Tree()
                 child.bug = bug
                 child.depth = node.depth+1
                 node.append(child)
