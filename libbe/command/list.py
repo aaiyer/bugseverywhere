@@ -62,7 +62,7 @@ class Filter (object):
         if len(bug.extra_strings) == 0:
             if len(self.extra_strings_regexps) > 0:
                 return False
-        else:
+        elif len(self.extra_strings_regexps) > 0:
             matched = False
             for string in bug.extra_strings:
                 for regexp in self.extra_strings_regexps:
