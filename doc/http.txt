@@ -2,6 +2,12 @@
 HTTP Interface
 **************
 
-There's an interactive HTML interface in the works
-(http://bitbucket.org/sjl/cherryflavoredbugseverywhere/), but it's not
-ready for use as a public interface yet.
+BE bundles Cherry-flavored BE, an interactive HTML interface
+originally developed by Steve Losh.
+
+You can run it from the BE source directory with::
+
+    $ python interfaces/web/cfbe.py PATH_TO_REPO
+
+Eventually we'll move it into :mod:`libbe.ui` so it will be installed
+automatically with every BE installation.
