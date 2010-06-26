@@ -50,7 +50,7 @@ if libbe.TESTING == True:
 
     import libbe.ui.util.user
 
-VCS_ORDER = ['arch', 'bzr', 'darcs', 'git', 'hg']
+VCS_ORDER = ['arch', 'bzr', 'darcs', 'git', 'hg', 'monotone']
 """List VCS modules in order of preference.
 
 Don't list this module, it is implicitly last.
