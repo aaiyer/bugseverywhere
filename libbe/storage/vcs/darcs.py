@@ -74,7 +74,7 @@ class Darcs(base.VCS):
         --------
 
         >>> d = Darcs(repo='.')
-        >>> d._vcs_version = lambda : "2.3.1 (release)"
+        >>> d._version = '2.3.1 (release)'
         >>> d.version_cmp(2,3,1)
         0
         >>> d.version_cmp(2,3,2)
@@ -83,7 +83,7 @@ class Darcs(base.VCS):
         1
         >>> d.version_cmp(3)
         -1
-        >>> d._vcs_version = lambda : "2.0.0pre2"
+        >>> d._version = '2.0.0pre2'
         >>> d._parsed_version = None
         >>> d.version_cmp(3)
         -1
@@ -94,7 +94,7 @@ class Darcs(base.VCS):
         """
         if not hasattr(self, '_parsed_version') \
                 or self._parsed_version == None:
-            num_part = self._vcs_version().split(' ')[0]
+            num_part = self.version().split(' ')[0]
             self._parsed_version = []
             for num in num_part.split('.'):
                 try:
@@ -105,7 +105,7 @@ class Darcs(base.VCS):
             if type(current) != types.IntType:
                 raise NotImplementedError(
                     'Cannot parse non-integer portion "%s" of Darcs version "%s"'
-                    % (current, self._vcs_version()))
+                    % (current, self.version()))
             c = cmp(current,other)
             if c != 0:
                 return c

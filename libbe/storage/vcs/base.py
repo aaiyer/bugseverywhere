@@ -518,20 +518,8 @@ class VCS (libbe.storage.base.VersionedStorage):
     def version(self):
         # Cache version string for efficiency.
         if not hasattr(self, '_version'):
-            self._version = self._get_version()
+            self._version = self._vcs_version()
         return self._version
-
-    def _get_version(self):
-        try:
-            ret = self._vcs_version()
-            return ret
-        except OSError, e:
-            if e.errno == errno.ENOENT:
-                return None
-            else:
-                raise OSError, e
-        except CommandError:
-            return None
 
     def installed(self):
         if self.version() != None:
@@ -547,6 +535,11 @@ class VCS (libbe.storage.base.VersionedStorage):
         """
         if not hasattr(self, 'user_id'):
             self.user_id = self._vcs_get_user_id()
+            if self.user_id == None:
+                # guess missing info
+                name = libbe.ui.util.user.get_fallback_username()
+                email = libbe.ui.util.user.get_fallback_email()
+                self.user_id = libbe.ui.util.user.create_user_id(name, email)
         return self.user_id
 
     def _detect(self, path='.'):

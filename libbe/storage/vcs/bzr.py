@@ -81,7 +81,7 @@ class Bzr(base.VCS):
         --------
 
         >>> b = Bzr(repo='.')
-        >>> b._vcs_version = lambda : "2.3.1 (release)"
+        >>> b._version = '2.3.1 (release)'
         >>> b.version_cmp(2,3,1)
         0
         >>> b.version_cmp(2,3,2)
@@ -90,7 +90,7 @@ class Bzr(base.VCS):
         1
         >>> b.version_cmp(3)
         -1
-        >>> b._vcs_version = lambda : "2.0.0pre2"
+        >>> b._version = '2.0.0pre2'
         >>> b._parsed_version = None
         >>> b.version_cmp(3)
         -1
@@ -101,7 +101,7 @@ class Bzr(base.VCS):
         """
         if not hasattr(self, '_parsed_version') \
                 or self._parsed_version == None:
-            num_part = self._vcs_version().split(' ')[0]
+            num_part = self.version().split(' ')[0]
             self._parsed_version = []
             for num in num_part.split('.'):
                 try:
@@ -112,7 +112,7 @@ class Bzr(base.VCS):
             if type(current) != types.IntType:
                 raise NotImplementedError(
                     'Cannot parse non-integer portion "%s" of Bzr version "%s"'
-                    % (current, self._vcs_version()))
+                    % (current, self.version()))
             c = cmp(current,other)
             if c != 0:
                 return c
