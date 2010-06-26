@@ -25,7 +25,7 @@ Contents:
    install
    tutorial
    email
-   html
+   http
    distributed_bugtracking
    hacking
    spam
