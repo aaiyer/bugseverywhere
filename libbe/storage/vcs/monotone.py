@@ -132,8 +132,12 @@ class Monotone (base.VCS):
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
         if self.version_cmp(8, 0) >= 0:
+            if not os.path.isdir(path):
+                dirname = os.path.dirname(path)
+            else:
+                dirname = path
             status,output,error = self._invoke_client(
-                'automate', 'get_workspace_root', cwd=path)
+                'automate', 'get_workspace_root', cwd=dirname)
         else:
             mtn_dir = self._u_search_parent_directories(path, '_MTN')
             if mtn_dir == None:
