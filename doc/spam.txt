@@ -21,7 +21,7 @@ If the offending commit is the last commit
 +-------+--------------------------------------------------------------+
 | hg    | hg rollback && hg revert                                     |
 +-------+--------------------------------------------------------------+
-| mtn   | mnt db kill_rev_locally $(mnt automate get_base_revision_id) |
+| mtn   | mtn db kill_rev_locally $(mtn automate get_base_revision_id) |
 +-------+--------------------------------------------------------------+
 
 If the offending commit is not the last commit
