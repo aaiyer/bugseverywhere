@@ -131,13 +131,9 @@ class Monotone (base.VCS):
 
     def _vcs_root(self, path):
         """Find the root of the deepest repository containing path."""
-        if os.path.isdir(path):
-            dirname = os.path.dirname(path)
-        else:
-            dirname = path
         if self.version_cmp(8, 0) >= 0:
             status,output,error = self._invoke_client(
-                'automate', 'get_workspace_root', cwd=dirname)
+                'automate', 'get_workspace_root', cwd=path)
         else:
             mtn_dir = self._u_search_parent_directories(path, '_MTN')
             if mtn_dir == None:
@@ -168,12 +164,13 @@ class Monotone (base.VCS):
         self._passphrase = ''
         self._u_invoke_client('db', 'init', '--db', self._db_path, cwd=path)
         os.mkdir(self._key_dir)
-        self._u_invoke_client('automate',
-                              '--db', self._db_path,
-                              '--keydir', self._key_dir,
-                              'genkey', self._key, self._passphrase)
-        self._invoke_client('setup', '--db', self._db_path,
-                                '--branch', self._branch_name, cwd=path)
+        self._u_invoke_client(
+            '--db', self._db_path,
+            '--keydir', self._key_dir,
+            'automate', 'genkey', self._key, self._passphrase)
+        self._invoke_client(
+            'setup', '--db', self._db_path,
+            '--branch', self._branch_name, cwd=path)
 
     def _vcs_destroy(self):
         vcs_dir = os.path.join(self.repo, '_MTN')
