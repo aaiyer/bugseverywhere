@@ -181,11 +181,11 @@ class Depend (libbe.command.Command):
             print >> self.stdout, '%s blocked by:' % bugA.id.user()
             if params['show-status'] == True:
                 print >> self.stdout, \
-                    '\n'.join(['%s\t%s' % (_bug.id.user(), _bug.status)
+                    '\n'.join(['%s\t%s\t%s' % (_bug.id.user(), _bug.status, _bug.summary)
                                for _bug in blocked_by])
             else:
                 print >> self.stdout, \
-                    '\n'.join([_bug.id.user() for _bug in blocked_by])
+                '\n'.join(['%s\t%s'%(_bug.id.user(), _bug.summary) for _bug in blocked_by])
         blocks = get_blocks(bugdir, bugA)
         if len(blocks) > 0:
             print >> self.stdout, '%s blocks:' % bugA.id.user()
