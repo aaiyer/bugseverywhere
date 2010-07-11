@@ -1,0 +1,13 @@
+Attempt to edit some bug details gives 500 Internal Server Error with:
+
+[11/Jul/2010:17:28:26] HTTP Traceback (most recent call last):
+  File "/usr/lib/python2.6/site-packages/cherrypy/_cprequest.py", line
+  606, in respond
+    cherrypy.response.body = self.handler()
+  File "/usr/lib/python2.6/site-packages/cherrypy/_cpdispatch.py",
+  line 25, in __call__
+    return self.callable(*self.args, **self.kwargs)
+  File "/home/gour/repos/git/gour-be/interfaces/web/web.py", line 161,
+  in edit
+    shortname = self.bd.bug_shortname(bug)
+AttributeError: 'BugDir' object has no attribute 'bug_shortname'
