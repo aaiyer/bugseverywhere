@@ -71,6 +71,11 @@ class Depend (libbe.command.Command):
     abc/b closed
     abc/a blocks:
     abc/b closed
+    >>> ret = ui.run(cmd, {'show-summary':True}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
+    abc/a blocked by:
+    abc/b       Bug B
+    abc/a blocks:
+    abc/b       Bug B
     >>> ret = ui.run(cmd, {'repair':True})
     >>> ret = ui.run(cmd, {'remove':True}, ['/b', '/a'])
     abc/b blocks:
@@ -88,6 +93,8 @@ class Depend (libbe.command.Command):
                     help='Remove dependency (instead of adding it)'),
                 libbe.command.Option(name='show-status', short_name='s',
                     help='Show status of blocking bugs'),
+                libbe.command.Option(name='show-summary', short_name='S',
+                    help='Show summary of blocking bugs'),
                 libbe.command.Option(name='status',
                     help='Only show bugs matching the STATUS specifier',
                     arg=libbe.command.Argument(
@@ -177,26 +184,27 @@ class Depend (libbe.command.Command):
                 add_block(bugA, bugB)
 
         blocked_by = get_blocked_by(bugdir, bugA)
+
         if len(blocked_by) > 0:
             print >> self.stdout, '%s blocked by:' % bugA.id.user()
-            if params['show-status'] == True:
-                print >> self.stdout, \
-                    '\n'.join(['%s\t%s\t%s' % (_bug.id.user(), _bug.status, _bug.summary)
-                               for _bug in blocked_by])
-            else:
-                print >> self.stdout, \
-                    '\n'.join(['%s\t%s'%(_bug.id.user(), _bug.summary) for _bug in blocked_by])
+            print >> self.stdout, \
+                '\n'.join([self.bug_string(_bug, params)
+                           for _bug in blocked_by])
         blocks = get_blocks(bugdir, bugA)
         if len(blocks) > 0:
             print >> self.stdout, '%s blocks:' % bugA.id.user()
-            if params['show-status'] == True:
-                print >> self.stdout, \
-                    '\n'.join(['%s\t%s\t%s' % (_bug.id.user(), _bug.status, _bug.summary)
-                               for _bug in blocks])
-            else:
-                print >> self.stdout, \
-                    '\n'.join(['%s\t%s'%(_bug.id.user(), _bug.summary) for _bug in blocks])
+            print >> self.stdout, \
+                '\n'.join([self.bug_string(_bug, params)
+                           for _bug in blocks])
         return 0
+
+    def bug_string(self, _bug, params):
+        fields = [_bug.id.user()]
+        if params['show-status'] == True:
+            fields.append(_bug.status)
+        if params['show-summary'] == True:
+            fields.append(_bug.summary)
+        return '\t'.join(fields)
 
     def _long_help(self):
         return """

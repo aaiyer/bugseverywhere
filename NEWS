@@ -1,3 +1,6 @@
+July 14, 2010
+ * Added --show-status to `be depend`.
+
 June 25, 2010
  * Added --tags to `be list`.
 
