@@ -104,8 +104,11 @@ class HTML (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
-        bugdir.load_all_bugs()
+        if params['export-template'] == True:
+            bugdir = None
+        else:
+            bugdir = self._get_bugdir()
+            bugdir.load_all_bugs()
         html_gen = HTMLGen(bugdir,
                            template=params['template-dir'],
                            title=params['title'],
@@ -117,7 +120,6 @@ class HTML (libbe.command.Command):
             html_gen.write_default_template(params['export-template-dir'])
         else:
             html_gen.run(params['output'])
-        return 0
 
     def _long_help(self):
         return """
