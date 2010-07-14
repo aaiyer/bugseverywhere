@@ -1,0 +1,17 @@
+creator: gour <gour@gaura-nitai>
+
+
+reporter: gour <gour@gaura-nitai>
+
+
+severity: minor
+
+
+status: open
+
+
+summary: '''BugDir'' object has no attribute ''bug_shortname'' (cfbe)'
+
+
+time: Sun, 11 Jul 2010 17:46:52 +0000
+
