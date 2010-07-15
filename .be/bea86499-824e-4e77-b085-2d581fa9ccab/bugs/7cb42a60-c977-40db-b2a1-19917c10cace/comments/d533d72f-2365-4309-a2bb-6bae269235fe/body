@@ -1,0 +1,10 @@
+This would require snapshotting the current BE bugdir on
+packaging/installation.  Easy enough to do, but usage should probably be
+  be --repo INSTALLED
+or
+  be --installed
+to load the snapshot bugdir.
+
+I'm not sure if we actually want to do this, so I'm demoting the issue
+to wishlist.
+
