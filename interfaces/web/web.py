@@ -94,9 +94,12 @@ class WebInterface:
             label += ' Currently Unschdeuled' if target == 'None' \
                 else ' Scheduled for %s' % (target,)
         
-        template = self.env.get_template('list.html')
         bugs = self.filter_bugs(status, assignee, target)
-        
+        if len(bugs) == 0:
+            template = self.env.get_template('empty-list.html')
+        else:
+            template = self.env.get_template('list.html')
+
         common_info = self.get_common_information()
         return template.render(bugs=bugs, bd=self.bd, label=label, 
                                assignees=common_info['possible_assignees'],
