@@ -15,8 +15,8 @@ severity: minor
 status: open
 
 
-summary: Fix the null creation date bug.  See bug ee6 in the BE repo for an
-  example that breaks things.
+summary: Fix the null creation date bug.  See bug ee6 in the BE repo for an example
+  that breaks things.
 
 
 time: Sun, 01 Feb 2009 21:26:49 +0000

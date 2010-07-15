@@ -15,8 +15,8 @@ severity: minor
 status: open
 
 
-summary: Assignee default selection is broken if two people have the same name
-  but different emails.
+summary: Assignee default selection is broken if two people have the same name but
+  different emails.
 
 
 time: Mon, 02 Feb 2009 00:38:49 +0000
