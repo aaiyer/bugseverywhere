@@ -7,7 +7,7 @@ reporter: gour <gour@gaura-nitai>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: '''BugDir'' object has no attribute ''bug_shortname'' (cfbe)'

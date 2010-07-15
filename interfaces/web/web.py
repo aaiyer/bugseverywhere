@@ -1,11 +1,15 @@
+from datetime import datetime
+from urllib import urlencode
+
+from jinja2 import Environment, FileSystemLoader
 import cherrypy
+
 from libbe import storage
 from libbe import bugdir
 from libbe.command.depend import get_blocks
 from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
-from jinja2 import Environment, FileSystemLoader
-from datetime import datetime
+
 
 EMPTY = settings_object.EMPTY
 
@@ -99,7 +103,8 @@ class WebInterface:
                                targets=common_info['possible_targets'],
                                statuses=common_info['possible_statuses'],
                                severities=common_info['possible_severities'],
-                               repository_name=common_info['repository_name'])
+                               repository_name=common_info['repository_name'],
+                               urlencode=urlencode)
     
     
     @cherrypy.expose
@@ -145,20 +150,19 @@ class WebInterface:
     def comment(self, id, body):
         """The view that handles adding a comment."""
         bug = self.bd.bug_from_uuid(id)
-        shortname = self.bd.bug_shortname(bug)
         
         if body.strip() != '':
             bug.comment_root.new_reply(body=body)
             bug.save()
-        
-        raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
-    
-    
+
+        raise cherrypy.HTTPRedirect(
+            '/bug?%s' % urlencode({'id':bug.id.long_user()}),
+            status=302)
+
     @cherrypy.expose
     def edit(self, id, status=None, target=None, assignee=None, severity=None, summary=None):
         """The view that handles editing bug details."""
         bug = self.bd.bug_from_uuid(id)
-        shortname = self.bd.bug_shortname(bug)
         
         if summary != None:
             bug.summary = summary
@@ -169,6 +173,8 @@ class WebInterface:
             bug.severity = severity if severity != 'None' else None
             
         bug.save()
-        
-        raise cherrypy.HTTPRedirect('/bug?id=%s' % (shortname,), status=302)
+
+        raise cherrypy.HTTPRedirect(
+            '/bug?%s' % urlencode({'id':bug.id.long_user()}),
+            status=302)
     
