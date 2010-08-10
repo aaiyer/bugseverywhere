@@ -64,6 +64,7 @@ class Help (libbe.command.Command):
             module = libbe.command.get_command(params['topic'])
             Class = libbe.command.get_command_class(module,params['topic'])
             c = Class(ui=self.ui)
+            self.ui.setup_command(c)
             print >> self.stdout, c.help().rstrip('\n')
         elif params['topic'] in TOPICS:
             print >> self.stdout, TOPICS[params['topic']].rstrip('\n')
