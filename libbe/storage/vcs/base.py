@@ -744,7 +744,6 @@ class VCS (libbe.storage.base.VersionedStorage):
                 children[i] = None
             else:
                 children[i] = self._u_path_to_id(cpath)
-                children[i]
         return [c for c in children if c != None]
 
     def _get(self, id, default=libbe.util.InvalidObject, revision=None):
