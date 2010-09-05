@@ -224,7 +224,7 @@ class CachedPathID (object):
                 continue
             try:
                 id = self.id(dirpath)
-                relpath = dirpath[len(self._root)+1:]
+                relpath = dirpath[len(self._root + os.path.sep):]
                 if id.count('/') == 0:
                     if verbose == True and id in self._cache:
                         print >> sys.stderr, 'Multiple paths for %s: \n  %s\n  %s' % (id, self._cache[id], relpath)
@@ -313,15 +313,15 @@ class CachedPathID (object):
         path = os.path.join(self._root, path)
         if not path.startswith(self._root + os.path.sep):
             raise InvalidPath(path, self._root)
-        path = path[len(self._root)+1:]
+        path = path[len(self._root + os.path.sep):]
         orig_path = path
         if not path.startswith(self._spacer_dirs[0] + os.path.sep):
             raise InvalidPath(path, self._spacer_dirs[0])
         for spacer in self._spacer_dirs:
             if not path.startswith(spacer + os.path.sep):
                 break
-            id = path[len(spacer)+1:]
-            fields = path[len(spacer)+1:].split(os.path.sep,1)
+            id = path[len(spacer + os.path.sep):]
+            fields = path[len(spacer + os.path.sep):].split(os.path.sep,1)
             if len(fields) == 1:
                 break
             path = fields[1]
