@@ -985,7 +985,7 @@ class VCS (libbe.storage.base.VersionedStorage):
             raise libbe.storage.InvalidStorageVersion(None)
         if revision == None: # don't require connection
             return libbe.util.encoding.get_file_contents(
-                path, decode=True).rstrip('\n')
+                path, decode=True).rstrip()
         relpath = self._u_rel_path(path)
         contents = self._vcs_get_file_contents(relpath, revision=revision)
         if type(contents) != types.UnicodeType:
