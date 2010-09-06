@@ -26,7 +26,6 @@ import libbe.command
 import libbe.command.util
 import libbe.util.id
 import libbe.version
-import libbe._version
 
 
 class Show (libbe.command.Command):
@@ -158,7 +157,7 @@ def _xml_header(encoding):
              '  <version>',
              '    <tag>%s</tag>' % libbe.version.version()]
     for tag in ['branch-nick', 'revno', 'revision-id']:
-        value = libbe._version.version_info[tag.replace('-', '_')]
+        value = libbe.version.version_info[tag.replace('-', '_')]
         lines.append('    <%s>%s</%s>' % (tag, value, tag))
     lines.append('  </version>')
     return lines

@@ -27,8 +27,17 @@ over the version strings" workflows.
 
 import copy
 
-import libbe._version as _version
 import libbe.storage
+try:
+    from ._version import version_info    
+except ImportError, e:
+    import logging
+    logging.warn('unable to import libbe._version: %s' % e)
+    version_info = {
+        'revision': 'unknown',
+        'date': 'unknown',
+        'committer': 'unknown',
+        }
 
 # Manually set a version string (optional, defaults to bzr revision id)
 #_VERSION = "1.2.3"
@@ -42,9 +51,9 @@ def version(verbose=False):
     if "_VERSION" in globals():
         string = _VERSION
     else:
-        string = _version.version_info['revision']
+        string = version_info['revision']
     if verbose == True:
-        info = copy.copy(_version.version_info)
+        info = copy.copy(version_info)
         info['storage'] = libbe.storage.STORAGE_VERSION
         string += ("\n"
                    "revision: %(revision)s\n"
