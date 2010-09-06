@@ -10,7 +10,6 @@
             <th>ID</th>
             <th>Summary</th>
             <th>Status</th>
-            <th>Target</th>
             <th>Assigned To</th>
         </tr>
         {% for bug in bugs %}
@@ -19,7 +18,6 @@
             <td><a href="/bug?{{ urlencode({'id':bug.id.long_user()}) }}">
                 {{ bug.summary|e|truncate(70) }}</a></td>
             <td>{{ bug.status }}</td>
-            <td>{{ bug.target }}</td>
             <td>{{ bug.assigned|striptags }}</td>
         </tr>
         {% endfor %}
