@@ -6,7 +6,8 @@ import cherrypy
 
 from libbe import storage
 from libbe import bugdir
-from libbe.command.depend import get_blocks
+from libbe.command.depend import get_blocked_by, get_blocks
+from libbe.command.target import bug_from_target_summary, bug_target
 from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
 
@@ -67,8 +68,16 @@ class WebInterface:
         
         if target != '':
             target = None if target == 'None' else target
-            bugs = [bug for bug in bugs if bug.target == target]
-        
+            if target == None:
+                # Return all bugs that don't block any targets.
+                return [bug for bug in bugs if not bug_target(self.bd, bug)]
+            else:
+                # Return all bugs that block the supplied target.
+                targetbug = bug_from_target_summary(self.bd, target)
+                if targetbug == None:
+                    return []
+                bugs = [bug for bug in get_blocked_by(self.bd, targetbug) if
+                        bug.status not in ('closed', 'fixed', 'wontfix')]
         return bugs
     
     
