@@ -7,7 +7,7 @@ import cherrypy
 from libbe import storage
 from libbe import bugdir
 from libbe.command.depend import get_blocked_by, get_blocks
-from libbe.command.target import bug_from_target_summary, bug_target
+from libbe.command.target import add_target, bug_from_target_summary, bug_target
 from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
 
@@ -180,10 +180,12 @@ class WebInterface:
             bug.summary = summary
         else:
             bug.status = status if status != 'None' else None
-            bug.target = target if target != 'None' else None
             bug.assigned = assignee if assignee != 'None' else None
             bug.severity = severity if severity != 'None' else None
             
+        if target:
+            add_target(self.bd, bug, target)
+
         bug.save()
 
         raise cherrypy.HTTPRedirect(
