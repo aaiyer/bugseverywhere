@@ -100,7 +100,7 @@ class WebInterface:
             label += ' Currently Unassigned' if assignee == 'None' \
                 else ' Assigned to %s' % (assignee,)
         if target != '':
-            label += ' Currently Unschdeuled' if target == 'None' \
+            label += ' Currently Unscheduled' if target == 'None' \
                 else ' Scheduled for %s' % (target,)
         
         bugs = self.filter_bugs(status, assignee, target)
