@@ -90,7 +90,9 @@
             <ul class="filter-items">
                 <li><a href="/?assignee=None">Unassigned</a></li>
                 {% for assignee in assignees %}
-                    <li><a href="/?assignee={{ assignee|e }}">{{ assignee|e }}</a></li>
+		    {% if assignee != "None" %}
+                        <li><a href="/?assignee={{ assignee|e }}">{{ assignee|e }}</a></li>
+                    {% endif %}
                 {% endfor %}
             </ul>
         </div>
