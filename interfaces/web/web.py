@@ -63,7 +63,7 @@ class WebInterface:
         bugs = [bug for bug in self.bd if bug.status in status]
         
         if assignee != '':
-            assignee = EMPTY if assignee == 'None' else assignee
+            assignee = None if assignee == 'None' else assignee
             bugs = [bug for bug in bugs if bug.assigned == assignee]
         
         if target != '':
