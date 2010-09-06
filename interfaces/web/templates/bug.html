@@ -140,7 +140,7 @@
     <h3>Comments</h3>
     {% for comment in bug.comments() %}
         <div class="bug-comment">
-            <h4 class="bug-comment-header">{{ comment.From|striptags|e }} said:</h4>
+            <h4 class="bug-comment-header">{{ comment.author|striptags|e }} said:</h4>
             <p class="bug-comment-body">{{ comment.body|trim|e }}</p>
             <p class="bug-comment-footer">on {{ comment.time|datetimeformat }}</p>
         </div>
