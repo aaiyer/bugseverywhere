@@ -83,5 +83,7 @@ distros, that's::
 
     $ apt-get install bugs-everywhere
 
+However, the official packages can lag behind current development.
+
 .. _Debian: http://packages.debian.org/sid/bugs-everywhere
 .. _Ubuntu: http://packages.ubuntu.com/lucid/bugs-everywhere
