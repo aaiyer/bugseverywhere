@@ -2,6 +2,38 @@
 Installing BE
 *************
 
+Dependencies
+============
+
+==============  =======================  =============  ===========================
+Package         Role                     Debian         Gentoo
+==============  =======================  =============  ===========================
+PyYAML_         serialized data storage  python-yaml    dev-python/pyyaml
+Sphinx_         see :doc:`doc`           python-sphinx  dev-python/sphinx
+numpydoc_       see :doc:`doc`           
+xsltproc_       see :doc:`doc`           xsltproc       dev-libs/libxslt
+==============  =======================  =============  ===========================
+
+The XSLT stylesheets reqired to generate the manpage are packaged in
+``docbook-xsl-ns`` on Debian [#debian] and
+``app-text/docbook-xsl-ns-stylesheets`` on Gentoo [#gentoo].  For
+futher details on DocBook publishing, see the DocBook wiki pages on
+tools_ and stylesheets_.
+
+.. _PyYAML: http://pyyaml.org/
+.. _Sphinx: http://sphinx.pocoo.org/
+.. _numpydoc: http://pypi.python.org/pypi/numpydoc
+.. _xsltproc: http://www.xmlsoft.org/XSLT/
+.. [#debian] See bugs `490716
+  <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=490716>`_
+  and `447959
+  <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=447959>`_.
+.. [#gentoo] See Diego Elio Pettenò's `blog entry
+  <http://blog.flameeyes.eu/2008/09/22/docbook-5-and-gentoo>`_.
+.. _tools: http://wiki.docbook.org/topic/DocBookPublishingTools
+.. _stylesheets: http://wiki.docbook.org/topic/DocBookXslStylesheets
+
+
 Git repository
 ==============
 
@@ -50,6 +82,8 @@ with your regular package manager.  For Debian, Ubuntu, and related
 distros, that's::
 
     $ apt-get install bugs-everywhere
+
+However, the official packages can lag behind current development.
 
 .. _Debian: http://packages.debian.org/sid/bugs-everywhere
 .. _Ubuntu: http://packages.ubuntu.com/lucid/bugs-everywhere

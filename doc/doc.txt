@@ -21,3 +21,24 @@ syntax.
   http://docutils.sourceforge.net/docs/user/rst/quickref.html
 .. _NumPy/SciPy documentation guide:
   http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines
+
+Man page
+========
+
+The man-page source :file:`be.1.xml` is writen in DocBook 5 [#DB5]_
+format.  The :file:`Makefile` converts it to :manpage:`roff(7)` format
+using an XSLT stylesheet.  See DocBook XSL [#DBXSL]_ for details.
+See :doc:`install` for suggestions on setting up a DocBook 5 toolchain
+in several distributions.
+
+The man page should conform to `Debian policy`_.
+
+.. [#DB5]
+   See Norman Walsh's `DocBook 5: The Definitive Guide
+   <http://www.docbook.org/>`_
+
+.. [#DBXSL]
+   See Bob Stayton's `DocBook XSL: The Complete Guide
+   <http://www.sagehill.net/book-description.html>`_
+
+.. _Debian policy: http://www.debian.org/doc/debian-policy/ch-docs.html#s12.1

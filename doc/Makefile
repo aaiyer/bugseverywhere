@@ -1,5 +1,6 @@
 # Makefile for Sphinx documentation
 #
+RM = /bin/rm
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
@@ -29,7 +30,7 @@ help:
 	@echo "  libbe     to autogenerate files for all libbe modules"
 
 clean:
-	-rm -rf $(BUILDDIR) libbe
+	$(RM) -rf $(BUILDDIR) libbe
 
 html: libbe
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

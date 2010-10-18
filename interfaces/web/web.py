@@ -7,7 +7,8 @@ import cherrypy
 from libbe import storage
 from libbe import bugdir
 from libbe.command.depend import get_blocked_by, get_blocks
-from libbe.command.target import add_target, bug_from_target_summary, bug_target
+from libbe.command.target import add_target, remove_target
+from libbe.command.target import bug_from_target_summary, bug_target
 from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
 
@@ -77,7 +78,11 @@ class WebInterface:
                 if targetbug == None:
                     return []
                 bugs = [bug for bug in get_blocked_by(self.bd, targetbug) if
+<<<<<<< HEAD
                         bug.status not in ('closed', 'fixed', 'wontfix')]
+=======
+                        bug.active]
+>>>>>>> 8f1cd4f5eecba8e3322ea6725d71e430520d1585
         return bugs
     
     
@@ -184,7 +189,17 @@ class WebInterface:
             bug.severity = severity if severity != 'None' else None
             
         if target:
+<<<<<<< HEAD
             add_target(self.bd, bug, target)
+=======
+            current_target = bug_target(self.bd, bug)
+            if current_target:
+                remove_target(self.bd, bug)
+                if target != "None":
+                    add_target(self.bd, bug, target)
+            else:
+                add_target(self.bd, bug, target)
+>>>>>>> 8f1cd4f5eecba8e3322ea6725d71e430520d1585
 
         bug.save()
 

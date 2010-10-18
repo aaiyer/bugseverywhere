@@ -26,7 +26,11 @@
 # along with Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
 SHELL = /bin/bash
-RM = rm
+RM = /bin/rm
+DB2MAN = http://docbook.sourceforge.net/release/xsl-ns/current/manpages/docbook.xsl
+XP = /usr/bin/xsltproc --nonet --param man.charmap.use.subset "0" \
+	--param make.year.ranges "1" --param make.single.year.ranges "1"
+
 #PATH = /usr/bin:/bin  # must include sphinx-build for 'sphinx' target.
 
 #PREFIX = /usr/local
@@ -75,8 +79,8 @@ libbe/_version.py:
 .PHONY: man
 man: ${MANPAGE_FILES}
 
-%.1: %.1.sgml
-	docbook-to-man $< > $@
+%.1: %.1.xml
+	$(XP) -o $@ $(DB2MAN) $<
 
 .PHONY: sphinx
 sphinx:
