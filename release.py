@@ -149,9 +149,9 @@ Create a git tag and a release tarball from the current revision.
 For example
   %prog 1.0.0
 
-You may wish to test this out in a dummy branch first to make sure it
-works as expected to avoid the tedium of unwinding the version-bump
-commit if it fails.
+If you don't like what got committed, you can undo the release with
+  $ git tag -d 1.0.0
+  $ git reset --hard HEAD^
 """
     p = optparse.OptionParser(usage)
     p.add_option('--test', dest='test', default=False,
