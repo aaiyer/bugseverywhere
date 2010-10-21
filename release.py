@@ -83,6 +83,8 @@ def tag(tag):
     invoke(['git', 'tag', tag])
 
 def export(target_dir):
+    if not target_dir.endswith(os.path.sep):
+        target_dir += os.path.sep
     print 'export current revision to', target_dir
     p = Pipe([['git', 'archive', '--prefix', target_dir, 'HEAD'],
               ['tar', '-xv']])
