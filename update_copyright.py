@@ -83,10 +83,11 @@ ALIASES = {
          'Chris Ball <cjb@thunk.printf.net>'],
     'Gianluca Montecchi <gian@grys.it>':
         ['Gianluca <gian@grys.it>',
+         'gian <gian@grys.it>',
          'gian <gian@li82-39>',
          'gianluca <gian@galactica>'],
     'Marien Zwart <marien.zwart@gmail.com>':
-        ['Marian Zwart <marienz@gentoo.org>'],
+        ['Marien Zwart <marienz@gentoo.org>'],
     'W. Trevor King <wking@drexel.edu>':
         ['wking <wking@mjolnir>',
          'wking <wking@thialfi>'],
