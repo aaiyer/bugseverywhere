@@ -154,16 +154,16 @@ commit if it fails.
         sys.exit(0)
 
     assert len(args) == 1, '%d (!= 1) arguments: %s' % (len(args), args)
-    tag = args[0]
-    validate_tag(tag)
+    _tag = args[0]
+    validate_tag(_tag)
 
     if pending_changes() == True:
         print "Handle pending changes before releasing."
         sys.exit(1)
-    set_release_version(tag)
+    set_release_version(_tag)
     print "Update copyright information..."
     update_authors()
     update_files()
-    commit("Bumped to version %s" % tag)
-    tag(tag)
-    create_tarball(tag)
+    commit("Bumped to version %s" % _tag)
+    tag(_tag)
+    create_tarball(_tag)
