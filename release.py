@@ -59,33 +59,28 @@ def validate_tag(tag):
 def pending_changes():
     """Use `git diff`s output to detect change.
     """
-    p = Pipe([['git', 'diff', 'HEAD']])
-    assert p.status == 0, p.statuses
-    if len(p.stdout) == 0:
+    status,stdout,stderr = invoke(['git', 'diff', 'HEAD'])
+    if len(stdout) == 0:
         return False
     return True
 
 def set_release_version(tag):
     print "set libbe.version._VERSION = '%s'" % tag
-    p = Pipe([['sed', '-i', "s/^# *_VERSION *=.*/_VERSION = '%s'/" % tag,
-               os.path.join('libbe', 'version.py')]])
-    assert p.status == 0, p.statuses
+    invoke(['sed', '-i', "s/^# *_VERSION *=.*/_VERSION = '%s'/" % tag,
+            os.path.join('libbe', 'version.py')])
 
 def remove_makefile_libbe_version_dependencies():
     print "set Makefile LIBBE_VERSION :="
-    p = Pipe([['sed', '-i', "s/^LIBBE_VERSION *:=.*/LIBBE_VERSION :=/",
-               'Makefile']])
-    assert p.status == 0, p.statuses
+    invoke(['sed', '-i', "s/^LIBBE_VERSION *:=.*/LIBBE_VERSION :=/",
+            'Makefile'])
 
 def commit(commit_message):
     print 'commit current status:', commit_message
-    p = Pipe([['git', 'commit', '-m', commit_message]])
-    assert p.status == 0, p.statuses
+    invoke(['git', 'commit', '-m', commit_message])
 
 def tag(tag):
     print 'tag current revision', tag
-    p = Pipe([['git', 'tag', tag]])
-    assert p.status == 0, p.statuses
+    invoke(['git', 'tag', tag])
 
 def export(target_dir):
     print 'export current revision to', target_dir
@@ -95,8 +90,7 @@ def export(target_dir):
 
 def make_version():
     print 'generate libbe/_version.py'
-    p = Pipe([['make', os.path.join('libbe', '_version.py')]])
-    assert p.status == 0, p.statuses
+    invoke(['make', os.path.join('libbe', '_version.py')])
 
 def make_changelog(filename, tag):
     """Generate a ChangeLog from the git history.
@@ -105,9 +99,9 @@ def make_changelog(filename, tag):
     by hand is just too slow.
     """
     print 'generate ChangeLog file', filename, 'up to tag', tag
-    p = invoke(['git', 'log', '--no-merges',
-                '%s..%s' % (INITIAL_COMMIT, tag)],
-               stdout=open(filename, 'w')),
+    invoke(['git', 'log', '--no-merges',
+            '%s..%s' % (INITIAL_COMMIT, tag)],
+           stdout=open(filename, 'w')),
 
 def set_vcs_name(filename, vcs_name='None'):
     """Exported directory is not a git repository, so set vcs_name to
@@ -115,9 +109,8 @@ def set_vcs_name(filename, vcs_name='None'):
       vcs_name: new_vcs_name
     """
     print 'set vcs_name in', filename, 'to', vcs_name
-    p = Pipe([['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
-               filename]])
-    assert p.status == 0, p.statuses
+    invoke(['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
+            filename])
 
 def create_tarball(tag):
     release_name='be-%s' % tag
@@ -131,8 +124,7 @@ def create_tarball(tag):
     set_vcs_name(os.path.join(export_dir, '.be', 'settings'))
     tarball_file = '%s.tar.gz' % release_name
     print 'create tarball', tarball_file
-    p = Pipe([['tar', '-czf', tarball_file, export_dir]])
-    assert p.status == 0, p.statuses
+    invoke(['tar', '-czf', tarball_file, export_dir])
     print 'remove', export_dir
     shutil.rmtree(export_dir)
 
