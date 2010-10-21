@@ -69,10 +69,10 @@ def set_release_version(tag):
     invoke(['sed', '-i', "s/^# *_VERSION *=.*/_VERSION = '%s'/" % tag,
             os.path.join('libbe', 'version.py')])
 
-def remove_makefile_libbe_version_dependencies():
-    print "set Makefile LIBBE_VERSION :="
+def remove_makefile_libbe_version_dependencies(filename):
+    print "set %s LIBBE_VERSION :=" % filename
     invoke(['sed', '-i', "s/^LIBBE_VERSION *:=.*/LIBBE_VERSION :=/",
-            'Makefile'])
+            filename])
 
 def commit(commit_message):
     print 'commit current status:', commit_message
@@ -105,25 +105,32 @@ def make_changelog(filename, tag):
             '%s..%s' % (INITIAL_COMMIT, tag)],
            stdout=open(filename, 'w')),
 
-def set_vcs_name(filename, vcs_name='None'):
+def set_vcs_name(be_dir, vcs_name='None'):
     """Exported directory is not a git repository, so set vcs_name to
     something that will work.
       vcs_name: new_vcs_name
     """
-    print 'set vcs_name in', filename, 'to', vcs_name
-    invoke(['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
-            filename])
+    for directory in os.listdir(be_dir):
+        if not os.path.isdir(os.path.join(be_dir, directory)):
+            continue
+        filename = os.path.join(be_dir, directory, 'settings')
+        if os.path.exists(filename):
+            print 'set vcs_name in', filename, 'to', vcs_name
+            invoke(['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
+                    filename])
 
 def create_tarball(tag):
     release_name='be-%s' % tag
     export_dir = release_name
     export(export_dir)
     make_version()
+    remove_makefile_libbe_version_dependencies(
+        os.path.join(export_dir, 'Makefile'))
     print 'copy libbe/_version.py to %s/libbe/_version.py' % export_dir
     shutil.copy(os.path.join('libbe', '_version.py'),
                 os.path.join(export_dir, 'libbe', '_version.py'))
     make_changelog(os.path.join(export_dir, 'ChangeLog'), tag)
-    set_vcs_name(os.path.join(export_dir, '.be', 'settings'))
+    set_vcs_name(os.path.join(export_dir, '.be'))
     tarball_file = '%s.tar.gz' % release_name
     print 'create tarball', tarball_file
     invoke(['tar', '-czf', tarball_file, export_dir])
