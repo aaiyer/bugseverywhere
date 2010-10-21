@@ -24,7 +24,6 @@ import string
 import sys
 
 from libbe.util.subproc import Pipe, invoke
-from libbe.util.encoding import set_file_contents
 from update_copyright import update_authors, update_files
 
 
@@ -102,23 +101,13 @@ def make_version():
 def make_changelog(filename, tag):
     """Generate a ChangeLog from the git history.
 
-    Based on
-      http://stackoverflow.com/questions/2976665/git-changelog-day-by-day
+    Not the most ChangeLog-esque format, but iterating through commits
+    by hand is just too slow.
     """
     print 'generate ChangeLog file', filename, 'up to tag', tag
-    p = invoke(['git', 'log', '--no-merges', '--format="%cd"', '--date=short',
-                '%s..%s' % (INITIAL_COMMIT, tag)])
-    days = sorted(set(p.stdout.split('\n')), reverse=True)
-    log = []
-    next = None
-    for day in days:
-        args = ['git', 'log', '--no-merges', '--format=" * s"', '--since', day]
-        if next != None:
-            args.extend(['--until', next])
-        p = invoke(args)
-        log.extend(['', day, p.stdout])
-        next = day
-    set_file_contents(filename, '\n'.join(log), encoding='utf-8')
+    p = invoke(['git', 'log', '--no-merges',
+                '%s..%s' % (INITIAL_COMMIT, tag)],
+               stdout=open(filename, 'w')),
 
 def set_vcs_name(filename, vcs_name='None'):
     """Exported directory is not a git repository, so set vcs_name to
