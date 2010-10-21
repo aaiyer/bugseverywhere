@@ -169,6 +169,7 @@ commit if it fails.
         print "Handle pending changes before releasing."
         sys.exit(1)
     set_release_version(tag)
+    print "Update copyright information..."
     update_authors()
     update_files()
     commit("Bumped to version %s" % tag)
