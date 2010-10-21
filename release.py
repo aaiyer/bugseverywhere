@@ -76,7 +76,7 @@ def remove_makefile_libbe_version_dependencies():
 
 def commit(commit_message):
     print 'commit current status:', commit_message
-    invoke(['git', 'commit', '-m', commit_message])
+    invoke(['git', 'commit', '-a', '-m', commit_message])
 
 def tag(tag):
     print 'tag current revision', tag
