@@ -1,7 +1,7 @@
 # Copyright (C) 2005-2010 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Ben Finney <benf@cybersource.com.au>
 #                         Gianluca Montecchi <gian@grys.it>
-#                         Marien Zwart <marienz@gentoo.org>
+#                         Marien Zwart <marien.zwart@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.
