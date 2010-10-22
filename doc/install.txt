@@ -54,7 +54,24 @@ to install BE.  By default BE will install into your home directory,
 but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
 to another location.
 
+By default, ``make`` builds both a man page for ``be`` and the HTML
+Sphinx documentation (:doc:`doc`).  You can customize the
+documentation targets by overriding_ the ``DOC`` variable.  For
+example, to disable all documentation during a build/install, run::
+
+    $ make DOC= install
+
+Note that ``setup.py`` (called during ``make install``) will install
+the man page (``doc/man/be.1``) if it exists, so::
+
+    $ make
+    $ make DOC= install
+
+*will* build (first ``make``) install (second ``make``) the man page.
+
+
 .. _homepage: http://bugseverywhere.org/
+.. _overriding: http://www.gnu.org/software/make/manual/html_node/Overriding.html#Overriding
 
 
 Release tarballs
