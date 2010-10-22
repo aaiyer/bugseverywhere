@@ -37,6 +37,9 @@ XP = /usr/bin/xsltproc --nonet --param man.charmap.use.subset "0" \
 PREFIX = ${HOME}
 INSTALL_OPTIONS = "--prefix=${PREFIX}"
 
+# Select the documentation you wish to build
+DOC = sphinx man
+
 # Directories with semantic meaning
 DOC_DIR := doc
 MAN_DIR := ${DOC_DIR}/man
@@ -58,7 +61,7 @@ build: $(LIBBE_VERSION)
 	python setup.py build
 
 .PHONY: doc
-doc: sphinx man
+doc: $(DOC)
 
 .PHONY: install
 install: build doc
