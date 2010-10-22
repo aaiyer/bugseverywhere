@@ -1,5 +1,6 @@
 # Copyright (C) 2006-2010 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Gianluca Montecchi <gian@grys.it>
+#                         Marien Zwart <marien.zwart@gmail.com>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         W. Trevor King <wking@drexel.edu>
 #

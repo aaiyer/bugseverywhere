@@ -42,7 +42,8 @@ DOC_DIR := doc
 MAN_DIR := ${DOC_DIR}/man
 
 MANPAGES = be.1
-GENERATED_FILES := build libbe/_version.py
+LIBBE_VERSION := libbe/_version.py
+GENERATED_FILES := build $(LIBBE_VERSION)
 
 MANPAGE_FILES = $(patsubst %,${MAN_DIR}/%,${MANPAGES})
 GENERATED_FILES += ${MANPAGE_FILES}
@@ -53,7 +54,7 @@ all: build
 
 
 .PHONY: build
-build: libbe/_version.py
+build: $(LIBBE_VERSION)
 	python setup.py build
 
 .PHONY: doc

@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2010 Aaron Bentley <abentley@panoramicfeedback.com>
-#                         Marien Zwart <marienz@gentoo.org>
+#                         Marien Zwart <marien.zwart@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.

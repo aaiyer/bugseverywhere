@@ -23,8 +23,12 @@ import shutil
 import string
 import sys
 
-from libbe.subproc import Pipe, invoke
+from libbe.util.subproc import Pipe, invoke
 from update_copyright import update_authors, update_files
+
+
+INITIAL_COMMIT = '1bf1ec598b436f41ff27094eddf0b28c797e359d'
+
 
 def validate_tag(tag):
     """
@@ -52,77 +56,84 @@ def validate_tag(tag):
             continue
         raise Exception("Invalid character '%s' in tag '%s'" % (char, tag))
 
-def bzr_pending_changes():
-    """Use `bzr diff`s exit status to detect change:
-    1 - changed
-    2 - unrepresentable changes
-    3 - error
-    0 - no change
+def pending_changes():
+    """Use `git diff`s output to detect change.
     """
-    p = Pipe([['bzr', 'diff']])
-    if p.status == 0:
+    status,stdout,stderr = invoke(['git', 'diff', 'HEAD'])
+    if len(stdout) == 0:
         return False
-    elif p.status in [1,2]:
-        return True
-    raise Exception("Error in bzr diff %d\n%s" % (p.status, p.stderrs[-1]))
+    return True
 
 def set_release_version(tag):
     print "set libbe.version._VERSION = '%s'" % tag
-    p = Pipe([['sed', '-i', "s/^# *_VERSION *=.*/_VERSION = '%s'/" % tag,
-               os.path.join('libbe', 'version.py')]])
-    assert p.status == 0, p.statuses
+    invoke(['sed', '-i', "s/^# *_VERSION *=.*/_VERSION = '%s'/" % tag,
+            os.path.join('libbe', 'version.py')])
 
-def bzr_commit(commit_message):
+def remove_makefile_libbe_version_dependencies(filename):
+    print "set %s LIBBE_VERSION :=" % filename
+    invoke(['sed', '-i', "s/^LIBBE_VERSION *:=.*/LIBBE_VERSION :=/",
+            filename])
+
+def commit(commit_message):
     print 'commit current status:', commit_message
-    p = Pipe([['bzr', 'commit', '-m', commit_message]])
-    assert p.status == 0, p.statuses
+    invoke(['git', 'commit', '-a', '-m', commit_message])
 
-def bzr_tag(tag):
+def tag(tag):
     print 'tag current revision', tag
-    p = Pipe([['bzr', 'tag', tag]])
-    assert p.status == 0, p.statuses
+    invoke(['git', 'tag', tag])
 
-def bzr_export(target_dir):
+def export(target_dir):
+    if not target_dir.endswith(os.path.sep):
+        target_dir += os.path.sep
     print 'export current revision to', target_dir
-    p = Pipe([['bzr', 'export', target_dir]])
+    p = Pipe([['git', 'archive', '--prefix', target_dir, 'HEAD'],
+              ['tar', '-xv']])
     assert p.status == 0, p.statuses
 
 def make_version():
     print 'generate libbe/_version.py'
-    p = Pipe([['make', os.path.join('libbe', '_version.py')]])
-    assert p.status == 0, p.statuses
+    invoke(['make', os.path.join('libbe', '_version.py')])
 
 def make_changelog(filename, tag):
-    print 'generate ChangeLog file', filename, 'up to tag', tag
-    p = invoke(['bzr', 'log', '--gnu-changelog', '-n1', '-r',
-                '..tag:%s' % tag], stdout=file(filename, 'w'))
-    status = p.wait()
-    assert status == 0, status
+    """Generate a ChangeLog from the git history.
 
-def set_vcs_name(filename, vcs_name='None'):
-    """Exported directory is not a bzr repository, so set vcs_name to
+    Not the most ChangeLog-esque format, but iterating through commits
+    by hand is just too slow.
+    """
+    print 'generate ChangeLog file', filename, 'up to tag', tag
+    invoke(['git', 'log', '--no-merges',
+            '%s..%s' % (INITIAL_COMMIT, tag)],
+           stdout=open(filename, 'w')),
+
+def set_vcs_name(be_dir, vcs_name='None'):
+    """Exported directory is not a git repository, so set vcs_name to
     something that will work.
       vcs_name: new_vcs_name
     """
-    print 'set vcs_name in', filename, 'to', vcs_name
-    p = Pipe([['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
-               filename]])
-    assert p.status == 0, p.statuses
+    for directory in os.listdir(be_dir):
+        if not os.path.isdir(os.path.join(be_dir, directory)):
+            continue
+        filename = os.path.join(be_dir, directory, 'settings')
+        if os.path.exists(filename):
+            print 'set vcs_name in', filename, 'to', vcs_name
+            invoke(['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
+                    filename])
 
 def create_tarball(tag):
     release_name='be-%s' % tag
     export_dir = release_name
-    bzr_export(export_dir)
+    export(export_dir)
     make_version()
+    remove_makefile_libbe_version_dependencies(
+        os.path.join(export_dir, 'Makefile'))
     print 'copy libbe/_version.py to %s/libbe/_version.py' % export_dir
     shutil.copy(os.path.join('libbe', '_version.py'),
                 os.path.join(export_dir, 'libbe', '_version.py'))
     make_changelog(os.path.join(export_dir, 'ChangeLog'), tag)
-    set_vcs_name(os.path.join(export_dir, '.be', 'settings'))
+    set_vcs_name(os.path.join(export_dir, '.be'))
     tarball_file = '%s.tar.gz' % release_name
     print 'create tarball', tarball_file
-    p = Pipe([['tar', '-czf', tarball_file, export_dir]])
-    assert p.status == 0, p.statuses
+    invoke(['tar', '-czf', tarball_file, export_dir])
     print 'remove', export_dir
     shutil.rmtree(export_dir)
 
@@ -134,9 +145,13 @@ if __name__ == '__main__':
     import optparse
     usage = """%prog [options] TAG
 
-Create a bzr tag and a release tarball from the current revision.
+Create a git tag and a release tarball from the current revision.
 For example
   %prog 1.0.0
+
+If you don't like what got committed, you can undo the release with
+  $ git tag -d 1.0.0
+  $ git reset --hard HEAD^
 """
     p = optparse.OptionParser(usage)
     p.add_option('--test', dest='test', default=False,
@@ -148,15 +163,16 @@ For example
         sys.exit(0)
 
     assert len(args) == 1, '%d (!= 1) arguments: %s' % (len(args), args)
-    tag = args[0]
-    validate_tag(tag)
+    _tag = args[0]
+    validate_tag(_tag)
 
-    if bzr_pending_changes() == True:
+    if pending_changes() == True:
         print "Handle pending changes before releasing."
         sys.exit(1)
-    set_release_version(tag)
+    set_release_version(_tag)
+    print "Update copyright information..."
     update_authors()
     update_files()
-    bzr_commit("Bumped to version %s" % tag)
-    bzr_tag(tag)
-    create_tarball(tag)
+    commit("Bumped to version %s" % _tag)
+    tag(_tag)
+    create_tarball(_tag)
