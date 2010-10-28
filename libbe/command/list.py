@@ -92,6 +92,8 @@ class List (libbe.command.Command):
     >>> ret = ui.run(cmd, {'status':'closed'})
     abc/b:cm: Bug B
     >>> ret = ui.run(cmd, {'status':'all', 'sort':'time'})
+    abc/a:om: Bug A
+    abc/b:cm: Bug B
     >>> bd.storage.writeable
     True
     >>> ui.cleanup()
@@ -190,7 +192,7 @@ class List (libbe.command.Command):
     def _parse_params(self, bugdir, params):
         cmp_list = []
         if params['sort'] != None:
-            for cmp in params['sort'].sort_by.split(','):
+            for cmp in params['sort'].split(','):
                 if cmp not in AVAILABLE_CMPS:
                     raise libbe.command.UserError(
                         'Invalid sort on "%s".\nValid sorts:\n  %s'
