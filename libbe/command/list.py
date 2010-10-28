@@ -91,6 +91,7 @@ class List (libbe.command.Command):
     abc/a:om: Bug A
     >>> ret = ui.run(cmd, {'status':'closed'})
     abc/b:cm: Bug B
+    >>> ret = ui.run(cmd, {'status':'all', 'sort':'time'})
     >>> bd.storage.writeable
     True
     >>> ui.cleanup()
