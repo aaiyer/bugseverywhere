@@ -23,11 +23,77 @@ import libbe
 import libbe.bug
 import libbe.command
 import libbe.command.util
-from libbe.command.list import Filter, parse_status, parse_severity
 import libbe.util.tree
 
 BLOCKS_TAG="BLOCKS:"
 BLOCKED_BY_TAG="BLOCKED-BY:"
+
+
+class Filter (object):
+    def __init__(self, status='all', severity='all', assigned='all',
+                 target='all', extra_strings_regexps=[]):
+        self.status = status
+        self.severity = severity
+        self.assigned = assigned
+        self.target = target
+        self.extra_strings_regexps = extra_strings_regexps
+
+    def __call__(self, bugdir, bug):
+        if self.status != 'all' and not bug.status in self.status:
+            return False
+        if self.severity != 'all' and not bug.severity in self.severity:
+            return False
+        if self.assigned != 'all' and not bug.assigned in self.assigned:
+            return False
+        if self.target == 'all':
+            pass
+        else:
+            target_bug = libbe.command.target.bug_target(bugdir, bug)
+            if self.target in ['none', None]:
+                if target_bug.summary != None:
+                    return False
+            else:
+                if target_bug.summary != self.target:
+                    return False
+        if len(bug.extra_strings) == 0:
+            if len(self.extra_strings_regexps) > 0:
+                return False
+        elif len(self.extra_strings_regexps) > 0:
+            matched = False
+            for string in bug.extra_strings:
+                for regexp in self.extra_strings_regexps:
+                    if regexp.match(string):
+                        matched = True
+                        break
+                if matched == True:
+                    break
+            if matched == False:
+                return False
+        return True
+
+def parse_status(status):
+    if status == 'all':
+        status = libbe.bug.status_values
+    elif status == 'active':
+        status = list(libbe.bug.active_status_values)
+    elif status == 'inactive':
+        status = list(libbe.bug.inactive_status_values)
+    else:
+        status = libbe.command.util.select_values(
+            status, libbe.bug.status_values)
+    return status
+
+def parse_severity(severity, important=False):
+    if severity == 'all':
+        severity = libbe.bug.severity_values
+    elif important == True:
+        serious = libbe.bug.severity_values.index('serious')
+        severity.append(list(libbe.bug.severity_values[serious:]))
+    else:
+        severity = libbe.command.util.select_values(
+            severity, libbe.bug.severity_values)
+    return severity
+
 
 class BrokenLink (Exception):
     def __init__(self, blocked_bug, blocking_bug, blocks=True):
