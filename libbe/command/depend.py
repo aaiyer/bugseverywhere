@@ -23,6 +23,7 @@ import libbe
 import libbe.bug
 import libbe.command
 import libbe.command.util
+from libbe.command.list import Filter, parse_status, parse_severity
 import libbe.util.tree
 
 BLOCKS_TAG="BLOCKS:"
@@ -145,20 +146,15 @@ class Depend (libbe.command.Command):
                     '\n'.join(['%s |-- %s' % (blockee.id.user(), blocker.id.user())
                                for blockee,blocker in fixed])
             return 0
-        allowed_status_values = \
-            libbe.command.util.select_values(
-                params['status'], libbe.bug.status_values)
-        allowed_severity_values = \
-            libbe.command.util.select_values(
-                params['severity'], libbe.bug.severity_values)
+        status = parse_status(params['status'])
+        severity = parse_severity(params['severity'])
+        filter = Filter(status, severity)
 
         bugA, dummy_comment = libbe.command.util.bug_comment_from_user_id(
             bugdir, params['bug-id'])
 
         if params['tree-depth'] != None:
-            dtree = DependencyTree(bugdir, bugA, params['tree-depth'],
-                                   allowed_status_values,
-                                   allowed_severity_values)
+            dtree = DependencyTree(bugdir, bugA, params['tree-depth'], filter)
             if len(dtree.blocked_by_tree()) > 0:
                 print >> self.stdout, '%s blocked by:' % bugA.id.user()
                 for depth,node in dtree.blocked_by_tree().thread():
@@ -374,14 +370,11 @@ class DependencyTree (object):
     """
     Note: should probably be DependencyDiGraph.
     """
-    def __init__(self, bugdir, root_bug, depth_limit=0,
-                 allowed_status_values=None,
-                 allowed_severity_values=None):
+    def __init__(self, bugdir, root_bug, depth_limit=0, filter=None):
         self.bugdir = bugdir
         self.root_bug = root_bug
         self.depth_limit = depth_limit
-        self.allowed_status_values = allowed_status_values
-        self.allowed_severity_values = allowed_severity_values
+        self.filter = filter
 
     def _build_tree(self, child_fn):
         root = libbe.util.tree.Tree()
@@ -393,11 +386,7 @@ class DependencyTree (object):
             if self.depth_limit > 0 and node.depth == self.depth_limit:
                 continue
             for bug in child_fn(self.bugdir, node.bug):
-                if self.allowed_status_values != None \
-                        and not bug.status in self.allowed_status_values:
-                    continue
-                if self.allowed_severity_values != None \
-                        and not bug.severity in self.allowed_severity_values:
+                if not self.filter(self.bugdir, bug):
                     continue
                 child = libbe.util.tree.Tree()
                 child.bug = bug

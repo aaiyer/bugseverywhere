@@ -75,6 +75,30 @@ class Filter (object):
                 return False
         return True
 
+def parse_status(status):
+    if status == 'all':
+        status = libbe.bug.status_values
+    elif status == 'active':
+        status = list(libbe.bug.active_status_values)
+    elif status == 'inactive':
+        status = list(libbe.bug.inactive_status_values)
+    else:
+        status = libbe.command.util.select_values(
+            status, libbe.bug.status_values)
+    return status
+
+def parse_severity(severity, important=False):
+    if severity == 'all':
+        severity = libbe.bug.severity_values
+    elif important == True:
+        serious = libbe.bug.severity_values.index('serious')
+        severity.append(list(libbe.bug.severity_values[serious:]))
+    else:
+        severity = libbe.command.util.select_values(
+            severity, libbe.bug.severity_values)
+    return severity
+
+
 class List (libbe.command.Command):
     """List bugs
 
@@ -198,25 +222,9 @@ class List (libbe.command.Command):
                         'Invalid sort on "%s".\nValid sorts:\n  %s'
                     % (cmp, '\n  '.join(AVAILABLE_CMPS)))
             cmp_list.append(eval('libbe.bug.cmp_%s' % cmp))
-        # select status
-        if params['status'] == 'all':
-            status = libbe.bug.status_values
-        elif params['status'] == 'active':
-            status = list(libbe.bug.active_status_values)
-        elif params['status'] == 'inactive':
-            status = list(libbe.bug.inactive_status_values)
-        else:
-            status = libbe.command.util.select_values(
-                params['status'], libbe.bug.status_values)
-        # select severity
-        if params['severity'] == 'all':
-            severity = libbe.bug.severity_values
-        elif params['important'] == True:
-            serious = libbe.bug.severity_values.index('serious')
-            severity.append(list(libbe.bug.severity_values[serious:]))
-        else:
-            severity = libbe.command.util.select_values(
-                params['severity'], libbe.bug.severity_values)
+        status = parse_status(params['status'])
+        severity = parse_severity(params['severity'],
+                                  important=params['important'])
         # select assigned
         if params['assigned'] == None:
             if params['mine'] == True:
