@@ -225,16 +225,16 @@ class Depend (libbe.command.Command):
                 print >> self.stdout, '%s blocked by:' % bugA.id.user()
                 for depth,node in dtree.blocked_by_tree().thread():
                     if depth == 0: continue
-                    print >> self.stdout, \
-                        '%s%s' % (' '*(depth),
-                        node.bug.string(shortlist=True))
+                    print >> self.stdout, (
+                        '%s%s'
+                        % (' '*(depth), self.bug_string(node.bug, params)))
             if len(dtree.blocks_tree()) > 0:
                 print >> self.stdout, '%s blocks:' % bugA.id.user()
                 for depth,node in dtree.blocks_tree().thread():
                     if depth == 0: continue
-                    print >> self.stdout, \
-                        '%s%s' % (' '*(depth),
-                        node.bug.string(shortlist=True))
+                    print >> self.stdout, (
+                        '%s%s'
+                        % (' '*(depth), self.bug_string(node.bug, params)))
             return 0
 
         if params['blocking-bug-id'] != None:
