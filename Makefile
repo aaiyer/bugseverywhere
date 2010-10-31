@@ -28,6 +28,7 @@
 SHELL = /bin/bash
 RM = /bin/rm
 DB2MAN = http://docbook.sourceforge.net/release/xsl-ns/current/manpages/docbook.xsl
+DB2HTML = http://docbook.sourceforge.net/release/xsl-ns/current/html/docbook.xsl
 XP = /usr/bin/xsltproc --nonet --param man.charmap.use.subset "0" \
 	--param make.year.ranges "1" --param make.single.year.ranges "1"
 
@@ -36,6 +37,9 @@ XP = /usr/bin/xsltproc --nonet --param man.charmap.use.subset "0" \
 #PREFIX = /usr/local
 PREFIX = ${HOME}
 INSTALL_OPTIONS = "--prefix=${PREFIX}"
+
+# Select the documentation you wish to build
+DOC = sphinx man
 
 # Directories with semantic meaning
 DOC_DIR := doc
@@ -58,7 +62,7 @@ build: $(LIBBE_VERSION)
 	python setup.py build
 
 .PHONY: doc
-doc: sphinx man
+doc: $(DOC)
 
 .PHONY: install
 install: build doc
@@ -82,6 +86,8 @@ man: ${MANPAGE_FILES}
 
 %.1: %.1.xml
 	$(XP) -o $@ $(DB2MAN) $<
+%.1.html: %.1.xml
+	$(XP) -o $@ $(DB2HTML) $<
 
 .PHONY: sphinx
 sphinx:

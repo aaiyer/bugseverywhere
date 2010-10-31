@@ -25,6 +25,7 @@ import libbe
 import libbe.bug
 import libbe.command
 import libbe.command.depend
+from libbe.command.depend import Filter, parse_status, parse_severity
 import libbe.command.tag
 import libbe.command.target
 import libbe.command.util
@@ -32,48 +33,6 @@ import libbe.command.util
 # get a list of * for cmp_*() comparing two bugs.
 AVAILABLE_CMPS = [fn[4:] for fn in dir(libbe.bug) if fn[:4] == 'cmp_']
 AVAILABLE_CMPS.remove('attr') # a cmp_* template.
-
-class Filter (object):
-    def __init__(self, status='all', severity='all', assigned='all',
-                 target='all', extra_strings_regexps=[]):
-        self.status = status
-        self.severity = severity
-        self.assigned = assigned
-        self.target = target
-        self.extra_strings_regexps = extra_strings_regexps
-
-    def __call__(self, bugdir, bug):
-        if self.status != 'all' and not bug.status in self.status:
-            return False
-        if self.severity != 'all' and not bug.severity in self.severity:
-            return False
-        if self.assigned != 'all' and not bug.assigned in self.assigned:
-            return False
-        if self.target == 'all':
-            pass
-        else:
-            target_bug = libbe.command.target.bug_target(bugdir, bug)
-            if self.target in ['none', None]:
-                if target_bug.summary != None:
-                    return False
-            else:
-                if target_bug.summary != self.target:
-                    return False
-        if len(bug.extra_strings) == 0:
-            if len(self.extra_strings_regexps) > 0:
-                return False
-        elif len(self.extra_strings_regexps) > 0:
-            matched = False
-            for string in bug.extra_strings:
-                for regexp in self.extra_strings_regexps:
-                    if regexp.match(string):
-                        matched = True
-                        break
-                if matched == True:
-                    break
-            if matched == False:
-                return False
-        return True
 
 class List (libbe.command.Command):
     """List bugs
@@ -90,6 +49,9 @@ class List (libbe.command.Command):
     >>> ret = ui.run(cmd)
     abc/a:om: Bug A
     >>> ret = ui.run(cmd, {'status':'closed'})
+    abc/b:cm: Bug B
+    >>> ret = ui.run(cmd, {'status':'all', 'sort':'time'})
+    abc/a:om: Bug A
     abc/b:cm: Bug B
     >>> bd.storage.writeable
     True
@@ -189,31 +151,15 @@ class List (libbe.command.Command):
     def _parse_params(self, bugdir, params):
         cmp_list = []
         if params['sort'] != None:
-            for cmp in params['sort'].sort_by.split(','):
+            for cmp in params['sort'].split(','):
                 if cmp not in AVAILABLE_CMPS:
                     raise libbe.command.UserError(
                         'Invalid sort on "%s".\nValid sorts:\n  %s'
                     % (cmp, '\n  '.join(AVAILABLE_CMPS)))
             cmp_list.append(eval('libbe.bug.cmp_%s' % cmp))
-        # select status
-        if params['status'] == 'all':
-            status = libbe.bug.status_values
-        elif params['status'] == 'active':
-            status = list(libbe.bug.active_status_values)
-        elif params['status'] == 'inactive':
-            status = list(libbe.bug.inactive_status_values)
-        else:
-            status = libbe.command.util.select_values(
-                params['status'], libbe.bug.status_values)
-        # select severity
-        if params['severity'] == 'all':
-            severity = libbe.bug.severity_values
-        elif params['important'] == True:
-            serious = libbe.bug.severity_values.index('serious')
-            severity.append(list(libbe.bug.severity_values[serious:]))
-        else:
-            severity = libbe.command.util.select_values(
-                params['severity'], libbe.bug.severity_values)
+        status = parse_status(params['status'])
+        severity = parse_severity(params['severity'],
+                                  important=params['important'])
         # select assigned
         if params['assigned'] == None:
             if params['mine'] == True:

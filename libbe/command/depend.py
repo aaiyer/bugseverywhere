@@ -28,6 +28,73 @@ import libbe.util.tree
 BLOCKS_TAG="BLOCKS:"
 BLOCKED_BY_TAG="BLOCKED-BY:"
 
+
+class Filter (object):
+    def __init__(self, status='all', severity='all', assigned='all',
+                 target='all', extra_strings_regexps=[]):
+        self.status = status
+        self.severity = severity
+        self.assigned = assigned
+        self.target = target
+        self.extra_strings_regexps = extra_strings_regexps
+
+    def __call__(self, bugdir, bug):
+        if self.status != 'all' and not bug.status in self.status:
+            return False
+        if self.severity != 'all' and not bug.severity in self.severity:
+            return False
+        if self.assigned != 'all' and not bug.assigned in self.assigned:
+            return False
+        if self.target == 'all':
+            pass
+        else:
+            target_bug = libbe.command.target.bug_target(bugdir, bug)
+            if self.target in ['none', None]:
+                if target_bug.summary != None:
+                    return False
+            else:
+                if target_bug.summary != self.target:
+                    return False
+        if len(bug.extra_strings) == 0:
+            if len(self.extra_strings_regexps) > 0:
+                return False
+        elif len(self.extra_strings_regexps) > 0:
+            matched = False
+            for string in bug.extra_strings:
+                for regexp in self.extra_strings_regexps:
+                    if regexp.match(string):
+                        matched = True
+                        break
+                if matched == True:
+                    break
+            if matched == False:
+                return False
+        return True
+
+def parse_status(status):
+    if status == 'all':
+        status = libbe.bug.status_values
+    elif status == 'active':
+        status = list(libbe.bug.active_status_values)
+    elif status == 'inactive':
+        status = list(libbe.bug.inactive_status_values)
+    else:
+        status = libbe.command.util.select_values(
+            status, libbe.bug.status_values)
+    return status
+
+def parse_severity(severity, important=False):
+    if severity == 'all':
+        severity = libbe.bug.severity_values
+    elif important == True:
+        serious = libbe.bug.severity_values.index('serious')
+        severity.append(list(libbe.bug.severity_values[serious:]))
+    else:
+        severity = libbe.command.util.select_values(
+            severity, libbe.bug.severity_values)
+    return severity
+
+
 class BrokenLink (Exception):
     def __init__(self, blocked_bug, blocking_bug, blocks=True):
         if blocks == True:
@@ -145,34 +212,29 @@ class Depend (libbe.command.Command):
                     '\n'.join(['%s |-- %s' % (blockee.id.user(), blocker.id.user())
                                for blockee,blocker in fixed])
             return 0
-        allowed_status_values = \
-            libbe.command.util.select_values(
-                params['status'], libbe.bug.status_values)
-        allowed_severity_values = \
-            libbe.command.util.select_values(
-                params['severity'], libbe.bug.severity_values)
+        status = parse_status(params['status'])
+        severity = parse_severity(params['severity'])
+        filter = Filter(status, severity)
 
         bugA, dummy_comment = libbe.command.util.bug_comment_from_user_id(
             bugdir, params['bug-id'])
 
         if params['tree-depth'] != None:
-            dtree = DependencyTree(bugdir, bugA, params['tree-depth'],
-                                   allowed_status_values,
-                                   allowed_severity_values)
+            dtree = DependencyTree(bugdir, bugA, params['tree-depth'], filter)
             if len(dtree.blocked_by_tree()) > 0:
                 print >> self.stdout, '%s blocked by:' % bugA.id.user()
                 for depth,node in dtree.blocked_by_tree().thread():
                     if depth == 0: continue
-                    print >> self.stdout, \
-                        '%s%s' % (' '*(depth),
-                        node.bug.string(shortlist=True))
+                    print >> self.stdout, (
+                        '%s%s'
+                        % (' '*(depth), self.bug_string(node.bug, params)))
             if len(dtree.blocks_tree()) > 0:
                 print >> self.stdout, '%s blocks:' % bugA.id.user()
                 for depth,node in dtree.blocks_tree().thread():
                     if depth == 0: continue
-                    print >> self.stdout, \
-                        '%s%s' % (' '*(depth),
-                        node.bug.string(shortlist=True))
+                    print >> self.stdout, (
+                        '%s%s'
+                        % (' '*(depth), self.bug_string(node.bug, params)))
             return 0
 
         if params['blocking-bug-id'] != None:
@@ -374,14 +436,11 @@ class DependencyTree (object):
     """
     Note: should probably be DependencyDiGraph.
     """
-    def __init__(self, bugdir, root_bug, depth_limit=0,
-                 allowed_status_values=None,
-                 allowed_severity_values=None):
+    def __init__(self, bugdir, root_bug, depth_limit=0, filter=None):
         self.bugdir = bugdir
         self.root_bug = root_bug
         self.depth_limit = depth_limit
-        self.allowed_status_values = allowed_status_values
-        self.allowed_severity_values = allowed_severity_values
+        self.filter = filter
 
     def _build_tree(self, child_fn):
         root = libbe.util.tree.Tree()
@@ -393,11 +452,7 @@ class DependencyTree (object):
             if self.depth_limit > 0 and node.depth == self.depth_limit:
                 continue
             for bug in child_fn(self.bugdir, node.bug):
-                if self.allowed_status_values != None \
-                        and not bug.status in self.allowed_status_values:
-                    continue
-                if self.allowed_severity_values != None \
-                        and not bug.severity in self.allowed_severity_values:
+                if not self.filter(self.bugdir, bug):
                     continue
                 child = libbe.util.tree.Tree()
                 child.bug = bug
