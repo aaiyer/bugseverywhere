@@ -132,10 +132,11 @@ of the ``--reporter`` option to give them credit::
 See ``be help new`` for more details.
 
 While the bug summary should include the appropriate keywords, it
-should also be brief.  You should probably add a comment immediately
-giving a more elaborate explanation of the problem so that the
-developer understands what you want and when the bug can be considered
-fixed.
+should also be brief.  Unlike other bug trackers, the bug itself cannot
+contain a multi-line description.  So you should probably add a comment
+immediately giving a more elaborate explanation of the problem so that
+the developer understands what you want and when the bug can be
+considered fixed.
 
 Commenting on bugs
 ------------------
