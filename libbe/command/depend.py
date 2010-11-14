@@ -84,11 +84,11 @@ def parse_status(status):
     return status
 
 def parse_severity(severity, important=False):
-    if severity == 'all':
-        severity = libbe.bug.severity_values
-    elif important == True:
+    if important == True:
         serious = libbe.bug.severity_values.index('serious')
-        severity.append(list(libbe.bug.severity_values[serious:]))
+        severity = list(libbe.bug.severity_values[serious:])
+    elif severity == 'all':
+        severity = libbe.bug.severity_values
     else:
         severity = libbe.command.util.select_values(
             severity, libbe.bug.severity_values)
