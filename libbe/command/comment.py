@@ -124,11 +124,13 @@ class Comment (libbe.command.Command):
             # try to launch an editor for comment-body entry
             try:
                 if parent == bug.comment_root:
-                    parent_body = bug.summary+'\n'
+                    header = "Subject: %s" % bug.summary
+                    parent_body = parent.string_thread() or "No comments"
                 else:
+                    header = "From: %s\nTo: %s" % (parent.author, bug)
                     parent_body = parent.body
-                estr = 'Please enter your comment above\n\n> %s\n' \
-                    % ('\n> '.join(parent_body.splitlines()))
+                estr = 'Please enter your comment above\n\n%s\n\n> %s\n' \
+                    % (header, '\n> '.join(parent_body.splitlines()))
                 body = libbe.ui.util.editor.editor_string(estr)
             except libbe.ui.util.editor.CantFindEditor, e:
                 raise libbe.command.UserError(
