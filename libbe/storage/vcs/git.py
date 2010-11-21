@@ -143,7 +143,7 @@ class Git(base.VCS):
         return output.rstrip('\n').splitlines()
 
     def _vcs_commit(self, commitfile, allow_empty=False):
-        args = ['commit', '--all', '--file', commitfile]
+        args = ['commit', '--file', commitfile]
         if allow_empty == True:
             args.append('--allow-empty')
             status,output,error = self._u_invoke_client(*args)
