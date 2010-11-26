@@ -84,6 +84,8 @@ class Assign (libbe.command.Command):
                 libbe.command.util.bug_comment_from_user_id(bugdir, bug_id)
             if bug.assigned != assigned:
                 bug.assigned = assigned
+                if bug.status == 'open':
+                    bug.status = 'assigned'
         return 0
 
     def _long_help(self):
