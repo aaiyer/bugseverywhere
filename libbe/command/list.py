@@ -156,7 +156,7 @@ class List (libbe.command.Command):
                     raise libbe.command.UserError(
                         'Invalid sort on "%s".\nValid sorts:\n  %s'
                     % (cmp, '\n  '.join(AVAILABLE_CMPS)))
-            cmp_list.append(getattr(libbe.bug, 'cmp_%s' % cmp))
+                cmp_list.append(getattr(libbe.bug, 'cmp_%s' % cmp))
         status = parse_status(params['status'])
         severity = parse_severity(params['severity'],
                                   important=params['important'])
