@@ -799,6 +799,12 @@ cmp_extra_strings = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "extra_strings"
 # chronological rankings (newer < older)
 cmp_time = lambda bug_1, bug_2 : cmp_attr(bug_1, bug_2, "time", invert=True)
 
+def cmp_mine(bug_1, bug_2):
+    user_id = libbe.ui.util.user.get_user_id(bug_1.storage)
+    mine_1 = bug_1.assigned != user_id
+    mine_2 = bug_2.assigned != user_id
+    return cmp(mine_1, mine_2)
+
 def cmp_comments(bug_1, bug_2):
     """
     Compare two bugs' comments lists.  Doesn't load any new comments,
