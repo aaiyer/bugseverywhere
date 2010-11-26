@@ -179,7 +179,9 @@ class List (libbe.command.Command):
                                      for x in params['extra-strings'].split(',')]
         return (cmp_list, status, severity, assigned, extra_strings_regexps)
 
-    def _sort_bugs(self, bugs, cmp_list=[]):
+    def _sort_bugs(self, bugs, cmp_list=None):
+        if cmp_list is None:
+            cmp_list = []
         cmp_list.extend(libbe.bug.DEFAULT_CMP_FULL_CMP_LIST)
         cmp_fn = libbe.bug.BugCompoundComparator(cmp_list=cmp_list)
         bugs.sort(cmp_fn)
