@@ -335,7 +335,8 @@ class Command (object):
 
     def complete(self, argument=None, fragment=None):
         if argument == None:
-            ret = ['--%s' % o.name for o in self.options]
+            ret = ['--%s' % o.name for o in self.options
+                    if o.name != 'complete']
             if len(self.args) > 0 and self.args[0].completion_callback != None:
                 ret.extend(self.args[0].completion_callback(self, argument, fragment))
             return ret
