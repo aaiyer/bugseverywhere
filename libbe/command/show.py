@@ -58,9 +58,9 @@ class Show (libbe.command.Command):
     <be-xml>
       <version>
         <tag>...</tag>
-        <branch-nick>...</branch-nick>
-        <revno>...</revno>
-        <revision-id>...</revision-id>
+        <committer>...</committer>
+        <date>...</date>
+        <revision>...</revision>
       </version>
       <bug>
         <uuid>a</uuid>
