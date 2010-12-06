@@ -119,6 +119,11 @@ def set_vcs_name(be_dir, vcs_name='None'):
             invoke(['sed', '-i', "s/^vcs_name:.*/vcs_name: %s/" % vcs_name,
                     filename])
 
+def make_id_cache():
+    """Generate .be/id-cache so users won't need to.
+    """
+    invoke(['./be', 'list'])
+
 def create_tarball(tag):
     release_name='be-%s' % tag
     export_dir = release_name
@@ -130,7 +135,12 @@ def create_tarball(tag):
     shutil.copy(os.path.join('libbe', '_version.py'),
                 os.path.join(export_dir, 'libbe', '_version.py'))
     make_changelog(os.path.join(export_dir, 'ChangeLog'), tag)
+    make_id_cache()
+    print 'copy .be/id-cache to %s/.be/id-cache' % export_dir
+    shutil.copy(os.path.join('.be', 'id-cache'),
+                os.path.join(export_dir, '.be', 'id-cache'))
     set_vcs_name(os.path.join(export_dir, '.be'))
+    os.remove(os.path.join(export_dir, 'update_copyright.py'))
     tarball_file = '%s.tar.gz' % release_name
     print 'create tarball', tarball_file
     invoke(['tar', '-czf', tarball_file, export_dir])
