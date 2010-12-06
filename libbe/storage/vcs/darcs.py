@@ -229,8 +229,9 @@ class Darcs(base.VCS):
                 descendents = [self._u_rel_path(f, path) for f in files
                                if f != '.']
             else:
-                descendents = [self._u_rel_path(f, path) for f in files
-                               if f.startswith(path)]
+                rel_files = [self._u_rel_path(f, path) for f in files]
+                descendents = [f for f in rel_files
+                               if f != '.' and not f.startswith('..')]
             return [f for f in descendents if f.count(os.path.sep) == 0]
         # Darcs versions <= 2.3.1 lack the --patch option for 'show files'
         raise NotImplementedError
