@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2009-2010 Gianluca Montecchi <gian@grys.it>
+# Copyright (C) 2009-2011 Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.

@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2010 Ben Finney <benf@cybersource.com.au>
+# Copyright (C) 2008-2011 Ben Finney <benf@cybersource.com.au>
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>

@@ -1,4 +1,7 @@
-# Copyright (C) 2008-2010 Gianluca Montecchi <gian@grys.it>
+# Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
+#                         Gianluca Montecchi <gian@grys.it>
+#                         Marien Zwart <marien.zwart@gmail.com>
+#                         Thomas Gerigk <tgerigk@gmx.de>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.

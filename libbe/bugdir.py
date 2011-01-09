@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2010 Aaron Bentley <abentley@panoramicfeedback.com>
+# Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Alexander Belchenko <bialix@ukr.net>
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>

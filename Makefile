@@ -4,7 +4,7 @@
 # Makefile
 # Part of Bugs Everywhere, a distributed bug tracking system.
 #
-# Copyright (C) 2008-2010 Anton Batenev <abbat@abbat>
+# Copyright (C) 2008-2011 Anton Batenev <abbat@abbat>
 #                         Ben Finney <benf@cybersource.com.au>
 #                         Eric Kow <eric.kow@gmail.com>
 #                         Gianluca Montecchi <gian@grys.it>

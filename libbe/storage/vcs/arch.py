@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2010 Aaron Bentley <abentley@panoramicfeedback.com>
+# Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Ben Finney <benf@cybersource.com.au>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         James Rowe <jnrowe@ukfsn.org>
