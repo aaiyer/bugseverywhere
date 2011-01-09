@@ -156,7 +156,7 @@ class List (libbe.command.Command):
                     raise libbe.command.UserError(
                         'Invalid sort on "%s".\nValid sorts:\n  %s'
                     % (cmp, '\n  '.join(AVAILABLE_CMPS)))
-            cmp_list.append(eval('libbe.bug.cmp_%s' % cmp))
+                cmp_list.append(getattr(libbe.bug, 'cmp_%s' % cmp))
         status = parse_status(params['status'])
         severity = parse_severity(params['severity'],
                                   important=params['important'])
@@ -179,7 +179,9 @@ class List (libbe.command.Command):
                                      for x in params['extra-strings'].split(',')]
         return (cmp_list, status, severity, assigned, extra_strings_regexps)
 
-    def _sort_bugs(self, bugs, cmp_list=[]):
+    def _sort_bugs(self, bugs, cmp_list=None):
+        if cmp_list is None:
+            cmp_list = []
         cmp_list.extend(libbe.bug.DEFAULT_CMP_FULL_CMP_LIST)
         cmp_fn = libbe.bug.BugCompoundComparator(cmp_list=cmp_list)
         bugs.sort(cmp_fn)

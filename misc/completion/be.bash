@@ -32,7 +32,7 @@ _be()
 	for i in `seq $COMP_CWORD ${#COMP_WORDS[@]}`; do
 	    unset COMP_WORDS[$i];
 	done
-	COMPREPLY=( $( compgen -W "$(be "${COMP_WORDS[@]}" --complete $cur)" -- $cur ) )
+	COMPREPLY=( $( IFS=$'\n' compgen -W "$(be "${COMP_WORDS[@]}" --complete $cur)" -- $cur ) )
     fi
 }
 
