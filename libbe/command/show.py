@@ -58,9 +58,9 @@ class Show (libbe.command.Command):
     <be-xml>
       <version>
         <tag>...</tag>
-        <branch-nick>...</branch-nick>
-        <revno>...</revno>
-        <revision-id>...</revision-id>
+        <committer>...</committer>
+        <date>...</date>
+        <revision>...</revision>
       </version>
       <bug>
         <uuid>a</uuid>
@@ -156,8 +156,7 @@ def _xml_header(encoding):
              '<be-xml>',
              '  <version>',
              '    <tag>%s</tag>' % libbe.version.version()]
-    for tag in ['branch-nick', 'revno', 'revision-id']:
-        value = libbe.version.version_info[tag.replace('-', '_')]
+    for tag,value in sorted(libbe.version.version_info.items()):
         lines.append('    <%s>%s</%s>' % (tag, value, tag))
     lines.append('  </version>')
     return lines

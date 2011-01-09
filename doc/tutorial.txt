@@ -15,13 +15,12 @@ and helps keep the bug repository in sync with the code.
 
 However, there are some differences compared to centralized
 bugtrackers.  Because bugs and comments can be created by several
-users in parallel, they have globally unique 
-:mod:`IDs </libbe.util.id>` rather than numbers.  There is also a
+users in parallel, they have globally unique :mod:`IDs
+</libbe.util.id>` rather than numbers.  There is also a
 developer-friendly command-line_ interface to compliment the
-user-friendly :doc:`web </tutorial-html>` and
-:doc:`email </tutorial-email>` interfaces.  This tutorial will focus
-on the command-line interface as the most powerful, and leave the web
-and email interfaces to other documents.
+user-friendly :doc:`web </http>` and :doc:`email </email>` interfaces.
+This tutorial will focus on the command-line interface as the most
+powerful, and leave the web and email interfaces to other documents.
 
 .. _command-line: `Command-line interface`_
 
@@ -358,7 +357,7 @@ To create a static dump of your bug directory, use::
 
 This is a fairly flexible command, see ``be help html`` for details.
 It works pretty well as the browsable part of a public interface using
-the email_ interface for interactive access.
+the :doc:`email` for interactive access.
 
 BE over HTTP
 ------------

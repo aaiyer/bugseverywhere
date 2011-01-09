@@ -136,12 +136,14 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_root()
         cmd.outf = StringIO.StringIO()
         cmd.run(filename=path)
+        cmd.cleanup_now()
         return cmd.outf.getvalue().rstrip('\n')
 
     def _vcs_init(self, path):
         cmd = bzrlib.builtins.cmd_init()
         cmd.outf = StringIO.StringIO()
         cmd.run(location=path)
+        cmd.cleanup_now()
 
     def _vcs_destroy(self):
         vcs_dir = os.path.join(self.repo, '.bzr')
@@ -153,6 +155,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_add()
         cmd.outf = StringIO.StringIO()
         cmd.run(file_list=[path], file_ids_from=self.repo)
+        cmd.cleanup_now()
 
     def _vcs_exists(self, path, revision=None):
         manifest = self._vcs_listdir(
@@ -167,6 +170,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_remove()
         cmd.outf = StringIO.StringIO()
         cmd.run(file_list=[path], file_deletion_strategy='force')
+        cmd.cleanup_now()
 
     def _vcs_update(self, path):
         pass
@@ -202,6 +206,7 @@ class Bzr(base.VCS):
             if self.version_cmp(2,0,0) < 0:
                 cmd.outf = sys.stdout
                 sys.stdout = stdout
+            cmd.cleanup_now()
         return cmd.outf.getvalue()
 
     def _vcs_path(self, id, revision):
@@ -236,6 +241,8 @@ class Bzr(base.VCS):
             if 'not present in revision' in str(e):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
+        finally:
+            cmd.cleanup_now()
         children = cmd.outf.getvalue().rstrip('\n').splitlines()
         children = [self._u_rel_path(c, path) for c in children]
         if self.version_cmp(2,0,0) < 0 and recursive == False:
@@ -257,12 +264,14 @@ class Bzr(base.VCS):
             raise
         finally:
             os.chdir(cwd)
+            cmd.cleanup_now()
         return self._vcs_revision_id(-1)
 
     def _vcs_revision_id(self, index):
         cmd = bzrlib.builtins.cmd_revno()
         cmd.outf = StringIO.StringIO()
         cmd.run(location=self.repo)
+        cmd.cleanup_now()
         current_revision = int(cmd.outf.getvalue())
         if index > current_revision or index < -current_revision:
             return None
@@ -281,6 +290,7 @@ class Bzr(base.VCS):
             status = cmd.run(revision=revision, file_list=[self.repo])
         finally:
             sys.stdout = stdout
+            cmd.cleanup_now()
         assert status in [0,1], "Invalid status %d" % status
         return cmd.outf.getvalue()
 
