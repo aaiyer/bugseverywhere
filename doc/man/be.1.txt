@@ -1,0 +1,72 @@
+==
+be
+==
+
+----------------------------------------------
+distributed bug tracking from the command line
+----------------------------------------------
+
+:Author: wking@drexel.edu
+:Date:   2011-01-10
+:Copyright: Permission is granted to copy, distribute and/or modify
+  this document under the terms of the GNU General Public License,
+  Version 2 or (at your option) any later version published by the
+  Free Software Foundation.
+:Version: 0.2
+:Manual section: 1
+:Manual group: distributed bug tracker
+
+SYNOPSIS
+========
+
+be [options] [command] [command_options] [commands_args...]
+
+DESCRIPTION
+===========
+
+``be`` allows commandline interaction with the Bugs Everywhere
+database in a project tree.
+
+To avoid bit-rotted documentation, we do not describe all available
+commands and options in this manpage.  Run ``be help`` for accurate
+documentation.  See the `Bugs Everywhere Manual`_ for more detailed
+documentation and tutorials.
+
+.. _Bugs Everywhere Manual: http://docs.bugseverywhere.org/
+
+COMMANDS
+========
+
+help
+    Print help for ``be`` and a list of all available commands.
+
+Run ``be help`` for a complete list.
+
+EXAMPLES
+========
+
+be help
+    Show general help and a list of all commands.
+
+be help init
+    Show help for the ``init`` command.
+
+be init
+    Initialize a new Bugs Everywhere database.
+
+BUGS
+====
+
+The Bugs Everywhere uses Bugs Everywhere to track its bugs.  You can
+submit bugs directly using ``be``::
+
+  % be --repo http://bugs.bugseverywhere.org/ new "The demuxulizer is broken"           
+  Created bug with ID bea/abc
+  % be --repo http://bugs.bugseverywhere.org/ comment bea/abc
+  <Describe bug>
+  % be --repo http://bugs.bugseverywhere.org/ commit "Reported bug in demuxulizer" 
+
+Or send an email to the mailing list at `be-devel@bugseverywhere.org`_.
+
+.. _be-devel@bugseverywhere.org:
+  http://void.printf.net/cgi-bin/mailman/listinfo/be-devel

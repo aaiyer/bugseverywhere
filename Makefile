@@ -27,10 +27,8 @@
 
 SHELL = /bin/bash
 RM = /bin/rm
-DB2MAN = http://docbook.sourceforge.net/release/xsl-ns/current/manpages/docbook.xsl
-DB2HTML = http://docbook.sourceforge.net/release/xsl-ns/current/html/docbook.xsl
-XP = /usr/bin/xsltproc --nonet --param man.charmap.use.subset "0" \
-	--param make.year.ranges "1" --param make.single.year.ranges "1"
+RST2MAN = /usr/bin/rst2man
+RST2HTML = /usr/bin/rst2html
 
 #PATH = /usr/bin:/bin  # must include sphinx-build for 'sphinx' target.
 
@@ -50,7 +48,8 @@ LIBBE_VERSION := libbe/_version.py
 GENERATED_FILES := build $(LIBBE_VERSION)
 
 MANPAGE_FILES = $(patsubst %,${MAN_DIR}/%,${MANPAGES})
-GENERATED_FILES += ${MANPAGE_FILES}
+MANPAGE_HTML =  $(patsubst %,${MAN_DIR}/%.html,${MANPAGES})
+GENERATED_FILES += ${MANPAGE_FILES} ${MANPAGE_HTML}
 
 
 .PHONY: all
@@ -84,10 +83,10 @@ libbe/_version.py:
 .PHONY: man
 man: ${MANPAGE_FILES}
 
-%.1: %.1.xml
-	$(XP) -o $@ $(DB2MAN) $<
-%.1.html: %.1.xml
-	$(XP) -o $@ $(DB2HTML) $<
+%.1: %.1.txt
+	$(RST2MAN) $< > $@
+%.1.html: %.1.txt
+	$(RST2HTML) $< > $@
 
 .PHONY: sphinx
 sphinx:
