@@ -10,14 +10,17 @@ Package         Role                     Debian           Gentoo
 ==============  =======================  ===============  ===========================
 PyYAML_         serialized data storage  python-yaml      dev-python/pyyaml
 Sphinx_         see :doc:`doc`           python-sphinx    dev-python/sphinx
-numpydoc_       see :doc:`doc`           
+numpydoc_       see :doc:`doc`                            dev-python/numpydoc [#npd]_
 Docutils_       manpage generation       python-docutils  dev-python/docutils
 ==============  =======================  ===============  ===========================
+
+.. [#npd] In the science_ overlay.
 
 .. _PyYAML: http://pyyaml.org/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _numpydoc: http://pypi.python.org/pypi/numpydoc
 .. _Docutils: http://docutils.sourceforge.net/
+.. _science: http://overlays.gentoo.org/proj/science
 
 Git repository
 ==============
