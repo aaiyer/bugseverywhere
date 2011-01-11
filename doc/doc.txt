@@ -20,7 +20,7 @@ syntax.
 .. _reStructuredText:
   http://docutils.sourceforge.net/docs/user/rst/quickref.html
 .. _NumPy/SciPy documentation guide:
-  http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines
+  https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
 Man page
 ========
