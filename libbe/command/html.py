@@ -32,6 +32,7 @@ import libbe.command.util
 import libbe.comment
 import libbe.util.encoding
 import libbe.util.id
+import libbe.command.depend
 
 
 class HTML (libbe.command.Command):
@@ -163,11 +164,21 @@ class HTMLGen (object):
 
         bugs_active = []
         bugs_inactive = []
+        bugs_target = []
         bugs = [b for b in self.bd]
         bugs.sort()
-        bugs_active = [b for b in bugs if b.active == True]
-        bugs_inactive = [b for b in bugs if b.active != True]
-
+        
+        for b in bugs:
+            if  b.active == True and b.severity != 'target':
+                bugs_active.append(b)
+            if b.active != True and b.severity != 'target':
+                bugs_inactive.append(b)
+            if b.severity == 'target':
+                bugs_target.append(b)
+#        bugs_active = [b for b in bugs if b.active == True and b.severity != 'target']
+#        bugs_inactive = [b for b in bugs if b.active != True and b.severity != 'target']
+#        bugs_target = [b for b in bugs if b.active == True and b.severity == 'target']
+        
         self._create_output_directories(out_dir)
         self._write_css_file()
         for b in bugs:
@@ -175,6 +186,7 @@ class HTMLGen (object):
                 up_link = '../../index.html'
             else:
                 up_link = '../../index_inactive.html'
+                
             self._write_bug_file(b, up_link)
         self._write_index_file(
             bugs_active, title=self.title,
@@ -182,6 +194,9 @@ class HTMLGen (object):
         self._write_index_file(
             bugs_inactive, title=self.title,
             index_header=self.index_header, bug_type='inactive')
+        self._write_index_file(
+            bugs_target, title=self.title,
+            index_header=self.index_header, bug_type='target')
 
     def _truncated_bug_id(self, bug):
         return libbe.util.id._truncate(
@@ -213,7 +228,15 @@ class HTMLGen (object):
             print >> self.stdout, '\tCreating bug file for %s' % bug.id.user()
         assert hasattr(self, 'out_dir_bugs'), \
             'Must run after ._create_output_directories()'
-
+        index_type = ''
+            
+        if bug.active == True:
+            index_type = 'Active'
+        else :
+            index_type = 'Inactive'
+        if bug.severity == 'target':
+            index_type = 'Target'
+                
         bug.load_comments(load_full=True)
         comment_entries = self._generate_bug_comment_entries(bug)
         dirname = self._truncated_bug_id(bug)
@@ -223,7 +246,8 @@ class HTMLGen (object):
                          'up_link':up_link,
                          'shortname':bug.id.user(),
                          'comment_entries':comment_entries,
-                         'generation_time':self.generation_time}
+                         'generation_time':self.generation_time,
+                         'index_type':index_type}
         for attr in ['uuid', 'severity', 'status', 'assigned',
                      'reporter', 'creator', 'time_string', 'summary']:
             template_info[attr] = self._escape(getattr(bug, attr))
@@ -366,13 +390,17 @@ class HTMLGen (object):
             print >> self.stdout, 'Writing %s index file for %d bugs' % (bug_type, len(bugs))
         assert hasattr(self, 'out_dir'), 'Must run after ._create_output_directories()'
         esc = self._escape
-
-        bug_entries = self._generate_index_bug_entries(bugs)
+        if (bug_type == 'target'):
+            bug_entries = self._generate_index_bug_entries_target(bugs)
+        else:
+            bug_entries = self._generate_index_bug_entries(bugs)
 
         if bug_type == 'active':
             filename = 'index.html'
         elif bug_type == 'inactive':
             filename = 'index_inactive.html'
+        elif bug_type == 'target':
+            filename = 'index_by_target.html'
         else:
             raise Exception, 'Unrecognized bug_type: "%s"' % bug_type
         template_info = {'title':title,
@@ -380,17 +408,41 @@ class HTMLGen (object):
                          'charset':self.encoding,
                          'active_class':'tab sel',
                          'inactive_class':'tab nsel',
+                         'target_class':'tab nsel',
                          'bug_entries':bug_entries,
                          'generation_time':self.generation_time}
         if bug_type == 'inactive':
             template_info['active_class'] = 'tab nsel'
             template_info['inactive_class'] = 'tab sel'
-
+        if bug_type == 'target':
+            template_info['active_class'] = 'tab nsel'
+            template_info['target_class'] = 'tab sel'
         self._write_file(self.index_file % template_info,
                          [self.out_dir, filename])
 
+    def _generate_index_bug_entries_target(self, targets):
+        
+        target_entries = []
+        for target in targets:
+            bug_entries = []
+            template_info_list = {'target':target.summary, 'bug_entries': '', 'status': target.status}
+            blocker = libbe.command.depend.get_blocked_by(self.bd, target)
+            for bug in blocker:
+                if self.verbose:
+                    print >> self.stdout, '\tCreating bug entry for %s' % bug.id.user()
+                template_info = {'shortname':bug.id.user()}
+                for attr in ['uuid', 'severity', 'status', 'assigned',
+                    'reporter', 'creator', 'time_string', 'summary']:
+                    template_info[attr] = self._escape(getattr(bug, attr))
+                template_info['dir'] = self._truncated_bug_id(bug)
+                bug_entries.append(self.index_bug_entry % template_info)
+            template_info_list['bug_entries'] = '\n'.join(bug_entries)
+            target_entries.append(self.target_bug_list % template_info_list)
+        return '\n'.join(target_entries)
+                
     def _generate_index_bug_entries(self, bugs):
         bug_entries = []
+        template_info_list = {'bug_entries': ''}
         for bug in bugs:
             if self.verbose:
                 print >> self.stdout, '\tCreating bug entry for %s' % bug.id.user()
@@ -400,7 +452,8 @@ class HTMLGen (object):
                 template_info[attr] = self._escape(getattr(bug, attr))
             template_info['dir'] = self._truncated_bug_id(bug)
             bug_entries.append(self.index_bug_entry % template_info)
-        return '\n'.join(bug_entries)
+        template_info_list['bug_entries'] = '\n'.join(bug_entries)
+        return self.bug_list % template_info_list 
 
     def _escape(self, string):
         if string == None:
@@ -463,6 +516,7 @@ class HTMLGen (object):
         self.css_file = """
             body {
               font-family: "lucida grande", "sans serif";
+              font-size: 14px;
               color: #333;
               width: auto;
               margin: auto;
@@ -474,6 +528,8 @@ class HTMLGen (object):
               padding-top: 0;
               margin-top: 1em;
               background-color: #fcfcfc;
+              -moz-border-radius: 10px;
+              
             }
 
             div.footer {
@@ -485,30 +541,71 @@ class HTMLGen (object):
               margin: auto;
               background: #305275;
               color: #fffee7;
+              -moz-border-radius: 10px;
             }
-
+            
+            div.header {
+                font-size: xx-large;
+                padding-left: 20px;
+                padding-right: 20px;
+                padding-top: 10px;
+                font-weight:bold;
+                padding-bottom: 10px;
+                background: #305275;
+                color: #fffee7;
+                -moz-border-radius: 10px;
+            }
+            
+            div.target_name {
+                border: 1px solid;
+                border-color: #305275;
+                background-color: #305275;
+                color: #fff;
+                width: auto%;
+                -moz-border-radius-topleft: 8px;
+                -moz-border-radius-topright: 8px;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            
             table {
               border-style: solid;
-              border: 10px #313131;
-              border-spacing: 0;
+              border: 1px #c3d9ff;
+              border-spacing: 0px 0px;
               width: auto;
-            }
+              padding: 0px;
+              
+              }
 
             tb { border: 1px; }
 
             tr {
               vertical-align: top;
+              border: 1px #c3d9ff;
+              border-style: dotted;
               width: auto;
+              padding: 0px;
             }
-
+            
+            th {
+                border-width: 1px;
+                border-style: solid;
+                border-color: #c3d9ff;
+                border-collapse: collapse;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            
+            
             td {
-              border-width: 0;
-              border-style: none;
-              padding-right: 0.5em;
-              padding-left: 0.5em;
-              width: auto;
+                border-width: 1px;
+                border-color: #c3d9ff;
+                border-collapse: collapse;
+                padding-left: 5px;
+                padding-right: 5px;
+                width: auto%;
             }
-
+            
             img { border-style: none; }
 
             h1 {
@@ -545,29 +642,68 @@ class HTMLGen (object):
             }
 
             td.sel.tab {
-              background-color: #afafaf;
-              border: 1px solid #afafaf;
-              font-weight:bold;
+                background-color: #c3d9ff ;
+                border: 1px solid #c3d9ff;
+                font-weight:bold;    
+                -moz-border-radius-topleft: 15px;
+                -moz-border-radius-topright: 15px;
             }
 
-            td.nsel.tab { border: 0px; }
+            td.nsel.tab { 
+                border: 1px solid #c3d9ff;
+                font-weight:bold;    
+                -moz-border-radius-topleft: 5px;
+                -moz-border-radius-topright: 5px;
+            }
 
             table.bug_list {
-              background-color: #afafaf;
-              border: 2px solid #afafaf;
+                border-width: 1px;
+                border-style: solid;
+                border-color: #c3d9ff;
+                padding: 0px;
+                width: 100%;            
+                border: 1px solid #c3d9ff;
+            }
+            
+            table.target_list {
+                border-width: 1px;
+                border-style: solid;
+                border-collapse: collapse;
+                border-color: #c3d9ff;
+                padding: 0px;
+                width: 100%;
+                margin-bottom: 10px;
             }
 
-            .bug_list tr { width: auto; }
-            tr.wishlist { background-color: #B4FF9B; }
-            tr.minor { background-color: #FCFF98; }
-            tr.serious { background-color: #FFB648; }
-            tr.critical { background-color: #FF752A; }
-            tr.fatal { background-color: #FF3300; }
+            table.target_list.td {
+                border-width: 1px;
+            }
 
+            tr.wishlist { background-color: #DCFAFF;}
+            tr.wishlist:hover { background-color: #C2DCE1; }
+            
+            tr.minor { background-color: #FFFFA6; }
+            tr.minor:hover { background-color: #E6E696; }
+            
+            tr.serious { background-color: #FF9077;}
+            tr.serious:hover { background-color: #E6826B; }
+            
+            tr.critical { background-color: #FF752A; }
+            tr.critical:hover { background-color: #D63905;}
+            
+            tr.fatal { background-color: #FF3300;}
+            tr.fatal:hover { background-color: #D60000;}
+            
+            td.uuid { text-align: center; width: 5%; border-style: dotted;}
+            td.status { text-align: center; width: 5%; border-style: dotted;}
+            td.severity { text-align: center; width: 5%; border-style: dotted;}
+            td.summary { border-style: dotted;}
+            td.date { text-align: center; width: 25%; border-style: dotted;}
+            
             /* bug detail pages */
 
-            td.bug_detail_label { text-align: right; }
-            td.bug_detail { }
+            td.bug_detail_label { text-align: right; border: none;}
+            td.bug_detail { border: none;}
             td.bug_comment_label { text-align: right; vertical-align: top; }
             td.bug_comment { }
 
@@ -596,26 +732,23 @@ class HTMLGen (object):
             </head>
             <body>
 
+            <div class="header">%(index_header)s</div>
             <div class="main">
-            <h1>%(index_header)s</h1>
             <p></p>
+            
             <table>
-
             <tr>
             <td class="%(active_class)s"><a href="index.html">Active Bugs</a></td>
             <td class="%(inactive_class)s"><a href="index_inactive.html">Inactive Bugs</a></td>
+            <td class="%(target_class)s"><a href="index_by_target.html">Divided by target</a></td>
             </tr>
-
             </table>
-            <table class="bug_list">
-            <tbody>
+
 
             %(bug_entries)s
 
-            </tbody>
-            </table>
             </div>
-
+            
             <div class="footer">
             <p>Generated by <a href="http://www.bugseverywhere.org/">
             BugsEverywhere</a> on %(generation_time)s</p>
@@ -628,17 +761,39 @@ class HTMLGen (object):
             </body>
             </html>
         """
-
+        
         self.index_bug_entry ="""
             <tr class="%(severity)s">
-              <td><a href="bugs/%(dir)s/">%(shortname)s</a></td>
-              <td><a href="bugs/%(dir)s/">%(status)s</a></td>
-              <td><a href="bugs/%(dir)s/">%(severity)s</a></td>
-              <td><a href="bugs/%(dir)s/">%(summary)s</a></td>
-              <td><a href="bugs/%(dir)s/">%(time_string)s</a></td>
+              <td class="uuid"><a href="bugs/%(dir)s/index.html">%(shortname)s</a></td>
+              <td class="status"><a href="bugs/%(dir)s/index.html">%(status)s</a></td>
+              <td class="severity"><a href="bugs/%(dir)s/index.html">%(severity)s</a></td>
+              <td class="summary"><a href="bugs/%(dir)s/index.html">%(summary)s</a></td>
+              <td class="date"><a href="bugs/%(dir)s/index.html">%(time_string)s</a></td>
             </tr>
         """
-
+        self.target_bug_list = """
+            <tr>
+            <td>
+            <div class="target_name">
+            Target: %(target)s (%(status)s)
+            </div>
+            <div>
+            <table class="target_list">
+            
+            %(bug_entries)s
+            </table>
+            </div>
+            </td>
+            </tr>
+        """
+        self.bug_list = """
+        <table class="bug_list">
+        
+        %(bug_entries)s
+        
+        </table>
+        
+        """
         self.bug_file = """
             <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -650,9 +805,10 @@ class HTMLGen (object):
             </head>
             <body>
 
+            <div class="header">BugsEverywhere Bug List</div>
             <div class="main">
-            <h1>BugsEverywhere Bug List</h1>
-            <h5><a href="%(up_link)s">Back to Index</a></h5>
+            <h5><a href="%(up_link)s">Back to %(index_type)s Index</a></h5>
+            <h5><a href="../../index_by_target.html">Back to Target Index</a></h5>
             <h2>Bug: %(shortname)s</h2>
             <table>
             <tbody>
@@ -683,8 +839,8 @@ class HTMLGen (object):
             %(comment_entries)s
 
             </div>
-            <h5><a href="%(up_link)s">Back to Index</a></h5>
-
+            <h5><a href="%(up_link)s">Back to %(index_type)s Index</a></h5>
+            <h5><a href="../../index_by_target.html">Back to Target Index</a></h5>
             <div class="footer">
             <p>Generated by <a href="http://www.bugseverywhere.org/">
             BugsEverywhere</a> on %(generation_time)s</p>
