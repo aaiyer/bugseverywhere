@@ -694,11 +694,11 @@ class HTMLGen (object):
             tr.fatal { background-color: #FF3300;}
             tr.fatal:hover { background-color: #D60000;}
             
-            td.uuid { text-align: center; width: 5%; border-style: dotted;}
-            td.status { text-align: center; width: 5%; border-style: dotted;}
-            td.severity { text-align: center; width: 5%; border-style: dotted;}
+            td.uuid { width: 5%; border-style: dotted;}
+            td.status { width: 5%; border-style: dotted;}
+            td.severity { width: 5%; border-style: dotted;}
             td.summary { border-style: dotted;}
-            td.date { text-align: center; width: 25%; border-style: dotted;}
+            td.date { width: 25%; border-style: dotted;}
             
             /* bug detail pages */
 
