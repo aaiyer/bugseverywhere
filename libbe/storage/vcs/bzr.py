@@ -136,7 +136,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_root()
         cmd.outf = StringIO.StringIO()
         cmd.run(filename=path)
-        if self.version_cmp(2,3,0) < 0:
+        if self.version_cmp(2,2,0) < 0:
             cmd.cleanup_now()
         return cmd.outf.getvalue().rstrip('\n')
 
@@ -144,7 +144,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_init()
         cmd.outf = StringIO.StringIO()
         cmd.run(location=path)
-        if self.version_cmp(2,3,0) < 0:
+        if self.version_cmp(2,2,0) < 0:
             cmd.cleanup_now()
 
     def _vcs_destroy(self):
@@ -157,7 +157,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_add()
         cmd.outf = StringIO.StringIO()
         cmd.run(file_list=[path], file_ids_from=self.repo)
-        if self.version_cmp(2,3,0) < 0:
+        if self.version_cmp(2,2,0) < 0:
             cmd.cleanup_now()
 
     def _vcs_exists(self, path, revision=None):
@@ -173,7 +173,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_remove()
         cmd.outf = StringIO.StringIO()
         cmd.run(file_list=[path], file_deletion_strategy='force')
-        if self.version_cmp(2,3,0) < 0:
+        if self.version_cmp(2,2,0) < 0:
             cmd.cleanup_now()
 
     def _vcs_update(self, path):
@@ -210,7 +210,7 @@ class Bzr(base.VCS):
             if self.version_cmp(2,0,0) < 0:
                 cmd.outf = sys.stdout
                 sys.stdout = stdout
-            if self.version_cmp(2,3,0) < 0:
+            if self.version_cmp(2,2,0) < 0:
                 cmd.cleanup_now()
         return cmd.outf.getvalue()
 
@@ -247,7 +247,7 @@ class Bzr(base.VCS):
                 raise base.InvalidPath(path, root=self.repo, revision=revision)
             raise
         finally:
-            if self.version_cmp(2,3,0) < 0:
+            if self.version_cmp(2,2,0) < 0:
                 cmd.cleanup_now()
         children = cmd.outf.getvalue().rstrip('\n').splitlines()
         children = [self._u_rel_path(c, path) for c in children]
@@ -270,7 +270,7 @@ class Bzr(base.VCS):
             raise
         finally:
             os.chdir(cwd)
-            if self.version_cmp(2,3,0) < 0:
+            if self.version_cmp(2,2,0) < 0:
                 cmd.cleanup_now()
         return self._vcs_revision_id(-1)
 
@@ -278,7 +278,7 @@ class Bzr(base.VCS):
         cmd = bzrlib.builtins.cmd_revno()
         cmd.outf = StringIO.StringIO()
         cmd.run(location=self.repo)
-        if self.version_cmp(2,3,0) < 0:
+        if self.version_cmp(2,2,0) < 0:
             cmd.cleanup_now()
         current_revision = int(cmd.outf.getvalue())
         if index > current_revision or index < -current_revision:
@@ -298,7 +298,7 @@ class Bzr(base.VCS):
             status = cmd.run(revision=revision, file_list=[self.repo])
         finally:
             sys.stdout = stdout
-            if self.version_cmp(2,3,0) < 0:
+            if self.version_cmp(2,2,0) < 0:
                 cmd.cleanup_now()
         assert status in [0,1], "Invalid status %d" % status
         return cmd.outf.getvalue()
