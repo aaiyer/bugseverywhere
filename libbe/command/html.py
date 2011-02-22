@@ -175,9 +175,6 @@ class HTMLGen (object):
                 bugs_inactive.append(b)
             if b.severity == 'target':
                 bugs_target.append(b)
-#        bugs_active = [b for b in bugs if b.active == True and b.severity != 'target']
-#        bugs_inactive = [b for b in bugs if b.active != True and b.severity != 'target']
-#        bugs_target = [b for b in bugs if b.active == True and b.severity == 'target']
         
         self._create_output_directories(out_dir)
         self._write_css_file()
