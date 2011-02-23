@@ -30,8 +30,8 @@ import shutil
 import unittest
 
 import libbe
-import libbe.ui.util.user
-import base
+from ...ui.util import user as _user
+from . import base
 
 if libbe.TESTING == True:
     import doctest
@@ -52,7 +52,10 @@ class Git(base.VCS):
         self.versioned = True
 
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client('--version')
+        try:
+            status,output,error = self._u_invoke_client('--version')
+        except CommandError:  # command not found?
+            return None
         return output.strip()
 
     def _vcs_get_user_id(self):
@@ -71,10 +74,10 @@ class Git(base.VCS):
         if name != '' or email != '': # got something!
             # guess missing info, if necessary
             if name == '':
-                name = libbe.ui.util.user.get_fallback_username()
+                name = _user.get_fallback_username()
             if email == '':
-                email = libe.ui.util.user.get_fallback_email()
-            return libbe.ui.util.user.create_user_id(name, email)
+                email = _user.get_fallback_email()
+            return _user.create_user_id(name, email)
         return None # Git has no infomation
 
     def _vcs_detect(self, path):

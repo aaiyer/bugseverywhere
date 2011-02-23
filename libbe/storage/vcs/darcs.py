@@ -35,7 +35,8 @@ except ImportError: # look for non-core module
 from xml.sax.saxutils import unescape
 
 import libbe
-import base
+from ...util.subproc import CommandError
+from . import base
 
 if libbe.TESTING == True:
     import doctest
@@ -57,7 +58,10 @@ class Darcs(base.VCS):
         self.__updated = [] # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client('--version')
+        try:
+            status,output,error = self._u_invoke_client('--version')
+        except CommandError:  # command not found?
+            return None
         return output.strip()
 
     def version_cmp(self, *args):

@@ -33,11 +33,11 @@ import sys
 import time # work around http://mercurial.selenic.com/bts/issue618
 
 import libbe
-import libbe.ui.util.user
-import libbe.storage.util.config
-from libbe.util.id import uuid_gen
-from libbe.util.subproc import CommandError
-import base
+from ...ui.util import user as _user
+from ...util.id import uuid_gen
+from ...util.subproc import CommandError
+from ..util import config as _config
+from . import base
 
 if libbe.TESTING == True:
     import unittest
@@ -51,7 +51,7 @@ class CantAddFile(Exception):
 
 DEFAULT_CLIENT = 'tla'
 
-client = libbe.storage.util.config.get_val(
+client = _config.get_val(
     'arch_client', default=DEFAULT_CLIENT)
 
 def new():
@@ -77,14 +77,17 @@ class Arch(base.VCS):
         self.__updated = [] # work around http://mercurial.selenic.com/bts/issue618
 
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client('--version')
+        try:
+            status,output,error = self._u_invoke_client('--version')
+        except CommandError:  # command not found?
+            return None
         version = '\n'.join(output.splitlines()[:2])
         return version
 
     def _vcs_detect(self, path):
         """Detect whether a directory is revision-controlled using Arch"""
         if self._u_search_parent_directories(path, '{arch}') != None :
-            libbe.storage.util.config.set_val('arch_client', client)
+            _config.set_val('arch_client', client)
             return True
         return False
 
@@ -102,7 +105,7 @@ class Arch(base.VCS):
         # http://regexps.srparish.net/tutorial-tla/new-archive.html#Creating_a_New_Archive
         assert self._archive_name == None
         id = self.get_user_id()
-        name, email = libbe.ui.util.user.parse_user_id(id)
+        name, email = _user.parse_user_id(id)
         if email == None:
             email = '%s@example.com' % name
         trailer = '%s-%s' % ('bugs-everywhere-auto', uuid_gen()[0:8])

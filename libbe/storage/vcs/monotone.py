@@ -29,8 +29,8 @@ import unittest
 
 import libbe
 import libbe.ui.util.user
-from libbe.util.subproc import CommandError
-import base
+from ...util.subproc import CommandError
+from . import base
 
 if libbe.TESTING == True:
     import doctest
@@ -54,7 +54,10 @@ class Monotone (base.VCS):
         self._key = None
 
     def _vcs_version(self):
-        status,output,error = self._u_invoke_client('automate', 'interface_version')
+        try:
+            status,output,error = self._u_invoke_client('automate', 'interface_version')
+        except CommandError:  # command not found?
+            return None
         return output.strip()
 
     def version_cmp(self, *args):
