@@ -183,7 +183,6 @@ class BE (libbe.command.Command):
     ... except CallbackExit:
     ...     print '  got callback'
     --help
-    --complete
     --version
     ...
     subscribe
