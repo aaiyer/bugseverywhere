@@ -45,7 +45,7 @@ If the offending commit is not the last commit
    increment ``XYZ`` by hand for ``<XYZ+1>``, because ``bzr`` does not
    support ``after:XYZ``.
 
-.. [#] From `Mercurial: The Definitive Guide`_:
+.. [#] From `Mercurial, The Definitive Guide`_:
 
      "Mercurial also does not provide a way to make a file or
      changeset completely disappear from history, because there is no
@@ -54,7 +54,7 @@ If the offending commit is not the last commit
 .. [#] See `Rebuilding ancestry`_ in the Monotone documentation.
 
 .. _bzr-rebase plugin: http://wiki.bazaar.canonical.com/Rebase
-.. _Mercurial: The Definitive Guide:
+.. _Mercurial, The Definitive Guide:
   http://hgbook.red-bean.com/read/finding-and-fixing-mistakes.html#id394667
 .. _Rebuilding ancestry:
   http://www.monotone.ca/docs/Rebuilding-ancestry.html

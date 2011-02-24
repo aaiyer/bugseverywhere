@@ -102,8 +102,8 @@ if you call it from a directory besides your project's root.
 Inside the ``.be`` directory (among other things) there will be a long
 UUID_ directory.  This is your bug directory.  The idea is that you
 could keep several bug directories in the same repository, using one
-to track bugs, another to track roadmap issues, etc.  See IDs_ for
-details.  For BE itself, the bug directory is
+to track bugs, another to track roadmap issues, etc.  See :mod:`IDs`
+for details.  For BE itself, the bug directory is
 ``bea86499-824e-4e77-b085-2d581fa9ccab``, which is why all the bug and
 comment IDs in this tutorial will start with ``bea/``.
 
