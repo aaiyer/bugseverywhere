@@ -156,7 +156,12 @@ class Bzr(base.VCS):
         path = os.path.join(self.repo, path)
         cmd = bzrlib.builtins.cmd_add()
         cmd.outf = StringIO.StringIO()
-        cmd.run(file_list=[path], file_ids_from=self.repo)
+        kwargs = {'file_ids_from': self.repo}
+        if self.repo == os.path.realpath(os.getcwd()):
+            # Work around bzr file locking on Windows.
+            # See: https://lists.ubuntu.com/archives/bazaar/2011q1/071705.html
+            kwargs.pop('file_ids_from')
+        cmd.run(file_list=[path], **kwargs)
         if self.version_cmp(2,2,0) < 0:
             cmd.cleanup_now()
 

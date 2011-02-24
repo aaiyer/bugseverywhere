@@ -575,7 +575,7 @@ class VCS (libbe.storage.base.VersionedStorage):
         if self._detect(self.repo) == False:
             raise VCSUnableToRoot(self)
         root = self._vcs_root(self.repo)
-        self.repo = os.path.abspath(root)
+        self.repo = os.path.realpath(root)
         if os.path.isdir(self.repo) == False:
             self.repo = os.path.dirname(self.repo)
         self.be_dir = os.path.join(
