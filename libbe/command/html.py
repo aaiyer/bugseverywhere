@@ -1,4 +1,5 @@
-# Copyright (C) 2009-2011 Gianluca Montecchi <gian@grys.it>
+# Copyright (C) 2009-2011 Chris Ball <cjb@laptop.org>
+#                         Gianluca Montecchi <gian@grys.it>
 #                         Mathieu Clabaut <mathieu.clabaut@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #

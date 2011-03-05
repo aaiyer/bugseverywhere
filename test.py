@@ -1,4 +1,5 @@
 # Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
+#                         Chris Ball <cjb@laptop.org>
 #                         Marien Zwart <marien.zwart@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
