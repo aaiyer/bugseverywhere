@@ -109,7 +109,12 @@ class New (libbe.command.Command):
         else:
             bug.reporter = bug.creator
         if params['assigned'] != None:
-            bug.assigned = params['assigned']
+            assigned = params['assigned']
+            if assigned == 'none':
+                assigned = None
+            elif assigned == '-':
+                assigned = self._get_user_id()
+            bug.assigned = assigned
         if params['status'] != None:
             bug.status = params['status']
         if params['severity'] != None:
