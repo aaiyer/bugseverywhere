@@ -78,6 +78,16 @@ class New (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='assigned', metavar='NAME',
                         completion_callback=libbe.command.util.complete_assigned)),
+                libbe.command.Option(name='status', short_name='t',
+                    help='The bug\'s status level',
+                    arg=libbe.command.Argument(
+                        name='status', metavar='STATUS',
+                        completion_callback=libbe.command.util.complete_status)),
+                libbe.command.Option(name='severity', short_name='s',
+                    help='The bug\'s severity',
+                    arg=libbe.command.Argument(
+                        name='severity', metavar='SEVERITY',
+                        completion_callback=libbe.command.util.complete_severity)),
                 ])
         self.args.extend([
                 libbe.command.Argument(name='summary', metavar='SUMMARY')
@@ -100,6 +110,10 @@ class New (libbe.command.Command):
             bug.reporter = bug.creator
         if params['assigned'] != None:
             bug.assigned = params['assigned']
+        if params['status'] != None:
+            bug.status = params['status']
+        if params['severity'] != None:
+            bug.severity = params['severity']
         print >> self.stdout, 'Created bug with ID %s' % bug.id.user()
         return 0
 
