@@ -49,9 +49,12 @@ def get_input_encoding():
     return get_encoding()
 
 def get_output_encoding():
-    return get_encoding()
+    return sys.__stdout__.encoding
 
 def get_filesystem_encoding():
+    return get_encoding()
+
+def get_argv_encoding():
     return get_encoding()
 
 def known_encoding(encoding):

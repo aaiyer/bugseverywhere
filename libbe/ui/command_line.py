@@ -29,6 +29,8 @@ import libbe.command
 import libbe.command.util
 import libbe.version
 import libbe.ui.util.pager
+import libbe.util.encoding
+
 
 if libbe.TESTING == True:
     import doctest
@@ -86,11 +88,11 @@ class CmdOptionParser(optparse.OptionParser):
             if '_' in name: # reconstruct original option name
                 options[name.replace('_', '-')] = options.pop(name)
         for name,value in options.items():
+            argument = None
+            option = self._option_by_name[name]
+            if option.arg != None:
+                argument = option.arg
             if value == '--complete':
-                argument = None
-                option = self._option_by_name[name]
-                if option.arg != None:
-                    argument = option.arg
                 fragment = None
                 indices = [i for i,arg in enumerate(args)
                            if arg == '--complete']
@@ -108,22 +110,28 @@ class CmdOptionParser(optparse.OptionParser):
                 if i+1 < len(args):
                     fragment = args[i+1]
                 self.complete(argument, fragment)
+            elif argument is not None:
+                value = self.process_raw_argument(argument=argument, value=value)
+                options[name] = value
         for i,arg in enumerate(parsed_args):
+            if i > 0 and self.command.name == 'be':
+                break # let this pass through for the command parser to handle
+            elif i < len(self.command.args):
+                argument = self.command.args[i]
+            elif len(self.command.args) == 0:
+                break # command doesn't take arguments
+            else:
+                argument = self.command.args[-1]
+                if argument.repeatable == False:
+                    raise libbe.command.UserError('Too many arguments')
             if arg == '--complete':
-                if i > 0 and self.command.name == 'be':
-                    break # let this pass through for the command parser to handle
-                elif i < len(self.command.args):
-                    argument = self.command.args[i]
-                elif len(self.command.args) == 0:
-                    break # command doesn't take arguments
-                else:
-                    argument = self.command.args[-1]
-                    if argument.repeatable == False:
-                        raise libbe.command.UserError('Too many arguments')
                 fragment = None
                 if i < len(parsed_args) - 1:
                     fragment = parsed_args[i+1]
                 self.complete(argument, fragment)
+            else:
+                value = self.process_raw_argument(argument=argument, value=arg)
+                parsed_args[i] = value
         if len(parsed_args) > len(self.command.args) \
                 and self.command.args[-1].repeatable == False:
             raise libbe.command.UserError('Too many arguments')
@@ -153,6 +161,16 @@ class CmdOptionParser(optparse.OptionParser):
         if len(comps) > 0:
             print >> self.command.stdout, '\n'.join(comps)
         raise CallbackExit
+
+    def process_raw_argument(self, argument, value):
+        if value == argument.default:
+            return value
+        if argument.type == 'string':
+            if not hasattr(self, 'argv_encoding'):
+                self.argv_encoding = libbe.util.encoding.get_argv_encoding()
+            return unicode(value, self.argv_encoding)
+        return value
+
 
 class BE (libbe.command.Command):
     """Class for parsing the command line arguments for `be`.
