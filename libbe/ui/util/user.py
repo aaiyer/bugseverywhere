@@ -28,24 +28,46 @@ are human-readable tags refering to objects.
 
 try:
     from email.utils import formataddr, parseaddr
-except ImportErrror: # adjust to old python < 2.5
+except ImportErrror:  # adjust to old python < 2.5
     from email.Utils import formataddr, parseaddr
 import os
+try:
+    import pwd
+except ImportError:  # handle non-Unix systems
+    pwd = None
 import re
 from socket import gethostname
 
 import libbe
 import libbe.storage.util.config
 
+
 def get_fallback_username():
     """Return a username extracted from environmental variables.
     """
     name = None
-    for env in ["LOGNAME", "USERNAME"]:
+    for env in ['LOGNAME', 'USERNAME']:
         if os.environ.has_key(env):
             name = os.environ[env]
             break
-    assert name != None
+    if name is None and pwd:
+        pw_ent = pwd.getpwuid(os.getuid())
+        name = pw_ent.pw_name
+    assert name is not None
+    return name
+
+def get_fallback_fullname():
+    """Return a full name extracted from environmental variables.
+    """
+    name = None
+    for env in ['FULLNAME']:
+        if os.environ.has_key(env):
+            name = os.environ[env]
+            break
+    if name is None and pwd:
+        pw_ent = pwd.getpwuid(os.getuid())
+        name = pw_ent.pw_gecos.split(',', 1)[0]
+    assert name is not None
     return name
 
 def get_fallback_email():
@@ -122,7 +144,7 @@ def get_user_id(storage=None):
         user = storage.get_user_id()
         if user != None:
             return user
-    name = get_fallback_username()
+    name = get_fallback_fullname()
     email = get_fallback_email()
     user = create_user_id(name, email)
     return user

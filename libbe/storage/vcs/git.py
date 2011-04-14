@@ -74,7 +74,7 @@ class Git(base.VCS):
         if name != '' or email != '': # got something!
             # guess missing info, if necessary
             if name == '':
-                name = _user.get_fallback_username()
+                name = _user.get_fallback_fullname()
             if email == '':
                 email = _user.get_fallback_email()
             return _user.create_user_id(name, email)

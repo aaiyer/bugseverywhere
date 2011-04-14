@@ -537,7 +537,7 @@ class VCS (libbe.storage.base.VersionedStorage):
             self.user_id = self._vcs_get_user_id()
             if self.user_id == None:
                 # guess missing info
-                name = libbe.ui.util.user.get_fallback_username()
+                name = libbe.ui.util.user.get_fallback_fullname()
                 email = libbe.ui.util.user.get_fallback_email()
                 self.user_id = libbe.ui.util.user.create_user_id(name, email)
         return self.user_id
