@@ -64,10 +64,11 @@ def get_fallback_fullname():
         if os.environ.has_key(env):
             name = os.environ[env]
             break
-    if name is None and pwd:
+    if pwd and not name:
         pw_ent = pwd.getpwuid(os.getuid())
         name = pw_ent.pw_gecos.split(',', 1)[0]
-    assert name is not None
+    if not name:
+        name = get_fallback_username()
     return name
 
 def get_fallback_email():
