@@ -73,9 +73,8 @@ def get_fallback_fullname():
 def get_fallback_email():
     """Return an email address extracted from environmental variables.
     """
-    hostname = gethostname()
-    name = get_fallback_username()
-    return "%s@%s" % (name, hostname)
+    return os.getenv('EMAIL') or '%s@%s' % (
+        get_fallback_username(), gethostname())
 
 def create_user_id(name, email=None):
     """Create a user ID string from given `name` and `email` strings.
