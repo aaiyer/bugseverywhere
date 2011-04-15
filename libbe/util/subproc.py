@@ -82,14 +82,14 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
     return status, stdout, stderr
 
 class Pipe (object):
-    """
-    Simple interface for executing POSIX-style pipes based on the
-    subprocess module.  The only complication is the adaptation of
-    subprocess.Popen._comminucate to listen to the stderrs of all
-    processes involved in the pipe, as well as the terminal process'
-    stdout.  There are two implementations of Pipe._communicate, one
-    for MS Windows, and one for POSIX systems.  The MS Windows
-    implementation is currently untested.
+    """Simple interface for executing POSIX-style pipes.
+
+    Based on the `subprocess` module.  The only complication is the
+    adaptation of `subprocess.Popen._communicate` to listen to the
+    stderrs of all processes involved in the pipe, as well as the
+    terminal process' stdout.  There are two implementations of
+    `Pipe._communicate`, one for MS Windows, and one for POSIX
+    systems.  The MS Windows implementation is currently untested.
 
     >>> p = Pipe([['find', '/etc/'], ['grep', '^/etc/ssh$']])
     >>> p.stdout
