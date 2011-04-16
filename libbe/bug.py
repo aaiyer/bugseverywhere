@@ -337,7 +337,7 @@ class Bug (settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def from_xml(self, xml_string, verbose=True):
+    def from_xml(self, xml_string, preserve_uuids=False, verbose=True):
         u"""
         Note: If a bug uuid is given, set .alt_id to it's value.
         >>> bugA = Bug(uuid="0123", summary="Need to test Bug.from_xml()")
@@ -362,6 +362,10 @@ class Bug (settings_object.SavedSettingsObject):
         ['severity', 'status', 'creator', 'time', 'summary']
         >>> len(list(bugB.comments()))
         3
+        >>> bugC = Bug()
+        >>> bugC.from_xml(xml, preserve_uuids=True)
+        >>> bugC.uuid == bugA.uuid
+        True
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
@@ -383,7 +387,8 @@ class Bug (settings_object.SavedSettingsObject):
                 pass
             elif child.tag == 'comment':
                 comm = comment.Comment(bug=self)
-                comm.from_xml(child)
+                comm.from_xml(
+                    child, preserve_uuids=preserve_uuids, verbose=verbose)
                 comments.append(comm)
                 continue
             elif child.tag in tags:
@@ -392,7 +397,7 @@ class Bug (settings_object.SavedSettingsObject):
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
                     text = text.decode('unicode_escape').strip()
-                if child.tag == 'uuid':
+                if child.tag == 'uuid' and not preserve_uuids:
                     uuid = text
                     continue # don't set the bug's uuid tag.
 		elif child.tag == 'created':

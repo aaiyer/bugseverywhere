@@ -340,7 +340,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def from_xml(self, xml_string, verbose=True):
+    def from_xml(self, xml_string, preserve_uuids=False, verbose=True):
         u"""
         Note: If alt-id is not given, translates any <uuid> fields to
         <alt-id> fields.
@@ -359,6 +359,10 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         >>> commB.uuid = commB.alt_id
         >>> commB.alt_id = None
         >>> commB.xml() == xml
+        True
+        >>> commC = Comment()
+        >>> commC.from_xml(xml, preserve_uuids=True)
+        >>> commC.uuid == commA.uuid
         True
         """
         if type(xml_string) == types.UnicodeType:
@@ -385,7 +389,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
                     text = text.decode('unicode_escape').strip()
-                if child.tag == 'uuid':
+                if child.tag == 'uuid' and not preserve_uuids:
                     uuid = text
                     continue # don't set the comment's uuid tag.
                 elif child.tag == 'body':

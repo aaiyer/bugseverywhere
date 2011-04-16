@@ -76,6 +76,8 @@ class Import_XML (libbe.command.Command):
                     help="If any comment's <in-reply-to> refers to a non-existent comment, ignore it (instead of raising an exception)."),
                 libbe.command.Option(name='add-only', short_name='a',
                     help='If any bug or comment listed in the XML file already exists in the bug repository, do not alter the repository version.'),
+                libbe.command.Option(name='preserve-uuids', short_name='p',
+                    help='Preserve UUIDs for trusted input (potential name collisions).'),
                 libbe.command.Option(name='comment-root', short_name='c',
                     help='Supply a bug or comment ID as the root of any <comment> elements that are direct children of the <be-xml> element.  If any such <comment> elements exist, you are required to set this option.',
                     arg=libbe.command.Argument(
@@ -131,11 +133,11 @@ class Import_XML (libbe.command.Command):
         for child in be_xml.getchildren():
             if child.tag == 'bug':
                 new = libbe.bug.Bug(bugdir=bugdir)
-                new.from_xml(child)
+                new.from_xml(child, preserve_uuids=params['preserve-uuids'])
                 root_bugs.append(new)
             elif child.tag == 'comment':
                 new = libbe.comment.Comment(croot_bug)
-                new.from_xml(child)
+                new.from_xml(child, preserve_uuids=params['preserve-uuids'])
                 root_comments.append(new)
             elif child.tag == 'version':
                 for gchild in child.getchildren():
