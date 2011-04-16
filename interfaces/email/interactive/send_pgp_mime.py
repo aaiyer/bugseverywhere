@@ -603,7 +603,7 @@ if __name__ == '__main__':
     elif options.mode == "plain":
         bodymsg = m.plain()
     else:
-        print "Unrecognized mode '%s'" % options.mode
+        raise Exception("unrecognized mode '%s'" % options.mode)
 
     message = attach_root(headermsg, bodymsg)
     if options.output == True:
