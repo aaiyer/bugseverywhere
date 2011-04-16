@@ -395,6 +395,10 @@ class Bug (settings_object.SavedSettingsObject):
                 if child.tag == 'uuid':
                     uuid = text
                     continue # don't set the bug's uuid tag.
+		elif child.tag == 'created':
+                    self.time = utility.str_to_time(text)
+                    self.explicit_attrs.append('time')
+                    continue
                 elif child.tag == 'extra-string':
                     estrs.append(text)
                     continue # don't set the bug's extra_string yet.
