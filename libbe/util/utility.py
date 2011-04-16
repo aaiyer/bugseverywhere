@@ -28,6 +28,10 @@ import shutil
 import tempfile
 import time
 import types
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
 
 import libbe
 if libbe.TESTING == True:
