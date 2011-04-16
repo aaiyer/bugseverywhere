@@ -1,0 +1,1 @@
+The make install will curently install the bin files in ~/bin and the lib files in ~/lib. Unfortunately this will lead to the lib files not being recognised by python by default. http://www.python.org/dev/peps/pep-0370/ defines that the paths should be set to '~/.local/bin' and '~/.local/lib'. Here they will also be automatically discoverable by python. (At least on Ubuntu 10.10)
