@@ -184,7 +184,7 @@ class Import_XML (libbe.command.Command):
             except KeyError:
                 old = None
             if old == None:
-                bd.append(new)
+                bugdir.append(new)
             else:
                 old.load_comments(load_full=True)
                 old.merge(new, accept_changes=accept_changes,
