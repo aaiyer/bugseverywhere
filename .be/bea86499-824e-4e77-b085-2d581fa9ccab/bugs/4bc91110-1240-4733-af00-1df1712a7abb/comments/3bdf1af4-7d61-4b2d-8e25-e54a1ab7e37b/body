@@ -1,0 +1,24 @@
+From 1a6ce70b03a8e7df3e21189cd552d95d28535c1d Mon Sep 17 00:00:00 2001
+From: Valtteri Kokkoniemi <rvk@iki.fi>
+Date: Thu, 17 Feb 2011 10:11:09 +0200
+Subject: [PATCH] fixed importing new bugs
+
+---
+ libbe/command/import_xml.py |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/libbe/command/import_xml.py b/libbe/command/import_xml.py
+index bd25372..b4da2fd 100644
+--- a/libbe/command/import_xml.py
++++ b/libbe/command/import_xml.py
+@@ -184,7 +184,7 @@ class Import_XML (libbe.command.Command):
+             except KeyError:
+                 old = None
+             if old == None:
+-                bd.append(new)
++                bugdir.append(new)
+             else:
+                 old.load_comments(load_full=True)
+                 old.merge(new, accept_changes=accept_changes,
+-- 
+1.7.1
