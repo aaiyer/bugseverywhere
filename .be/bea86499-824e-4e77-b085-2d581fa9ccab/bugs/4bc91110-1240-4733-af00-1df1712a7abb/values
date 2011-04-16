@@ -7,7 +7,7 @@ reporter: Valtteri Kokkoniemi <rvk@iki.fi>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: xml import of new bugs is broken
