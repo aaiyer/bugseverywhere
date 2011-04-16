@@ -21,6 +21,7 @@ Functions for running external commands in subprocesses.
 
 from subprocess import Popen, PIPE
 import sys
+import types
 
 import libbe
 from encoding import get_encoding
@@ -45,7 +46,8 @@ class CommandError(Exception):
         self.stderr = stderr
 
 def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
-           cwd=None, unicode_output=True, verbose=False, encoding=None):
+           cwd=None, shell=None, unicode_output=True, verbose=False,
+           encoding=None):
     """
     expect should be a tuple of allowed exit codes.  cwd should be
     the directory from which the command will be executed.  When
@@ -54,18 +56,29 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
     """
     if cwd == None:
         cwd = '.'
+    if isinstance(shell, types.StringTypes):
+        list_args = ' '.split(args)  # sloppy, but just for logging
+        str_args = args
+    else:
+        list_args = args
+        str_args = ' '.join(args)  # sloppy, but just for logging
     if verbose == True:
-        print >> sys.stderr, '%s$ %s' % (cwd, ' '.join(args))
+        print >> sys.stderr, '%s$ %s' % (cwd, str_args)
     try :
         if _POSIX:
-            q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr, cwd=cwd)
+            if shell is None:
+                shell = False
+            q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr,
+                      shell=shell, cwd=cwd)
         else:
             assert _MSWINDOWS==True, 'invalid platform'
+            if shell is None:
+                shell = True
             # win32 don't have os.execvp() so have to run command in a shell
             q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr,
-                      shell=True, cwd=cwd)
+                      shell=shell, cwd=cwd)
     except OSError, e:
-        raise CommandError(args, status=e.args[0], stderr=e)
+        raise CommandError(list_args, status=e.args[0], stderr=e)
     stdout,stderr = q.communicate(input=stdin)
     status = q.wait()
     if unicode_output == True:
@@ -78,7 +91,7 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
     if verbose == True:
         print >> sys.stderr, '%d\n%s%s' % (status, stdout, stderr)
     if status not in expect:
-        raise CommandError(args, status, stdout, stderr)
+        raise CommandError(list_args, status, stdout, stderr)
     return status, stdout, stderr
 
 class Pipe (object):

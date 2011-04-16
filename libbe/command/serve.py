@@ -58,6 +58,7 @@ import libbe
 import libbe.command
 import libbe.command.util
 import libbe.util.encoding
+import libbe.util.subproc
 import libbe.version
 
 if libbe.TESTING == True:
@@ -507,9 +508,10 @@ class ServerApp (WSGI_AppObject):
     """
     server_version = "BE-server/" + libbe.version.version()
 
-    def __init__(self, storage, *args, **kwargs):
-        WSGI_AppObject.__init__(self, *args, **kwargs)
+    def __init__(self, storage, notify=False, **kwargs):
+        WSGI_AppObject.__init__(self, **kwargs)
         self.storage = storage
+        self.notify = notify
         self.http_user_error = 418
 
         self.urls = [
@@ -570,6 +572,9 @@ class ServerApp (WSGI_AppObject):
         directory = self.data_get_boolean(
             data, 'directory', default=False, source=source)
         self.storage.add(id, parent=parent, directory=directory)
+        if self.notify:
+            self._notify(environ, 'add', id,
+                         [('parent', parent), ('directory', directory)])
         return self.ok_response(environ, start_response, None)
 
     def exists(self, environ, start_response):
@@ -593,6 +598,8 @@ class ServerApp (WSGI_AppObject):
             self.storage.recursive_remove(id)
         else:
             self.storage.remove(id)
+        if self.notify:
+            self._notify(environ, 'remove', id, [('recursive', recursive)])
         return self.ok_response(environ, start_response, None)
 
     def ancestors(self, environ, start_response):
@@ -641,6 +648,8 @@ class ServerApp (WSGI_AppObject):
             raise _HandlerError(406, 'Missing query key value')
         value = data['value']
         self.storage.set(id, value)
+        if self.notify:
+            self._notify(environ, 'set', id, [('value', value)])
         return self.ok_response(environ, start_response, None)
 
     def commit(self, environ, start_response):
@@ -661,6 +670,10 @@ class ServerApp (WSGI_AppObject):
             revision = self.storage.commit(summary, body, allow_empty)
         except libbe.storage.EmptyCommit, e:
             raise _HandlerError(self.http_user_error, 'EmptyCommit')
+        if self.notify:
+            self._notify(environ, 'commit', id,
+                         [('allow_empty', allow_empty), ('summary', summary),
+                          ('body', body)])
         return self.ok_response(environ, start_response, revision)
 
     def revision_id(self, environ, start_response):
@@ -700,6 +713,35 @@ class ServerApp (WSGI_AppObject):
                     raise _Unauthorized() # only non-guests allowed to write
             # allow read-only commands for all users
 
+    def _notify(self, environ, command, id, params):
+        message = self._format_notification(environ, command, id, params)
+        self._submit_notification(message)
+
+    def _format_notification(self, environ, command, id, params):
+        key_length = len('command')
+        for key,value in params:
+            if len(key) > key_length and '\n' not in str(value):
+                key_length = len(key)
+        key_length += 1
+        lines = []
+        multi_line_params = []
+        for key,value in [('address', environ.get('REMOTE_ADDR', '-')),
+                          ('command', command), ('id', id)]+params:
+            v = str(value)
+            if '\n' in v:
+                multi_line_params.append((key,v))
+                continue
+            lines.append('%*.*s %s' % (key_length, key_length, key+':', v))
+        lines.append('')
+        for key,value in multi_line_params:
+            lines.extend(['=== START %s ===' % key, v,
+                          '=== STOP %s ===' % key, ''])
+        lines.append('')
+        return '\n'.join(lines)
+
+    def _submit_notification(self, message):
+        libbe.util.subproc.invoke(self.notify, stdin=message, shell=True)
+
 
 class Serve (libbe.command.Command):
     """:class:`~libbe.command.base.Command` wrapper around
@@ -721,6 +763,10 @@ class Serve (libbe.command.Command):
                         name='host', metavar='HOST', default='')),
                 libbe.command.Option(name='read-only', short_name='r',
                     help='Dissable operations that require writing'),
+                libbe.command.Option(name='notify', short_name='n',
+                    help='Send notification emails for changes.',
+                    arg=libbe.command.Argument(
+                        name='notify', metavar='EMAIL-COMMAND', default=None)),
                 libbe.command.Option(name='ssl', short_name='s',
                     help='Use CherryPy to serve HTTPS (HTTP over SSL/TLS)'),
                 libbe.command.Option(name='auth', short_name='a',
@@ -742,7 +788,8 @@ class Serve (libbe.command.Command):
             self._check_restricted_access(storage, params['auth'])
         users = Users(params['auth'])
         users.load()
-        app = ServerApp(storage=storage, logger=self.logger)
+        app = ServerApp(
+            storage=storage, notify=params['notify'], logger=self.logger)
         if params['auth'] != None:
             app = AdminApp(app, users=users, logger=self.logger)
             app = AuthenticationApp(app, realm=storage.repo,
@@ -860,6 +907,7 @@ if libbe.TESTING == True:
             self.logger.setLevel(logging.INFO)
             self.default_environ = { # required by PEP 333
                 'REQUEST_METHOD': 'GET', # 'POST', 'HEAD'
+                'REMOTE_ADDR': '192.168.0.123',
                 'SCRIPT_NAME':'',
                 'PATH_INFO': '',
                 #'QUERY_STRING':'',   # may be empty or absent

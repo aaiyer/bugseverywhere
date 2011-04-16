@@ -1,6 +1,7 @@
 April 16, 2011
  * Added --preserve-uuids to `be import-xml`.
  * Added --assigned, --severity, and --status to `be new`.
+ * Added --notify to `be serve`.
 
 March 5, 2011
  * Release version 1.0.1 (bugfixes).

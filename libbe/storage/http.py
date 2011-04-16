@@ -358,6 +358,7 @@ if TESTING == True:
             # duplicated from libbe.command.serve.WSGITestCase
             self.default_environ = {
                 'REQUEST_METHOD': 'GET', # 'POST', 'HEAD'
+                'REMOTE_ADDR': '192.168.0.123',
                 'SCRIPT_NAME':'',
                 'PATH_INFO': '',
                 #'QUERY_STRING':'',   # may be empty or absent
