@@ -21,6 +21,8 @@ import libbe
 import libbe.command
 import libbe.command.util
 
+from .assign import parse_assigned as _parse_assigned
+
 
 class New (libbe.command.Command):
     """Create a new bug
@@ -40,7 +42,8 @@ class New (libbe.command.Command):
     >>> uuid_gen = libbe.util.id.uuid_gen
     >>> libbe.util.id.uuid_gen = lambda: 'X'
     >>> ui._user_id = u'Fran\\xe7ois'
-    >>> ret = ui.run(cmd, args=['this is a test',])
+    >>> options = {'assigned': 'none'}
+    >>> ret = ui.run(cmd, options=options, args=['this is a test',])
     Created bug with ID abc/X
     >>> libbe.util.id.uuid_gen = uuid_gen
     >>> bd.flush_reload()
@@ -57,6 +60,8 @@ class New (libbe.command.Command):
     minor
     >>> print bug.status
     open
+    >>> print bug.assigned
+    None
     >>> ui.cleanup()
     >>> bd.cleanup()
     """
@@ -109,12 +114,7 @@ class New (libbe.command.Command):
         else:
             bug.reporter = bug.creator
         if params['assigned'] != None:
-            assigned = params['assigned']
-            if assigned == 'none':
-                assigned = None
-            elif assigned == '-':
-                assigned = self._get_user_id()
-            bug.assigned = assigned
+            bug.assigned = _parse_assigned(self, params['assigned'])
         if params['status'] != None:
             bug.status = params['status']
         if params['severity'] != None:

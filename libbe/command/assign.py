@@ -73,11 +73,7 @@ class Assign (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        assigned = params['assigned']
-        if assigned == 'none':
-            assigned = None
-        elif assigned == '-':
-            assigned = self._get_user_id()
+        assigned = parse_assigned(self, params['assigned'])
         bugdir = self._get_bugdir()
         for bug_id in params['bug-id']:
             bug,dummy_comment = \
@@ -99,3 +95,12 @@ Special assigned strings:
   "-"      assign the bug to yourself
   "none"   un-assigns the bug
 """
+
+def parse_assigned(command, assigned):
+    """Standard processing for the 'assigned' Argument.
+    """
+    if assigned == 'none':
+        assigned = None
+    elif assigned == '-':
+        assigned = command._get_user_id()
+    return assigned
