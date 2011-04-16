@@ -1,3 +1,7 @@
+April 16, 2011
+ * Added --preserve-uuids to `be import-xml`.
+ * Added --assigned, --severity, and --status to `be new`.
+
 July 14, 2010
  * Added --show-status to `be depend`.
 
