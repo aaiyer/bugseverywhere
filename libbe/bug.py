@@ -359,7 +359,7 @@ class Bug (settings_object.SavedSettingsObject):
         >>> bugB.xml(show_comments=True) == xml
         True
         >>> bugB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
-        ['severity', 'status', 'creator', 'created', 'summary']
+        ['severity', 'status', 'creator', 'time', 'summary']
         >>> len(list(bugB.comments()))
         3
         """
