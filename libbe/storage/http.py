@@ -355,7 +355,7 @@ if TESTING == True:
                 storage=self._storage_backend)
             HTTP.__init__(self, repo='http://localhost:8000/', *args, **kwargs)
             self.intitialized = False
-            # duplicated from libbe.storage.serve.WSGITestCase
+            # duplicated from libbe.command.serve.WSGITestCase
             self.default_environ = {
                 'REQUEST_METHOD': 'GET', # 'POST', 'HEAD'
                 'SCRIPT_NAME':'',
@@ -376,7 +376,7 @@ if TESTING == True:
                 }
         def getURL(self, app, path='/', method='GET', data=None,
                    scheme='http', environ={}):
-            # duplicated from libbe.storage.serve.WSGITestCase
+            # duplicated from libbe.command.serve.WSGITestCase
             env = copy.copy(self.default_environ)
             env['PATH_INFO'] = path
             env['REQUEST_METHOD'] = method
