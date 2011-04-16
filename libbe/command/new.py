@@ -104,6 +104,7 @@ class New (libbe.command.Command):
         else:
             summary = params['summary']
         bugdir = self._get_bugdir()
+        bugdir.storage.writeable = False
         bug = bugdir.new_bug(summary=summary.strip())
         if params['creator'] != None:
             bug.creator = params['creator']
@@ -119,6 +120,8 @@ class New (libbe.command.Command):
             bug.status = params['status']
         if params['severity'] != None:
             bug.severity = params['severity']
+        bugdir.storage.writeable = True
+        bug.save()
         print >> self.stdout, 'Created bug with ID %s' % bug.id.user()
         return 0
 
