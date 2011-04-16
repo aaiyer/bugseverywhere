@@ -1,0 +1,3 @@
+show --xml generates <created> tags for bug creation timestamp, but these break in import
+
+for fix, see attached patch

@@ -1,0 +1,26 @@
+From 80ce5b9707750edba08842cd267843fa035d7b0a Mon Sep 17 00:00:00 2001
+From: Valtteri Kokkoniemi <rvk@iki.fi>
+Date: Thu, 17 Feb 2011 12:03:56 +0200
+Subject: [PATCH] fixed created tag handling in import-xml
+
+---
+ libbe/bug.py |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/libbe/bug.py b/libbe/bug.py
+index 6d3d836..122c81a 100644
+--- a/libbe/bug.py
++++ b/libbe/bug.py
+@@ -395,6 +395,10 @@ class Bug (settings_object.SavedSettingsObject):
+                 if child.tag == 'uuid':
+                     uuid = text
+                     continue # don't set the bug's uuid tag.
++		elif child.tag == 'created':
++                    self.time = utility.str_to_time(text)
++                    self.explicit_attrs.append('time')
++                    continue
+                 elif child.tag == 'extra-string':
+                     estrs.append(text)
+                     continue # don't set the bug's extra_string yet.
+-- 
+1.7.1
