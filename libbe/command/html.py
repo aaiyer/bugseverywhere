@@ -782,9 +782,9 @@ div.root.comment {
 {% if comments %}
 {% for depth,comment in comments %}
 {% if depth == 0 %}
-<div class="comment root" id="{{ comment_dir(comment) }}">
+<div class="comment root" id="C{{ comment_dir(comment) }}">
 {% else %}
-<div class="comment" id="{{ comment_dir(comment) }}">
+<div class="comment" id="C{{ comment_dir(comment) }}">
 {% endif %}
 {{ comment_entry.render({
        'depth':depth, 'bug': bug, 'comment':comment, 'comment_dir':comment_dir,
