@@ -743,7 +743,7 @@ div.root.comment {
   <td class="status"><a href="bugs/{{ dir }}/index.html">{{ bug.status|e }}</a></td>
   <td class="severity"><a href="bugs/{{ dir }}/index.html">{{ bug.severity|e }}</a></td>
   <td class="summary"><a href="bugs/{{ dir }}/index.html">{{ bug.summary|e }}</a></td>
-  <td class="date"><a href="bugs/{{ dir }}/index.html">{{ bug.time_string or ''|e }}</a></td>
+  <td class="date"><a href="bugs/{{ dir }}/index.html">{{ (bug.time_string or '')|e }}</a></td>
 </tr>
 """,
 ##
@@ -765,13 +765,13 @@ div.root.comment {
     <tr><td class="bug_detail_label">Severity :</td>
         <td class="bug_detail">{{ bug.severity|e }}</td></tr>
     <tr><td class="bug_detail_label">Assigned :</td>
-        <td class="bug_detail">{{ bug.assigned or ''|e }}</td></tr>
+        <td class="bug_detail">{{ (bug.assigned or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Reporter :</td>
-        <td class="bug_detail">{{ bug.reporter or ''|e }}</td></tr>
+        <td class="bug_detail">{{ (bug.reporter or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Creator :</td>
-        <td class="bug_detail">{{ bug.creator or ''|e }}</td></tr>
+        <td class="bug_detail">{{ (bug.creator or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Created :</td>
-        <td class="bug_detail">{{ bug.time_string or ''|e }}</td></tr>
+        <td class="bug_detail">{{ (bug.time_string or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Summary :</td>
         <td class="bug_detail">{{ bug.summary|e }}</td></tr>
   </tbody>
@@ -815,8 +815,8 @@ div.root.comment {
         --------- Comment ---------<br/>
         ID: {{ comment.uuid }}<br/>
         Short name: {{ comment.id.user() }}<br/>
-        From: {{ comment.author or ''|e }}<br/>
-        Date: {{ comment.date or ''|e }}<br/>
+        From: {{ (comment.author or '')|e }}<br/>
+        Date: {{ (comment.date or '')|e }}<br/>
         <br/>
         {{ format_body(bug, comment) }}
       </td>
