@@ -1,0 +1,7 @@
+> We still want storage-level hooks for notification emails, etc,
+
+The new `be serve --notify ...` is effectively a command-specific
+storage-level hook (for storage actions that change the repository).
+If it seems to be working out well, we can move the logic down into
+the base storage classes.
+
