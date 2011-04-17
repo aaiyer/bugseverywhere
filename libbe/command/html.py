@@ -808,7 +808,7 @@ div.root.comment {
 ##
             'bug_comment_entry.html':
 """<table>
-  <tdata>
+  <tbody>
     <tr>
       <td class="bug_comment_label">Comment:</td>
       <td class="bug_comment">
@@ -821,7 +821,7 @@ div.root.comment {
         {{ format_body(bug, comment) }}
       </td>
     </tr>
-  </tdata>
+  </tbody>
 </table>
 """,
             }
