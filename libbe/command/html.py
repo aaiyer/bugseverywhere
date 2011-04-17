@@ -702,7 +702,7 @@ div.root.comment {
     {% for bug in bugs %}
     {{ bug_entry.render({'bug':bug, 'dir':bug_dir(bug)}) }}
     {% endfor %}
-  <tbody>
+  </tbody>
 </table>
 {% endblock %}
 """,
