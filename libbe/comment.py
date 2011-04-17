@@ -611,8 +611,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         if self.uuid == INVALID_UUID:
             return
         if settings_mapfile == None:
-            settings_mapfile = \
-                self.storage.get(self.id.storage("values"), default="\n")
+            settings_mapfile = self.storage.get(self.id.storage('values'))
         try:
             settings = mapfile.parse(settings_mapfile)
         except mapfile.InvalidMapfileContents, e:
