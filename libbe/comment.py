@@ -53,24 +53,12 @@ if libbe.TESTING == True:
     import doctest
 
 
-class InvalidShortname(KeyError):
-    def __init__(self, shortname, shortnames):
-        msg = "Invalid shortname %s\n%s" % (shortname, shortnames)
-        KeyError.__init__(self, msg)
-        self.shortname = shortname
-        self.shortnames = shortnames
-
 class MissingReference(ValueError):
     def __init__(self, comment):
         msg = "Missing reference to %s" % (comment.in_reply_to)
         ValueError.__init__(self, msg)
         self.reference = comment.in_reply_to
         self.comment = comment
-
-class DiskAccessRequired (Exception):
-    def __init__(self, goal):
-        msg = "Cannot %s without accessing the disk" % goal
-        Exception.__init__(self, msg)
 
 INVALID_UUID = "!!~~\n INVALID-UUID \n~~!!"
 

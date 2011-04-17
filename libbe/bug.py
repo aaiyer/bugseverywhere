@@ -47,11 +47,6 @@ if libbe.TESTING == True:
     import doctest
 
 
-class DiskAccessRequired (Exception):
-    def __init__(self, goal):
-        msg = "Cannot %s without accessing the disk" % goal
-        Exception.__init__(self, msg)
-
 ### Define and describe valid bug categories
 # Use a tuple of (category, description) tuples since we don't have
 # ordered dicts in Python yet http://www.python.org/dev/peps/pep-0372/
