@@ -32,9 +32,8 @@ RST2HTML = /usr/bin/rst2html
 
 #PATH = /usr/bin:/bin  # must include sphinx-build for 'sphinx' target.
 
-#PREFIX = /usr/local
-PREFIX = ${HOME}
-INSTALL_OPTIONS = "--prefix=${PREFIX}"
+#INSTALL_OPTIONS = "--prefix=/usr/local"
+INSTALL_OPTIONS = "--user"
 
 # Select the documentation you wish to build
 DOC = sphinx man

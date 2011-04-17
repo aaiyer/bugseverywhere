@@ -7,7 +7,7 @@ reporter: dietmarw <dietmarw@HeX>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Set default user paths according to PEP370
