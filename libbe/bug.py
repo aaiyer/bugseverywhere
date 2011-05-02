@@ -285,6 +285,8 @@ class Bug (settings_object.SavedSettingsObject):
                     ("Reporter", self._setting_attr_string("reporter")),
                     ("Creator", self._setting_attr_string("creator")),
                     ("Created", timestring)]
+            for estr in self.extra_strings:
+                info.append(('Extra string', estr))
             longest_key_len = max([len(k) for k,v in info])
             infolines = ["  %*s : %s\n" %(longest_key_len,k,v) for k,v in info]
             bugout = "".join(infolines) + "%s" % self.summary.rstrip('\n')
