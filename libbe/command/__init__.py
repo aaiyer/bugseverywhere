@@ -19,6 +19,7 @@
 import base
 
 UserError = base.UserError
+UsageError = base.UsageError
 UnknownCommand = base.UnknownCommand
 get_command = base.get_command
 get_command_class = base.get_command_class
@@ -33,7 +34,7 @@ UnconnectedStorageGetter = base.UnconnectedStorageGetter
 StorageCallbacks = base.StorageCallbacks
 UserInterface = base.UserInterface
 
-__all__ = [UserError, UnknownCommand,
+__all__ = [UserError, UsageError, UnknownCommand,
            get_command, get_command_class, commands,
            Option, Argument, Command,
            InputOutput, StdInputOutput, StringInputOutput,

@@ -27,13 +27,36 @@ import libbe.ui.util.user
 import libbe.util.encoding
 import libbe.util.plugin
 
-class UserError(Exception):
+
+class UserError (Exception):
+    "An error due to improper BE usage."
     pass
 
-class UnknownCommand(UserError):
-    def __init__(self, cmd):
-        Exception.__init__(self, "Unknown command '%s'" % cmd)
-        self.cmd = cmd
+
+class UsageError (UserError):
+    """A serious parsing error due to invalid BE command construction.
+
+    The distinction between `UserError`\s and the more specific
+    `UsageError`\s is that when displaying a `UsageError` to the user,
+    the user is pointed towards the command usage information.  Use
+    the more general `UserError` if you feel that usage information
+    would not be particularly enlightening.
+    """
+    def __init__(self, command=None, command_name=None, message=None):
+        super(UsageError, self).__init__(message)
+        self.command = command
+        if command_name is None and command is not None:
+            command_name = command.name
+        self.command_name = command_name
+        self.message = message
+
+
+class UnknownCommand (UsageError):
+    def __init__(self, command_name):
+        super(UnknownCommand, self).__init__(
+            command_name=command_name,
+            message="Unknown command '%s'" % command_name)
+
 
 def get_command(command_name):
     """Retrieves the module for a user command

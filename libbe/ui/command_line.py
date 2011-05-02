@@ -137,8 +137,9 @@ class CmdOptionParser(optparse.OptionParser):
             raise libbe.command.UserError('Too many arguments')
         for arg in self.command.args[len(parsed_args):]:
             if arg.optional == False:
-                raise libbe.command.UserError(
-                    'Missing required argument %s' % arg.metavar)
+                raise libbe.command.UsageError(
+                    command=self.command,
+                    message='Missing required argument %s' % arg.metavar)
         return (options, parsed_args)
 
     def callback(self, option, opt, value, parser):
@@ -289,6 +290,13 @@ def dispatch(ui, command, args):
                 'See http://docs.python.org/library/locale.html for details',
                 ])
         return 1
+    except libbe.command.UsageError, e:
+        print >> ui.io.stdout, 'Usage Error:\n', e
+        if e.command:
+            print >> ui.io.stdout, e.command.usage()
+        print >> ui.io.stdout, 'For usage information, try'
+        print >> ui.io.stdout, '  be help %s' % e.command_name
+        return 1
     except libbe.command.UserError, e:
         print >> ui.io.stdout, 'ERROR:\n', e
         return 1
@@ -314,15 +322,19 @@ def main():
         options,args = parser.parse_args()
     except CallbackExit:
         return 0
-    except libbe.command.UserError, e:
-        if str(e).endswith('COMMAND'):
+    except libbe.command.UsageError, e:
+        if isinstance(e.command, BE):
             # no command given, print usage string
-            print >> ui.io.stdout, 'ERROR:'
-            print >> ui.io.stdout, be.usage(), '\n', e
+            print >> ui.io.stdout, 'Usage Error:\n', e
+            print >> ui.io.stdout, be.usage()
             print >> ui.io.stdout, 'For example, try'
             print >> ui.io.stdout, '  be help'
         else:
-            print >> ui.io.stdout, 'ERROR:\n', e
+            print >> ui.io.stdout, 'Usage Error:\n', e
+            if e.command:
+                print >> ui.io.stdout, e.command.usage()
+            print >> ui.io.stdout, 'For usage information, try'
+            print >> ui.io.stdout, '  be help %s' % e.command_name
         return 1
 
     command_name = args.pop(0)
