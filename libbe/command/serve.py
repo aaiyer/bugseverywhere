@@ -744,7 +744,12 @@ class ServerApp (WSGI_AppObject):
 
 
 class Serve (libbe.command.Command):
-    """:class:`~libbe.command.base.Command` wrapper around
+    """Serve bug directory storage over HTTP.
+
+    This allows you to run local `be` commands interfacing with remote
+    data, transmitting file reads/writes/etc. over the network.
+
+    :class:`~libbe.command.base.Command` wrapper around
     :class:`ServerApp`.
     """
 
