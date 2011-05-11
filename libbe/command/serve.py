@@ -973,7 +973,7 @@ if libbe.TESTING == True:
             self.app.log_request(
                 environ=self.default_environ, status='-1 OK', bytes=123)
             log = self.logstream.getvalue()
-            self.failUnless(log.startswith('- -'), log)
+            self.failUnless(log.startswith('192.168.0.123 -'), log)
 
     class ExceptionAppTestCase (WSGITestCase):
         def setUp(self):
