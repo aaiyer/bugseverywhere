@@ -16,7 +16,7 @@ and helps keep the bug repository in sync with the code.
 However, there are some differences compared to centralized
 bugtrackers.  Because bugs and comments can be created by several
 users in parallel, they have globally unique :mod:`IDs
-</libbe.util.id>` rather than numbers.  There is also a
+<libbe.util.id>` rather than numbers.  There is also a
 developer-friendly command-line_ interface to compliment the
 user-friendly :doc:`web </http>` and :doc:`email </email>` interfaces.
 This tutorial will focus on the command-line interface as the most
@@ -102,8 +102,8 @@ if you call it from a directory besides your project's root.
 Inside the ``.be`` directory (among other things) there will be a long
 UUID_ directory.  This is your bug directory.  The idea is that you
 could keep several bug directories in the same repository, using one
-to track bugs, another to track roadmap issues, etc.  See :mod:`IDs`
-for details.  For BE itself, the bug directory is
+to track bugs, another to track roadmap issues, etc.  See :mod:`IDs
+<libbe.util.id>` for details.  For BE itself, the bug directory is
 ``bea86499-824e-4e77-b085-2d581fa9ccab``, which is why all the bug and
 comment IDs in this tutorial will start with ``bea/``.
 
