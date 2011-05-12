@@ -220,14 +220,18 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     def uuids(self, use_cached_disk_uuids=True):
         if use_cached_disk_uuids==False or not hasattr(self, '_uuids_cache'):
-            self._uuids_cache = []
-            # list bugs that are in storage
-            if self.storage != None and self.storage.is_readable():
-                child_uuids = libbe.util.id.child_uuids(
-                    self.storage.children(self.id.storage()))
-                for id in child_uuids:
-                    self._uuids_cache.append(id)
-        return list(set([bug.uuid for bug in self] + self._uuids_cache))
+            self._refresh_uuid_cache()
+        self._uuids_cache = self._uuids_cache.union([bug.uuid for bug in self])
+        return self._uuids_cache
+
+    def _refresh_uuid_cache(self):
+        self._uuids_cache = set()
+        # list bugs that are in storage
+        if self.storage != None and self.storage.is_readable():
+            child_uuids = libbe.util.id.child_uuids(
+                self.storage.children(self.id.storage()))
+            for id in child_uuids:
+                self._uuids_cache.add(id)
 
     def _clear_bugs(self):
         while len(self) > 0:
@@ -248,7 +252,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
         self.append(bg)
         self._bug_map_gen()
         if hasattr(self, '_uuids_cache') and not bg.uuid in self._uuids_cache:
-            self._uuids_cache.append(bg.uuid)
+            self._uuids_cache.add(bg.uuid)
         return bg
 
     def remove_bug(self, bug):
