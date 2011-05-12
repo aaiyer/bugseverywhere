@@ -156,11 +156,11 @@ class CachedPathID (object):
     >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments'))
     >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments', 'def'))
     >>> os.mkdir(os.path.join(dir.path, '.be', 'abc', 'bugs', '456'))
-    >>> file(os.path.join(dir.path, '.be', 'abc', 'values'),
+    >>> open(os.path.join(dir.path, '.be', 'abc', 'values'),
     ...      'w').close()
-    >>> file(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'values'),
+    >>> open(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'values'),
     ...      'w').close()
-    >>> file(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments', 'def', 'values'),
+    >>> open(os.path.join(dir.path, '.be', 'abc', 'bugs', '123', 'comments', 'def', 'values'),
     ...      'w').close()
     >>> c = CachedPathID()
     >>> c.root(dir.path)
