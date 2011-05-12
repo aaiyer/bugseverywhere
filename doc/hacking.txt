@@ -71,10 +71,14 @@ execution + childrens' times)::
     $ python -m cProfile -o profile be [command] [args]
     $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_stats(20)"
 
-It's often useful to toss::
+If you want to find out who's calling your expensive function
+(e.g. :func:`libbe.util.subproc.invoke`), try::
+
+    $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_callers(20)"
+
+You can also toss::
 
     import sys, traceback
     print >> sys.stderr, '-'*60, '\n', '\n'.join(traceback.format_stack()[-10:])
 
-into expensive functions (e.g. :func:`libbe.util.subproc.invoke`) if
-you're not sure why they're being called.
+into the function itself for a depth-first caller list.
