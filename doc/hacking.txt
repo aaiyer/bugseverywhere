@@ -82,3 +82,7 @@ You can also toss::
     print >> sys.stderr, '-'*60, '\n', '\n'.join(traceback.format_stack()[-10:])
 
 into the function itself for a depth-first caller list.
+
+For a more top-down approach, try::
+
+    $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_callees(20)"
