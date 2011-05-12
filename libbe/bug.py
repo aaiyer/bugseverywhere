@@ -194,10 +194,19 @@ class Bug (settings_object.SavedSettingsObject):
 
     def _get_time(self):
         if self.time_string == None:
+            self._cached_time_string = None
+            self._cached_time = None
             return None
-        return utility.str_to_time(self.time_string)
+        if (not hasattr(self, '_cached_time_string')
+            or self.time_string != self._cached_time_string):
+            self._cached_time_string = self.time_string
+            self._cached_time = utility.str_to_time(self.time_string)
+        return self._cached_time
     def _set_time(self, value):
-        self.time_string = utility.time_to_str(value)
+        if not hasattr(self, '_cached_time') or value != self._cached_time:
+            self.time_string = utility.time_to_str(value)
+            self._cached_time_string = self.time_string
+            self._cached_time = value
     time = property(fget=_get_time,
                     fset=_set_time,
                     doc="An integer version of .time_string")
