@@ -224,8 +224,8 @@ def _truncate(uuid, other_uuids, min_length=3):
     uuid : str
       The UUID to truncate.
     other_uuids : list of str
-      The other UUIDs which the truncation *might* (but doesn't) refer
-      to.
+      The other UUIDs which the truncation *might* refer to.  May
+      contain `uuid`.
     min_length : int
       Avoid rapidly outdated truncations, even if they are unique now.
 
@@ -255,8 +255,8 @@ def _expand(truncated_id, common, other_ids):
       `other_ids`.  Not used by ``_expand``, but passed on to the
       matching exceptions if they occur.
     other_uuids : list of str
-      The other UUIDs which the truncation *might* (but doesn't) refer
-      to.
+      The other UUIDs which the truncation *might* refer to.  May
+      contain `uuid`.
 
     Raises
     ------
