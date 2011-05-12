@@ -1003,7 +1003,7 @@ class VCS (libbe.storage.base.VersionedStorage):
                 libbe.storage.STORAGE_VERSION+'\n')
             self._vcs_add(self._u_rel_path(path))
 
-
+
 if libbe.TESTING == True:
     class VCSTestCase (unittest.TestCase):
         """

@@ -251,7 +251,7 @@ class Hg(base.VCS):
     def _vcs_changed(self, revision):
         return self._parse_diff(self._diff(revision))
 
-
+
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Hg, sys.modules[__name__])
 

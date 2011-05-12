@@ -378,7 +378,7 @@ class Bzr(base.VCS):
     def _vcs_changed(self, revision):
         return self._parse_diff(self._diff(revision))
 
-
+
 if libbe.TESTING == True:
     base.make_vcs_testcase_subclasses(Bzr, sys.modules[__name__])
 
