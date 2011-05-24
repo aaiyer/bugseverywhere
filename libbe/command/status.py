@@ -80,6 +80,10 @@ class Status (libbe.command.Command):
         return 0
 
     def _long_help(self):
+        try: # See if there are any per-tree status configurations
+            bd = self._get_bugdir()
+        except NotImplementedError:
+            pass # No tree, just show the defaults
         longest_status_len = max([len(s) for s in libbe.bug.status_values])
         active_statuses = []
         for status in libbe.bug.active_status_values :
