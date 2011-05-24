@@ -79,21 +79,26 @@ class Severity (libbe.command.Command):
         return 0
 
     def _long_help(self):
-        ret = ["""
+        try: # See if there are any per-tree severity configurations
+            bd = self._get_bugdir()
+        except NotImplementedError:
+            pass # No tree, just show the defaults
+        longest_severity_len = max([len(s) for s in libbe.bug.severity_values])
+        severity_levels = []
+        for severity in libbe.bug.severity_values :
+            description = libbe.bug.severity_description[severity]
+            s = '%*s : %s' % (longest_severity_len, severity, description)
+            severity_levels.append(s)
+        ret = """
 Show or change a bug's severity level.
 
 If no severity is specified, the current value is printed.  If a severity level
 is specified, it will be assigned to the bug.
 
 Severity levels are:
-"""]
-        try: # See if there are any per-tree severity configurations
-            bd = self._get_bugdir()
-        except NotImplementedError:
-            pass # No tree, just show the defaults
-        longest_severity_len = max([len(s) for s in libbe.bug.severity_values])
-        for severity in libbe.bug.severity_values :
-            description = libbe.bug.severity_description[severity]
-            ret.append('%*s : %s\n' \
-                % (longest_severity_len, severity, description))
-        return ''.join(ret)
+  %s
+
+You can overide the list of allowed severities on a per-repository basis.
+See "be set --help" for more details.
+""" % ('\n  '.join(severity_levels))
+        return ret
