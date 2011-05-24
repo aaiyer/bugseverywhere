@@ -111,6 +111,24 @@ Inactive status levels are:
   %s
 
 You can overide the list of allowed statuses on a per-repository basis.
-See "be set --help" for more details.
+In order to do so, you must edit your be settings file. This can be found within your .be/xxx-xxx directory.
+
+Add the following lines to override the default statuses and use your own:
+
+active_status:
+    - - unconfirmed
+      - A possible bug which lacks independent existance confirmation.
+    - - open
+      - A working bug that has not been assigned to a developer.
+
+inactive_status:
+    - - closed
+      - The bug is no longer relevant.
+    - - fixed
+      - The bug should no longer occur.
+
+You may add as many name/description pairs as you wish to have; they are sorted in order from most important at the top, to least important at the bottom.
+
+Note that the values here _override_ the defaults. That means that if you like the defaults, and wish to keep them, you will have to copy them here before adding any of your own.
 """ % ('\n  '.join(active_statuses), '\n  '.join(inactive_statuses))
         return ret

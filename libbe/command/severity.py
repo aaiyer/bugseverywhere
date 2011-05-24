@@ -99,6 +99,18 @@ Severity levels are:
   %s
 
 You can overide the list of allowed severities on a per-repository basis.
-See "be set --help" for more details.
+In order to do so, you must edit your be settings file. This can be found within your .be/xxx-xxx directory.
+
+Add the following lines to override the default severities and use your own:
+
+severities:
+    - - target
+      - The issue is a target or milestone, not a bug.
+    - - wishlist
+      - A feature that could improve usefulness, but not a bug.
+
+You may add as many name/description pairs as you wish to have; they are sorted in order from least important at the top, to most important at the bottom.
+
+Note that the values here _override_ the defaults. That means that if you like the defaults, and wish to keep them, you will have to copy them here before adding any of your own.
 """ % ('\n  '.join(severity_levels))
         return ret
