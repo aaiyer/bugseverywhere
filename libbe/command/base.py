@@ -54,10 +54,15 @@ class UsageError (UserError):
 
 
 class UnknownCommand (UsageError):
-    def __init__(self, command_name):
+    def __init__(self, command_name, message=None):
+        uc_message = "Unknown command '%s'" % command_name
+        if message is None:
+            message = uc_message
+        else:
+            message = '%s\n(%s)' % (uc_message, message)
         super(UnknownCommand, self).__init__(
             command_name=command_name,
-            message="Unknown command '%s'" % command_name)
+            message=message)
 
 
 def get_command(command_name):
@@ -75,7 +80,7 @@ def get_command(command_name):
         cmd = libbe.util.plugin.import_by_name(
             'libbe.command.%s' % command_name.replace("-", "_"))
     except ImportError, e:
-        raise UnknownCommand(command_name)
+        raise UnknownCommand(command_name, message=unicode(e))
     return cmd
 
 def get_command_class(module=None, command_name=None):
