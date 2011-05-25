@@ -100,7 +100,56 @@ To unset a setting, set it to "none".
 
 Allowed settings are:
 
-%s""" % ('\n'.join(get_bugdir_settings()),)
+%s
+
+Note that this command does not provide a good interface for some of
+these settings (yet!).  You may need to edit the bugdir settings file
+(`.be/<bugdir>/settings`) manually.  Examples for each troublesome
+setting are given below.
+
+Add the following lines to override the default severities and use
+your own:
+
+  severities:
+    - - target
+      - The issue is a target or milestone, not a bug.
+    - - wishlist
+      - A feature that could improve usefulness, but not a bug.
+
+You may add as many name/description pairs as you wish to have; they
+are sorted in order from least important at the top, to most important
+at the bottom.  The target severity gets special handling by `be
+target`.
+
+Note that the values here _override_ the defaults. That means that if
+you like the defaults, and wish to keep them, you will have to copy
+them here before adding any of your own.  See `be severity --help` for
+the current list.
+
+Add the following lines to override the default statuses and use your
+own:
+
+  active_status:
+    - - unconfirmed
+      - A possible bug which lacks independent existance confirmation.
+    - - open
+      - A working bug that has not been assigned to a developer.
+
+  inactive_status:
+    - - closed
+      - The bug is no longer relevant.
+    - - fixed
+      - The bug should no longer occur.
+
+You may add as many name/description pairs as you wish to have; they
+are sorted in order from most important at the top, to least important
+at the bottom.
+
+Note that the values here _override_ the defaults. That means that if
+you like the defaults, and wish to keep them, you will have to copy
+them here before adding any of your own.  See `be status --help` for
+the current list.
+""" % ('\n'.join(get_bugdir_settings()),)
 
 def get_bugdir_settings():
     settings = []
