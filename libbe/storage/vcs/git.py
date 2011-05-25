@@ -1,6 +1,7 @@
 # Copyright (C) 2008-2011 Ben Finney <benf@cybersource.com.au>
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
+#                         Robert Lehmann <mail@robertlehmann.de>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.

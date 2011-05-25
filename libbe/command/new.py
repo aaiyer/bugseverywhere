@@ -1,4 +1,6 @@
 # Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
+#                         Andrew Cooper <andrew.cooper@hkcreations.org>
+#                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>
 #

@@ -1,4 +1,6 @@
-# Copyright (C) 2009-2011 W. Trevor King <wking@drexel.edu>
+# Copyright (C) 2009-2011 Chris Ball <cjb@laptop.org>
+#                         Valtteri Kokkoniemi <rvk@iki.fi>
+#                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.
 #

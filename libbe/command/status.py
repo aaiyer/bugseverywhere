@@ -1,7 +1,9 @@
 # Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
+#                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Marien Zwart <marien.zwart@gmail.com>
 #                         Thomas Gerigk <tgerigk@gmx.de>
+#                         Tim Guirgies <lt.infiltrator@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.

@@ -6,6 +6,7 @@
 #
 # Copyright (C) 2008-2011 Anton Batenev <abbat@abbat>
 #                         Ben Finney <benf@cybersource.com.au>
+#                         Chris Ball <cjb@laptop.org>
 #                         Eric Kow <eric.kow@gmail.com>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         W. Trevor King <wking@drexel.edu>

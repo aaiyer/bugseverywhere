@@ -1,4 +1,5 @@
 # Copyright (C) 2005-2011 Aaron Bentley <abentley@panoramicfeedback.com>
+#                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         Thomas Habets <thomas@habets.pp.se>
