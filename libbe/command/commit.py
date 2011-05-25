@@ -84,6 +84,9 @@ class Commit (libbe.command.Command):
             body = libbe.util.encoding.get_file_contents(
                 params['body'], decode=True)
         if summary == None:  # use the first body line as the summary
+            if body == None:
+                raise libbe.command.UserError(
+                    'cannot commit without a summary')
             lines = body.splitlines()
             summary = lines[0]
             body = '\n'.join(lines[1:]).strip() + '\n'
