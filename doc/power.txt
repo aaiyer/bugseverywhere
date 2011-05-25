@@ -1,0 +1,27 @@
+**************
+Power features
+**************
+
+BE comes with a number of additional utilities and features that may
+be useful to power users.  We'll try to keep an up to date list here,
+but your best bet may be poking around in the source on your own.
+
+Autocompletion
+==============
+
+:file:`misc/completion` contains completion scripts for common shells
+(if we don't have a completion script for your favorite shell, submit
+one!).  Basic instructions for installing the completion file for a
+given shell should be given in the completion script comments.
+
+Packagers should install these completion scripts in their system's
+usual spot (on Gentoo it's :file:`/etc/bash_completion.d/`).
+
+XML-handling utilities
+======================
+
+Email threads are quite similar to the bugs/issues that BE tracks.
+There are a number of useful scripts in :file:`misc/xml` to go back
+and forth between the two formats using BE's XML format.  The commands
+should be well documented.  Use the usual ``<command> --help`` for
+more details on a given command.

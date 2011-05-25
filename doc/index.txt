@@ -27,6 +27,7 @@ Contents:
    email
    http
    distributed_bugtracking
+   power
    hacking
    spam
    libbe/libbe
