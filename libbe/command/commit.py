@@ -60,16 +60,19 @@ class Commit (libbe.command.Command):
                  ])
         self.args.extend([
                 libbe.command.Argument(
-                    name='comment', metavar='COMMENT', default=None),
+                    name='summary', metavar='SUMMARY', default=None,
+                    optional=True),
                 ])
 
     def _run(self, **params):
-        if params['comment'] == '-': # read summary from stdin
+        if params['summary'] == '-': # read summary from stdin
             assert params['body'] != 'EDITOR', \
                 'Cannot spawn and editor when the summary is using stdin.'
             summary = sys.stdin.readline()
         else:
-            summary = params['comment']
+            summary = params['summary']
+            if summary == None and params['body'] == None:
+                params['body'] = 'EDITOR'
         storage = self._get_storage()
         if params['body'] == None:
             body = None
@@ -80,6 +83,10 @@ class Commit (libbe.command.Command):
             self._check_restricted_access(storage, params['body'])
             body = libbe.util.encoding.get_file_contents(
                 params['body'], decode=True)
+        if summary == None:  # use the first body line as the summary
+            lines = body.splitlines()
+            summary = lines[0]
+            body = '\n'.join(lines[1:]).strip() + '\n'
         try:
             revision = storage.commit(summary, body=body,
                                       allow_empty=params['allow-empty'])
@@ -90,7 +97,12 @@ class Commit (libbe.command.Command):
 
     def _long_help(self):
         return """
-Commit the current repository status.  The summary specified on the
-commandline is a string (only one line) that describes the commit
-briefly or "-", in which case the string will be read from stdin.
+Commit the current repository status.
+
+The summary specified on the commandline is a string (only one line)
+that describes the commit briefly or "-", in which case the string
+will be read from stdin.  If no summary is given, the first line from
+the body message is used instead.  If no summary or body is given, we
+spawn an editor without needing the special "EDITOR" value for the
+"--body" option.
 """
