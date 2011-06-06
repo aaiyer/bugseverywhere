@@ -1,0 +1,31 @@
+Ugly "exception" crash when permissions are not properly set.
+
+$ sudo chown -R root:root .be 
+$ be new "Unauthorized"
+Traceback (most recent call last):
+  File "/usr/local/bin/be", line 26, in <module>
+    sys.exit(libbe.ui.command_line.main())
+  File "/usr/local/lib/python2.7/dist-packages/libbe/ui/command_line.py", line 332, in main
+    ret = dispatch(ui, command, args)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/ui/command_line.py", line 264, in dispatch
+    ret = ui.run(command, options, args)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/command/base.py", line 534, in run
+    return command.run(options, args)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/command/base.py", line 262, in run
+    self.status = self._run(**params)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/command/new.py", line 92, in _run
+    bug = bugdir.new_bug(summary=summary.strip())
+  File "/usr/local/lib/python2.7/dist-packages/libbe/bugdir.py", line 247, in new_bug
+    from_storage=False)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/bug.py", line 257, in __init__
+    self.save()
+  File "/usr/local/lib/python2.7/dist-packages/libbe/bug.py", line 663, in save
+    self.storage.add(self.id.storage(), parent=parent, directory=True)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/storage/base.py", line 249, in add
+    self._add(id, *args, **kwargs)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/storage/vcs/base.py", line 654, in _add
+    self._add_path(path, **kwargs)
+  File "/usr/local/lib/python2.7/dist-packages/libbe/storage/vcs/base.py", line 643, in _add_path
+    os.mkdir(dir)
+OSError: [Errno 13] Permission denied: '/home/tanguy/tmp/test/.be/7c416fb1-ab04-4144-97f4-6fded55524bc/bugs'
+
