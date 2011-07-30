@@ -73,6 +73,7 @@ def get_command(command_name):
     ... except UnknownCommand, e:
     ...     print e
     Unknown command 'asdf'
+    (No module named asdf)
     >>> repr(get_command('list')).startswith("<module 'libbe.command.list' from ")
     True
     """
