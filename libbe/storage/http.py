@@ -335,14 +335,14 @@ if TESTING == True:
     class GetPostUrlTestCase (unittest.TestCase):
         """Test cases for get_post_url()"""
         def test_get(self):
-            url = 'http://bugseverywhere.org/be/show/HomePage'
+            url = 'http://bugseverywhere.org/'
             page,final_url,info = get_post_url(url=url)
             self.failUnless(final_url == url,
                 'Redirect?\n  Expected: "%s"\n  Got:      "%s"'
                 % (url, final_url))
         def test_get_redirect(self):
-            url = 'http://bugseverywhere.org'
-            expected = 'http://bugseverywhere.org/be/show/HomePage'
+            url = 'http://physics.drexel.edu/~wking/code/be/redirect'
+            expected = 'http://physics.drexel.edu/~wking/'
             page,final_url,info = get_post_url(url=url)
             self.failUnless(final_url == expected,
                 'Redirect?\n  Expected: "%s"\n  Got:      "%s"'
