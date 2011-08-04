@@ -87,8 +87,14 @@ class Bzr(base.VCS):
         0
         >>> b.version_cmp(2,3,2)
         -1
+        >>> b.version_cmp(2,3,'a',5)
+        1
         >>> b.version_cmp(2,3,0)
         1
+        >>> b.version_cmp(2,3,1,'a',5)
+        1
+        >>> b.version_cmp(2,3,1,1)
+        -1
         >>> b.version_cmp(3)
         -1
         >>> b._version = '2.0.0pre2'
@@ -96,9 +102,17 @@ class Bzr(base.VCS):
         >>> b.version_cmp(3)
         -1
         >>> b.version_cmp(2,0,1)
-        Traceback (most recent call last):
-          ...
-        NotImplementedError: Cannot parse non-integer portion "0pre2" of Bzr version "2.0.0pre2"
+        -1
+        >>> b.version_cmp(2,0,0,'pre',1)
+        1
+        >>> b.version_cmp(2,0,0,'pre',2)
+        0
+        >>> b.version_cmp(2,0,0,'pre',3)
+        -1
+        >>> b.version_cmp(2,0,0,'a',3)
+        1
+        >>> b.version_cmp(2,0,0,'rc',1)
+        -1
         """
         if not hasattr(self, '_parsed_version') \
                 or self._parsed_version == None:
@@ -108,16 +122,43 @@ class Bzr(base.VCS):
                 try:
                     self._parsed_version.append(int(num))
                 except ValueError, e:
-                    self._parsed_version.append(num)
+                    # bzr version number might contain non-numerical tags
+                    import re
+                    splitter = re.compile(r'[\D]') # Match non-digits
+                    splits = splitter.split(num)
+                    # if len(tag) > 1 some splits will be empty; remove
+                    splits = filter(lambda s: s != '', splits)
+                    tag_starti = len(splits[0])
+                    num_starti = num.find(splits[1], tag_starti)
+                    tag = num[tag_starti:num_starti]
+                    self._parsed_version.append(int(splits[0]))
+                    self._parsed_version.append(tag)
+                    self._parsed_version.append(int(splits[1]))
         for current,other in zip(self._parsed_version, args):
-            if type(current) != types.IntType:
-                raise NotImplementedError(
-                    'Cannot parse non-integer portion "%s" of Bzr version "%s"'
-                    % (current, self.version()))
+            if type(current) != type (other):
+                # one of them is a pre-release string
+                if type(current) != types.IntType:
+                    return -1
+                else:
+                    return 1
             c = cmp(current,other)
             if c != 0:
                 return c
-        return 0
+        # see if one is longer than the other
+        verlen = len(self._parsed_version)
+        arglen = len(args)
+        if verlen == arglen:
+            return 0
+        elif verlen > arglen:
+            if type(self._parsed_version[arglen]) != types.IntType:
+                return -1 # self is a prerelease
+            else:
+                return 1
+        else:
+            if type(args[verlen]) != types.IntType:
+                return 1 # args is a prerelease
+            else:
+                return -1
 
     def _vcs_get_user_id(self):
         # excerpted from bzrlib.builtins.cmd_whoami.run()
