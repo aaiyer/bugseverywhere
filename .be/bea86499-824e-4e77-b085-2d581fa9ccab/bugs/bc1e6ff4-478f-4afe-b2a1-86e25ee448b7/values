@@ -7,7 +7,7 @@ reporter: Tanguy LE CARROUR <tanguy.lecarrour@gmail.com>
 severity: minor
 
 
-status: open
+status: fixed
 
 
 summary: Crashes when too many arguments are provided
