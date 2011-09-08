@@ -23,6 +23,7 @@ Support input/output/filesystem encodings (e.g. UTF-8).
 
 import codecs
 import locale
+import os
 import sys
 import types
 
@@ -31,7 +32,8 @@ if libbe.TESTING == True:
     import doctest
 
 
-ENCODING = None # override get_encoding() output by setting this
+ENCODING = os.environ.get('BE_ENCODING', None)
+"override get_encoding() output"
 
 def get_encoding():
     """
