@@ -9,6 +9,7 @@ Dependencies
 Package         Role                     Debian           Gentoo
 ==============  =======================  ===============  ===========================
 PyYAML_         serialized data storage  python-yaml      dev-python/pyyaml
+Jinja_          HTML templating          python-jinja2    deb-python/jinja
 Sphinx_         see :doc:`doc`           python-sphinx    dev-python/sphinx
 numpydoc_       see :doc:`doc`                            dev-python/numpydoc [#npd]_
 Docutils_       manpage generation       python-docutils  dev-python/docutils
@@ -17,6 +18,7 @@ Docutils_       manpage generation       python-docutils  dev-python/docutils
 .. [#npd] In the science_ overlay.
 
 .. _PyYAML: http://pyyaml.org/
+.. _Jinja: http://jinja.pocoo.org/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _numpydoc: http://pypi.python.org/pypi/numpydoc
 .. _Docutils: http://docutils.sourceforge.net/
