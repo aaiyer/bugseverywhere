@@ -85,7 +85,7 @@ class Hg(base.VCS):
         fullargs.extend(args)
         cwd = os.getcwd()
         output = StringIO.StringIO()
-        if self.version_cmp(1,9):
+        if self.version_cmp(1,9) >= 0:
             req = mercurial.dispatch.request(fullargs, fout=output)
             mercurial.dispatch.dispatch(req)
         else:
