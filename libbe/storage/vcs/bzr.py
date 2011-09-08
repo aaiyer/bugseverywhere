@@ -123,7 +123,6 @@ class Bzr(base.VCS):
                     self._parsed_version.append(int(num))
                 except ValueError, e:
                     # bzr version number might contain non-numerical tags
-                    import re
                     splitter = re.compile(r'[\D]') # Match non-digits
                     splits = splitter.split(num)
                     # if len(tag) > 1 some splits will be empty; remove
