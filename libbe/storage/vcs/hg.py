@@ -83,10 +83,16 @@ class Hg(base.VCS):
         assert len(kwargs) == 1, kwargs
         fullargs = ['--cwd', kwargs['cwd']]
         fullargs.extend(args)
-        output = StringIO.StringIO()
         cwd = os.getcwd()
-        req = mercurial.dispatch.request(fullargs, fout=output)
-        mercurial.dispatch.dispatch(req)
+        output = StringIO.StringIO()
+        if self.version_cmp(1,9):
+            req = mercurial.dispatch.request(fullargs, fout=output)
+            mercurial.dispatch.dispatch(req)
+        else:
+            stdout = sys.stdout
+            sys.stdout = output
+            mercurial.dispatch.dispatch(fullargs)
+            sys.stdout = stdout
         os.chdir(cwd)
         return output.getvalue().rstrip('\n')
 
