@@ -41,19 +41,22 @@ def get_encoding():
     if ENCODING != None:
         return ENCODING
     encoding = locale.getpreferredencoding() or sys.getdefaultencoding()
-    if sys.platform != 'win32' or sys.version_info[:2] > (2, 3):
-        encoding = locale.getlocale(locale.LC_TIME)[1] or encoding
-        # Python 2.3 on windows doesn't know about 'XYZ' alias for 'cpXYZ'
     return encoding
 
 def get_input_encoding():
-    return get_encoding()
+    return sys.__stdin__.encoding or get_encoding()
 
 def get_output_encoding():
     return sys.__stdout__.encoding or get_encoding()
 
 def get_filesystem_encoding():
-    return get_encoding()
+    """Return the encoding that should be used for file contents
+
+    Note that `sys.getfilesystemencoding` returns the prefered
+    encoding for file *names*, and we're assuming that this is also
+    the prefered encoding for their contents.
+    """
+    return sys.getfilesystemencoding() or get_encoding()
 
 def get_argv_encoding():
     return get_encoding()
