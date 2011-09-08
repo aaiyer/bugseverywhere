@@ -83,14 +83,12 @@ class Hg(base.VCS):
         assert len(kwargs) == 1, kwargs
         fullargs = ['--cwd', kwargs['cwd']]
         fullargs.extend(args)
-        stdout = sys.stdout
-        tmp_stdout = StringIO.StringIO()
-        sys.stdout = tmp_stdout
+        output = StringIO.StringIO()
         cwd = os.getcwd()
-        mercurial.dispatch.dispatch(fullargs)
+        req = mercurial.dispatch.request(fullargs, fout=output)
+        mercurial.dispatch.dispatch(req)
         os.chdir(cwd)
-        sys.stdout = stdout
-        return tmp_stdout.getvalue().rstrip('\n')
+        return output.getvalue().rstrip('\n')
 
     def _vcs_get_user_id(self):
         output = self._u_invoke_client(
