@@ -51,14 +51,10 @@ def get_input_encoding():
 def get_output_encoding():
     return sys.__stdout__.encoding or get_encoding()
 
-def get_filesystem_encoding():
+def get_text_file_encoding():
     """Return the encoding that should be used for file contents
-
-    Note that `sys.getfilesystemencoding` returns the prefered
-    encoding for file *names*, and we're assuming that this is also
-    the prefered encoding for their contents.
     """
-    return sys.getfilesystemencoding() or get_encoding()
+    return 'utf-8'
 
 def get_argv_encoding():
     return get_encoding()
