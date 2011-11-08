@@ -42,7 +42,9 @@ to build some auto-generated files (e.g. :mod:`libbe._version`), and::
 
 to install BE.  By default BE will install into your home directory,
 but you can tweak the ``INSTALL_OPTIONS`` variable in ``Makefile`` to
-install to another location.
+install to another location.  With the default installation, you may
+need to add ``~/.local/bin/`` to your ``PATH`` so that your shell can
+find the installed ``be`` script.
 
 By default, ``make`` builds both a man page for ``be`` and the HTML
 Sphinx documentation (:doc:`doc`).  You can customize the
