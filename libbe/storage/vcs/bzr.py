@@ -3,6 +3,7 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Marien Zwart <marien.zwart@gmail.com>
+#                         Michel Alexandre Salim <salimma@fedoraproject.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.

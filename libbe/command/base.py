@@ -1,4 +1,5 @@
 # Copyright (C) 2009-2011 Chris Ball <cjb@laptop.org>
+#                         Phil Schumm <philschumm@gmail.com>
 #                         Robert Lehmann <mail@robertlehmann.de>
 #                         W. Trevor King <wking@drexel.edu>
 #

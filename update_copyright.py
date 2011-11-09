@@ -89,6 +89,8 @@ ALIASES = {
          'gianluca <gian@galactica>'],
     'Marien Zwart <marien.zwart@gmail.com>':
         ['Marien Zwart <marienz@gentoo.org>'],
+    'Tanguy Le Carrour <tanguy.lecarrour@gmail.com>':
+        ['Tanguy LE CARROUR <tanguy.lecarrour@gmail.com>'],
     'W. Trevor King <wking@drexel.edu>':
         ['wking <wking@mjolnir>',
          'wking <wking@thialfi>'],
