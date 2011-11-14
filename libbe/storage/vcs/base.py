@@ -199,7 +199,7 @@ class CachedPathID (object):
     >>> dir.cleanup()
     """
     def __init__(self, encoding=None):
-        self.encoding = libbe.util.encoding.get_filesystem_encoding()
+        self.encoding = libbe.util.encoding.get_text_file_encoding()
         self._spacer_dirs = ['.be', 'bugs', 'comments']
 
     def root(self, path):
@@ -350,7 +350,7 @@ class VCS (libbe.storage.base.VersionedStorage):
 
     def __init__(self, *args, **kwargs):
         if 'encoding' not in kwargs:
-            kwargs['encoding'] = libbe.util.encoding.get_filesystem_encoding()
+            kwargs['encoding'] = libbe.util.encoding.get_text_file_encoding()
         libbe.storage.base.VersionedStorage.__init__(self, *args, **kwargs)
         self.versioned = False
         self.interspersed_vcs_files = False

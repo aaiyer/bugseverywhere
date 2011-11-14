@@ -54,7 +54,7 @@ def get_output_encoding():
 def get_text_file_encoding():
     """Return the encoding that should be used for file contents
     """
-    return 'utf-8'
+    return get_encoding()
 
 def get_argv_encoding():
     return get_encoding()
@@ -75,7 +75,7 @@ def known_encoding(encoding):
 def get_file_contents(path, mode='r', encoding=None, decode=False):
     if decode == True:
         if encoding == None:
-            encoding = get_filesystem_encoding()
+            encoding = get_text_file_encoding()
         f = codecs.open(path, mode, encoding)
     else:
         f = open(path, mode)
@@ -86,7 +86,7 @@ def get_file_contents(path, mode='r', encoding=None, decode=False):
 def set_file_contents(path, contents, mode='w', encoding=None):
     if type(contents) == types.UnicodeType:
         if encoding == None:
-            encoding = get_filesystem_encoding()
+            encoding = get_text_file_encoding()
         f = codecs.open(path, mode, encoding)
     else:
         f = open(path, mode)

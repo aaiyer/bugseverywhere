@@ -149,7 +149,7 @@ class HTMLGen (object):
         if encoding != None:
             self.encoding = encoding
         else:
-            self.encoding = libbe.util.encoding.get_filesystem_encoding()
+            self.encoding = libbe.util.encoding.get_text_file_encoding()
         self._load_templates(template_dir)
         self.min_id_length = min_id_length
 
