@@ -78,11 +78,7 @@ class WebInterface:
                 if targetbug == None:
                     return []
                 bugs = [bug for bug in get_blocked_by(self.bd, targetbug) if
-<<<<<<< HEAD
-                        bug.status not in ('closed', 'fixed', 'wontfix')]
-=======
                         bug.active]
->>>>>>> 8f1cd4f5eecba8e3322ea6725d71e430520d1585
         return bugs
     
     
@@ -189,9 +185,6 @@ class WebInterface:
             bug.severity = severity if severity != 'None' else None
             
         if target:
-<<<<<<< HEAD
-            add_target(self.bd, bug, target)
-=======
             current_target = bug_target(self.bd, bug)
             if current_target:
                 remove_target(self.bd, bug)
@@ -199,7 +192,6 @@ class WebInterface:
                     add_target(self.bd, bug, target)
             else:
                 add_target(self.bd, bug, target)
->>>>>>> 8f1cd4f5eecba8e3322ea6725d71e430520d1585
 
         bug.save()
 
