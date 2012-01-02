@@ -1,0 +1,17 @@
+creator: Tanguy LE CARROUR <tanguy.lecarrour@gmail.com>
+
+
+reporter: Tanguy LE CARROUR <tanguy.lecarrour@gmail.com>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Crashes when too many arguments are provided
+
+
+time: Mon, 06 Jun 2011 18:04:41 +0000
+

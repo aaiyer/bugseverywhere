@@ -133,8 +133,9 @@ class CmdOptionParser(optparse.OptionParser):
             else:
                 value = self.process_raw_argument(argument=argument, value=arg)
                 parsed_args[i] = value
-        if len(parsed_args) > len(self.command.args) \
-                and self.command.args[-1].repeatable == False:
+        if (len(parsed_args) > len(self.command.args) and
+            (len(self.command.args) == 0 or
+             self.command.args[-1].repeatable == False)):
             raise libbe.command.UserError('Too many arguments')
         for arg in self.command.args[len(parsed_args):]:
             if arg.optional == False:

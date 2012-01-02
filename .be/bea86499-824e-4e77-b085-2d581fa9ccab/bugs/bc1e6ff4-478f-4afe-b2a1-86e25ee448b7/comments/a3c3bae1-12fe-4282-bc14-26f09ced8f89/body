@@ -1,0 +1,15 @@
+BE crashes when too many arguments are provided.
+
+Ex: be list extra_arg
+WARNING:root:unable to import libbe._version: No module named _version
+Traceback (most recent call last):
+  File "/usr/local/bin/be", line 26, in <module>
+    sys.exit(libbe.ui.command_line.main())
+  File "/home/tanguy/Documents/Repositories/Bugs-Everywhere/tlecarrours-be-reports/libbe/ui/command_line.py", line 331, in main
+    ret = dispatch(ui, command, args)
+  File "/home/tanguy/Documents/Repositories/Bugs-Everywhere/tlecarrours-be-reports/libbe/ui/command_line.py", line 262, in dispatch
+    options,args = parser.parse_args(args)
+  File "/home/tanguy/Documents/Repositories/Bugs-Everywhere/tlecarrours-be-reports/libbe/ui/command_line.py", line 128, in parse_args
+    and self.command.args[-1].repeatable == False:
+IndexError: list index out of range
+

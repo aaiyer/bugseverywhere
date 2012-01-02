@@ -31,10 +31,10 @@ if libbe.TESTING == True:
     import doctest
 
 
-default_encoding = libbe.util.encoding.get_filesystem_encoding()
+default_encoding = libbe.util.encoding.get_text_file_encoding()
 """Default filesystem encoding.
 
-Initialized with :func:`libbe.util.encoding.get_filesystem_encoding`.
+Initialized with :func:`libbe.util.encoding.get_text_file_encoding`.
 """
 
 def path():

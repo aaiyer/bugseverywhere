@@ -65,7 +65,7 @@ def editor_string(comment=None, encoding=None):
     >>> del os.environ["VISUAL"]
     """
     if encoding == None:
-        encoding = libbe.util.encoding.get_filesystem_encoding()
+        encoding = libbe.util.encoding.get_text_file_encoding()
     editor = None
     for name in ('VISUAL', 'EDITOR'):
         if name in os.environ and os.environ[name] != '':

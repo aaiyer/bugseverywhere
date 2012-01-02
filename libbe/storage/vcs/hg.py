@@ -3,6 +3,7 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Marien Zwart <marien.zwart@gmail.com>
+#                         Phil Schumm <philschumm@gmail.com>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.
@@ -83,14 +84,18 @@ class Hg(base.VCS):
         assert len(kwargs) == 1, kwargs
         fullargs = ['--cwd', kwargs['cwd']]
         fullargs.extend(args)
-        stdout = sys.stdout
-        tmp_stdout = StringIO.StringIO()
-        sys.stdout = tmp_stdout
         cwd = os.getcwd()
-        mercurial.dispatch.dispatch(fullargs)
+        output = StringIO.StringIO()
+        if self.version_cmp(1,9) >= 0:
+            req = mercurial.dispatch.request(fullargs, fout=output)
+            mercurial.dispatch.dispatch(req)
+        else:
+            stdout = sys.stdout
+            sys.stdout = output
+            mercurial.dispatch.dispatch(fullargs)
+            sys.stdout = stdout
         os.chdir(cwd)
-        sys.stdout = stdout
-        return tmp_stdout.getvalue().rstrip('\n')
+        return output.getvalue().rstrip('\n')
 
     def _vcs_get_user_id(self):
         output = self._u_invoke_client(

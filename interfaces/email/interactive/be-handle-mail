@@ -721,7 +721,7 @@ def open_logfile(logpath=None):
             LOGPATH = os.path.join(_THIS_DIR, logpath)
     if LOGFILE == None and LOGPATH != u'none':
         LOGFILE = codecs.open(LOGPATH, u'a+',
-            libbe.util.encoding.get_filesystem_encoding())
+            libbe.util.encoding.get_text_file_encoding())
 
 def close_logfile():
     if LOGFILE != None and LOGPATH not in [u'stderr', u'none']:

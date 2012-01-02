@@ -199,7 +199,7 @@ class CachedPathID (object):
     >>> dir.cleanup()
     """
     def __init__(self, encoding=None):
-        self.encoding = libbe.util.encoding.get_filesystem_encoding()
+        self.encoding = libbe.util.encoding.get_text_file_encoding()
         self._spacer_dirs = ['.be', 'bugs', 'comments']
 
     def root(self, path):
@@ -350,7 +350,7 @@ class VCS (libbe.storage.base.VersionedStorage):
 
     def __init__(self, *args, **kwargs):
         if 'encoding' not in kwargs:
-            kwargs['encoding'] = libbe.util.encoding.get_filesystem_encoding()
+            kwargs['encoding'] = libbe.util.encoding.get_text_file_encoding()
         libbe.storage.base.VersionedStorage.__init__(self, *args, **kwargs)
         self.versioned = False
         self.interspersed_vcs_files = False
@@ -520,6 +520,97 @@ class VCS (libbe.storage.base.VersionedStorage):
         if not hasattr(self, '_version'):
             self._version = self._vcs_version()
         return self._version
+
+    def version_cmp(self, *args):
+        """Compare the installed VCS version `V_i` with another version
+        `V_o` (given in `*args`).  Returns
+
+           === ===============
+            1  if `V_i > V_o`
+            0  if `V_i == V_o`
+           -1  if `V_i < V_o`
+           === ===============
+
+        Examples
+        --------
+
+        >>> v = VCS(repo='.')
+        >>> v._version = '2.3.1 (release)'
+        >>> v.version_cmp(2,3,1)
+        0
+        >>> v.version_cmp(2,3,2)
+        -1
+        >>> v.version_cmp(2,3,'a',5)
+        1
+        >>> v.version_cmp(2,3,0)
+        1
+        >>> v.version_cmp(2,3,1,'a',5)
+        1
+        >>> v.version_cmp(2,3,1,1)
+        -1
+        >>> v.version_cmp(3)
+        -1
+        >>> v._version = '2.0.0pre2'
+        >>> v._parsed_version = None
+        >>> v.version_cmp(3)
+        -1
+        >>> v.version_cmp(2,0,1)
+        -1
+        >>> v.version_cmp(2,0,0,'pre',1)
+        1
+        >>> v.version_cmp(2,0,0,'pre',2)
+        0
+        >>> v.version_cmp(2,0,0,'pre',3)
+        -1
+        >>> v.version_cmp(2,0,0,'a',3)
+        1
+        >>> v.version_cmp(2,0,0,'rc',1)
+        -1
+        """
+        if not hasattr(self, '_parsed_version') \
+                or self._parsed_version == None:
+            num_part = self.version().split(' ')[0]
+            self._parsed_version = []
+            for num in num_part.split('.'):
+                try:
+                    self._parsed_version.append(int(num))
+                except ValueError, e:
+                    # bzr version number might contain non-numerical tags
+                    splitter = re.compile(r'[\D]') # Match non-digits
+                    splits = splitter.split(num)
+                    # if len(tag) > 1 some splits will be empty; remove
+                    splits = filter(lambda s: s != '', splits)
+                    tag_starti = len(splits[0])
+                    num_starti = num.find(splits[1], tag_starti)
+                    tag = num[tag_starti:num_starti]
+                    self._parsed_version.append(int(splits[0]))
+                    self._parsed_version.append(tag)
+                    self._parsed_version.append(int(splits[1]))
+        for current,other in zip(self._parsed_version, args):
+            if type(current) != type (other):
+                # one of them is a pre-release string
+                if type(current) != types.IntType:
+                    return -1
+                else:
+                    return 1
+            c = cmp(current,other)
+            if c != 0:
+                return c
+        # see if one is longer than the other
+        verlen = len(self._parsed_version)
+        arglen = len(args)
+        if verlen == arglen:
+            return 0
+        elif verlen > arglen:
+            if type(self._parsed_version[arglen]) != types.IntType:
+                return -1 # self is a prerelease
+            else:
+                return 1
+        else:
+            if type(args[verlen]) != types.IntType:
+                return 1 # args is a prerelease
+            else:
+                return -1
 
     def installed(self):
         if self.version() != None:

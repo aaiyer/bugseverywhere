@@ -3,6 +3,7 @@
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Marien Zwart <marien.zwart@gmail.com>
+#                         Michel Alexandre Salim <salimma@fedoraproject.org>
 #                         W. Trevor King <wking@drexel.edu>
 #
 # This file is part of Bugs Everywhere.
@@ -40,7 +41,6 @@ import re
 import shutil
 import StringIO
 import sys
-import types
 
 import libbe
 import base
@@ -67,57 +67,6 @@ class Bzr(base.VCS):
         if bzrlib == None:
             return None
         return bzrlib.__version__
-
-    def version_cmp(self, *args):
-        """Compare the installed Bazaar version `V_i` with another version
-        `V_o` (given in `*args`).  Returns
-
-           === ===============
-            1  if `V_i > V_o`
-            0  if `V_i == V_o`
-           -1  if `V_i < V_o`
-           === ===============
-
-        Examples
-        --------
-
-        >>> b = Bzr(repo='.')
-        >>> b._version = '2.3.1 (release)'
-        >>> b.version_cmp(2,3,1)
-        0
-        >>> b.version_cmp(2,3,2)
-        -1
-        >>> b.version_cmp(2,3,0)
-        1
-        >>> b.version_cmp(3)
-        -1
-        >>> b._version = '2.0.0pre2'
-        >>> b._parsed_version = None
-        >>> b.version_cmp(3)
-        -1
-        >>> b.version_cmp(2,0,1)
-        Traceback (most recent call last):
-          ...
-        NotImplementedError: Cannot parse non-integer portion "0pre2" of Bzr version "2.0.0pre2"
-        """
-        if not hasattr(self, '_parsed_version') \
-                or self._parsed_version == None:
-            num_part = self.version().split(' ')[0]
-            self._parsed_version = []
-            for num in num_part.split('.'):
-                try:
-                    self._parsed_version.append(int(num))
-                except ValueError, e:
-                    self._parsed_version.append(num)
-        for current,other in zip(self._parsed_version, args):
-            if type(current) != types.IntType:
-                raise NotImplementedError(
-                    'Cannot parse non-integer portion "%s" of Bzr version "%s"'
-                    % (current, self.version()))
-            c = cmp(current,other)
-            if c != 0:
-                return c
-        return 0
 
     def _vcs_get_user_id(self):
         # excerpted from bzrlib.builtins.cmd_whoami.run()

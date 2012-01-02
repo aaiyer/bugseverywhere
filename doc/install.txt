@@ -9,6 +9,7 @@ Dependencies
 Package         Role                     Debian           Gentoo
 ==============  =======================  ===============  ===========================
 PyYAML_         serialized data storage  python-yaml      dev-python/pyyaml
+Jinja_          HTML templating          python-jinja2    deb-python/jinja
 Sphinx_         see :doc:`doc`           python-sphinx    dev-python/sphinx
 numpydoc_       see :doc:`doc`                            dev-python/numpydoc [#npd]_
 Docutils_       manpage generation       python-docutils  dev-python/docutils
@@ -17,6 +18,7 @@ Docutils_       manpage generation       python-docutils  dev-python/docutils
 .. [#npd] In the science_ overlay.
 
 .. _PyYAML: http://pyyaml.org/
+.. _Jinja: http://jinja.pocoo.org/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _numpydoc: http://pypi.python.org/pypi/numpydoc
 .. _Docutils: http://docutils.sourceforge.net/
@@ -39,8 +41,10 @@ to build some auto-generated files (e.g. :mod:`libbe._version`), and::
     $ make install
 
 to install BE.  By default BE will install into your home directory,
-but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
-to another location.
+but you can tweak the ``INSTALL_OPTIONS`` variable in ``Makefile`` to
+install to another location.  With the default installation, you may
+need to add ``~/.local/bin/`` to your ``PATH`` so that your shell can
+find the installed ``be`` script.
 
 By default, ``make`` builds both a man page for ``be`` and the HTML
 Sphinx documentation (:doc:`doc`).  You can customize the

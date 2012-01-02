@@ -1,0 +1,4 @@
+Trying to write to a bug repository to which you do not have write
+access should be uncommon enough that hiding the traceback seems like
+overkill.  The final error message is clear enough...
+

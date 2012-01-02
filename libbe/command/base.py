@@ -1,4 +1,5 @@
 # Copyright (C) 2009-2011 Chris Ball <cjb@laptop.org>
+#                         Phil Schumm <philschumm@gmail.com>
 #                         Robert Lehmann <mail@robertlehmann.de>
 #                         W. Trevor King <wking@drexel.edu>
 #
@@ -73,6 +74,7 @@ def get_command(command_name):
     ... except UnknownCommand, e:
     ...     print e
     Unknown command 'asdf'
+    (No module named asdf)
     >>> repr(get_command('list')).startswith("<module 'libbe.command.list' from ")
     True
     """
