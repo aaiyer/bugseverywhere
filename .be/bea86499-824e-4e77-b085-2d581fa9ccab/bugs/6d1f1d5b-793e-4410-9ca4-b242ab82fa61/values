@@ -1,0 +1,17 @@
+creator: Matěj Cepl <mcepl@redhat.com>
+
+
+reporter: Matěj Cepl <mcepl@redhat.com>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: Wrong .gitignore
+
+
+time: Mon, 02 Jan 2012 14:42:57 +0000
+

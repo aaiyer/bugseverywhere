@@ -1,6 +1,6 @@
 *.pyc
-./build
-./doc/man/*.1
-./doc/.build/
+build
+doc/man/*.1
+doc/.build/
 .be/id-cache
 libbe/_version.py
