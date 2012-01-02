@@ -1,0 +1,17 @@
+creator: Matěj Cepl <mcepl@redhat.com>
+
+
+reporter: Matěj Cepl <mcepl@redhat.com>
+
+
+severity: minor
+
+
+status: fixed
+
+
+summary: make crashes on non-ASCII committer
+
+
+time: Mon, 02 Jan 2012 14:51:06 +0000
+
