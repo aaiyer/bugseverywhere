@@ -25,7 +25,6 @@ import string
 import sys
 
 from libbe.util.subproc import Pipe, invoke
-from update_copyright import update_authors, update_files
 
 
 INITIAL_COMMIT = '1bf1ec598b436f41ff27094eddf0b28c797e359d'
@@ -141,7 +140,6 @@ def create_tarball(tag):
     shutil.copy(os.path.join('.be', 'id-cache'),
                 os.path.join(export_dir, '.be', 'id-cache'))
     set_vcs_name(os.path.join(export_dir, '.be'))
-    os.remove(os.path.join(export_dir, 'update_copyright.py'))
     tarball_file = '%s.tar.gz' % release_name
     print 'create tarball', tarball_file
     invoke(['tar', '-czf', tarball_file, export_dir])
@@ -182,8 +180,7 @@ If you don't like what got committed, you can undo the release with
         sys.exit(1)
     set_release_version(_tag)
     print "Update copyright information..."
-    update_authors()
-    update_files()
+    status,stdout,stderr = invoke(['update-copyright.py'])
     commit("Bumped to version %s" % _tag)
     tag(_tag)
     create_tarball(_tag)
