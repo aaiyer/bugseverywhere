@@ -66,7 +66,7 @@ def pending_changes():
 
 def set_release_version(tag):
     print "set libbe.version._VERSION = '%s'" % tag
-    invoke(['sed', '-i', "s/^# *_VERSION *=.*/_VERSION = '%s'/" % tag,
+    invoke(['sed', '-i', "s/^[# ]*_VERSION *=.*/_VERSION = '%s'/" % tag,
             os.path.join('libbe', 'version.py')])
 
 def remove_makefile_libbe_version_dependencies(filename):
