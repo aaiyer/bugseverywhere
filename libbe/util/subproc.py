@@ -48,7 +48,7 @@ class CommandError(Exception):
 
 def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
            cwd=None, shell=None, unicode_output=True, verbose=False,
-           encoding=None):
+           encoding=None, **kwargs):
     """
     expect should be a tuple of allowed exit codes.  cwd should be
     the directory from which the command will be executed.  When
@@ -70,14 +70,14 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
             if shell is None:
                 shell = False
             q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr,
-                      shell=shell, cwd=cwd)
+                      shell=shell, cwd=cwd, **kwargs)
         else:
             assert _MSWINDOWS==True, 'invalid platform'
             if shell is None:
                 shell = True
             # win32 don't have os.execvp() so have to run command in a shell
             q = Popen(args, stdin=PIPE, stdout=stdout, stderr=stderr,
-                      shell=shell, cwd=cwd)
+                      shell=shell, cwd=cwd, **kwargs)
     except OSError, e:
         raise CommandError(list_args, status=e.args[0], stderr=e)
     stdout,stderr = q.communicate(input=stdin)

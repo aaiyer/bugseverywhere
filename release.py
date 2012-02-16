@@ -180,7 +180,15 @@ If you don't like what got committed, you can undo the release with
         sys.exit(1)
     set_release_version(_tag)
     print "Update copyright information..."
-    status,stdout,stderr = invoke(['update-copyright.py'])
+    env = dict(os.environ)
+    pythonpath = os.path.abspath('update-copyright')
+    if 'PYTHONPATH' in env:
+        env['PYTHONPATH'] = '{}:{}'.format(pythonpath, env['PYTHONPATH'])
+    else:
+        env['PYTHONPATH'] = pythonpath
+    status,stdout,stderr = invoke([
+            os.path.join('update-copyright', 'bin', 'update-copyright.py')],
+            env=env)
     commit("Bumped to version %s" % _tag)
     tag(_tag)
     create_tarball(_tag)

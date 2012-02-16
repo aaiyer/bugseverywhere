@@ -1,0 +1,3 @@
+[submodule "update-copyright"]
+	path = update-copyright
+	url = git://gitorious.org/update-copyright/wtk.git
