@@ -34,6 +34,10 @@ if libbe.TESTING == True:
 
 ENCODING = os.environ.get('BE_ENCODING', None)
 "override get_encoding() output"
+INPUT_ENCODING = os.environ.get('BE_INPUT_ENCODING', None)
+"override get_input_encoding() output"
+OUTPUT_ENCODING = os.environ.get('BE_OUTPUT_ENCODING', None)
+"override get_output_encoding() output"
 
 def get_encoding():
     """
@@ -46,9 +50,13 @@ def get_encoding():
     return encoding
 
 def get_input_encoding():
+    if INPUT_ENCODING != None:
+        return INPUT_ENCODING
     return sys.__stdin__.encoding or get_encoding()
 
 def get_output_encoding():
+    if OUTPUT_ENCODING != None:
+        return OUTPUT_ENCODING
     return sys.__stdout__.encoding or get_encoding()
 
 def get_text_file_encoding():
