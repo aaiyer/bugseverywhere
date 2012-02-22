@@ -72,17 +72,23 @@ def modnames(prefix):
     components = prefix.split('.')
     modfilespath=os.path.join(_PLUGIN_PATH, *components)
     # Cope if we are executing from inside a zip archive full of precompiled .pyc's
-    modfiles=ziplistdir(modfilespath) if '.zip' in modfilespath else os.listdir(modfilespath)
+    inside_zip='.zip' in modfilespath
+    modfiles=ziplistdir(modfilespath) if inside_zip else os.listdir(modfilespath)
     modfiles.sort()
-    # Eliminate .py/.pyc duplicates
-    print modfiles
-    x=1
-    while x<len(modfiles):
-        if modfiles[x].endswith('.pyc') and modfiles[x-1]==modfiles[x][:len(modfiles[x-1])]:
-            del modfiles[x-1]
-        else:
+    # Eliminate .py/.pyc duplicates, preferring .pyc if we're in a zip archive
+    if inside_zip:
+        x=1
+        while x<len(modfiles):
+            if modfiles[x].endswith('.pyc') and modfiles[x-1]==modfiles[x][:len(modfiles[x-1])]:
+                del modfiles[x-1]
+            else:
+                x+=1
+    else:
+        x=0
+        while x<len(modfiles)-1:
+            if modfiles[x].endswith('.py') and modfiles[x]==modfiles[x+1][:len(modfiles[x])]:
+                del modfiles[x+1]
             x+=1
-    print modfiles
     for modfile in modfiles:
         if modfile.startswith('.'):
             continue # the occasional emacs temporary file
