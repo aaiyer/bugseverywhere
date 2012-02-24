@@ -3,7 +3,7 @@
 from distutils.core import setup
 import os.path
 
-from libbe import _version
+from libbe import _version, version
 
 rev_id = _version.version_info["revision"]
 rev_date = _version.version_info["date"]
@@ -16,7 +16,7 @@ if os.path.exists(man_path):
 
 setup(
     name='Bugs Everywhere',
-    version=rev_date,
+    version='{} ({})'.format(version.version(), rev_date),
     description='Bugtracker supporting distributed revision control',
     url='http://bugseverywhere.org/',
     packages=['libbe',
