@@ -483,8 +483,7 @@ class StringInputOutput (InputOutput):
 
     def get_stdout(self):
         ret = self.stdout.getvalue()
-        self.stdout = StringIO.StringIO() # clear stdout for next read
-        self.stdin.encoding = 'utf-8'
+        self.stdout.truncate(size=0)
         return ret
 
 class UnconnectedStorageGetter (object):
