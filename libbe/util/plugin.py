@@ -27,6 +27,7 @@ submodules (i.e. "plugins").
 import os
 import os.path
 import sys
+import zipfile
 
 
 _PLUGIN_PATH = os.path.realpath(
@@ -52,6 +53,15 @@ def import_by_name(modname):
         module = getattr(module, comp)
     return module
 
+def ziplistdir(path):
+    """Lists items in a directory contained in a zip file"""
+    zipidx=path.find('.zip')
+    zippath=path[:4+zipidx]
+    path=path[5+zipidx:].replace(os.sep, '/')
+    with zipfile.ZipFile(zippath, 'r') as zf:
+        files=[f[len(path)+1:] for f in zf.namelist() if f[:len(path)]==path and '/' not in f[len(path)+1:]]
+        return files
+
 def modnames(prefix):
     """
     >>> 'list' in [n for n in modnames('libbe.command')]
@@ -60,10 +70,25 @@ def modnames(prefix):
     True
     """
     components = prefix.split('.')
-    modfiles = os.listdir(os.path.join(_PLUGIN_PATH, *components))
+    modfilespath=os.path.join(_PLUGIN_PATH, *components)
+    # Cope if we are executing from inside a zip archive full of precompiled .pyc's
+    modfiles=ziplistdir(modfilespath) if '.zip' in modfilespath else os.listdir(modfilespath)
     modfiles.sort()
+    # Eliminate .py/.pyc duplicates
+    print modfiles
+    x=1
+    while x<len(modfiles):
+        if modfiles[x].endswith('.pyc') and modfiles[x-1]==modfiles[x][:len(modfiles[x-1])]:
+            del modfiles[x-1]
+        else:
+            x+=1
+    print modfiles
     for modfile in modfiles:
         if modfile.startswith('.'):
             continue # the occasional emacs temporary file
-        if modfile.endswith('.py') and modfile != '__init__.py':
+        if modfile == '__init__.py' or modfile == '__init__.pyc':
+            continue
+        if modfile.endswith('.py'):
             yield modfile[:-3]
+        elif modfile.endswith('.pyc'):
+            yield modfile[:-4]
