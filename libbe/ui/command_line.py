@@ -28,6 +28,8 @@ import libbe
 import libbe.bugdir
 import libbe.command
 import libbe.command.util
+import libbe.storage
+import libbe.storage.http
 import libbe.version
 import libbe.ui.util.pager
 import libbe.util.encoding
@@ -304,6 +306,9 @@ def dispatch(ui, command, args):
         return 1
     except libbe.storage.ConnectionError, e:
         print >> ui.io.stdout, 'Connection Error:\n', e
+        return 1
+    except libbe.storage.http.InvalidURL, e:
+        print >> ui.io.stdout, 'Invalid URL:\n', e
         return 1
     except (libbe.util.id.MultipleIDMatches, libbe.util.id.NoIDMatches,
             libbe.util.id.InvalidIDStructure), e:
