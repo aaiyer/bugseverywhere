@@ -304,6 +304,9 @@ def dispatch(ui, command, args):
     except libbe.command.UserError, e:
         print >> ui.io.stdout, 'ERROR:\n', e
         return 1
+    except OSError, e:
+        print >> ui.io.stdout, 'OSError:\n', e
+        return 1
     except libbe.storage.ConnectionError, e:
         print >> ui.io.stdout, 'Connection Error:\n', e
         return 1
@@ -366,7 +369,12 @@ def main():
     libbe.ui.util.pager.run_pager(paginate)
 
     ret = dispatch(ui, command, args)
-    ui.cleanup()
+    try:
+        ui.cleanup()
+    except IOError, e:
+        print >> ui.io.stdout, 'IOError:\n', e
+        return 1
+
     return ret
 
 if __name__ == '__main__':
