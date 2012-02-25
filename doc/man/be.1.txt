@@ -60,11 +60,11 @@ BUGS
 The Bugs Everywhere uses Bugs Everywhere to track its bugs.  You can
 submit bugs directly using ``be``::
 
-  % be --repo http://bugs.bugseverywhere.org/ new "The demuxulizer is broken"           
+  $ be --repo http://bugs.bugseverywhere.org/ new "The demuxulizer is broken"           
   Created bug with ID bea/abc
-  % be --repo http://bugs.bugseverywhere.org/ comment bea/abc
+  $ be --repo http://bugs.bugseverywhere.org/ comment bea/abc
   <Describe bug>
-  % be --repo http://bugs.bugseverywhere.org/ commit "Reported bug in demuxulizer" 
+  $ be --repo http://bugs.bugseverywhere.org/ commit "Reported bug in demuxulizer" 
 
 Or send an email to the mailing list at `be-devel@bugseverywhere.org`_.
 
