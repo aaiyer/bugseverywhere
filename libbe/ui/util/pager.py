@@ -50,7 +50,6 @@ def run_pager(paginate='auto'):
     if os.fork() == 0:
         # child process
         os.close(read_fd)
-        os.close(0)
         os.dup2(write_fd, 1)
         os.close(write_fd)
         if hasattr(sys.stderr, 'isatty') and sys.stderr.isatty() == True:
