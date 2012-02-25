@@ -29,10 +29,9 @@ database in a project tree.
 
 To avoid bit-rotted documentation, we do not describe all available
 commands and options in this manpage.  Run ``be help`` for accurate
-documentation.  See the `Bugs Everywhere Manual`_ for more detailed
-documentation and tutorials.
-
-.. _Bugs Everywhere Manual: http://docs.bugseverywhere.org/
+documentation.  See the Bugs Everywhere Manual
+(http://docs.bugseverywhere.org/) for more detailed documentation and
+tutorials.
 
 COMMANDS
 ========
