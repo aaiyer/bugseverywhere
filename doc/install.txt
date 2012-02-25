@@ -2,14 +2,43 @@
 Installing BE
 *************
 
+Distribution packages
+=====================
+
+Some distributions (Debian_ , Ubuntu_ , others?) package BE.  If
+you're running one of those distributions, you can install the package
+with your regular package manager.  For Debian, Ubuntu, and related
+distros, that's::
+
+    $ apt-get install bugs-everywhere
+
+However, the official packages can lag behind current development.
+
+If you're running Gentoo_, I've got a live ebuild in my overlay_ that
+installs the current version of BE from the Git source.
+
+Michel Alexandre Salim maintains a Fedora_ package.
+
+.. _Debian: http://packages.debian.org/sid/bugs-everywhere
+.. _Ubuntu: http://packages.ubuntu.com/lucid/bugs-everywhere
+.. _Gentoo: http://www.gentoo.org/
+.. _overlay: http://blog.tremily.us/posts/Gentoo_overlay/
+.. _Fedora: https://admin.fedoraproject.org/pkgdb/acls/name/be
+
+
 Dependencies
 ============
 
+If your distribution does not package BE, you'll have to install it
+yourself, along with its dependencies.  Not all of these are strictly
+required.  See `Minimal installs`_ for possible shortcuts.
+
 ==============  =======================  ===============  ===========================
-Package         Role                     Debian           Gentoo
+Package         Role                     Debian_          Gentoo_
 ==============  =======================  ===============  ===========================
 PyYAML_         serialized data storage  python-yaml      dev-python/pyyaml
 Jinja_          HTML templating          python-jinja2    deb-python/jinja
+CherryPy_       serve repos over HTTP    python-cherrypy  dev-python/cherrypy
 Sphinx_         see :doc:`doc`           python-sphinx    dev-python/sphinx
 numpydoc_       see :doc:`doc`                            dev-python/numpydoc [#npd]_
 Docutils_       manpage generation       python-docutils  dev-python/docutils
@@ -19,6 +48,7 @@ Docutils_       manpage generation       python-docutils  dev-python/docutils
 
 .. _PyYAML: http://pyyaml.org/
 .. _Jinja: http://jinja.pocoo.org/
+.. _CherryPy: http://cherrypy.org/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _numpydoc: http://pypi.python.org/pypi/numpydoc
 .. _Docutils: http://docutils.sourceforge.net/
@@ -46,10 +76,14 @@ install to another location.  With the default installation, you may
 need to add ``~/.local/bin/`` to your ``PATH`` so that your shell can
 find the installed ``be`` script.
 
+Minimal installs
+----------------
+
 By default, ``make`` builds both a man page for ``be`` and the HTML
 Sphinx documentation (:doc:`doc`).  You can customize the
-documentation targets by overriding_ the ``DOC`` variable.  For
-example, to disable all documentation during a build/install, run::
+documentation targets (if, for example, you don't want to install
+Sphinx) by overriding_ the ``DOC`` variable.  For example, to disable
+all documentation during a build/install, run::
 
     $ make DOC= install
 
@@ -59,18 +93,43 @@ the man page (``doc/man/be.1``) if it exists, so::
     $ make
     $ make DOC= install
 
-*will* build (first ``make``) install (second ``make``) the man page.
+*will* build (first ``make``) and install (second ``make``) the man
+ page.
 
+Also note that there is no need to edit the ``Makefile`` to change any
+of its internal variables.  You can `override them from the command
+line`__, as we did for ``DOC`` above.
+
+__ overriding_
+
+Finally, if you want to do the absolute minimum required to install BE
+locally, you can skip the ``Makefile`` entirely, and just use
+``setup.py`` directly::
+
+    $ python setup.py install
+
+See::
+
+    $ python setup.py install --help
+
+for a list of installation options.
+
+You will still need to install PyYAML.  Jinja is only used by the
+``html`` command, so feel free to skip Jinja if you don't mind
+avoiding that command.  Similarly, CherryPy is only used for the
+``serve`` command.  The other dependencies are only used for
+:doc:`building these docs <doc>`, so feel free to skip them and just
+use the docs wherever you're currently reading them.
 
 .. _homepage: http://bugseverywhere.org/
-.. _overriding: http://www.gnu.org/software/make/manual/html_node/Overriding.html#Overriding
+.. _overriding: http://www.gnu.org/software/make/manual/html_node/Overriding.html
 
 
 Release tarballs
 ================
 
 For those not interested in the cutting edge, or those who don't want
-to worry about installing Git, we'll post release tarballs somewhere
+to worry about installing Git, we'll `post release tarballs`_
 (once we actually make a release).  After you've downloaded the
 release tarball, unpack it with::
 
@@ -81,18 +140,4 @@ And install it with:::
     $ cd be-<VERSION>
     $ make install
 
-
-Distribution packages
-=====================
-
-Some distributions (Debian_ , Ubuntu_ , others?) package BE.  If
-you're running one of those distributions, you can install the package
-with your regular package manager.  For Debian, Ubuntu, and related
-distros, that's::
-
-    $ apt-get install bugs-everywhere
-
-However, the official packages can lag behind current development.
-
-.. _Debian: http://packages.debian.org/sid/bugs-everywhere
-.. _Ubuntu: http://packages.ubuntu.com/lucid/bugs-everywhere
+.. _post release tarballs: http://download.bugseverywhere.org/releases/

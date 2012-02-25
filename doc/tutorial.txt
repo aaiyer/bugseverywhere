@@ -32,6 +32,9 @@ For example, most Debian-based distributions support::
 
     $ apt-get install bugs-everywhere
 
+See :doc:`the install page <install>` for more information and
+alternative methods.
+
 Bugs
 ====
 
