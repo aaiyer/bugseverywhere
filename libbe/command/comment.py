@@ -159,7 +159,7 @@ class Comment (libbe.command.Command):
         for key in ['alt-id', 'author']:
             if params[key] != None:
                 setattr(new, new._setting_name_to_attr_name(key), params[key])
-        print >> self.stdout, 'Created comment with ID %s' % new.id.user()
+        print >> self.stdout, 'Created comment with ID %s (%s)' % (new.id.user(), new.id.long_user())
         return 0
 
     def _long_help(self):

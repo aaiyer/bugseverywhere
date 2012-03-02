@@ -124,7 +124,7 @@ class New (libbe.command.Command):
             bug.severity = params['severity']
         bugdir.storage.writeable = True
         bug.save()
-        print >> self.stdout, 'Created bug with ID %s' % bug.id.user()
+        print >> self.stdout, 'Created bug with ID %s (%s)' % (bug.id.user(), bug.id.long_user())
         return 0
 
     def _long_help(self):
