@@ -95,6 +95,8 @@ class New (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='severity', metavar='SEVERITY',
                         completion_callback=libbe.command.util.complete_severity)),
+                libbe.command.Option(name='full-uuid', short_name='f',
+                    help='Print the full UUID for the new bug')
                 ])
         self.args.extend([
                 libbe.command.Argument(name='summary', metavar='SUMMARY')
@@ -124,7 +126,11 @@ class New (libbe.command.Command):
             bug.severity = params['severity']
         bugdir.storage.writeable = True
         bug.save()
-        print >> self.stdout, 'Created bug with ID %s (%s)' % (bug.id.user(), bug.id.long_user())
+        if params['full-uuid']:
+            bug_id = bug.id.long_user()
+        else:
+            bug_id = bug.id.user()
+        self.stdout.write('Created bug with ID %s\n' % (bug_id))
         return 0
 
     def _long_help(self):

@@ -107,6 +107,8 @@ class Comment (libbe.command.Command):
                     help='Set comment content-type (e.g. text/plain)',
                     arg=libbe.command.Argument(name='content-type',
                         metavar='MIME')),
+                libbe.command.Option(name='full-uuid', short_name='f',
+                    help='Print the full UUID for the new bug')
                 ])
         self.args.extend([
                 libbe.command.Argument(
@@ -159,7 +161,11 @@ class Comment (libbe.command.Command):
         for key in ['alt-id', 'author']:
             if params[key] != None:
                 setattr(new, new._setting_name_to_attr_name(key), params[key])
-        print >> self.stdout, 'Created comment with ID %s (%s)' % (new.id.user(), new.id.long_user())
+        if params['full-uuid']:
+            comment_id = new.id.long_user()
+        else:
+            comment_id = new.id.user()
+        self.stdout.write('Created comment with ID %s\n' % (comment_id))
         return 0
 
     def _long_help(self):
