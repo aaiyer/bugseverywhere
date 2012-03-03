@@ -377,7 +377,6 @@ class Comment (Tree, settings_object.SavedSettingsObject):
                     text = settings_object.EMPTY
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
-                    # Sometimes saxutils returns unicode
                     if not isinstance(text, unicode):
                         text = text.decode('unicode_escape')
                     text = text.strip()

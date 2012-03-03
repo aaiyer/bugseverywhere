@@ -405,7 +405,9 @@ class Bug (settings_object.SavedSettingsObject):
                     text = settings_object.EMPTY
                 else:
                     text = xml.sax.saxutils.unescape(child.text)
-                    text = text.decode('unicode_escape').strip()
+                    if not isinstance(text, unicode):
+                        text = text.decode('unicode_escape')
+                    text = text.strip()
                 if child.tag == 'uuid' and not preserve_uuids:
                     uuid = text
                     continue # don't set the bug's uuid tag.
