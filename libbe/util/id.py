@@ -471,17 +471,24 @@ class IDreplacer (object):
     --------
     short_to_long_text, long_to_short_text
     """
-    def __init__(self, bugdirs, replace_fn, wrap=True):
+    def __init__(self, bugdirs, replace_fn, wrap=True, strict=True):
         self.bugdirs = bugdirs
         self.replace_fn = replace_fn
         self.wrap = wrap
+        self.strict = strict
+
     def __call__(self, match):
         ids = []
         for m in match.groups():
             if m == None:
                 m = ''
             ids.append(m)
-        replacement = self.replace_fn(self.bugdirs, ''.join(ids))
+        try:
+            replacement = self.replace_fn(self.bugdirs, ''.join(ids))
+        except (MultipleIDMatches, NoIDMatches, InvalidIDStructure):
+            if self.strict:
+                raise
+            replacement = ''.join(ids)
         if self.wrap == True:
             return '#%s#' % replacement
         return replacement
@@ -496,7 +503,8 @@ def short_to_long_text(bugdirs, text):
     short_to_long_user : conversion on a single ID
     long_to_short_text : inverse
     """
-    return re.sub(REGEXP, IDreplacer(bugdirs, short_to_long_user), text)
+    return re.sub(
+        REGEXP, IDreplacer(bugdirs, short_to_long_user, strict=False), text)
 
 def long_to_short_text(bugdirs, text):
     """Convert long user IDs to short user IDs in text (see :class:`ID`).
