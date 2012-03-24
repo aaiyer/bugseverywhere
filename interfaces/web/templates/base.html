@@ -32,6 +32,12 @@
                     e.preventDefault();
                 });
                 
+                $('#filter-tag').click(function(e) {
+                    $('#filter-pane').html($('#tags').html());
+                    $('#filter-pane').fadeIn('fast');
+                    e.preventDefault();
+                });
+                
                 $('#create-bug').click(function(e) {
                     $('#create-bug').hide();
                     $('#create-form').fadeIn('fast');
@@ -56,6 +62,7 @@
                     <a href="/?status=closed">Closed</a>
                     <a href="" id="filter-assignee">Assigned to...</a>
                     <a href="" id="filter-target">Scheduled for...</a>
+                    <a href="" id="filter-tag">Tags...</a>
                 </span>
                 <span id="create">
                     <a href="" id="create-bug">&#43; Create a new bug</a>
@@ -104,5 +111,13 @@
                 {% endfor %}
             </ul>
         </div>
-    </body>
+        <div id="tags">
+            <ul class="filter-items">
+                <li><a href="/?tag=None">All</a></li>
+               {% for tag in tags %}
+                    <li><a href="/?tag={{ tag }}">{{ tag }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>        
+   </body>
 </html>

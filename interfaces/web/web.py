@@ -11,7 +11,7 @@ from libbe.command.target import add_target, remove_target
 from libbe.command.target import bug_from_target_summary, bug_target
 from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
-
+import libbe.command.tag
 
 EMPTY = settings_object.EMPTY
 
@@ -57,15 +57,19 @@ class WebInterface:
                 'possible_targets': possible_targets,
                 'possible_statuses': possible_statuses,
                 'possible_severities': possible_severities,
+                'tags': libbe.command.tag.get_all_tags(self.bd),
                 'repository_name': self.repository_name,}
     
-    def filter_bugs(self, status, assignee, target):
+    def filter_bugs(self, status, assignee, target, tag):
         """Filter the list of bugs to return only those desired."""
         bugs = [bug for bug in self.bd if bug.status in status]
         
         if assignee != '':
             assignee = None if assignee == 'None' else assignee
             bugs = [bug for bug in bugs if bug.assigned == assignee]
+
+        if tag != '' and tag!= 'None':
+            bugs = [bug for bug in bugs if tag in libbe.command.tag.get_tags(bug)]
         
         if target != '':
             target = None if target == 'None' else target
@@ -79,11 +83,12 @@ class WebInterface:
                     return []
                 bugs = [bug for bug in get_blocked_by(self.bd, targetbug) if
                         bug.active]
+        
         return bugs
     
     
     @cherrypy.expose
-    def index(self, status='open', assignee='', target=''):
+    def index(self, status='open', assignee='', target='', tag=''):
         """The main bug page.
         Bugs can be filtered by assignee or target.
         The bug database will be reloaded on each visit."""
@@ -102,9 +107,11 @@ class WebInterface:
                 else ' Assigned to %s' % (assignee,)
         if target != '':
             label += ' Currently Unscheduled' if target == 'None' \
-                else ' Scheduled for %s' % (target,)
+                else ' Scheduled for %s' % (target,)        
+        if tag != '' and tag != 'None':
+            label += ' Tagged %s' % (tag,)
         
-        bugs = self.filter_bugs(status, assignee, target)
+        bugs = self.filter_bugs(status, assignee, target, tag)
         if len(bugs) == 0:
             template = self.env.get_template('empty-list.html')
         else:
@@ -117,6 +124,7 @@ class WebInterface:
                                statuses=common_info['possible_statuses'],
                                severities=common_info['possible_severities'],
                                repository_name=common_info['repository_name'],
+                               tags=common_info['tags'],
                                urlencode=urlencode)
     
     

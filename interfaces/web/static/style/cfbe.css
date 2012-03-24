@@ -106,7 +106,7 @@ tr.stripe {
     background-color: #fcecf8;
 }
 
-div#assignees, div#targets {
+div#assignees, div#targets, div#tags {
     display: none;
 }
 
