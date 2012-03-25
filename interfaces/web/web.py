@@ -13,6 +13,7 @@ from libbe.command.util import bug_comment_from_user_id
 from libbe.storage.util import settings_object
 import libbe.command.tag
 
+
 EMPTY = settings_object.EMPTY
 
 def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
@@ -22,7 +23,7 @@ def datetimeformat(value, format='%B %d, %Y at %I:%M %p'):
 
 class WebInterface:
     """The web interface to CFBE."""
-    
+
     def __init__(self, bug_root, template_root):
         """Initialize the bug repository for this web interface."""
         self.bug_root = bug_root
@@ -34,43 +35,44 @@ class WebInterface:
         self.repository_name = self.bug_root.split('/')[-1]
         self.env = Environment(loader=FileSystemLoader(template_root))
         self.env.filters['datetimeformat'] = datetimeformat
-    
+
     def get_common_information(self):
         """Returns a dict of common information that most pages will need."""
         possible_assignees = list(set(
           [unicode(bug.assigned) for bug in self.bd if bug.assigned != EMPTY]))
         possible_assignees.sort(key=unicode.lower)
-        
+
         possible_targets = list(set(
           [unicode(bug.summary.rstrip("\n")) for bug in self.bd \
                 if bug.severity == u"target"]))
 
         possible_targets.sort(key=unicode.lower)
-        
-        possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed', 
+
+        possible_statuses = [u'open', u'assigned', u'test', u'unconfirmed',
                              u'closed', u'disabled', u'fixed', u'wontfix']
-        
-        possible_severities = [u'minor', u'serious', u'critical', u'fatal', 
+
+        possible_severities = [u'minor', u'serious', u'critical', u'fatal',
                                u'wishlist']
-        
+
         return {'possible_assignees': possible_assignees,
                 'possible_targets': possible_targets,
                 'possible_statuses': possible_statuses,
                 'possible_severities': possible_severities,
                 'tags': libbe.command.tag.get_all_tags(self.bd),
                 'repository_name': self.repository_name,}
-    
+
     def filter_bugs(self, status, assignee, target, tag):
         """Filter the list of bugs to return only those desired."""
         bugs = [bug for bug in self.bd if bug.status in status]
-        
+
         if assignee != '':
             assignee = None if assignee == 'None' else assignee
             bugs = [bug for bug in bugs if bug.assigned == assignee]
 
-        if tag != '' and tag!= 'None':
-            bugs = [bug for bug in bugs if tag in libbe.command.tag.get_tags(bug)]
-        
+        if tag != '' and tag != 'None':
+            bugs = [bug for bug in bugs
+                    if tag in libbe.command.tag.get_tags(bug)]
+
         if target != '':
             target = None if target == 'None' else target
             if target == None:
@@ -83,34 +85,34 @@ class WebInterface:
                     return []
                 bugs = [bug for bug in get_blocked_by(self.bd, targetbug) if
                         bug.active]
-        
+
         return bugs
-    
-    
+
+
     @cherrypy.expose
     def index(self, status='open', assignee='', target='', tag=''):
         """The main bug page.
         Bugs can be filtered by assignee or target.
         The bug database will be reloaded on each visit."""
-        
+
         self.bd.load_all_bugs()
-        
+
         if status == 'open':
             status = ['open', 'assigned', 'test', 'unconfirmed', 'wishlist']
             label = 'All Open Bugs'
         elif status == 'closed':
             status = ['closed', 'disabled', 'fixed', 'wontfix']
             label = 'All Closed Bugs'
-        
+
         if assignee != '':
             label += ' Currently Unassigned' if assignee == 'None' \
                 else ' Assigned to %s' % (assignee,)
         if target != '':
             label += ' Currently Unscheduled' if target == 'None' \
-                else ' Scheduled for %s' % (target,)        
+                else ' Scheduled for %s' % (target,)
         if tag != '' and tag != 'None':
             label += ' Tagged %s' % (tag,)
-        
+
         bugs = self.filter_bugs(status, assignee, target, tag)
         if len(bugs) == 0:
             template = self.env.get_template('empty-list.html')
@@ -118,7 +120,7 @@ class WebInterface:
             template = self.env.get_template('list.html')
 
         common_info = self.get_common_information()
-        return template.render(bugs=bugs, bd=self.bd, label=label, 
+        return template.render(bugs=bugs, bd=self.bd, label=label,
                                assignees=common_info['possible_assignees'],
                                targets=common_info['possible_targets'],
                                statuses=common_info['possible_statuses'],
@@ -126,16 +128,16 @@ class WebInterface:
                                repository_name=common_info['repository_name'],
                                tags=common_info['tags'],
                                urlencode=urlencode)
-    
-    
+
+
     @cherrypy.expose
     def bug(self, id=''):
         """The page for viewing a single bug."""
-        
+
         self.bd.load_all_bugs()
-        
+
         bug, comment = bug_comment_from_user_id(self.bd, id)
-        
+
         template = self.env.get_template('bug.html')
         common_info = self.get_common_information()
 
@@ -148,8 +150,8 @@ class WebInterface:
             blocker = self.bd.bug_from_uuid(targetbug.uuid)
             if blocker.severity == "target":
                 targets += "%s " % blocker.summary
-        
-        return template.render(bug=bug, bd=self.bd, 
+
+        return template.render(bug=bug, bd=self.bd,
                                assignee='' if bug.assigned == EMPTY else bug.assigned,
                                target=targets,
                                assignees=common_info['possible_assignees'],
@@ -157,21 +159,21 @@ class WebInterface:
                                statuses=common_info['possible_statuses'],
                                severities=common_info['possible_severities'],
                                repository_name=common_info['repository_name'])
-    
-    
+
+
     @cherrypy.expose
     def create(self, summary):
         """The view that handles the creation of a new bug."""
         if summary.strip() != '':
             self.bd.new_bug(summary=summary).save()
         raise cherrypy.HTTPRedirect('/', status=302)
-    
-    
+
+
     @cherrypy.expose
     def comment(self, id, body):
         """The view that handles adding a comment."""
         bug = self.bd.bug_from_uuid(id)
-        
+
         if body.strip() != '':
             bug.comment_root.new_reply(body=body)
             bug.save()
@@ -184,14 +186,14 @@ class WebInterface:
     def edit(self, id, status=None, target=None, assignee=None, severity=None, summary=None):
         """The view that handles editing bug details."""
         bug = self.bd.bug_from_uuid(id)
-        
+
         if summary != None:
             bug.summary = summary
         else:
             bug.status = status if status != 'None' else None
             bug.assigned = assignee if assignee != 'None' else None
             bug.severity = severity if severity != 'None' else None
-            
+
         if target:
             current_target = bug_target(self.bd, bug)
             if current_target:
@@ -206,4 +208,3 @@ class WebInterface:
         raise cherrypy.HTTPRedirect(
             '/bug?%s' % urlencode({'id':bug.id.long_user()}),
             status=302)
-    
