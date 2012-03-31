@@ -1,4 +1,8 @@
 #compdef be
+#
+# This file should be copied into one of the directories in $fpath;
+# e. g. /usr/local/share/zsh/site-functions/_be.
+# From then on, every new shell should have the be completion.
 
 __be_commands () {
   local -a commands
@@ -28,7 +32,7 @@ __be_commands () {
   )
 
   integer ret=1
-  _describe -t commands 'commands' commands && ret=0
+  _describe -t commands 'command' commands && ret=0
   return ret
 }
 
@@ -355,17 +359,13 @@ _be () {
 
   case $state in
     (command)
-      _wanted commands expl 'svn command' __be_commands && ret=0
+      _wanted commands expl 'be command' __be_commands && ret=0
       #__be_commands
       ;;
     (option-or-argument)
       becommand="${words[1]}"
       curcontext="${curcontext%:*:*}:be${becommand}:"
       _call_function ret _be-${becommand}
-
-      ;;
-    *)
-      echo "$state"
       ;;
   esac
 }
