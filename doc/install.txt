@@ -35,14 +35,14 @@ required.  See `Minimal installs`_ for possible shortcuts.
 
 ==============  =======================  ===============  ===========================
 Package         Role                     Debian_          Gentoo_
-==============  =======================  ===============  ===========================
-PyYAML_         serialized data storage  python-yaml      dev-python/pyyaml
-Jinja_          HTML templating          python-jinja2    dev-python/jinja
-CherryPy_       serve repos over HTTP    python-cherrypy  dev-python/cherrypy
-Sphinx_         see :doc:`doc`           python-sphinx    dev-python/sphinx
-numpydoc_       see :doc:`doc`                            dev-python/numpydoc [#npd]_
-Docutils_       manpage generation       python-docutils  dev-python/docutils
-==============  =======================  ===============  ===========================
+==============  =======================  ================  ===========================
+PyYAML_         serialized data storage  python-yaml       dev-python/pyyaml
+Jinja_          HTML templating          python-jinja2     dev-python/jinja
+CherryPy_       serve repos over HTTP    python-cherrypy3  dev-python/cherrypy
+Sphinx_         see :doc:`doc`           python-sphinx     dev-python/sphinx
+numpydoc_       see :doc:`doc`                             dev-python/numpydoc [#npd]_
+Docutils_       manpage generation       python-docutils   dev-python/docutils
+==============  =======================  ================  ===========================
 
 .. [#npd] In the science_ overlay.
 
