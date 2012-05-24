@@ -214,7 +214,7 @@ class List (libbe.command.Command):
     def _long_help(self):
         return """
 This command lists bugs.  Normally it prints a short string like
-  bea/576:om:[TAGS:] Allow attachments
+  bea/576 om:[TAGS:] Allow attachments
 Where
   bea/576   the bug id
   o         the bug status is 'open' (first letter)

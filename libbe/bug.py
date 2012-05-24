@@ -306,7 +306,7 @@ class Bug (settings_object.SavedSettingsObject):
             statuschar = self.status[0]
             severitychar = self.severity[0]
             chars = "%c%c" % (statuschar, severitychar)
-            bugout = "%s:%s: %s" % (self.id.user(),chars,self.summary.rstrip('\n'))
+            bugout = "%s %s: %s" % (self.id.user(),chars,self.summary.rstrip('\n'))
 
         if show_comments == True:
             self.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
