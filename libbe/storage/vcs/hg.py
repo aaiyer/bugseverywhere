@@ -242,7 +242,7 @@ class Hg(base.VCS):
             assert file_a.startswith('a/'), \
                 'missformed file_a %s' % file_a
             assert file_b.startswith('b/'), \
-                'missformed file_a %s' % file_b
+                'missformed file_b %s' % file_b
             file = file_a[2:]
             assert file_b[2:] == file, \
                 'diff file missmatch %s != %s' % (file_a, file_b)
