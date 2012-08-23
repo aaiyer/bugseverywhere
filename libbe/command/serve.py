@@ -203,7 +203,7 @@ class WSGI_Object (object):
         return [message]
 
     def log_request(self, environ, status='-1 OK', bytes=-1):
-        if self.logger == None:
+        if self.logger is None or self.logger.level > self.log_level:
             return
         req_uri = urllib.quote(environ.get('SCRIPT_NAME', '')
                                + environ.get('PATH_INFO', ''))
@@ -744,6 +744,11 @@ class ServerApp (WSGI_AppObject):
         libbe.util.subproc.invoke(self.notify, stdin=message, shell=True)
 
 
+class SilentRequestHandler (wsgiref.simple_server.WSGIRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+
 class Serve (libbe.command.Command):
     """Serve bug directory storage over HTTP.
 
@@ -848,7 +853,8 @@ class Serve (libbe.command.Command):
         else:
             details['protocol'] = 'HTTP'
             server = wsgiref.simple_server.make_server(
-                params['host'], params['port'], app)
+                params['host'], params['port'], app,
+                handler_class=SilentRequestHandler)
             details['socket-name'] = server.socket.getsockname()[0]
         return (server, details)
 
