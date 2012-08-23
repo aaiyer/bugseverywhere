@@ -681,6 +681,24 @@ if TESTING == True:
                 s = sorted(self.s.children('parent'))
                 self.failUnless(s == ids, '\n  %s\n  !=\n  %s' % (s, ids))
 
+        def test_grandchildren(self):
+            """Grandchildren should not be returned as children.
+            """
+            self.s.add('parent', directory=True)
+            ids = []
+            for i in range(5):
+                child = 'parent/%s' % str(i)
+                directory = (i % 2 == 0)
+                ids.append(child)
+                self.s.add(child, 'parent', directory=directory)
+                if directory:
+                    for j in range(3):
+                        grandchild = '%s/%s' % (child, str(j))
+                        directory = (j % 2 == 0)
+                        self.s.add(grandchild, child, directory=directory)
+                s = sorted(self.s.children('parent'))
+                self.failUnless(s == ids, '\n  %s\n  !=\n  %s' % (s, ids))
+
         def test_add_invalid_directory(self):
             """Should not be able to add children to non-directories.
             """
@@ -908,7 +926,7 @@ if TESTING == True:
                 self.s.commit('Added initialization files')
             except EmptyCommit:
                 pass
-                
+
         def test_revision_id_exception(self):
             """Invalid revision id should raise InvalidRevision.
             """
@@ -999,6 +1017,38 @@ if TESTING == True:
                                 "%s.children() returned %s not %s for revision %s"
                                 % (vars(self.Class)['name'], ret,
                                    children[i], revs[i]))
+
+        def test_avoid_previous_grandchildren(self):
+            """Previous grandchildren should not be returned as children.
+            """
+            self.s.add('parent', directory=True)
+            revs = []
+            cur_children = []
+            children = []
+            for i in range(5):
+                new_child = 'parent/%s' % str(i)
+                directory = (i % 2 == 0)
+                self.s.add(new_child, 'parent', directory=directory)
+                cur_children.append(new_child)
+                children.append(list(cur_children))
+                if directory:
+                    for j in range(3):
+                        new_grandchild = '%s/%s' % (new_child, str(j))
+                        directory = (j % 2 == 0)
+                        self.s.add(
+                            new_grandchild, new_child, directory=directory)
+                        if not directory:
+                            self.s.set(new_grandchild, self.val)
+                else:
+                    self.s.set(new_child, self.val)
+                revs.append(self.s.commit('%s: %d' % (self.commit_msg, i),
+                                          self.commit_body))
+            for rev,cur_children in zip(revs, children):
+                ret = sorted(self.s.children('parent', revision=rev))
+                self.failUnless(ret == cur_children,
+                                "%s.children() returned %s not %s for revision %s"
+                                % (vars(self.Class)['name'], ret,
+                                   cur_children, rev))
 
     class VersionedStorage_changed_TestCase (VersionedStorageTestCase):
         """Test cases for VersionedStorage.changed() method."""
