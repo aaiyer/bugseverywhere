@@ -152,7 +152,10 @@ class Hg(base.VCS):
         output = self._u_invoke_client('manifest', '--rev', revision)
         files = output.splitlines()
         path = path.rstrip(os.path.sep) + os.path.sep
-        return [self._u_rel_path(f, path) for f in files if f.startswith(path)]
+        descendent_files = [self._u_rel_path(f, path) for f in files
+                            if f.startswith(path)]
+        return sorted(set(
+                f.split(os.path.sep, 1)[0] for f in descendent_files))
 
     def _vcs_commit(self, commitfile, allow_empty=False):
         args = ['commit', '--logfile', commitfile]
