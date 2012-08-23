@@ -53,14 +53,13 @@ def import_by_name(modname):
         module = getattr(module, comp)
     return module
 
-def ziplistdir(path):
-    """Lists items in a directory contained in a zip file"""
-    zipidx=path.find('.zip')
-    zippath=path[:4+zipidx]
-    path=path[5+zipidx:].replace(os.sep, '/')
-    with zipfile.ZipFile(zippath, 'r') as zf:
-        files=[f[len(path)+1:] for f in zf.namelist() if f[:len(path)]==path and '/' not in f[len(path)+1:]]
-        return files
+def zip_listdir(path, components):
+    """Lists items in a directory contained in a zip file
+    """
+    dirpath = '/'.join(components)
+    with zipfile.ZipFile(path, 'r') as f:
+        return [os.path.relpath(f, dirpath) for f in f.namelist()
+                if f.startswith(dirpath)]
 
 def modnames(prefix):
     """
@@ -70,31 +69,15 @@ def modnames(prefix):
     True
     """
     components = prefix.split('.')
-    modfilespath=os.path.join(_PLUGIN_PATH, *components)
-    # Cope if we are executing from inside a zip archive full of precompiled .pyc's
-    inside_zip='.zip' in modfilespath
-    modfiles=ziplistdir(modfilespath) if inside_zip else os.listdir(modfilespath)
-    modfiles.sort()
-    # Eliminate .py/.pyc duplicates, preferring .pyc if we're in a zip archive
-    if inside_zip:
-        x=1
-        while x<len(modfiles):
-            if modfiles[x].endswith('.pyc') and modfiles[x-1]==modfiles[x][:len(modfiles[x-1])]:
-                del modfiles[x-1]
-            else:
-                x+=1
+    egg = os.path.isfile(_PLUGIN_PATH)  # are we inside a zip archive (egg)?
+    if egg:
+        modfiles = zip_listdir(_PLUGIN_PATH, components)
     else:
-        x=0
-        while x<len(modfiles)-1:
-            if modfiles[x].endswith('.py') and modfiles[x]==modfiles[x+1][:len(modfiles[x])]:
-                del modfiles[x+1]
-            x+=1
+        modfiles = os.listdir(os.path.join(_PLUGIN_PATH, *components))
+    # normalize .py/.pyc extensions and sort
+    modfiles = sorted(set(os.path.splitext(f)[0] + '.py' for f in modfiles))
     for modfile in modfiles:
-        if modfile.startswith('.'):
-            continue # the occasional emacs temporary file
-        if modfile == '__init__.py' or modfile == '__init__.pyc':
-            continue
-        if modfile.endswith('.py'):
+        if modfile.startswith('.') or not modfile:
+            continue # the occasional emacs temporary file or .* file
+        if modfile.endswith('.py') and modfile != '__init__.py':
             yield modfile[:-3]
-        elif modfile.endswith('.pyc'):
-            yield modfile[:-4]
