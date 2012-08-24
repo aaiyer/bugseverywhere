@@ -83,12 +83,18 @@ def get_post_url(url, get=True, data_dict=None, headers=[], agent=None):
     try:
         response = urllib2.urlopen(req)
     except urllib2.HTTPError, e:
+        lines = [
+            'We failed to connect to the server (HTTPError).',
+            'URL: {}'.format(url),
+            ]
         if hasattr(e, 'reason'):
-            msg = ('We failed to connect to the server.\nURL: {}\n'
-                   'Reason: {}').format(url, e.reason)
-        elif hasattr(e, 'code'):
-            msg = ("The server couldn't fulfill the request.\nURL: {}\n"
-                   'Error code: {}').format(url, e.code)
+            lines.append('Reason: {}'.format(e.reason))
+        lines.append('Error code: {}'.format(e.code))
+        msg = '\n'.join(lines)
+        raise HTTPError(error=e, url=url, msg=msg)
+    except urllib2.URLError, e:
+        msg = ('We failed to connect to the server (URLError).\nURL: {}\n'
+               'Reason: {}').format(url, e.reason)
         raise HTTPError(error=e, url=url, msg=msg)
     page = response.read()
     final_url = response.geturl()
