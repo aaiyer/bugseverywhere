@@ -937,19 +937,23 @@ if libbe.TESTING == True:
                 'wsgi.run_once':False,
                 }
         def getURL(self, app, path='/', method='GET', data=None,
-                   scheme='http', environ={}):
+                   data_dict=None, scheme='http', environ={}):
             env = copy.copy(self.default_environ)
             env['PATH_INFO'] = path
             env['REQUEST_METHOD'] = method
             env['scheme'] = scheme
-            if data != None:
-                enc_data = urllib.urlencode(data)
+            if data_dict is not None:
+                assert data is None, (data, data_dict)
+                data = urllib.urlencode(data_dict)
+            if data is not None:
+                if data_dict is None:
+                    assert method == 'POST', (method, data)
                 if method == 'POST':
-                    env['CONTENT_LENGTH'] = len(enc_data)
-                    env['wsgi.input'] = StringIO.StringIO(enc_data)
+                    env['CONTENT_LENGTH'] = len(data)
+                    env['wsgi.input'] = StringIO.StringIO(data)
                 else:
                     assert method in ['GET', 'HEAD'], method
-                    env['QUERY_STRING'] = enc_data
+                    env['QUERY_STRING'] = data
             for key,value in environ.items():
                 env[key] = value
             return ''.join(app(env, self.start_response))
@@ -1021,7 +1025,7 @@ if libbe.TESTING == True:
         def test_new_name(self):
             self.getURL(
                 self.app, '/admin/', method='POST',
-                data={'name':'Prince Al'},
+                data_dict={'name':'Prince Al'},
                 environ={'HTTP_Authorization':
                              self.basic_auth('Aladdin', 'open sesame')})
             self.failUnless(self.status == '200 OK', self.status)
@@ -1035,7 +1039,7 @@ if libbe.TESTING == True:
         def test_new_password(self):
             self.getURL(
                 self.app, '/admin/', method='POST',
-                data={'password':'New Pass'},
+                data_dict={'password':'New Pass'},
                 environ={'HTTP_Authorization':
                              self.basic_auth('Aladdin', 'open sesame')})
             self.failUnless(self.status == '200 OK', self.status)
@@ -1050,7 +1054,7 @@ if libbe.TESTING == True:
         def test_guest_name(self):
             self.getURL(
                 self.app, '/admin/', method='POST',
-                data={'name':'SPAM'},
+                data_dict={'name':'SPAM'},
                 environ={'HTTP_Authorization':
                              self.basic_auth('guest', 'guestpass')})
             self.failUnless(self.status.startswith('403 '), self.status)
@@ -1065,7 +1069,7 @@ if libbe.TESTING == True:
         def test_guest_password(self):
             self.getURL(
                 self.app, '/admin/', method='POST',
-                data={'password':'SPAM'},
+                data_dict={'password':'SPAM'},
                 environ={'HTTP_Authorization':
                              self.basic_auth('guest', 'guestpass')})
             self.failUnless(self.status.startswith('403 '), self.status)
@@ -1095,8 +1099,8 @@ if libbe.TESTING == True:
             self.failUnless(self.exc_info == None, self.exc_info)
         def test_add_post(self):
             self.getURL(self.app, '/add/', method='POST',
-                        data={'id':'123456', 'parent':'abc123',
-                              'directory':'True'})
+                        data_dict={'id':'123456', 'parent':'abc123',
+                                   'directory':'True'})
             self.failUnless(self.status == '200 OK', self.status)
             self.failUnless(self.response_headers == [],
                             self.response_headers)
