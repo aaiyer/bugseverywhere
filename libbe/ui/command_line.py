@@ -230,6 +230,12 @@ class BE (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='repo', metavar='REPO', default='.',
                         completion_callback=libbe.command.util.complete_path)),
+                libbe.command.Option(name='server', short_name='s',
+                    help='Select BE command server (see `be help '
+                         'command-server`) rather than executing commands '
+                         'locally',
+                    arg=libbe.command.Argument(
+                        name='server', metavar='URL')),
                 libbe.command.Option(name='paginate',
                     help='Pipe all output into less (or if set, $PAGER).'),
                 libbe.command.Option(name='no-pager',
@@ -355,10 +361,11 @@ def main():
         return 1
 
     ui.storage_callbacks = libbe.command.StorageCallbacks(options['repo'])
-    command = Class(ui=ui)
+    command = Class(ui=ui, server=options['server'])
     ui.setup_command(command)
 
-    if command.name in ['new', 'comment', 'commit', 'import-xml', 'serve']:
+    if command.name in [
+        'new', 'comment', 'commit', 'import-xml', 'serve', 'serve-commands']:
         paginate = 'never'
     else:
         paginate = 'auto'

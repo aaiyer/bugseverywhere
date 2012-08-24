@@ -23,11 +23,14 @@ import optparse
 import os.path
 import StringIO
 import sys
+import urlparse
+import yaml
 
 import libbe
 import libbe.storage
 import libbe.ui.util.user
 import libbe.util.encoding
+import libbe.util.http
 import libbe.util.plugin
 
 
@@ -261,11 +264,13 @@ class Command (object):
     <BLANKLINE>
     A detailed help message.
     """
+    user_agent = 'BE-HTTP-Command'
 
     name = 'command'
 
-    def __init__(self, ui=None):
+    def __init__(self, ui=None, server=None):
         self.ui = ui # calling user-interface
+        self.server = server # location of eventual execution
         self.status = None
         self.result = None
         self.restrict_file_access = True
@@ -291,7 +296,10 @@ class Command (object):
         else:
             params.pop('complete')
 
-        self.status = self._run(**params)
+        if self.server:
+            self.status = self._run_remote(**params)
+        else:
+            self.status = self._run(**params)
         return self.status
 
     def _parse_options_args(self, options=None, args=None):
@@ -338,6 +346,17 @@ class Command (object):
 
     def _run(self, **kwargs):
         raise NotImplementedError
+
+    def _run_remote(self, **kwargs):
+        data = yaml.safe_dump({
+                'command': self.name,
+                'parameters': kwargs,
+                })
+        url = urlparse.urljoin(self.server, 'run')
+        page,final_url,info = libbe.util.http.get_post_url(
+            url=url, get=False, data=data, agent=self.user_agent)
+        self.stdout.write(page)
+        return 0
 
     def help(self, *args):
         return '\n\n'.join([self.usage(),
