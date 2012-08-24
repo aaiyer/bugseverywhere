@@ -829,12 +829,12 @@ class Serve (libbe.command.Command):
 
     def _get_server(self, params, app):
         details = {'port':params['port']}
+        app = ExceptionApp(app, logger=self.logger)
         if params['ssl'] == True:
             details['protocol'] = 'HTTPS'
             if cherrypy == None:
                 raise libbe.command.UserError, \
                     '--ssl requires the cherrypy module'
-            app = ExceptionApp(app, logger=self.logger)
             server = cherrypy.wsgiserver.CherryPyWSGIServer(
                 (params['host'], params['port']), app)
             #server.throw_errors = True
