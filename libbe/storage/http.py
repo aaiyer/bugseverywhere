@@ -29,9 +29,9 @@ implementation.
 See Also
 --------
 :mod:`libbe.command.serve` : the associated server
-
 """
 
+from __future__ import absolute_import
 import sys
 import urllib
 import urllib2
@@ -39,7 +39,8 @@ import urlparse
 
 import libbe
 import libbe.version
-import base
+from . import base
+
 from libbe import TESTING
 
 if TESTING == True:
