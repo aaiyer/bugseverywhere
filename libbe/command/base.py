@@ -566,11 +566,11 @@ class UserInterface (object):
         return command.run(options, args)
 
     def setup_command(self, command):
-        if command.ui == None:
+        if command.ui is None:
             command.ui = self
-        if self.io != None:
+        if self.io is not None:
             self.io.setup_command(command)
-        if self.storage_callbacks != None:
+        if self.storage_callbacks is not None:
             self.storage_callbacks.setup_command(command)        
         command.restrict_file_access = self.restrict_file_access
         command._get_user_id = self._get_user_id
