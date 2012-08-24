@@ -583,5 +583,6 @@ class UserInterface (object):
         return self._user_id
 
     def cleanup(self):
-        self.storage_callbacks.cleanup()
+        if self.storage_callbacks is not None:
+            self.storage_callbacks.cleanup()
         self.io.cleanup()
