@@ -112,8 +112,8 @@ def get_post_url(url, get=True, data_dict=None, headers=[], agent=None):
         response = urllib2.urlopen(req)
     except urllib2.HTTPError, e:
         if hasattr(e, 'reason'):
-            msg = 'We failed to reach a server.\nURL: %s\nReason: %s' \
-                % (url, e.reason)
+            msg = ('We failed to connect to the server.\nURL: {}\n'
+                   'Reason: {}').format(url, e.reason)
         elif hasattr(e, 'code'):
             msg = "The server couldn't fulfill the request.\nURL: %s\nError code: %s" \
                 % (url, e.code)
