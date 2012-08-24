@@ -16,13 +16,6 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-# For urllib2 information, see
-#   urllib2, from urllib2 - The Missing Manual
-#   http://www.voidspace.org.uk/python/articles/urllib2.shtml
-# 
-# A dictionary of response codes is available in
-#   httplib.responses
-
 """Define an HTTP-based :class:`~libbe.storage.base.VersionedStorage`
 implementation.
 
@@ -34,11 +27,12 @@ See Also
 from __future__ import absolute_import
 import sys
 import urllib
-import urllib2
 import urlparse
 
 import libbe
 import libbe.version
+import libbe.util.http
+from libbe.util.http import HTTP_VALID, HTTP_USER_ERROR
 from . import base
 
 from libbe import TESTING
@@ -53,79 +47,6 @@ if TESTING == True:
     import libbe.command.serve
 
 
-USER_AGENT = 'BE-HTTP-Storage'
-HTTP_OK = 200
-HTTP_FOUND = 302
-HTTP_TEMP_REDIRECT = 307
-HTTP_USER_ERROR = 418
-"""Status returned to indicate exceptions on the server side.
-
-A BE-specific extension to the HTTP/1.1 protocol (See `RFC 2616`_).
-
-.. _RFC 2616: http://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html#sec6.1.1
-"""
-
-HTTP_VALID = [HTTP_OK, HTTP_FOUND, HTTP_TEMP_REDIRECT, HTTP_USER_ERROR]
-
-class InvalidURL (Exception):
-    def __init__(self, error=None, url=None, msg=None):
-        Exception.__init__(self, msg)
-        self.url = url
-        self.error = error
-        self.msg = msg
-    def __str__(self):
-        if self.msg == None:
-            if self.error == None:
-                return "Unknown URL error: %s" % self.url
-            return self.error.__str__()
-        return self.msg
-
-def get_post_url(url, get=True, data_dict=None, headers=[], agent=None):
-    """Execute a GET or POST transaction.
-
-    Parameters
-    ----------
-    url : str
-      The base URL (query portion added internally, if necessary).
-    get : bool
-      Use GET if True, otherwise use POST.
-    data_dict : dict
-      Data to send, either by URL query (if GET) or by POST (if POST).
-    headers : list
-      Extra HTTP headers to add to the request.
-    """
-    if data_dict == None:
-        data_dict = {}
-    if agent is None:
-        agent = USER_AGENT
-    if get == True:
-        if data_dict != {}:
-            # encode get parameters in the url
-            param_string = urllib.urlencode(data_dict)
-            url = "%s?%s" % (url, param_string)
-        data = None
-    else:
-        data = urllib.urlencode(data_dict)
-    headers = dict(headers)
-    headers['User-Agent'] = agent
-    req = urllib2.Request(url, data=data, headers=headers)
-    try:
-        response = urllib2.urlopen(req)
-    except urllib2.HTTPError, e:
-        if hasattr(e, 'reason'):
-            msg = ('We failed to connect to the server.\nURL: {}\n'
-                   'Reason: {}').format(url, e.reason)
-        elif hasattr(e, 'code'):
-            msg = "The server couldn't fulfill the request.\nURL: %s\nError code: %s" \
-                % (url, e.code)
-        raise InvalidURL(error=e, url=url, msg=msg)
-    page = response.read()
-    final_url = response.geturl()
-    info = response.info()
-    response.close()
-    return (page, final_url, info)
-
-
 class HTTP (base.VersionedStorage):
     """:class:`~libbe.storage.base.VersionedStorage` implementation over
     HTTP.
@@ -133,6 +54,7 @@ class HTTP (base.VersionedStorage):
     Uses GET to retrieve information and POST to set information.
     """
     name = 'HTTP'
+    user_agent = 'BE-HTTP-Storage'
 
     def __init__(self, repo, *args, **kwargs):
         repo,self.uname,self.password = self.parse_repo(repo)
@@ -168,7 +90,8 @@ class HTTP (base.VersionedStorage):
         if self.uname != None and self.password != None:
             headers.append(('Authorization','Basic %s' % \
                 ('%s:%s' % (self.uname, self.password)).encode('base64')))
-        return get_post_url(url, get, data_dict, headers)
+        return libbe.util.http.get_post_url(
+            url, get, data_dict, headers, agent=self.user_agent)
 
     def storage_version(self, revision=None):
         """Return the storage format for this backend."""
@@ -237,7 +160,7 @@ class HTTP (base.VersionedStorage):
             page,final_url,info = self.get_post_url(
                 url, get=True,
                 data_dict={'revision':revision})
-        except InvalidURL, e:
+        except libbe.util.http.HTTPError, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
             elif default == base.InvalidObject:
@@ -255,7 +178,7 @@ class HTTP (base.VersionedStorage):
             page,final_url,info = self.get_post_url(
                 url, get=False,
                 data_dict={'value':value})
-        except InvalidURL, e:
+        except libbe.util.http.HTTPError, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
             if e.error.code == HTTP_USER_ERROR \
@@ -271,7 +194,7 @@ class HTTP (base.VersionedStorage):
                 url, get=False,
                 data_dict={'summary':summary, 'body':body,
                            'allow_empty':allow_empty})
-        except InvalidURL, e:
+        except libbe.util.http.HTTPError, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
             if e.error.code == HTTP_USER_ERROR:
@@ -305,7 +228,7 @@ class HTTP (base.VersionedStorage):
             page,final_url,info = self.get_post_url(
                 url, get=True,
                 data_dict={'index':index})
-        except InvalidURL, e:
+        except libbe.util.http.HTTPError, e:
             if not (hasattr(e.error, 'code') and e.error.code in HTTP_VALID):
                 raise
             if e.error.code == HTTP_USER_ERROR:
@@ -335,22 +258,6 @@ class HTTP (base.VersionedStorage):
         return page.rstrip('\n')
 
 if TESTING == True:
-    class GetPostUrlTestCase (unittest.TestCase):
-        """Test cases for get_post_url()"""
-        def test_get(self):
-            url = 'http://bugseverywhere.org/'
-            page,final_url,info = get_post_url(url=url)
-            self.failUnless(final_url == url,
-                'Redirect?\n  Expected: "%s"\n  Got:      "%s"'
-                % (url, final_url))
-        def test_get_redirect(self):
-            url = 'http://physics.drexel.edu/~wking/code/be/redirect'
-            expected = 'http://physics.drexel.edu/~wking/'
-            page,final_url,info = get_post_url(url=url)
-            self.failUnless(final_url == expected,
-                'Redirect?\n  Expected: "%s"\n  Got:      "%s"'
-                % (expected, final_url))
-
     class TestingHTTP (HTTP):
         name = 'TestingHTTP'
         def __init__(self, repo, *args, **kwargs):
@@ -420,7 +327,8 @@ if TESTING == True:
                     def __str__(self):
                         return self.string
                 error = __estr(self.status)
-                raise InvalidURL(error=error, url=url, msg=output)
+                raise libbe.util.http.HTTPError(
+                    error=error, url=url, msg=output)
             info = dict(self.response_headers)
             return (output, url, info)
         def _init(self):

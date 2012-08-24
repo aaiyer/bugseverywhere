@@ -29,10 +29,10 @@ import libbe.bugdir
 import libbe.command
 import libbe.command.util
 import libbe.storage
-import libbe.storage.http
 import libbe.version
 import libbe.ui.util.pager
 import libbe.util.encoding
+import libbe.util.http
 
 
 if libbe.TESTING == True:
@@ -310,8 +310,8 @@ def dispatch(ui, command, args):
     except libbe.storage.ConnectionError, e:
         print >> ui.io.stdout, 'Connection Error:\n', e
         return 1
-    except libbe.storage.http.InvalidURL, e:
-        print >> ui.io.stdout, 'Invalid URL:\n', e
+    except libbe.util.http.HTTPError, e:
+        print >> ui.io.stdout, 'HTTP Error:\n', e
         return 1
     except (libbe.util.id.MultipleIDMatches, libbe.util.id.NoIDMatches,
             libbe.util.id.InvalidIDStructure), e:
