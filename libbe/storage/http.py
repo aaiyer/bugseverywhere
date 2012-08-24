@@ -79,7 +79,7 @@ class InvalidURL (Exception):
             return self.error.__str__()
         return self.msg
 
-def get_post_url(url, get=True, data_dict=None, headers=[]):
+def get_post_url(url, get=True, data_dict=None, headers=[], agent=None):
     """Execute a GET or POST transaction.
 
     Parameters
@@ -95,6 +95,8 @@ def get_post_url(url, get=True, data_dict=None, headers=[]):
     """
     if data_dict == None:
         data_dict = {}
+    if agent is None:
+        agent = USER_AGENT
     if get == True:
         if data_dict != {}:
             # encode get parameters in the url
@@ -104,7 +106,7 @@ def get_post_url(url, get=True, data_dict=None, headers=[]):
     else:
         data = urllib.urlencode(data_dict)
     headers = dict(headers)
-    headers['User-Agent'] = USER_AGENT
+    headers['User-Agent'] = agent
     req = urllib2.Request(url, data=data, headers=headers)
     try:
         response = urllib2.urlopen(req)
