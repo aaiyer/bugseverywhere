@@ -49,7 +49,8 @@ class HTTPError (Exception):
         return self.msg
 
 
-def get_post_url(url, get=True, data_dict=None, headers=[], agent=None):
+def get_post_url(url, get=True, data=None, data_dict=None, headers=[],
+                 agent=None):
     """Execute a GET or POST transaction.
 
     Parameters
@@ -58,25 +59,31 @@ def get_post_url(url, get=True, data_dict=None, headers=[], agent=None):
       The base URL (query portion added internally, if necessary).
     get : bool
       Use GET if True, otherwise use POST.
+    data : str
+      Raw data to send by POST (requires POST).
     data_dict : dict
       Data to send, either by URL query (if GET) or by POST (if POST).
+      Cannot be given in combination with `data`.
     headers : list
       Extra HTTP headers to add to the request.
     agent : str
       User agent string overriding the BE default.
     """
-    if data_dict is None:
-        data_dict = {}
     if agent is None:
         agent = USER_AGENT
-    if get is True:
-        if data_dict != {}:
-            # encode get parameters in the url
-            param_string = urllib.urlencode(data_dict)
-            url = '{}?{}'.format(url, param_string)
-        data = None
+    if data is None:
+        if data_dict is None:
+            data_dict = {}
+        if get is True:
+            if data_dict != {}:
+                # encode get parameters in the url
+                param_string = urllib.urlencode(data_dict)
+                url = '{}?{}'.format(url, param_string)
+        else:
+            data = urllib.urlencode(data_dict)
     else:
-        data = urllib.urlencode(data_dict)
+        assert get is False, (data, get)
+        assert data_dict is None, (data, data_dict)
     headers = dict(headers)
     headers['User-Agent'] = agent
     req = urllib2.Request(url, data=data, headers=headers)
