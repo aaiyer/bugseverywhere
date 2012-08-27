@@ -2,5 +2,6 @@
 build
 doc/man/*.1
 doc/.build/
+doc/libbe/
 .be/id-cache
 libbe/_version.py
