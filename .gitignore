@@ -1,5 +1,6 @@
 *.pyc
 build
+dist
 doc/man/*.1
 doc/.build/
 doc/libbe/
