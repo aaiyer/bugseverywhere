@@ -45,6 +45,7 @@ if TESTING == True:
 
     import libbe.bugdir
     import libbe.command.serve
+    import libbe.util.http
 
 
 class HTTP (base.VersionedStorage):
@@ -91,7 +92,8 @@ class HTTP (base.VersionedStorage):
             headers.append(('Authorization','Basic %s' % \
                 ('%s:%s' % (self.uname, self.password)).encode('base64')))
         return libbe.util.http.get_post_url(
-            url, get, data_dict, headers, agent=self.user_agent)
+            url, get, data_dict=data_dict, headers=headers,
+            agent=self.user_agent)
 
     def storage_version(self, revision=None):
         """Return the storage format for this backend."""
@@ -303,7 +305,11 @@ if TESTING == True:
                     env['QUERY_STRING'] = enc_data
             for key,value in environ.items():
                 env[key] = value
-            return ''.join(app(env, self.start_response))
+            try:
+                result = app(env, self.start_response)
+            except libbe.util.wsgi.HandlerError as e:
+                raise libbe.util.http.HTTPError(error=e, url=path, msg=str(e))
+            return ''.join(result)
         def start_response(self, status, response_headers, exc_info=None):
             self.status = status
             self.response_headers = response_headers
