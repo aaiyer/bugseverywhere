@@ -75,7 +75,9 @@ def modnames(prefix):
     else:
         modfiles = os.listdir(os.path.join(_PLUGIN_PATH, *components))
     # normalize .py/.pyc extensions and sort
-    modfiles = sorted(set(os.path.splitext(f)[0] + '.py' for f in modfiles))
+    base_ext = [os.path.splitext(f) for f in modfiles]
+    modfiles = sorted(set(
+            base + '.py' for base,ext in base_ext if ext in ['.py', '.pyc']))
     for modfile in modfiles:
         if modfile.startswith('.') or not modfile:
             continue # the occasional emacs temporary file or .* file
