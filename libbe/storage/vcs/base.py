@@ -219,7 +219,8 @@ class CachedPathID (object):
         else:
             self._cache = cache
         spaced_root = os.path.join(self._root, self._spacer_dirs[0])
-        for dirpath, dirnames, filenames in os.walk(spaced_root):
+        for dirpath, dirnames, filenames in os.walk(spaced_root,
+                                                    followlinks=True):
             if dirpath == spaced_root:
                 continue
             try:
