@@ -38,6 +38,8 @@ except ImportError:
 import libbe.util.encoding
 import libbe.command
 import libbe.command.base
+import libbe.storage
+
 
 if libbe.TESTING == True:
     import copy
@@ -262,6 +264,25 @@ class ExceptionApp (WSGI_Middleware):
                 traceback.format_exception(etype, value, tb, None))
             self.logger.log(self.log_level, trace)
             raise
+
+
+class BEExceptionApp (WSGI_Middleware):
+    """Translate BE-specific exceptions
+    """
+    def __init__(self, *args, **kwargs):
+        super(BEExceptionApp, self).__init__(*args, **kwargs)
+        self.http_user_error = 418
+
+    def _call(self, environ, start_response):
+        try:
+            return self.app(environ, start_response)
+        except libbe.storage.NotReadable as e:
+            raise libbe.util.wsgi.HandlerError(403, 'Read permission denied')
+        except libbe.storage.NotWriteable as e:
+            raise libbe.util.wsgi.HandlerError(403, 'Write permission denied')
+        except libbe.storage.InvalidID as e:
+            raise libbe.util.wsgi.HandlerError(
+                self.http_user_error, 'InvalidID {}'.format(e))
 
 
 class UppercaseHeaderApp (WSGI_Middleware):
@@ -597,6 +618,7 @@ class ServerCommand (libbe.command.base.Command):
             'socket-name':params['host'],
             'port':params['port'],
             }
+        app = BEExceptionApp(app, logger=self.logger)
         app = ExceptionApp(app, logger=self.logger)
         if params['ssl'] == True:
             details['protocol'] = 'HTTPS'

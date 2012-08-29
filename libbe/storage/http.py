@@ -46,6 +46,7 @@ if TESTING == True:
     import libbe.bugdir
     import libbe.command.serve
     import libbe.util.http
+    import libbe.util.wsgi
 
 
 class HTTP (base.VersionedStorage):
@@ -264,8 +265,9 @@ if TESTING == True:
         name = 'TestingHTTP'
         def __init__(self, repo, *args, **kwargs):
             self._storage_backend = base.VersionedStorage(repo)
-            self.app = libbe.command.serve.ServerApp(
+            app = libbe.command.serve.ServerApp(
                 storage=self._storage_backend)
+            self.app = libbe.util.wsgi.BEExceptionApp(app=app)
             HTTP.__init__(self, repo='http://localhost:8000/', *args, **kwargs)
             self.intitialized = False
             # duplicated from libbe.command.serve.WSGITestCase

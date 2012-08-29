@@ -50,16 +50,6 @@ if libbe.TESTING:
     import libbe.util.wsgi
 
 
-#        return callback(environ, start_response)
-#    except libbe.storage.NotReadable, e:
-#        raise libbe.util.wsgi.HandlerError(403, 'Read permission denied')
-#    except libbe.storage.NotWriteable, e:
-#        raise libbe.util.wsgi.HandlerError(403, 'Write permission denied')
-#    except libbe.storage.InvalidID, e:
-#        raise libbe.util.wsgi.HandlerError(
-#            self.http_user_error, 'InvalidID %s' % e)
-
-
 class ServerApp (libbe.util.wsgi.WSGI_AppObject,
                  libbe.util.wsgi.WSGI_DataObject):
     """WSGI server for a BE Storage instance over HTTP.
