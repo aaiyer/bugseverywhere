@@ -476,7 +476,7 @@ class Bug (settings_object.SavedSettingsObject):
             bug = ElementTree.XML(xml_string)
         if bug.tag != 'bug':
             raise utility.InvalidXML( \
-                'bug', bug, 'root element must be <comment>')
+                'bug', bug, 'root element must be <bug>')
         tags=['uuid','short-name','severity','status','assigned',
               'reporter', 'creator','created','summary','extra-string']
         self.explicit_attrs = []
