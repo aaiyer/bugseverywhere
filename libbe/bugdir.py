@@ -28,6 +28,12 @@ import errno
 import os
 import os.path
 import time
+import types
+try: # import core module, Python >= 2.5
+    from xml.etree import ElementTree
+except ImportError: # look for non-core module
+    from elementtree import ElementTree
+import xml.sax.saxutils
 
 import libbe
 import libbe.storage as storage
@@ -250,10 +256,13 @@ class BugDir (list, settings_object.SavedSettingsObject):
         bg = bug.Bug(bugdir=self, uuid=_uuid, summary=summary,
                      from_storage=False)
         self.append(bg)
-        self._bug_map_gen()
-        if hasattr(self, '_uuids_cache') and not bg.uuid in self._uuids_cache:
-            self._uuids_cache.add(bg.uuid)
         return bg
+
+    def append(self, bug):
+        super(BugDir, self).append(bug)
+        self._bug_map_gen()
+        if hasattr(self, '_uuids_cache') and not bug.uuid in self._uuids_cache:
+            self._uuids_cache.add(bug.uuid)
 
     def remove_bug(self, bug):
         if hasattr(self, '_uuids_cache') and bug.uuid in self._uuids_cache:
@@ -277,6 +286,224 @@ class BugDir (list, settings_object.SavedSettingsObject):
             if bug_uuid not in self._bug_map:
                 return False
         return True
+
+    def xml(self, indent=0, show_bugs=False, show_comments=False):
+        """
+        >>> bug.load_severities(bug.severity_def)
+        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        >>> bugdirA = SimpleBugDir(memory=True)
+        >>> bugdirA.severities
+        >>> bugdirA.severities = (('minor', 'The standard bug level.'),)
+        >>> bugdirA.inactive_status = (
+        ...     ('closed', 'The bug is no longer relevant.'),)
+        >>> bugA = bugdirA.bug_from_uuid('a')
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'commA'
+        >>> commA.date = 'Thu, 01 Jan 1970 00:03:00 +0000'
+        >>> print(bugdirA.xml(show_bugs=True, show_comments=True))
+        ... # doctest: +REPORT_UDIFF
+        <bugdir>
+          <uuid>abc123</uuid>
+          <short-name>abc</short-name>
+          <severities>
+            <entry>
+              <key>minor</key>
+              <value>The standard bug level.</value>
+            </entry>
+          </severities>
+          <inactive-status>
+            <entry>
+              <key>closed</key>
+              <value>The bug is no longer relevant.</value>
+            </entry>
+          </inactive-status>
+          <bug>
+            <uuid>a</uuid>
+            <short-name>abc/a</short-name>
+            <severity>minor</severity>
+            <status>open</status>
+            <creator>John Doe &lt;jdoe@example.com&gt;</creator>
+            <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+            <summary>Bug A</summary>
+            <comment>
+              <uuid>commA</uuid>
+              <short-name>abc/a/com</short-name>
+              <author></author>
+              <date>Thu, 01 Jan 1970 00:03:00 +0000</date>
+              <content-type>text/plain</content-type>
+              <body>comment A</body>
+            </comment>
+          </bug>
+          <bug>
+            <uuid>b</uuid>
+            <short-name>abc/b</short-name>
+            <severity>minor</severity>
+            <status>closed</status>
+            <creator>Jane Doe &lt;jdoe@example.com&gt;</creator>
+            <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+            <summary>Bug B</summary>
+          </bug>
+        </bugdir>
+        >>> bug.load_severities(bug.severity_def)
+        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        """
+        info = [('uuid', self.uuid),
+                ('short-name', self.id.user()),
+                ('target', self.target),
+                ('severities', self.severities),
+                ('active-status', self.active_status),
+                ('inactive-status', self.inactive_status),
+                ]
+        lines = ['<bugdir>']
+        for (k,v) in info:
+            if v is not None:
+                if k in ['severities', 'active-status', 'inactive-status']:
+                    lines.append('  <{}>'.format(k))
+                    for vk,vv in v:
+                        lines.extend([
+                                '    <entry>',
+                                '      <key>{}</key>'.format(
+                                    xml.sax.saxutils.escape(vk)),
+                                '      <value>{}</value>'.format(
+                                    xml.sax.saxutils.escape(vv)),
+                                '    </entry>',
+                                ])
+                    lines.append('  </{}>'.format(k))
+                else:
+                    v = xml.sax.saxutils.escape(v)
+                    lines.append('  <{0}>{1}</{0}>'.format(k, v))
+        for estr in self.extra_strings:
+            lines.append('  <extra-string>{}</extra-string>'.format(estr))
+        if show_bugs:
+            for bug in self:
+                bug_xml = bug.xml(indent=indent+2, show_comments=show_comments)
+                if bug_xml:
+                    bug_xml = bug_xml[indent:]  # strip leading indent spaces
+                    lines.append(bug_xml)
+        lines.append('</bugdir>')
+        istring = ' '*indent
+        sep = '\n' + istring
+        return istring + sep.join(lines).rstrip('\n')
+
+    def from_xml(self, xml_string, preserve_uuids=False, verbose=True):
+        """
+        Note: If a bugdir uuid is given, set .alt_id to it's value.
+        >>> bug.load_severities(bug.severity_def)
+        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        >>> bugdirA = SimpleBugDir(memory=True)
+        >>> bugdirA.severities = (('minor', 'The standard bug level.'),)
+        >>> bugdirA.inactive_status = (
+        ...     ('closed', 'The bug is no longer relevant.'),)
+        >>> bugA = bugdirA.bug_from_uuid('a')
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'commA'
+        >>> xml = bugdirA.xml(show_bugs=True, show_comments=True)
+        >>> bugdirB = BugDir(storage=None)
+        >>> bugdirB.from_xml(xml)
+        >>> bugdirB.xml(show_bugs=True, show_comments=True) == xml
+        False
+        >>> bugdirB.uuid = bugdirB.alt_id
+        >>> for bug_ in bugdirB:
+        ...     bug_.uuid = bug_.alt_id
+        ...     bug_.alt_id = None
+        ...     for comm in bug_.comments():
+        ...         comm.uuid = comm.alt_id
+        ...         comm.alt_id = None
+        >>> bugdirB.xml(show_bugs=True, show_comments=True) == xml
+        True
+        >>> bugdirB.explicit_attrs  # doctest: +NORMALIZE_WHITESPACE
+        ['severities', 'inactive_status']
+        >>> bugdirC = BugDir(storage=None)
+        >>> bugdirC.from_xml(xml, preserve_uuids=True)
+        >>> bugdirC.uuid == bugdirA.uuid
+        True
+        >>> bugdirC.xml(show_bugs=True, show_comments=True) == xml
+        True
+        >>> bug.load_severities(bug.severity_def)
+        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        """
+        if type(xml_string) == types.UnicodeType:
+            xml_string = xml_string.strip().encode('unicode_escape')
+        if hasattr(xml_string, 'getchildren'): # already an ElementTree Element
+            bugdir = xml_string
+        else:
+            bugdir = ElementTree.XML(xml_string)
+        if bugdir.tag != 'bugdir':
+            raise utility.InvalidXML(
+                'bugdir', bugdir, 'root element must be <bugdir>')
+        tags = ['uuid', 'short-name', 'target', 'severities', 'active-status',
+                'inactive-status', 'extra-string']
+        self.explicit_attrs = []
+        uuid = None
+        estrs = []
+        for child in bugdir.getchildren():
+            if child.tag == 'short-name':
+                pass
+            elif child.tag == 'bug':
+                bg = bug.Bug(bugdir=self)
+                bg.from_xml(
+                    child, preserve_uuids=preserve_uuids, verbose=verbose)
+                self.append(bg)
+                continue
+            elif child.tag in tags:
+                if child.text == None or len(child.text) == 0:
+                    text = settings_object.EMPTY
+                elif child.tag in ['severities', 'active-status',
+                                   'inactive-status']:
+                    entries = []
+                    for entry in child.getchildren():
+                        if entry.tag != 'entry':
+                            raise utility.InvalidXML(
+                                '{} child element {} must be <entry>'.format(
+                                    child.tag, entry))
+                        key = value = None
+                        for kv in entry.getchildren():
+                            if kv.tag == 'key':
+                                if key is not None:
+                                    raise utility.InvalidXML(
+                                        ('duplicate keys ({} and {}) in {}'
+                                         ).format(key, kv.text, child.tag))
+                                key = xml.sax.saxutils.unescape(kv.text)
+                            elif kv.tag == 'value':
+                                if value is not None:
+                                    raise utility.InvalidXML(
+                                        ('duplicate values ({} and {}) in {}'
+                                         ).format(
+                                            value, kv.text, child.tag))
+                                value = xml.sax.saxutils.unescape(kv.text)
+                            else:
+                                raise utility.InvalidXML(
+                                    ('{} child element {} must be <key> or '
+                                     '<value>').format(child.tag, kv))
+                        if key is None:
+                            raise utility.InvalidXML(
+                                'no key for {}'.format(child.tag))
+                        if value is None:
+                            raise utility.InvalidXML(
+                                'no key for {}'.format(child.tag))
+                        entries.append((key, value))
+                    text = entries
+                else:
+                    text = xml.sax.saxutils.unescape(child.text)
+                    if not isinstance(text, unicode):
+                        text = text.decode('unicode_escape')
+                    text = text.strip()
+                if child.tag == 'uuid' and not preserve_uuids:
+                    uuid = text
+                    continue # don't set the bug's uuid tag.
+                elif child.tag == 'extra-string':
+                    estrs.append(text)
+                    continue # don't set the bug's extra_string yet.
+                attr_name = child.tag.replace('-','_')
+                self.explicit_attrs.append(attr_name)
+                setattr(self, attr_name, text)
+            elif verbose == True:
+                sys.stderr.write('Ignoring unknown tag {} in {}\n'.format(
+                        child.tag, bugdir.tag))
+        if uuid != self.uuid:
+            if not hasattr(self, 'alt_id') or self.alt_id == None:
+                self.alt_id = uuid
+        self.extra_strings = estrs
 
     # methods for id generation
 
