@@ -255,14 +255,16 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def new_bug(self, summary=None, _uuid=None):
         bg = bug.Bug(bugdir=self, uuid=_uuid, summary=summary,
                      from_storage=False)
-        self.append(bg)
+        self.append(bg, update=True)
         return bg
 
-    def append(self, bug):
+    def append(self, bug, update=False):
         super(BugDir, self).append(bug)
-        self._bug_map_gen()
-        if hasattr(self, '_uuids_cache') and not bug.uuid in self._uuids_cache:
-            self._uuids_cache.add(bug.uuid)
+        if update:
+            self._bug_map_gen()
+            if (hasattr(self, '_uuids_cache') and
+                not bug.uuid in self._uuids_cache):
+                self._uuids_cache.add(bug.uuid)
 
     def remove_bug(self, bug):
         if hasattr(self, '_uuids_cache') and bug.uuid in self._uuids_cache:
@@ -443,7 +445,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                 bg = bug.Bug(bugdir=self)
                 bg.from_xml(
                     child, preserve_uuids=preserve_uuids, verbose=verbose)
-                self.append(bg)
+                self.append(bg, update=True)
                 continue
             elif child.tag in tags:
                 if child.text == None or len(child.text) == 0:
