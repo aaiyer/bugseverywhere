@@ -332,8 +332,7 @@ class Bug (settings_object.SavedSettingsObject):
         >>> commC = commB.new_reply(body='comment C')
         >>> commC.uuid = 'commC'
         >>> commC.date = 'Thu, 01 Jan 1970 00:03:00 +0000'
-        >>> xml = bugA.xml(show_comments=True)
-        >>> print(xml)  # doctest: +REPORT_UDIFF
+        >>> print(bugA.xml(show_comments=True))  # doctest: +REPORT_UDIFF
         <bug>
           <uuid>bugA</uuid>
           <short-name>/bug</short-name>
@@ -370,6 +369,44 @@ class Bug (settings_object.SavedSettingsObject):
             <body>comment C</body>
           </comment>
         </bug>
+        >>> print(bugA.xml(show_comments=True, indent=2))
+        ... # doctest: +REPORT_UDIFF
+          <bug>
+            <uuid>bugA</uuid>
+            <short-name>/bug</short-name>
+            <severity>minor</severity>
+            <status>open</status>
+            <creator>Frank</creator>
+            <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+            <summary>Need to test Bug.xml()</summary>
+            <extra-string>TAG: very helpful</extra-string>
+            <comment>
+              <uuid>commA</uuid>
+              <short-name>/bug/commA</short-name>
+              <author></author>
+              <date>Thu, 01 Jan 1970 00:01:00 +0000</date>
+              <content-type>text/plain</content-type>
+              <body>comment A</body>
+            </comment>
+            <comment>
+              <uuid>commB</uuid>
+              <short-name>/bug/commB</short-name>
+              <in-reply-to>commA</in-reply-to>
+              <author></author>
+              <date>Thu, 01 Jan 1970 00:02:00 +0000</date>
+              <content-type>text/plain</content-type>
+              <body>comment B</body>
+            </comment>
+            <comment>
+              <uuid>commC</uuid>
+              <short-name>/bug/commC</short-name>
+              <in-reply-to>commB</in-reply-to>
+              <author></author>
+              <date>Thu, 01 Jan 1970 00:03:00 +0000</date>
+              <content-type>text/plain</content-type>
+              <body>comment C</body>
+            </comment>
+          </bug>
         """
         if self.time == None:
             timestring = ""
@@ -393,7 +430,8 @@ class Bug (settings_object.SavedSettingsObject):
             lines.append('  <extra-string>%s</extra-string>' % estr)
         if show_comments == True:
             comout = self.comment_root.xml_thread(indent=indent+2)
-            if len(comout) > 0:
+            if comout:
+                comout = comout[indent:]  # strip leading indent spaces
                 lines.append(comout)
         lines.append('</bug>')
         istring = ' '*indent
