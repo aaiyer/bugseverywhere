@@ -700,20 +700,21 @@ class Bug (settings_object.SavedSettingsObject):
           </comment>
         </bug>
         """
-        for attr in other.explicit_attrs:
-            old = getattr(self, attr)
-            new = getattr(other, attr)
-            if old != new:
-                if accept_changes == True:
-                    setattr(self, attr, new)
-                elif change_exception == True:
-                    raise ValueError, \
-                        'Merge would change %s "%s"->"%s" for bug %s' \
-                        % (attr, old, new, self.uuid)
+        if hasattr(other, 'explicit_attrs'):
+            for attr in other.explicit_attrs:
+                old = getattr(self, attr)
+                new = getattr(other, attr)
+                if old != new:
+                    if accept_changes:
+                        setattr(self, attr, new)
+                    elif change_exception:
+                        raise ValueError(
+                            ('Merge would change {} "{}"->"{}" for bug {}'
+                             ).format(attr, old, new, self.uuid))
         for estr in other.extra_strings:
             if not estr in self.extra_strings:
                 if accept_extra_strings == True:
-                    self.extra_strings.append(estr)
+                    self.extra_strings += [estr]
                 elif change_exception == True:
                     raise ValueError, \
                         'Merge would add extra string "%s" for bug %s' \

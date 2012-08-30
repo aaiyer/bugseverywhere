@@ -57,6 +57,15 @@ class Set (libbe.command.Command):
 
     def __init__(self, *args, **kwargs):
         libbe.command.Command.__init__(self, *args, **kwargs)
+        self.options.extend([
+                libbe.command.Option(name='bugdir', short_name='b',
+                    help='Short bugdir UUID to act on.  You '
+                    'only need to set this if you have multiple bugdirs in '
+                    'your repository.',
+                    arg=libbe.command.Argument(
+                        name='bugdir', metavar='ID', default=None,
+                        completion_callback=libbe.command.util.complete_bugdir_id)),
+                ])
         self.args.extend([
                 libbe.command.Argument(
                     name='setting', metavar='SETTING', optional=True,
@@ -66,7 +75,14 @@ class Set (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
+        if params['bugdir']:
+            bugdir = bugdirs[bugdir]
+        elif len(bugdirs) == 1:
+            bugdir = bugdirs.values()[0]
+        else:
+            raise libbe.command.UserError(
+                'Ambiguous bugdir {}'.format(sorted(bugdirs.values())))
         if params['setting'] == None:
             keys = bugdir.settings_properties
             keys.sort()

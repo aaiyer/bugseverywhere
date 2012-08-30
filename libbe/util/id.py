@@ -414,11 +414,11 @@ def long_to_short_user(bugdirs, id):
     long_to_short_text : conversion on a block of text
     """
     ids = _split(id, check_length=True)
-    matching_bugdirs = [bd for bd in bugdirs if bd.uuid == ids[0]]
+    matching_bugdirs = [bd for bd in bugdirs.values() if bd.uuid == ids[0]]
     if len(matching_bugdirs) == 0:
-        raise NoIDMatches(id, [bd.uuid for bd in bugdirs])
+        raise NoIDMatches(id, [bd.uuid for bd in bugdirs.values()])
     elif len(matching_bugdirs) > 1:
-        raise MultipleIDMatches(id, '', [bd.uuid for bd in bugdirs])
+        raise MultipleIDMatches(id, '', [bd.uuid for bd in bugdirs.values()])
     bugdir = matching_bugdirs[0]
     objects = [bugdir]
     if len(ids) >= 2:
@@ -443,10 +443,10 @@ def short_to_long_user(bugdirs, id):
     """
     ids = _split(id, check_length=True)
     ids[0] = _expand(ids[0], common=None,
-                     other_ids=[bd.uuid for bd in bugdirs])
+                     other_ids=[bd.uuid for bd in bugdirs.values()])
     if len(ids) == 1:
         return _assemble(ids)
-    bugdir = [bd for bd in bugdirs if bd.uuid == ids[0]][0]
+    bugdir = [bd for bd in bugdirs.values() if bd.uuid == ids[0]][0]
     ids[1] = _expand(ids[1], common=bugdir.id.user(),
                      other_ids=bugdir.uuids())
     if len(ids) == 2:
@@ -584,7 +584,7 @@ def _parse_user(id):
         ret[type] = arg
     return ret
 
-def parse_user(bugdir, id):
+def parse_user(bugdirs, id):
     """Parse a user ID (see :class:`ID`), returning a dict of parsed
     information.
 
@@ -596,7 +596,7 @@ def parse_user(bugdir, id):
     This function tries to expand IDs before parsing, so it can handle
     both short and long IDs successfully.
     """
-    long_id = short_to_long_user([bugdir], id)
+    long_id = short_to_long_user(bugdirs, id)
     return _parse_user(long_id)
 
 if libbe.TESTING == True:
@@ -659,6 +659,7 @@ if libbe.TESTING == True:
     class ShortLongParseTestCase(unittest.TestCase):
         def setUp(self):
             self.bugdir = DummyObject('1234abcd')
+            self.bugdirs = {self.bugdir.uuid: self.bugdir}
             self.bug = DummyObject('abcdef', self.bugdir, ['a1234', 'ab9876'])
             self.comment = DummyObject('12345678', self.bug, ['1234abcd', '1234cdef'])
             self.bd_id = self.bugdir.id
@@ -689,20 +690,25 @@ if libbe.TESTING == True:
                         None, '123/abc', ['1234abcd','1234cdef','12345678'])),
                 ]
         def test_short_to_long_text(self):
-            self.failUnless(short_to_long_text([self.bugdir], self.short) == self.long,
-                            '\n' + self.short + '\n' + short_to_long_text([self.bugdir], self.short) + '\n' + self.long)
+            self.failUnless(short_to_long_text(
+                    self.bugdirs, self.short) == self.long,
+                            '\n' + self.short + '\n' + short_to_long_text(
+                    self.bugdirs, self.short) + '\n' + self.long)
         def test_long_to_short_text(self):
-            self.failUnless(long_to_short_text([self.bugdir], self.long) == self.short,
-                            '\n' + long_to_short_text([self.bugdir], self.long) + '\n' + self.short)
+            self.failUnless(long_to_short_text(
+                    self.bugdirs, self.long) == self.short,
+                            '\n' + long_to_short_text(
+                    self.bugdirs, self.long
+                    ) + '\n' + self.short)
         def test_parse_user(self):
             for short_id,parsed in self.short_id_parse_pairs:
-                ret = parse_user(self.bugdir, short_id)
+                ret = parse_user(self.bugdirs, short_id)
                 self.failUnless(ret == parsed,
                                 'got %s\nexpected %s' % (ret, parsed))
         def test_parse_user_exceptions(self):
             for short_id,exception in self.short_id_exception_pairs:
                 try:
-                    ret = parse_user(self.bugdir, short_id)
+                    ret = parse_user(self.bugdirs, short_id)
                     self.fail('Expected parse_user(bugdir, "%s") to raise %s,'
                               '\n  but it returned %s'
                               % (short_id, exception.__class__.__name__, ret))

@@ -20,6 +20,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
 import os
 import re
 
@@ -125,15 +126,18 @@ class List (libbe.command.Command):
 #                ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
-        writeable = bugdir.storage.writeable
-        bugdir.storage.writeable = False
+        storage = self._get_storage()
+        bugdirs = self._get_bugdirs()
+        writeable = storage.writeable
+        storage.writeable = False
         cmp_list, status, severity, assigned, extra_strings_regexps = \
-            self._parse_params(bugdir, params)
+            self._parse_params(bugdirs, params)
         filter = Filter(status, severity, assigned,
                         extra_strings_regexps=extra_strings_regexps)
-        bugs = [bugdir.bug_from_uuid(uuid) for uuid in bugdir.uuids()]
-        bugs = [b for b in bugs if filter(bugdir, b) == True]
+        bugs = list(itertools.chain(*list(
+                    [bugdir.bug_from_uuid(uuid) for uuid in bugdir.uuids()]
+                    for bugdir in bugdirs.values())))
+        bugs = [b for b in bugs if filter(bugdirs, b) == True]
         self.result = bugs
         if len(bugs) == 0 and params['xml'] == False:
             print >> self.stdout, 'No matching bugs found'
@@ -147,10 +151,10 @@ class List (libbe.command.Command):
                 print >> self.stdout, bug.id.user()
         else:
             self._list_bugs(bugs, show_tags=params['tags'], xml=params['xml'])
-        bugdir.storage.writeable = writeable
+        storage.writeable = writeable
         return 0
 
-    def _parse_params(self, bugdir, params):
+    def _parse_params(self, bugdirs, params):
         cmp_list = []
         if params['sort'] != None:
             for cmp in params['sort'].split(','):
@@ -170,7 +174,7 @@ class List (libbe.command.Command):
                 assigned = 'all'
         else:
             assigned = libbe.command.util.select_values(
-                params['assigned'], libbe.command.util.assignees(bugdir))
+                params['assigned'], libbe.command.util.assignees(bugdirs))
         for i in range(len(assigned)):
             if assigned[i] == '-':
                 assigned[i] = params['user-id']

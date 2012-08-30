@@ -220,6 +220,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
                          directory=False)
         self.save_settings()
         for bug in self:
+            bug.bugdir = self
+            bug.storage = self.storage
             bug.save()
 
     # methods for managing bugs
@@ -261,6 +263,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def append(self, bug, update=False):
         super(BugDir, self).append(bug)
         if update:
+            bug.bugdir = self
+            bug.storage = self.storage
             self._bug_map_gen()
             if (hasattr(self, '_uuids_cache') and
                 not bug.uuid in self._uuids_cache):
@@ -292,7 +296,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
     def xml(self, indent=0, show_bugs=False, show_comments=False):
         """
         >>> bug.load_severities(bug.severity_def)
-        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        >>> bug.load_status(
+        ...     active_status_def=bug.active_status_def,
+        ...     inactive_status_def=bug.inactive_status_def)
         >>> bugdirA = SimpleBugDir(memory=True)
         >>> bugdirA.severities
         >>> bugdirA.severities = (('minor', 'The standard bug level.'),)
@@ -347,7 +353,10 @@ class BugDir (list, settings_object.SavedSettingsObject):
           </bug>
         </bugdir>
         >>> bug.load_severities(bug.severity_def)
-        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        >>> bug.load_status(
+        ...     active_status_def=bug.active_status_def,
+        ...     inactive_status_def=bug.inactive_status_def)
+        >>> bugdirA.cleanup()
         """
         info = [('uuid', self.uuid),
                 ('short-name', self.id.user()),
@@ -391,7 +400,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
         """
         Note: If a bugdir uuid is given, set .alt_id to it's value.
         >>> bug.load_severities(bug.severity_def)
-        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        >>> bug.load_status(
+        ...     active_status_def=bug.active_status_def,
+        ...     inactive_status_def=bug.inactive_status_def)
         >>> bugdirA = SimpleBugDir(memory=True)
         >>> bugdirA.severities = (('minor', 'The standard bug level.'),)
         >>> bugdirA.inactive_status = (
@@ -422,7 +433,10 @@ class BugDir (list, settings_object.SavedSettingsObject):
         >>> bugdirC.xml(show_bugs=True, show_comments=True) == xml
         True
         >>> bug.load_severities(bug.severity_def)
-        >>> bug.load_status(active_status_def=bug.active_status_def, inactive_status_def=bug.inactive_status_def)
+        >>> bug.load_status(
+        ...     active_status_def=bug.active_status_def,
+        ...     inactive_status_def=bug.inactive_status_def)
+        >>> bugdirA.cleanup()
         """
         if type(xml_string) == types.UnicodeType:
             xml_string = xml_string.strip().encode('unicode_escape')
@@ -506,6 +520,151 @@ class BugDir (list, settings_object.SavedSettingsObject):
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
         self.extra_strings = estrs
+
+    def merge(self, other, accept_changes=True,
+              accept_extra_strings=True, accept_bugs=True,
+              accept_comments=True, change_exception=False):
+        """Merge info from other into this bugdir.
+
+        Overrides any attributes in self that are listed in
+        other.explicit_attrs.
+
+        >>> bugdirA = SimpleBugDir()
+        >>> bugdirA.extra_strings += ['TAG: favorite']
+        >>> bugdirB = SimpleBugDir()
+        >>> bugdirB.explicit_attrs = ['target']
+        >>> bugdirB.target = '1234'
+        >>> bugdirB.extra_strings += ['TAG: very helpful']
+        >>> bugdirB.extra_strings += ['TAG: useful']
+        >>> bugA = bugdirB.bug_from_uuid('a')
+        >>> commA = bugA.comment_root.new_reply(body='comment A')
+        >>> commA.uuid = 'uuid-commA'
+        >>> commA.date = 'Thu, 01 Jan 1970 00:01:00 +0000'
+        >>> bugC = bugdirB.new_bug(summary='bug C', _uuid='c')
+        >>> bugC.alt_id = 'alt-c'
+        >>> bugC.time_string = 'Thu, 01 Jan 1970 00:02:00 +0000'
+        >>> bugdirA.merge(
+        ...     bugdirB, accept_changes=False, accept_extra_strings=False,
+        ...     accept_bugs=False, change_exception=False)
+        >>> print(bugdirA.target)
+        None
+        >>> bugdirA.merge(
+        ...     bugdirB, accept_changes=False, accept_extra_strings=False,
+        ...     accept_bugs=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would change target "None"->"1234" for bugdir abc123
+        >>> print(bugdirA.target)
+        None
+        >>> bugdirA.merge(
+        ...     bugdirB, accept_changes=True, accept_extra_strings=False,
+        ...     accept_bugs=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add extra string "TAG: useful" for bugdir abc123
+        >>> print(bugdirA.target)
+        1234
+        >>> print(bugdirA.extra_strings)
+        ['TAG: favorite']
+        >>> bugdirA.merge(
+        ...     bugdirB, accept_changes=True, accept_extra_strings=True,
+        ...     accept_bugs=False, change_exception=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: Merge would add bug c (alt: alt-c) to bugdir abc123
+        >>> print(bugdirA.extra_strings)
+        ['TAG: favorite', 'TAG: useful', 'TAG: very helpful']
+        >>> bugdirA.merge(
+        ...     bugdirB, accept_changes=True, accept_extra_strings=True,
+        ...     accept_bugs=True, change_exception=True)
+        >>> print(bugdirA.xml(show_bugs=True, show_comments=True))
+        ... # doctest: +ELLIPSIS, +REPORT_UDIFF
+        <bugdir>
+          <uuid>abc123</uuid>
+          <short-name>abc</short-name>
+          <target>1234</target>
+          <extra-string>TAG: favorite</extra-string>
+          <extra-string>TAG: useful</extra-string>
+          <extra-string>TAG: very helpful</extra-string>
+          <bug>
+            <uuid>a</uuid>
+            <short-name>abc/a</short-name>
+            <severity>minor</severity>
+            <status>open</status>
+            <creator>John Doe &lt;jdoe@example.com&gt;</creator>
+            <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+            <summary>Bug A</summary>
+            <comment>
+              <uuid>uuid-commA</uuid>
+              <short-name>abc/a/uui</short-name>
+              <author></author>
+              <date>Thu, 01 Jan 1970 00:01:00 +0000</date>
+              <content-type>text/plain</content-type>
+              <body>comment A</body>
+            </comment>
+          </bug>
+          <bug>
+            <uuid>b</uuid>
+            <short-name>abc/b</short-name>
+            <severity>minor</severity>
+            <status>closed</status>
+            <creator>Jane Doe &lt;jdoe@example.com&gt;</creator>
+            <created>Thu, 01 Jan 1970 00:00:00 +0000</created>
+            <summary>Bug B</summary>
+          </bug>
+          <bug>
+            <uuid>c</uuid>
+            <short-name>abc/c</short-name>
+            <severity>minor</severity>
+            <status>open</status>
+            <created>Thu, 01 Jan 1970 00:02:00 +0000</created>
+            <summary>bug C</summary>
+          </bug>
+        </bugdir>
+        >>> bugdirA.cleanup()
+        >>> bugdirB.cleanup()
+        """
+        if hasattr(other, 'explicit_attrs'):
+            for attr in other.explicit_attrs:
+                old = getattr(self, attr)
+                new = getattr(other, attr)
+                if old != new:
+                    if accept_changes:
+                        setattr(self, attr, new)
+                    elif change_exception:
+                        raise ValueError(
+                            ('Merge would change {} "{}"->"{}" for bugdir {}'
+                             ).format(attr, old, new, self.uuid))
+        for estr in other.extra_strings:
+            if not estr in self.extra_strings:
+                if accept_extra_strings:
+                    self.extra_strings += [estr]
+                elif change_exception:
+                    raise ValueError(
+                        ('Merge would add extra string "{}" for bugdir {}'
+                         ).format(estr, self.uuid))
+        for o_bug in other:
+            try:
+                s_bug = self.bug_from_uuid(o_bug.uuid)
+            except KeyError as e:
+                try:
+                    s_bug = self.bug_from_uuid(o_bug.alt_id)
+                except KeyError as e:
+                    s_bug = None
+            if s_bug is None:
+                if accept_bugs:
+                    o_bug_copy = copy.copy(o_bug)
+                    o_bug_copy.bugdir = self
+                    o_bug_copy.id = libbe.util.id.ID(o_bug_copy, 'bug')
+                    self.append(o_bug_copy)
+                elif change_exception:
+                    raise ValueError(
+                        ('Merge would add bug {} (alt: {}) to bugdir {}'
+                         ).format(o_bug.uuid, o_bug.alt_id, self.uuid))
+            else:
+                s_bug.merge(o_bug, accept_changes=accept_changes,
+                            accept_extra_strings=accept_extra_strings,
+                            change_exception=change_exception)
 
     # methods for id generation
 

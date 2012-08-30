@@ -97,7 +97,7 @@ class Init (libbe.command.Command):
         storage.connect()
         self.ui.storage_callbacks.set_storage(storage)
         bd = libbe.bugdir.BugDir(storage, from_storage=False)
-        self.ui.storage_callbacks.set_bugdir(bd)
+        self.ui.storage_callbacks.set_bugdirs({bd.uuid: bd})
         if bd.storage.name is not 'None':
             print >> self.stdout, \
                 'Using %s for revision control.' % storage.name

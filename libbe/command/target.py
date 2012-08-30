@@ -24,6 +24,7 @@ import libbe
 import libbe.command
 import libbe.command.util
 import libbe.command.depend
+import libbe.util.id
 
 
 class Target (libbe.command.Command):
@@ -70,6 +71,13 @@ class Target (libbe.command.Command):
                     help="Print the UUID for the target bug whose summary "
                     "matches TARGET.  If TARGET is not given, print the UUID "
                     "of the current bugdir target."),
+                libbe.command.Option(name='bugdir', short_name='b',
+                    help='Short bugdir UUID for the target resolution.  You '
+                    'only need to set this if you have multiple bugdirs in '
+                    'your repository.',
+                    arg=libbe.command.Argument(
+                        name='bugdir', metavar='ID', default=None,
+                        completion_callback=libbe.command.util.complete_bugdir_id)),
                 ])
         self.args.extend([
                 libbe.command.Argument(
@@ -88,27 +96,35 @@ class Target (libbe.command.Command):
             if params['target'] != None:
                 raise libbe.command.UserError('Too many arguments')
             params['target'] = params.pop('id')
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
         if params['resolve'] == True:
-            bug = bug_from_target_summary(bugdir, params['target'])
+            if params['bugdir']:
+                bugdir = bugdirs[bugdir]
+            elif len(bugdirs) == 1:
+                bugdir = bugdirs.values()[0]
+            else:
+                raise libbe.command.UserError(
+                    'Ambiguous bugdir {}'.format(sorted(bugdirs.values())))
+            bug = bug_from_target_summary(bugdirs, bugdir, params['target'])
             if bug == None:
                 print >> self.stdout, 'No target assigned.'
             else:
                 print >> self.stdout, bug.uuid
             return 0
-        bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-            bugdir, params['id'])
+        bugdir,bug,comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['id']))
         if params['target'] == None:
-            target = bug_target(bugdir, bug)
+            target = bug_target(bugdirs, bug)
             if target == None:
                 print >> self.stdout, 'No target assigned.'
             else:
                 print >> self.stdout, target.summary
         else:
             if params['target'] == 'none':
-                target = remove_target(bugdir, bug)
+                target = remove_target(bugdirs, bug)
             else:
-                target = add_target(bugdir, bug, params['target'])
+                target = add_target(bugdirs, bugdir, bug, params['target'])
         return 0
 
     def usage(self):
@@ -140,7 +156,7 @@ by UUID), try
   $ be set target $(be target --resolve SUMMARY)
 """
 
-def bug_from_target_summary(bugdir, summary=None):
+def bug_from_target_summary(bugdirs, bugdir, summary=None):
     if summary == None:
         if bugdir.target == None:
             return None
@@ -158,11 +174,11 @@ def bug_from_target_summary(bugdir, summary=None):
                         % '\n  '.join([bug.uuid for bug in matched]))
     return matched[0]
 
-def bug_target(bugdir, bug):
+def bug_target(bugdirs, bug):
     if bug.severity == 'target':
         return bug
     matched = []
-    for blocked in libbe.command.depend.get_blocks(bugdir, bug):
+    for blocked in libbe.command.depend.get_blocks(bugdirs, bug):
         if blocked.severity == 'target':
             matched.append(blocked)
     if len(matched) == 0:
@@ -173,38 +189,37 @@ def bug_target(bugdir, bug):
                            '\n  '.join([b.uuid for b in matched])))
     return matched[0]
 
-def remove_target(bugdir, bug):
-    target = bug_target(bugdir, bug)
+def remove_target(bugdirs, bug):
+    target = bug_target(bugdirs, bug)
     libbe.command.depend.remove_block(target, bug)
     return target
 
-def add_target(bugdir, bug, summary):
-    target = bug_from_target_summary(bugdir, summary)
+def add_target(bugdirs, bugdir, bug, summary):
+    target = bug_from_target_summary(bugdirs, bugdir, summary)
     if target == None:
         target = bugdir.new_bug(summary=summary)
         target.severity = 'target'
     libbe.command.depend.add_block(target, bug)
     return target
 
-def targets(bugdir):
+def targets(bugdirs):
     """Generate all possible target bug summaries."""
-    bugdir.load_all_bugs()
-    for bug in bugdir:
-        if bug.severity == 'target':
-            yield bug.summary
+    for bugdir in bugdirs.values():
+        bugdir.load_all_bugs()
+        for bug in bugdir:
+            if bug.severity == 'target':
+                yield bug.summary
 
-def target_dict(bugdir):
+def target_dict(bugdirs):
     """
     Return a dict with bug UUID keys and bug summary values for all
     target bugs.
     """
     ret = {}
-    bugdir.load_all_bugs()
-    for bug in bugdir:
-        if bug.severity == 'target':
-            ret[bug.uuid] = bug.summary
+    for bug in targets(bugdirs):
+        ret[bug.uuid] = bug
     return ret
 
 def complete_target(command, argument, fragment=None):
     """List possible command completions for fragment."""
-    return targets(command._get_bugdir())
+    return targets(command._get_bugdirs())

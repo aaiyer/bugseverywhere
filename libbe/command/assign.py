@@ -76,10 +76,11 @@ class Assign (libbe.command.Command):
 
     def _run(self, **params):
         assigned = parse_assigned(self, params['assigned'])
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
         for bug_id in params['bug-id']:
-            bug,dummy_comment = \
-                libbe.command.util.bug_comment_from_user_id(bugdir, bug_id)
+            bugdir,bug,comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, bug_id))
             if bug.assigned != assigned:
                 bug.assigned = assigned
                 if bug.status == 'open':

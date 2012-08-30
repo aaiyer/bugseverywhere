@@ -41,7 +41,7 @@ class Subscribe (libbe.command.Command):
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
-    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
     >>> cmd = Subscribe(ui=ui)
 
     >>> a = bd.bug_from_uuid('a')
@@ -74,11 +74,15 @@ class Subscribe (libbe.command.Command):
     Subscriptions for abc/a:
     John Doe <j@doe.com>    all    *
     >>> ret = ui.run(cmd, {'unsubscribe':True, 'subscriber':'John Doe <j@doe.com>'}, ['/a'])
-    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>', 'types':'new'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for bug directory:
+    >>> ret = ui.run(cmd,
+    ...     {'subscriber':'Jane Doe <J@doe.com>', 'types':'new'},
+    ...     [bd.uuid[:3]]) # doctest: +NORMALIZE_WHITESPACE
+    Subscriptions for abc:
     Jane Doe <J@doe.com>    new    *
-    >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>'}, ['DIR']) # doctest: +NORMALIZE_WHITESPACE
-    Subscriptions for bug directory:
+    >>> ret = ui.run(cmd,
+    ...     {'subscriber':'Jane Doe <J@doe.com>'},
+    ...     [bd.uuid]) # doctest: +NORMALIZE_WHITESPACE
+    Subscriptions for abc:
     Jane Doe <J@doe.com>    all    *
     >>> ui.cleanup()
     >>> bd.cleanup()
@@ -115,10 +119,11 @@ class Subscribe (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
+        storage = self._get_storage()
+        bugdirs = self._get_bugdirs()
         if params['list-all'] == True or params['list'] == True:
-            writeable = bugdir.storage.writeable
-            bugdir.storage.writeable = False
+            writeable = storage.writeable
+            storage.writeable = False
             if params['list-all'] == True:
                 assert len(params['id']) == 0, params['id']
         subscriber = params['subscriber']
@@ -138,18 +143,19 @@ class Subscribe (libbe.command.Command):
         types = params['types'].split(',')
 
         if len(params['id']) == 0:
-            params['id'] = [libbe.diff.BUGDIR_ID]
+            params['id'] = bugdirs.keys()
         for _id in params['id']:
-            if _id == libbe.diff.BUGDIR_ID: # directory-wide subscriptions
+            p = libbe.util.id.parse_user(bugdirs, _id)
+            if p['type'] == 'bugdir':
                 type_root = libbe.diff.BUGDIR_TYPE_ALL
-                entity = bugdir
-                entity_name = 'bug directory'
+                entity = bugdirs[p['bugdir']]
             else: # bug-specific subscriptions
                 type_root = libbe.diff.BUG_TYPE_ALL
-                bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-                    bugdir, _id)
+                bugdir,bug,comment = (
+                    libbe.command.util.bugdir_bug_comment_from_user_id(
+                        bugdirs, _id))
                 entity = bug
-                entity_name = bug.id.user()
+            entity_name = entity.id.user()
             if params['list-all'] == True:
                 entity_name = 'anything in the bug directory'
             types = [libbe.diff.type_from_name(name, type_root, default=libbe.diff.INVALID_TYPE,
@@ -166,8 +172,11 @@ class Subscribe (libbe.command.Command):
                 entity.extra_strings = estrs # reassign to notice change
 
             if params['list-all'] == True:
-                bugdir.load_all_bugs()
-                subscriptions = get_bugdir_subscribers(bugdir, servers[0])
+                subscriptions = []
+                for bugdir in bugdirs.values():
+                    bugdir.load_all_bugs()
+                    subscriptions.extend(
+                        get_bugdir_subscribers(bugdir, servers[0]))
             else:
                 subscriptions = []
                 for estr in entity.extra_strings:
@@ -178,13 +187,13 @@ class Subscribe (libbe.command.Command):
                 print >> self.stdout, 'Subscriptions for %s:' % entity_name
                 print >> self.stdout, '\n'.join(subscriptions)
         if params['list-all'] == True or params['list'] == True:
-            bugdir.storage.writeable = writeable
+            storage.writeable = writeable
         return 0
 
     def _long_help(self):
         return """
-ID can be either a bug id, or blank/"DIR", in which case it refers to the
-whole bug directory.
+ID can be either a bug ID, a bugdir ID, or blank, in which case it
+refers to all known bugdirs.
 
 SERVERS specifies the servers from which you would like to receive
 notification.  Multiple severs may be specified in a comma-separated

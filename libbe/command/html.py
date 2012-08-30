@@ -20,6 +20,7 @@
 
 import codecs
 import htmlentitydefs
+import itertools
 import os
 import os.path
 import re
@@ -43,28 +44,34 @@ class HTML (libbe.command.Command):
 
     >>> import sys
     >>> import libbe.bugdir
-    >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> bugdir = libbe.bugdir.SimpleBugDir(memory=False)
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
-    >>> ui.storage_callbacks.set_storage(bd.storage)
+    >>> ui.storage_callbacks.set_storage(bugdir.storage)
     >>> cmd = HTML(ui=ui)
 
-    >>> ret = ui.run(cmd, {'output':os.path.join(bd.storage.repo, 'html_export')})
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export'))
+    >>> ret = ui.run(cmd, {
+    ...         'output':os.path.join(bugdir.storage.repo, 'html_export')})
+    >>> os.path.exists(os.path.join(bugdir.storage.repo, 'html_export'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'index.html'))
+    >>> os.path.exists(os.path.join(
+    ...         bugdir.storage.repo, 'html_export', 'index.html'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'index_inactive.html'))
+    >>> os.path.exists(os.path.join(
+    ...         bugdir.storage.repo, 'html_export', 'index_inactive.html'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs'))
+    >>> os.path.exists(os.path.join(
+    ...         bugdir.storage.repo, 'html_export', 'bugs'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'a', 'index.html'))
+    >>> os.path.exists(os.path.join(
+    ...         bugdir.storage.repo, 'html_export', 'bugs', 'a', 'index.html'))
     True
-    >>> os.path.exists(os.path.join(bd.storage.repo, 'html_export', 'bugs', 'b', 'index.html'))
+    >>> os.path.exists(os.path.join(
+    ...         bugdir.storage.repo, 'html_export', 'bugs', 'b', 'index.html'))
     True
     >>> ui.cleanup()
-    >>> bd.cleanup()
+    >>> bugdir.cleanup()
     """
     name = 'html'
 
@@ -110,11 +117,12 @@ class HTML (libbe.command.Command):
 
     def _run(self, **params):
         if params['export-template'] == True:
-            bugdir = None
+            bugdirs = None
         else:
-            bugdir = self._get_bugdir()
-            bugdir.load_all_bugs()
-        html_gen = HTMLGen(bugdir,
+            bugdirs = self._get_bugdirs()
+            for bugdir in bugdirs.values():
+                bugdir.load_all_bugs()
+        html_gen = HTMLGen(bugdirs,
                            template_dir=params['template-dir'],
                            title=params['title'],
                            header=params['index-header'],
@@ -135,13 +143,13 @@ directory.
 Html = HTML # alias for libbe.command.base.get_command_class()
 
 class HTMLGen (object):
-    def __init__(self, bd, template_dir=None,
+    def __init__(self, bugdirs, template_dir=None,
                  title="Site Title", header="Header",
                  min_id_length=-1,
                  verbose=False, encoding=None, stdout=None,
                  ):
         self.generation_time = time.ctime()
-        self.bd = bd
+        self.bugdirs = bugdirs
         self.title = title
         self.header = header
         self.verbose = verbose
@@ -162,7 +170,9 @@ class HTMLGen (object):
         bugs_active = []
         bugs_inactive = []
         bugs_target = []
-        bugs = [b for b in self.bd]
+        bugs = list(itertools.chain(*list(
+                    [bug for bug in bugdir]
+                    for bugdir in self.bugdirs.values())))
         bugs.sort()
         
         for b in bugs:
@@ -294,7 +304,7 @@ class HTMLGen (object):
             template = self.template.get_template('target_index.html')
             template_info['targets'] = [
                 (target, sorted(libbe.command.depend.get_blocked_by(
-                            self.bd, target)))
+                            target.bugdir, target)))
                 for target in bugs]
         else:
             template = self.template.get_template('standard_index.html')           
@@ -304,14 +314,14 @@ class HTMLGen (object):
     def _long_to_linked_user(self, text):
         """
         >>> import libbe.bugdir
-        >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-        >>> h = HTMLGen(bd)
+        >>> bugdir = libbe.bugdir.SimpleBugDir(memory=False)
+        >>> h = HTMLGen({bugdir.uuid: bugdir})
         >>> h._long_to_linked_user('A link #abc123/a#, and a non-link #x#y#.')
         'A link <a href="./a/">abc/a</a>, and a non-link #x#y#.'
-        >>> bd.cleanup()
+        >>> bugdir.cleanup()
         """
         replacer = libbe.util.id.IDreplacer(
-            [self.bd], self._long_to_linked_user_replacer, wrap=False)
+            self.bugdirs, self._long_to_linked_user_replacer, wrap=False)
         return re.sub(
             libbe.util.id.REGEXP, replacer, text)
 
@@ -319,29 +329,30 @@ class HTMLGen (object):
         """
         >>> import libbe.bugdir
         >>> import libbe.util.id
-        >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
-        >>> a = bd.bug_from_uuid('a')
+        >>> bugdir = libbe.bugdir.SimpleBugDir(memory=False)
+        >>> bugdirs = {bugdir.uuid: bugdir}
+        >>> a = bugdir.bug_from_uuid('a')
         >>> uuid_gen = libbe.util.id.uuid_gen
         >>> libbe.util.id.uuid_gen = lambda : '0123'
         >>> c = a.new_comment('comment for link testing')
         >>> libbe.util.id.uuid_gen = uuid_gen
         >>> c.uuid
         '0123'
-        >>> h = HTMLGen(bd)
-        >>> h._long_to_linked_user_replacer([bd], 'abc123')
+        >>> h = HTMLGen(bugdirs)
+        >>> h._long_to_linked_user_replacer(bugdirs, 'abc123')
         '#abc123#'
-        >>> h._long_to_linked_user_replacer([bd], 'abc123/a')
+        >>> h._long_to_linked_user_replacer(bugdirs, 'abc123/a')
         '<a href="./a/">abc/a</a>'
-        >>> h._long_to_linked_user_replacer([bd], 'abc123/a/0123')
+        >>> h._long_to_linked_user_replacer(bugdirs, 'abc123/a/0123')
         '<a href="./a/#0123">abc/a/012</a>'
-        >>> h._long_to_linked_user_replacer([bd], 'x')
+        >>> h._long_to_linked_user_replacer(bugdirs, 'x')
         '#x#'
-        >>> h._long_to_linked_user_replacer([bd], '')
+        >>> h._long_to_linked_user_replacer(bugdirs, '')
         '##'
-        >>> bd.cleanup()
+        >>> bugdir.cleanup()
         """
         try:
-            p = libbe.util.id.parse_user(bugdirs[0], long_id)
+            p = libbe.util.id.parse_user(bugdirs, long_id)
         except (libbe.util.id.MultipleIDMatches,
                 libbe.util.id.NoIDMatches,
                 libbe.util.id.InvalidIDStructure), e:
@@ -349,13 +360,15 @@ class HTMLGen (object):
         if p['type'] == 'bugdir':
             return '#%s#' % long_id
         elif p['type'] == 'bug':
-            bug,comment = libbe.command.util.bug_comment_from_user_id(
-                bugdirs[0], long_id)
+            bugdir,bug,comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, long_id))
             return '<a href="./%s/">%s</a>' \
                 % (self._truncated_bug_id(bug), bug.id.user())
         elif p['type'] == 'comment':
-            bug,comment = libbe.command.util.bug_comment_from_user_id(
-                bugdirs[0], long_id)
+            bugdir,bug,comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, long_id))
             return '<a href="./%s/#%s">%s</a>' \
                 % (self._truncated_bug_id(bug),
                    self._truncated_comment_id(comment),

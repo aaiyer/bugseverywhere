@@ -19,10 +19,12 @@
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import itertools
 import os
 
 import libbe
 import libbe.bug
+import libbe.bugdir
 import libbe.command
 import libbe.command.util
 import libbe.util.tree
@@ -40,7 +42,7 @@ class Filter (object):
         self.target = target
         self.extra_strings_regexps = extra_strings_regexps
 
-    def __call__(self, bugdir, bug):
+    def __call__(self, bugdirs, bug):
         if self.status != 'all' and not bug.status in self.status:
             return False
         if self.severity != 'all' and not bug.severity in self.severity:
@@ -50,7 +52,7 @@ class Filter (object):
         if self.target == 'all':
             pass
         else:
-            target_bug = libbe.command.target.bug_target(bugdir, bug)
+            target_bug = libbe.command.target.bug_target(bugdirs, bug)
             if self.target in ['none', None]:
                 if target_bug.summary != None:
                     return False
@@ -113,7 +115,6 @@ class Depend (libbe.command.Command):
     """Add/remove bug dependencies
 
     >>> import sys
-    >>> import libbe.bugdir
     >>> bd = libbe.bugdir.SimpleBugDir(memory=False)
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
@@ -204,9 +205,10 @@ class Depend (libbe.command.Command):
                 and params['blocking-bug-id'] != None:
             raise libbe.command.UserError(
                 'Only one bug id used in tree mode.')
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
         if params['repair'] == True:
-            good,fixed,broken = check_dependencies(bugdir, repair_broken_links=True)
+            good,fixed,broken = check_dependencies(
+                bugdirs, repair_broken_links=True)
             assert len(broken) == 0, broken
             if len(fixed) > 0:
                 print >> self.stdout, 'Fixed the following links:'
@@ -218,11 +220,12 @@ class Depend (libbe.command.Command):
         severity = parse_severity(params['severity'])
         filter = Filter(status, severity)
 
-        bugA, dummy_comment = libbe.command.util.bug_comment_from_user_id(
-            bugdir, params['bug-id'])
+        bugdir,bugA,dummy_comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['bug-id']))
 
         if params['tree-depth'] != None:
-            dtree = DependencyTree(bugdir, bugA, params['tree-depth'], filter)
+            dtree = DependencyTree(bugdirs, bugA, params['tree-depth'], filter)
             if len(dtree.blocked_by_tree()) > 0:
                 print >> self.stdout, '%s blocked by:' % bugA.id.user()
                 for depth,node in dtree.blocked_by_tree().thread():
@@ -240,21 +243,22 @@ class Depend (libbe.command.Command):
             return 0
 
         if params['blocking-bug-id'] != None:
-            bugB,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-                bugdir, params['blocking-bug-id'])
+            bugdirB,bugB,dummy_comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, params['blocking-bug-id']))
             if params['remove'] == True:
                 remove_block(bugA, bugB)
             else: # add the dependency
                 add_block(bugA, bugB)
 
-        blocked_by = get_blocked_by(bugdir, bugA)
+        blocked_by = get_blocked_by(bugdirs, bugA)
 
         if len(blocked_by) > 0:
             print >> self.stdout, '%s blocked by:' % bugA.id.user()
             print >> self.stdout, \
                 '\n'.join([self.bug_string(_bug, params)
                            for _bug in blocked_by])
-        blocks = get_blocks(bugdir, bugA)
+        blocks = get_blocks(bugdirs, bugA)
         if len(blocks) > 0:
             print >> self.stdout, '%s blocks:' % bugA.id.user()
             print >> self.stdout, \
@@ -355,35 +359,37 @@ def remove_block(blocked_bug, blocking_bug):
     blocks_string = _generate_blocks_string(blocked_bug)
     _add_remove_extra_string(blocking_bug, blocks_string, add=False)
 
-def get_blocks(bugdir, bug):
+def get_blocks(bugdirs, bug):
     """
     Return a list of bugs that the given bug blocks.
     """
     blocks = []
     for uuid in _get_blocks(bug):
-        blocks.append(bugdir.bug_from_uuid(uuid))
+        blocks.append(libbe.command.util.bug_from_uuid(bugdirs, uuid))
     return blocks
 
-def get_blocked_by(bugdir, bug):
+def get_blocked_by(bugdirs, bug):
     """
     Return a list of bugs blocking the given bug.
     """
     blocked_by = []
     for uuid in _get_blocked_by(bug):
-        blocked_by.append(bugdir.bug_from_uuid(uuid))
+        blocked_by.append(libbe.command.util.bug_from_uuid(bugdirs, uuid))
     return blocked_by
 
-def check_dependencies(bugdir, repair_broken_links=False):
+def check_dependencies(bugdirs, repair_broken_links=False):
     """
     Check that links are bi-directional for all bugs in bugdir.
 
     >>> import libbe.bugdir
-    >>> bd = libbe.bugdir.SimpleBugDir()
-    >>> a = bd.bug_from_uuid("a")
-    >>> b = bd.bug_from_uuid("b")
+    >>> bugdir = libbe.bugdir.SimpleBugDir()
+    >>> bugdirs = {bugdir.uuid: bugdir}
+    >>> a = bugdir.bug_from_uuid('a')
+    >>> b = bugdir.bug_from_uuid('b')
     >>> blocked_by_string = _generate_blocked_by_string(b)
     >>> _add_remove_extra_string(a, blocked_by_string, add=True)
-    >>> good,repaired,broken = check_dependencies(bd, repair_broken_links=False)
+    >>> good,repaired,broken = check_dependencies(
+    ...     bugdirs, repair_broken_links=False)
     >>> good
     []
     >>> repaired
@@ -392,7 +398,8 @@ def check_dependencies(bugdir, repair_broken_links=False):
     [(Bug(uuid='a'), Bug(uuid='b'))]
     >>> _get_blocks(b)
     []
-    >>> good,repaired,broken = check_dependencies(bd, repair_broken_links=True)
+    >>> good,repaired,broken = check_dependencies(
+    ...     bugdirs, repair_broken_links=True)
     >>> _get_blocks(b)
     ['a']
     >>> good
@@ -401,45 +408,48 @@ def check_dependencies(bugdir, repair_broken_links=False):
     [(Bug(uuid='a'), Bug(uuid='b'))]
     >>> broken
     []
+    >>> bugdir.cleanup()
     """
-    if bugdir.storage != None:
-        bugdir.load_all_bugs()
+    for bugdir in bugdirs.values():
+        if bugdir.storage is not None:
+            bugdir.load_all_bugs()
     good_links = []
     fixed_links = []
     broken_links = []
-    for bug in bugdir:
-        for blocker in get_blocked_by(bugdir, bug):
-            blocks = get_blocks(bugdir, blocker)
-            if (bug, blocks) in good_links+fixed_links+broken_links:
-                continue # already checked that link
-            if bug not in blocks:
-                if repair_broken_links == True:
-                    _repair_one_way_link(bug, blocker, blocks=True)
-                    fixed_links.append((bug, blocker))
+    for bugdir in bugdirs.values():
+        for bug in bugdir:
+            for blocker in get_blocked_by(bugdirs, bug):
+                blocks = get_blocks(bugdirs, blocker)
+                if (bug, blocks) in good_links+fixed_links+broken_links:
+                    continue # already checked that link
+                if bug not in blocks:
+                    if repair_broken_links == True:
+                        _repair_one_way_link(bug, blocker, blocks=True)
+                        fixed_links.append((bug, blocker))
+                    else:
+                        broken_links.append((bug, blocker))
                 else:
-                    broken_links.append((bug, blocker))
-            else:
-                good_links.append((bug, blocker))
-        for blockee in get_blocks(bugdir, bug):
-            blocked_by = get_blocked_by(bugdir, blockee)
-            if (blockee, bug) in good_links+fixed_links+broken_links:
-                continue # already checked that link
-            if bug not in blocked_by:
-                if repair_broken_links == True:
-                    _repair_one_way_link(blockee, bug, blocks=False)
-                    fixed_links.append((blockee, bug))
+                    good_links.append((bug, blocker))
+            for blockee in get_blocks(bugdirs, bug):
+                blocked_by = get_blocked_by(bugdirs, blockee)
+                if (blockee, bug) in good_links+fixed_links+broken_links:
+                    continue # already checked that link
+                if bug not in blocked_by:
+                    if repair_broken_links == True:
+                        _repair_one_way_link(blockee, bug, blocks=False)
+                        fixed_links.append((blockee, bug))
+                    else:
+                        broken_links.append((blockee, bug))
                 else:
-                    broken_links.append((blockee, bug))
-            else:
-                good_links.append((blockee, bug))
+                    good_links.append((blockee, bug))
     return (good_links, fixed_links, broken_links)
 
 class DependencyTree (object):
     """
     Note: should probably be DependencyDiGraph.
     """
-    def __init__(self, bugdir, root_bug, depth_limit=0, filter=None):
-        self.bugdir = bugdir
+    def __init__(self, bugdirs, root_bug, depth_limit=0, filter=None):
+        self.bugdirs = bugdirs
         self.root_bug = root_bug
         self.depth_limit = depth_limit
         self.filter = filter
@@ -453,8 +463,8 @@ class DependencyTree (object):
             node = stack.pop()
             if self.depth_limit > 0 and node.depth == self.depth_limit:
                 continue
-            for bug in child_fn(self.bugdir, node.bug):
-                if not self.filter(self.bugdir, bug):
+            for bug in child_fn(self.bugdirs, node.bug):
+                if not self.filter(self.bugdirs, bug):
                     continue
                 child = libbe.util.tree.Tree()
                 child.bug = bug

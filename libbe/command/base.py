@@ -522,7 +522,7 @@ class StorageCallbacks (object):
     def setup_command(self, command):
         command._get_unconnected_storage = self.get_unconnected_storage
         command._get_storage = self.get_storage
-        command._get_bugdir = self.get_bugdir
+        command._get_bugdirs = self.get_bugdirs
 
     def get_unconnected_storage(self):
         """
@@ -555,15 +555,20 @@ class StorageCallbacks (object):
     def set_storage(self, storage):
         self._storage = storage
 
-    def get_bugdir(self):
+    def get_bugdirs(self):
         """Callback for use by commands that need it."""
-        if not hasattr(self, '_bugdir'):
-            self._bugdir = libbe.bugdir.BugDir(self.get_storage(),
-                                               from_storage=True)
-        return self._bugdir
+        if not hasattr(self, '_bugdirs'):
+            storage = self.get_storage()
+            self._bugdirs = dict(
+                (uuid, libbe.bugdir.BugDir(
+                        storage=storage,
+                        uuid=uuid,
+                        from_storage=True))
+                for uuid in storage.children())
+        return self._bugdirs
 
-    def set_bugdir(self, bugdir):
-        self._bugdir = bugdir
+    def set_bugdirs(self, bugdirs):
+        self._bugdirs = bugdirs
 
     def cleanup(self):
         if hasattr(self, '_storage'):

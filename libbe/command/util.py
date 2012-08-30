@@ -25,7 +25,7 @@ import libbe.command
 class Completer (object):
     def __init__(self, options):
         self.options = options
-    def __call__(self, bugdir, fragment=None):
+    def __call__(self, bugdirs, fragment=None):
         return [fragment]
 
 def complete_command(command, argument, fragment=None):
@@ -50,27 +50,34 @@ def complete_path(command, argument, fragment=None):
     return comp_path(fragment)
 
 def complete_status(command, argument, fragment=None):
-    bd = command._get_bugdir()
+    bd = sorted(command._get_bugdirs().items())[1]
     import libbe.bug
     return libbe.bug.status_values
 
 def complete_severity(command, argument, fragment=None):
-    bd = command._get_bugdir()
+    bd = sorted(command._get_bugdirs().items())[1]
     import libbe.bug
     return libbe.bug.severity_values
 
-def assignees(bugdir):
-    bugdir.load_all_bugs()
-    return list(set([bug.assigned for bug in bugdir
-                     if bug.assigned != None]))
+def assignees(bugdirs):
+    ret = set()
+    for bugdir in bugdirs.values():
+        bugdir.load_all_bugs()
+        ret.update(set([bug.assigned for bug in bugdir
+                        if bug.assigned != None]))
+    return list(ret)
 
 def complete_assigned(command, argument, fragment=None):
-    return assignees(command._get_bugdir())
+    return assignees(command._get_bugdirs())
 
 def complete_extra_strings(command, argument, fragment=None):
     if fragment == None:
         return []
     return [fragment]
+
+def complete_bugdir_id(command, argument, fragment=None):
+    bugdirs = command._get_bugdirs()
+    return bugdirs.keys()
 
 def complete_bug_id(command, argument, fragment=None):
     return complete_bug_comment_id(command, argument, fragment,
@@ -80,11 +87,11 @@ def complete_bug_comment_id(command, argument, fragment=None,
                             active_only=True, comments=True):
     import libbe.bugdir
     import libbe.util.id
-    bd = command._get_bugdir()
+    bugdirs = command._get_bugdirs()
     if fragment == None or len(fragment) == 0:
         fragment = '/'
     try:
-        p = libbe.util.id.parse_user(bd, fragment)
+        p = libbe.util.id.parse_user(bugdirs, fragment)
         matches = None
         root,residual = (fragment, None)
         if not root.endswith('/'):
@@ -100,28 +107,32 @@ def complete_bug_comment_id(command, argument, fragment=None,
         common = e.common
         matches = e.matches
         root,residual = libbe.util.id.residual(common, fragment)
-        p = libbe.util.id.parse_user(bd, e.common)
+        p = libbe.util.id.parse_user(bugdirs, e.common)
     bug = None
     if matches == None: # fragment was complete, get a list of children uuids
         if p['type'] == 'bugdir':
-            matches = bd.uuids()
-            common = bd.id.user()
+            bugdir = bugdirs[p['bugdir']]
+            matches = bugdir.uuids()
+            common = bugdir.id.user()
         elif p['type'] == 'bug':
             if comments == False:
                 return [fragment]
-            bug = bd.bug_from_uuid(p['bug'])
+            bugdir = bugdirs[p['bugdir']]
+            bug = bugdir.bug_from_uuid(p['bug'])
             matches = bug.uuids()
             common = bug.id.user()
         else:
             assert p['type'] == 'comment', p
             return [fragment]
     if p['type'] == 'bugdir':
-        child_fn = bd.bug_from_uuid
+        bugdir = bugdirs[p['bugdir']]
+        child_fn = bugdir.bug_from_uuid
     elif p['type'] == 'bug':
         if comments == False:
             return[fragment]
+        bugdir = bugdirs[p['bugdir']]
         if bug == None:
-            bug = bd.bug_from_uuid(p['bug'])
+            bug = bugdir.bug_from_uuid(p['bug'])
         child_fn = bug.comment_from_uuid
     elif p['type'] == 'comment':
         assert matches == None, matches
@@ -188,18 +199,38 @@ def select_values(string, possible_values, name="unkown"):
         possible_values = whitelisted_values
     return possible_values
 
-def bug_comment_from_user_id(bugdir, id):
-    p = libbe.util.id.parse_user(bugdir, id)
-    if not p['type'] in ['bug', 'comment']:
+def bugdir_bug_comment_from_user_id(bugdirs, id):
+    p = libbe.util.id.parse_user(bugdirs, id)
+    if not p['type'] in ['bugdir', 'bug', 'comment']:
         raise libbe.command.UserError(
-            '%s is a %s id, not a bug or comment id' % (id, p['type']))
+            '{} is a {} id, not a bugdir, bug, or comment id'.format(
+                id, p['type']))
+    if p['bugdir'] not in bugdirs:
+        raise libbe.command.UserError(
+            "{} doesn't belong to any bugdirs in {}".format(
+                id, sorted(bugdirs.keys())))
+    bugdir = bugdirs[p['bugdir']]
     if p['bugdir'] != bugdir.uuid:
         raise libbe.command.UserError(
             "%s doesn't belong to this bugdir (%s)"
             % (id, bugdir.uuid))
-    bug = bugdir.bug_from_uuid(p['bug'])
-    if 'comment' in p:
-        comment = bug.comment_from_uuid(p['comment'])
+    if 'bug' in p:
+        bug = bugdir.bug_from_uuid(p['bug'])
+        if 'comment' in p:
+            comment = bug.comment_from_uuid(p['comment'])
+        else:
+            comment = bug.comment_root
     else:
-        comment = bug.comment_root
-    return (bug, comment)
+        bug = comment = None
+    return (bugdir, bug, comment)
+
+def bug_from_uuid(bugdirs, uuid):
+    error = None
+    for bugdir in bugdirs.values():
+        try:
+            bug = bugdir.bug_from_uuid(uuid)
+        except libbe.bugdir.NoBugMatches as e:
+            error = e
+        else:
+            return bug
+    raise error

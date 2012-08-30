@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
+
 import libbe
 import libbe.command
 import libbe.command.util
@@ -34,7 +36,7 @@ class Tag (libbe.command.Command):
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
-    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> ui.storage_callbacks.set_bugdirs({bd.uuid: bd})
     >>> cmd = Tag(ui=ui)
 
     >>> a = bd.bug_from_uuid('a')
@@ -107,16 +109,18 @@ class Tag (libbe.command.Command):
         if params['id'] != None and params['list'] == True:
             raise libbe.command.UserError(
                 'Do not specify a bug id with the --list option.')
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
         if params['list'] == True:
-            tags = get_all_tags(bugdir)
+            tags = list(itertools.chain(*
+                    [get_all_tags(bugdir) for bugdir in bugdirs.values()]))
             tags.sort()
             if len(tags) > 0:
                 print >> self.stdout, '\n'.join(tags)
             return 0
 
-        bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-            bugdir, params['id'])
+        bugdir,bug,comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['id']))
         if len(params['tag']) > 0:
             tags = get_tags(bug)
             for tag in params['tag']:

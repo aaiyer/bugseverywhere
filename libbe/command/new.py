@@ -95,6 +95,13 @@ class New (libbe.command.Command):
                     arg=libbe.command.Argument(
                         name='severity', metavar='SEVERITY',
                         completion_callback=libbe.command.util.complete_severity)),
+                libbe.command.Option(name='bugdir', short_name='b',
+                    help='Short bugdir UUID for the new bug.  You '
+                    'only need to set this if you have multiple bugdirs in '
+                    'your repository.',
+                    arg=libbe.command.Argument(
+                        name='bugdir', metavar='ID', default=None,
+                        completion_callback=libbe.command.util.complete_bugdir_id)),
                 libbe.command.Option(name='full-uuid', short_name='f',
                     help='Print the full UUID for the new bug')
                 ])
@@ -107,8 +114,16 @@ class New (libbe.command.Command):
             summary = self.stdin.readline()
         else:
             summary = params['summary']
-        bugdir = self._get_bugdir()
-        bugdir.storage.writeable = False
+        storage = self._get_storage()
+        bugdirs = self._get_bugdirs()
+        if params['bugdir']:
+            bugdir = bugdirs[bugdir]
+        elif len(bugdirs) == 1:
+            bugdir = bugdirs.values()[0]
+        else:
+            raise libbe.command.UserError(
+                'Ambiguous bugdir {}'.format(sorted(bugdirs.values())))
+        storage.writeable = False
         bug = bugdir.new_bug(summary=summary.strip())
         if params['creator'] != None:
             bug.creator = params['creator']
@@ -124,7 +139,7 @@ class New (libbe.command.Command):
             bug.status = params['status']
         if params['severity'] != None:
             bug.severity = params['severity']
-        bugdir.storage.writeable = True
+        storage.writeable = True
         bug.save()
         if params['full-uuid']:
             bug_id = bug.id.long_user()

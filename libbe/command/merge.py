@@ -35,7 +35,7 @@ class Merge (libbe.command.Command):
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
-    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
     >>> cmd = Merge(ui=ui)
 
     >>> a = bd.bug_from_uuid('a')
@@ -61,7 +61,8 @@ class Merge (libbe.command.Command):
     ...                     cmp=libbe.comment.cmp_time)
     >>> mergeA = a_comments[0]
     >>> mergeA.time = 3
-    >>> print a.string(show_comments=True) # doctest: +ELLIPSIS
+    >>> print a.string(show_comments=True)
+    ... # doctest: +ELLIPSIS, +REPORT_UDIFF
               ID : a
       Short name : abc/a
         Severity : minor
@@ -107,7 +108,8 @@ class Merge (libbe.command.Command):
     ...                     libbe.comment.cmp_time)
     >>> mergeB = b_comments[0]
     >>> mergeB.time = 3
-    >>> print b.string(show_comments=True) # doctest: +ELLIPSIS
+    >>> print b.string(show_comments=True)
+    ... # doctest: +ELLIPSIS, +REPORT_UDIFF
               ID : b
       Short name : abc/b
         Severity : minor
@@ -154,14 +156,15 @@ class Merge (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
-        bugA,dummy_comment = \
-            libbe.command.util.bug_comment_from_user_id(
-                bugdir, params['bug-id'])
+        storage = self._get_storage()
+        bugdirs = self._get_bugdirs()
+        bugdirA,bugA,comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['bug-id']))
         bugA.load_comments()
-        bugB,dummy_comment = \
-            libbe.command.util.bug_comment_from_user_id(
-                bugdir, params['bug-id-to-merge'])
+        bugdirB,bugB,dummy_comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['bug-id-to-merge']))
         bugB.load_comments()
         mergeA = bugA.new_comment('Merged from bug #%s#' % bugB.id.long_user())
         newCommTree = copy.deepcopy(bugB.comment_root)
@@ -171,7 +174,7 @@ class Merge (libbe.command.Command):
             if comment.alt_id == None:
                 comment.storage = None
                 comment.alt_id = comment.uuid
-                comment.storage = bugdir.storage
+                comment.storage = storage
             comment.uuid = libbe.util.id.uuid_gen()
             comment.save() # force onto disk under bugA
 

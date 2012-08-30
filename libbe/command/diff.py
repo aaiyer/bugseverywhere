@@ -91,11 +91,16 @@ class Diff (libbe.command.Command):
                 params['subscribe'])
         except ValueError, e:
             raise libbe.command.UserError(e.msg)
-        bugdir = self._get_bugdir()
-        if bugdir.storage.versioned == False:
-            raise libbe.command.UserError(
-                'This repository is not revision-controlled.')
+        bugdirs = self._get_bugdirs()
+        for uuid,bugdir in sorted(bugdirs.items()):
+            self.diff(bugdir, subscriptions, params=params)
+
+
+    def diff(self, bugdir, subscriptions, params):
         if params['repo'] == None:
+            if bugdir.storage.versioned == False:
+                raise libbe.command.UserError(
+                    'This repository is not revision-controlled.')
             if params['revision'] == None: # get the most recent revision
                 params['revision'] = bugdir.storage.revision_id(-1)
             old_bd = libbe.bugdir.RevisionedBugDir(bugdir, params['revision'])
@@ -108,8 +113,8 @@ class Diff (libbe.command.Command):
             else:
                 if old_bd_current.storage.versioned == False:
                     raise libbe.command.UserError(
-                        '%s is not revision-controlled.'
-                        % storage.repo)
+                        '{} is not revision-controlled.'.format(
+                            bugdir.storage.repo))
                 old_bd = libbe.bugdir.RevisionedBugDir(old_bd_current,revision)
         d = libbe.diff.Diff(old_bd, bugdir)
         tree = d.report_tree(subscriptions)

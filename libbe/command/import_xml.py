@@ -27,10 +27,12 @@ except ImportError: # look for non-core module
 
 import libbe
 import libbe.bug
+import libbe.bugdir
 import libbe.command
 import libbe.command.util
 import libbe.comment
 import libbe.util.encoding
+import libbe.util.id
 import libbe.util.utility
 
 if libbe.TESTING == True:
@@ -39,6 +41,7 @@ if libbe.TESTING == True:
     import unittest
 
     import libbe.bugdir
+
 
 class Import_XML (libbe.command.Command):
     """Import comments and bugs from XML
@@ -54,7 +57,7 @@ class Import_XML (libbe.command.Command):
     >>> cmd = Import_XML(ui=ui)
 
     >>> ui.io.set_stdin('<be-xml><comment><uuid>c</uuid><body>This is a comment about a</body></comment></be-xml>')
-    >>> ret = ui.run(cmd, {'comment-root':'/a'}, ['-'])
+    >>> ret = ui.run(cmd, {'root':'/a'}, ['-'])
     >>> bd.flush_reload()
     >>> bug = bd.bug_from_uuid('a')
     >>> bug.load_comments(load_full=False)
@@ -80,10 +83,13 @@ class Import_XML (libbe.command.Command):
                     help='If any bug or comment listed in the XML file already exists in the bug repository, do not alter the repository version.'),
                 libbe.command.Option(name='preserve-uuids', short_name='p',
                     help='Preserve UUIDs for trusted input (potential name collisions).'),
-                libbe.command.Option(name='comment-root', short_name='c',
-                    help='Supply a bug or comment ID as the root of any <comment> elements that are direct children of the <be-xml> element.  If any such <comment> elements exist, you are required to set this option.',
+                libbe.command.Option(name='root', short_name='r',
+                    help='Supply a bugdir, bug, or comment ID as the root of '
+                    'any non-bugdir elements that are direct children of the '
+                    '<be-xml> element.  If any such elements exist, you are '
+                    'required to set this option.',
                     arg=libbe.command.Argument(
-                        name='comment-root', metavar='ID',
+                        name='root', metavar='ID',
                         completion_callback=libbe.command.util.complete_bug_comment_id)),
                 ])
         self.args.extend([
@@ -92,53 +98,102 @@ class Import_XML (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
-        writeable = bugdir.storage.writeable
-        bugdir.storage.writeable = False
-        if params['comment-root'] != None:
-            croot_bug,croot_comment = \
-                libbe.command.util.bug_comment_from_user_id(
-                    bugdir, params['comment-root'])
-            croot_bug.load_comments(load_full=True)
-            if croot_comment.uuid == libbe.comment.INVALID_UUID:
-                croot_comment = croot_bug.comment_root
-            else:
-                croot_comment = croot_bug.comment_from_uuid(croot_comment.uuid)
-            new_croot_bug = libbe.bug.Bug(bugdir=bugdir, uuid=croot_bug.uuid)
-            new_croot_bug.explicit_attrs = []
-            new_croot_bug.comment_root = copy.deepcopy(croot_bug.comment_root)
-            if croot_comment.uuid == libbe.comment.INVALID_UUID:
-                new_croot_comment = new_croot_bug.comment_root
-            else:
-                new_croot_comment = \
-                    new_croot_bug.comment_from_uuid(croot_comment.uuid)
-            for new in new_croot_bug.comments():
-                new.explicit_attrs = []
+        storage = self._get_storage()
+        bugdirs = self._get_bugdirs()
+        writeable = storage.writeable
+        storage.writeable = False
+        if params['root'] != None:
+            root_bugdir,root_bug,root_comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, params['root']))
         else:
-            croot_bug,croot_comment = (None, None)
+            root_bugdir,root_bug,root_comment = (None, None, None)
 
+        xml = self._read_xml(storage, params)
+        version,root_bugdirs,root_bugs,root_comments = self._parse_xml(
+            xml, params)
+
+        if params['add-only']:
+            accept_changes = False
+            accept_extra_strings = False
+        else:
+            accept_changes = True
+            accept_extra_strings = True
+
+        dirty_items = list(self._merge_comments(
+                bugdirs, root_bug, root_comment, root_comments,
+                params, accept_changes, accept_extra_strings))
+        dirty_items.extend(self._merge_bugs(
+                bugdirs, root_bugdir, root_bugs,
+                params, accept_changes, accept_extra_strings))
+        dirty_items.extend(self._merge_bugdirs(
+                bugdirs, root_bugdirs,
+                params, accept_changes, accept_extra_strings))
+
+        # protect against programmer error causing data loss:
+        if root_bug is not None:
+            # check for each of the new comments
+            comms = []
+            for c in root_bug.comments():
+                comms.append(c.uuid)
+                if c.alt_id != None:
+                    comms.append(c.alt_id)
+            if root_comment.uuid == libbe.comment.INVALID_UUID:
+                root_text = root_bug.id.user()
+            else:
+                root_text = root_comment.id.user()
+            for new in root_comments:
+                assert new.uuid in comms or new.alt_id in comms, \
+                    "comment %s (alt: %s) wasn't added to %s" \
+                    % (new.uuid, new.alt_id, root_text)
+        for new in root_bugs:
+            # check for each of the new bugs
+            try:
+                libbe.command.util.bug_from_uuid(bugdirs, new.uuid)
+            except libbe.bugdir.NoBugMatches:
+                try:
+                    libbe.command.util.bug_from_uuid(bugdirs, new.alt_id)
+                except libbe.bugdir.NoBugMatches:
+                    raise AssertionError(
+                        "bug {} (alt: {}) wasn't added to {}".format(
+                            new.uuid, new.alt_id, root_bugdir.id.user()))
+        for new in root_bugdirs:
+            assert new.uuid in bugdirs or new.alt_id in bugdirs, (
+                "bugdir {} wasn't added to {}".format(
+                    new.uuid, sorted(bugdirs.keys())))
+
+        # save new information
+        storage.writeable = writeable
+        for item in dirty_items:
+            item.save()
+
+    def _read_xml(self, storage, params):
         if params['xml-file'] == '-':
-            xml = self.stdin.read().encode(self.stdin.encoding)
+            return self.stdin.read().encode(self.stdin.encoding)
         else:
-            self._check_restricted_access(bugdir.storage, params['xml-file'])
-            xml = libbe.util.encoding.get_file_contents(
-                params['xml-file'])
+            self._check_restricted_access(storage, params['xml-file'])
+            return libbe.util.encoding.get_file_contents(params['xml-file'])
 
-        # parse the xml
+    def _parse_xml(self, xml, params):
+        version = {}
+        root_bugdirs = []
         root_bugs = []
         root_comments = []
-        version = {}
         be_xml = ElementTree.XML(xml)
         if be_xml.tag != 'be-xml':
             raise libbe.util.utility.InvalidXML(
                 'import-xml', be_xml, 'root element must be <be-xml>')
         for child in be_xml.getchildren():
-            if child.tag == 'bug':
-                new = libbe.bug.Bug(bugdir=bugdir)
+            if child.tag == 'bugdir':
+                new = libbe.bugdir.BugDir(storage=None)
+                new.from_xml(child, preserve_uuids=params['preserve-uuids'])
+                root_bugdirs.append(new)
+            elif child.tag == 'bug':
+                new = libbe.bug.Bug()
                 new.from_xml(child, preserve_uuids=params['preserve-uuids'])
                 root_bugs.append(new)
             elif child.tag == 'comment':
-                new = libbe.comment.Comment(croot_bug)
+                new = libbe.comment.Comment()
                 new.from_xml(child, preserve_uuids=params['preserve-uuids'])
                 root_comments.append(new)
             elif child.tag == 'version':
@@ -148,84 +203,82 @@ class Import_XML (libbe.command.Command):
                         text = text.decode('unicode_escape').strip()
                         version[child.tag] = text
                     else:
-                        print >> sys.stderr, 'ignoring unknown tag %s in %s' \
-                            % (gchild.tag, child.tag)
+                        sys.stderr.write(
+                            'ignoring unknown tag {} in {}\n'.format(
+                                gchild.tag, child.tag))
             else:
-                print >> sys.stderr, 'ignoring unknown tag %s in %s' \
-                    % (child.tag, comment_list.tag)
+                sys.stderr.write('ignoring unknown tag {} in {}\n'.format(
+                        child.tag, be_xml.tag))
+        return (version, root_bugdirs, root_bugs, root_comments)
 
-        # merge the new root_comments
-        if params['add-only'] == True:
-            accept_changes = False
-            accept_extra_strings = False
+    def _merge_comments(self, bugdirs, bug, root_comment, comments,
+                        params, accept_changes, accept_extra_strings,
+                        accept_comments=True):
+        if len(comments) == 0:
+            return
+        if bug is None:
+            raise libbe.command.UserError(
+                'No root bug for merging comments:\n{}'.format(
+                    '\n\n'.join([c.string() for c in comments])))
+        bug.load_comments(load_full=True)
+        if root_comment.uuid == libbe.comment.INVALID_UUID:
+            root_comment = bug.comment_root
         else:
-            accept_changes = True
-            accept_extra_strings = True
-        accept_comments = True
-        if len(root_comments) > 0:
-            if croot_bug == None:
-                raise libbe.command.UserError(
-                    '--comment-root option is required for your root comments:\n%s'
-                    % '\n\n'.join([c.string() for c in root_comments]))
-            try:
-                # link new comments
-                new_croot_bug.add_comments(root_comments,
-                                           default_parent=new_croot_comment,
-                                           ignore_missing_references= \
-                                               params['ignore-missing-references'])
-            except libbe.comment.MissingReference, e:
-                raise libbe.command.UserError(e)
-            croot_bug.merge(new_croot_bug, accept_changes=accept_changes,
-                            accept_extra_strings=accept_extra_strings,
-                            accept_comments=accept_comments)
+            root_comment = bug.comment_from_uuid(root_comment.uuid)
+        new_bug = libbe.bug.Bug(bugdir=bug.bugdir, uuid=bug.uuid)
+        new_bug.explicit_attrs = []
+        new_bug.comment_root = copy.deepcopy(bug.comment_root)
+        if root_comment.uuid == libbe.comment.INVALID_UUID:
+            new_root_comment = new_bug.comment_root
+        else:
+            new_root_comment = new_bug.comment_from_uuid(
+                root_comment.uuid)
+        for new in new_bug.comments():
+            new.explicit_attrs = []
+        try:
+            new_bug.add_comments(
+                comments,
+                default_parent=root_comment,
+                ignore_missing_references=params['ignore-missing-references'])
+        except libbe.comment.MissingReference as e:
+            raise libbe.command.UserError(e)
+        bug.merge(new_bug, accept_changes=accept_changes,
+                  accept_extra_strings=accept_extra_strings,
+                  accept_comments=accept_comments)
+        yield bug
 
-        # merge the new croot_bugs
-        merged_bugs = []
-        old_bugs = []
-        for new in root_bugs:
+    def _merge_bugs(self, bugdirs, bugdir, bugs,
+                    params, accept_changes, accept_extra_strings,
+                    accept_comments=True):
+        for new in bugs:
             try:
                 old = bugdir.bug_from_uuid(new.alt_id)
             except KeyError:
-                old = None
-            if old == None:
-                bugdir.append(new)
+                bugdir.append(new, update=True)
+                yield new
             else:
                 old.load_comments(load_full=True)
                 old.merge(new, accept_changes=accept_changes,
                           accept_extra_strings=accept_extra_strings,
                           accept_comments=accept_comments)
-                merged_bugs.append(new)
-                old_bugs.append(old)
+                yield old
 
-        # protect against programmer error causing data loss:
-        if croot_bug != None:
-            comms = []
-            for c in croot_comment.traverse():
-                comms.append(c.uuid)
-                if c.alt_id != None:
-                    comms.append(c.alt_id)
-            if croot_comment.uuid == libbe.comment.INVALID_UUID:
-                root_text = croot_bug.id.user()
+    def _merge_bugdirs(self, bugdirs, new_bugdirs,
+                       params, accept_changes, accept_extra_strings,
+                       accept_comments=True):
+        for new in new_bugdirs:
+            if new.alt_id in bugdirs:
+                old = bugdirs[new.alt_id]
+                old.load_all_bugs()
+                old.merge(new, accept_changes=accept_changes,
+                          accept_extra_strings=accept_extra_strings,
+                          accept_bugs=True,
+                          accept_comments=accept_comments)
+                yield old
             else:
-                root_text = croot_comment.id.user()
-            for new in root_comments:
-                assert new.uuid in comms or new.alt_id in comms, \
-                    "comment %s (alt: %s) wasn't added to %s" \
-                    % (new.uuid, new.alt_id, root_text)
-        for new in root_bugs:
-            if not new in merged_bugs:
-                assert bugdir.has_bug(new.uuid), \
-                    "bug %s wasn't added" % (new.uuid)
-
-        # save new information
-        bugdir.storage.writeable = writeable
-        if croot_bug != None:
-            croot_bug.save()
-        for new in root_bugs:
-            if not new in merged_bugs:
-                new.save()
-        for old in old_bugs:
-            old.save()
+                bugdirs[new.uuid] = new
+                new.storage = self._get_storage()
+                yield new
 
     def _long_help(self):
         return """
@@ -238,7 +291,8 @@ VCSs are compatible, it's better to use their builtin merge/push/pull
 to share this information, as that will preserve a more detailed
 history.
 
-The XML file should be formatted similarly to
+The XML file should be formatted similarly to:
+
   <be-xml>
     <version>
       <tag>1.0.0</tag>
@@ -246,29 +300,34 @@ The XML file should be formatted similarly to
       <revno>446</revno>
       <revision-id>a@b.com-20091119214553-iqyw2cpqluww3zna</revision-id>
     <version>
-    <bug>
-      ...
-      <comment>...</comment>
-      <comment>...</comment>
-    </bug>
+    <bugdir>
+      <bug>
+        ...
+        <comment>...</comment>
+        <comment>...</comment>
+      </bug>
+      <bug>...</bug>
+    </bugdir>
+    <bug>...</bug>
     <bug>...</bug>
     <comment>...</comment>
     <comment>...</comment>
   </be-xml>
-where the ellipses mark output commpatible with Bug.xml() and
-Comment.xml().  Take a look at the output of `be show --xml` for some
-explicit examples.  Unrecognized tags are ignored.  Missing tags are
-left at the default value.  The version tag is not required, but is
-strongly recommended.
 
-The bug and comment UUIDs are always auto-generated, so if you set a
-<uuid> field, but no <alt-id> field, your <uuid> will be used as the
-comment's <alt-id>.  An exception is raised if <alt-id> conflicts with
-an existing comment.  Bugs do not have a permantent alt-id, so they
-the <uuid>s you specify are not saved.  The <uuid>s _are_ used to
-match agains prexisting bug and comment uuids, and comment alt-ids,
-and fields explicitly given in the XML file will replace old versions
-unless the --add-only flag.
+where the ellipses mark output commpatible with BugDir.xml(),
+Bug.xml(), and Comment.xml().  Take a look at the output of `be show
+--xml` for some explicit examples.  Unrecognized tags are ignored.
+Missing tags are left at the default value.  The version tag is not
+required, but is strongly recommended.
+
+The bugdir, bug, and comment UUIDs are always auto-generated, so if
+you set a <uuid> field, but no <alt-id> field, your <uuid> will be
+used as the object's <alt-id>.  An exception is raised if <alt-id>
+conflicts with an existing object.  Bugdirs and bugs do not have a
+permantent alt-id, so they the <uuid>s you specify are not saved.  The
+<uuid>s _are_ used to match agains prexisting bug and comment uuids,
+and comment alt-ids, and fields explicitly given in the XML file will
+replace old versions unless the --add-only flag.
 
 *.extra_strings recieves special treatment, and if --add-only is not
 set, the resulting list concatenates both source lists and removes
@@ -276,53 +335,65 @@ repeats.
 
 Here's an example of import activity:
   Repository
-   bug (uuid=B, creator=John, status=open)
-     estr (don't forget your towel)
-     estr (helps with space travel)
-     com (uuid=C1, author=Jane, body=Hello)
-     com (uuid=C2, author=Jess, body=World)
+   bugdir (uuid=abc123)
+     bug (uuid=B, creator=John, status=open)
+       estr (don't forget your towel)
+       estr (helps with space travel)
+       com (uuid=C1, author=Jane, body=Hello)
+       com (uuid=C2, author=Jess, body=World)
   XML
-   bug (uuid=B, status=fixed)
-     estr (don't forget your towel)
-     estr (watch out for flying dolphins)
-     com (uuid=C1, body=So long)
-     com (uuid=C3, author=Jed, body=And thanks)
+   bugdir (uuid=abc123)
+     bug (uuid=B, status=fixed)
+       estr (don't forget your towel)
+       estr (watch out for flying dolphins)
+       com (uuid=C1, body=So long)
+       com (uuid=C3, author=Jed, body=And thanks)
   Result
-   bug (uuid=B, creator=John, status=fixed)
-     estr (don't forget your towel)
-     estr (helps with space travel)
-     estr (watch out for flying dolphins)
-     com (uuid=C1, author=Jane, body=So long)
-     com (uuid=C2, author=Jess, body=World)
-     com (uuid=C4, alt-id=C3, author=Jed, body=And thanks)
+   bugdir (uuid=abc123)
+     bug (uuid=B, creator=John, status=fixed)
+       estr (don't forget your towel)
+       estr (helps with space travel)
+       estr (watch out for flying dolphins)
+       com (uuid=C1, author=Jane, body=So long)
+       com (uuid=C2, author=Jess, body=World)
+       com (uuid=C4, alt-id=C3, author=Jed, body=And thanks)
   Result, with --add-only
-   bug (uuid=B, creator=John, status=open)
-     estr (don't forget your towel)
-     estr (helps with space travel)
-     com (uuid=C1, author=Jane, body=Hello)
-     com (uuid=C2, author=Jess, body=World)
-     com (uuid=C4, alt-id=C3, author=Jed, body=And thanks)
+   bugdir (uuid=abc123)
+     bug (uuid=B, creator=John, status=open)
+       estr (don't forget your towel)
+       estr (helps with space travel)
+       com (uuid=C1, author=Jane, body=Hello)
+       com (uuid=C2, author=Jess, body=World)
+       com (uuid=C4, alt-id=C3, author=Jed, body=And thanks)
 
 Examples:
 
-Import comments (e.g. emails from an mbox) and append to bug XYZ
-  $ be-mbox-to-xml mail.mbox | be import-xml --c XYZ -
-Or you can append those emails underneath the prexisting comment XYZ-3
-  $ be-mbox-to-xml mail.mbox | be import-xml --c XYZ-3 -
+Import comments (e.g. emails from an mbox) and append to bug /XYZ:
 
-User creates a new bug
+  $ be-mbox-to-xml mail.mbox | be import-xml --r /XYZ -
+
+Or you can append those emails underneath the prexisting comment /XYZ/3:
+
+  $ be-mbox-to-xml mail.mbox | be import-xml --r /XYZ/3 -
+
+User creates a new bug:
+
   user$ be new "The demuxulizer is broken"
   Created bug with ID 48f
   user$ be comment 48f
   <Describe bug>
   ...
-User exports bug as xml and emails it to the developers
+
+User exports bug as xml and emails it to the developers:
+
   user$ be show --xml 48f > 48f.xml
   user$ cat 48f.xml | mail -s "Demuxulizer bug xml" devs@b.com
 or equivalently (with a slightly fancier be-handle-mail compatible
 email):
   user$ be email-bugs 48f
-Devs recieve email, and save it's contents as demux-bug.xml
+
+Devs recieve email, and save it's contents as demux-bug.xml:
+
   dev$ cat demux-bug.xml | be import-xml -
 """
 
@@ -360,22 +431,25 @@ if libbe.TESTING == True:
             bugB.save()
             self.xml = """
             <be-xml>
-              <bug>
-                <uuid>b</uuid>
-                <status>fixed</status>
-                <summary>a test bug</summary>
-                <extra-string>don't forget your towel</extra-string>
-                <extra-string>watch out for flying dolphins</extra-string>
-                <comment>
-                  <uuid>c1</uuid>
-                  <body>So long</body>
-                </comment>
-                <comment>
-                  <uuid>c3</uuid>
-                  <author>Jed</author>
-                  <body>And thanks</body>
-                </comment>
-              </bug>
+              <bugdir>
+                <uuid>abc123</uuid>
+                <bug>
+                  <uuid>b</uuid>
+                  <status>fixed</status>
+                  <summary>a test bug</summary>
+                  <extra-string>don't forget your towel</extra-string>
+                  <extra-string>watch out for flying dolphins</extra-string>
+                  <comment>
+                    <uuid>c1</uuid>
+                    <body>So long</body>
+                  </comment>
+                  <comment>
+                    <uuid>c3</uuid>
+                    <author>Jed</author>
+                    <body>And thanks</body>
+                  </comment>
+                </bug>
+              </bugdir>
             </be-xml>
             """
             self.root_comment_xml = """
@@ -473,7 +547,7 @@ if libbe.TESTING == True:
         def testRootCommentsNotAddOnly(self):
             bugB = self.bugdir.bug_from_uuid('b')
             initial_bugB_summary = bugB.summary
-            self._execute(self.root_comment_xml, {'comment-root':'/b'}, ['-'])
+            self._execute(self.root_comment_xml, {'root':'/b'}, ['-'])
             uuids = list(self.bugdir.uuids())
             uuids = list(self.bugdir.uuids())
             self.failUnless(uuids == ['b'], uuids)
@@ -510,7 +584,7 @@ if libbe.TESTING == True:
             bugB = self.bugdir.bug_from_uuid('b')
             initial_bugB_summary = bugB.summary
             self._execute(self.root_comment_xml,
-                          {'comment-root':'/b', 'add-only':True}, ['-'])
+                          {'root':'/b', 'add-only':True}, ['-'])
             uuids = list(self.bugdir.uuids())
             self.failUnless(uuids == ['b'], uuids)
             bugB = self.bugdir.bug_from_uuid('b')

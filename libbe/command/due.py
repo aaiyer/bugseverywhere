@@ -61,9 +61,10 @@ class Due (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
-        bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-            bugdir, params['bug-id'])
+        bugdirs = self._get_bugdirs()
+        bugdir,bug,comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['bug-id']))
         if params['due'] == None:
             due_time = get_due(bug)
             if due_time is None:

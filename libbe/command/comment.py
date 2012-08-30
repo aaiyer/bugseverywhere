@@ -121,9 +121,10 @@ class Comment (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
-        bug,parent = \
-            libbe.command.util.bug_comment_from_user_id(bugdir, params['id'])
+        bugdirs = self._get_bugdirs()
+        bugdir,bug,parent = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                bugdirs, params['id']))
         if params['comment'] == None:
             # try to launch an editor for comment-body entry
             try:

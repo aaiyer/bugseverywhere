@@ -86,6 +86,8 @@ def load_comments(bug, load_full=False):
 
 def save_comments(bug):
     for comment in bug.comment_root.traverse():
+        comment.bug = bug
+        comment.storage = bug.storage
         comment.save()
 
 
@@ -156,7 +158,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         assert self.uuid != INVALID_UUID, self
         if self.content_type.startswith('text/') \
                 and self.bug != None and self.bug.bugdir != None:
-            new = libbe.util.id.short_to_long_text([self.bug.bugdir], new)
+            new = libbe.util.id.short_to_long_text(
+                {self.bug.bugdir.uuid: self.bug.bugdir}, new)
         if (self.storage != None and self.storage.writeable == True) \
                 or force==True:
             assert new != None, "Can't save empty comment"
@@ -458,16 +461,17 @@ class Comment (Tree, settings_object.SavedSettingsObject):
           <extra-string>TAG: very helpful</extra-string>
         </comment>
         """
-        for attr in other.explicit_attrs:
-            old = getattr(self, attr)
-            new = getattr(other, attr)
-            if old != new:
-                if accept_changes == True:
-                    setattr(self, attr, new)
-                elif change_exception == True:
-                    raise ValueError, \
-                        'Merge would change %s "%s"->"%s" for comment %s' \
-                        % (attr, old, new, self.uuid)
+        if hasattr(other, 'explicit_attrs'):
+            for attr in other.explicit_attrs:
+                old = getattr(self, attr)
+                new = getattr(other, attr)
+                if old != new:
+                    if accept_changes:
+                        setattr(self, attr, new)
+                    elif change_exception:
+                        raise ValueError(
+                            ('Merge would change {} "{}"->"{}" for comment {}'
+                             ).format(attr, old, new, self.uuid))
         if self.alt_id == self.uuid:
             self.alt_id = None
         for estr in other.extra_strings:
@@ -503,7 +507,8 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         if self.content_type.startswith("text/"):
             body = (self.body or "")
             if self.bug != None and self.bug.bugdir != None:
-                body = libbe.util.id.long_to_short_text([self.bug.bugdir], body)
+                body = libbe.util.id.long_to_short_text(
+                    {self.bug.bugdir.uuid: self.bug.bugdir}, body)
             lines.extend(body.splitlines())
         else:
             lines.append("Content type %s not printable.  Try XML output instead" % self.content_type)

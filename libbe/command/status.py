@@ -36,7 +36,7 @@ class Status (libbe.command.Command):
     >>> io = libbe.command.StringInputOutput()
     >>> io.stdout = sys.stdout
     >>> ui = libbe.command.UserInterface(io=io)
-    >>> ui.storage_callbacks.set_bugdir(bd)
+    >>> ui.storage_callbacks.set_storage(bd.storage)
     >>> cmd = Status(ui=ui)
     >>> cmd._storage = bd.storage
 
@@ -67,10 +67,11 @@ class Status (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
         for bug_id in params['bug-id']:
-            bug,dummy_comment = \
-                libbe.command.util.bug_comment_from_user_id(bugdir, bug_id)
+            bugdir,bug,comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, bug_id))
             if bug.status != params['status']:
                 try:
                     bug.status = params['status']
@@ -83,7 +84,7 @@ class Status (libbe.command.Command):
 
     def _long_help(self):
         try: # See if there are any per-tree status configurations
-            bd = self._get_bugdir()
+            bugdirs = self._get_bugdirs()
         except NotImplementedError:
             pass # No tree, just show the defaults
         longest_status_len = max([len(s) for s in libbe.bug.status_values])

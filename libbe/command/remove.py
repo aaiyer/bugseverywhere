@@ -62,11 +62,12 @@ class Remove (libbe.command.Command):
                 ])
 
     def _run(self, **params):
-        bugdir = self._get_bugdir()
+        bugdirs = self._get_bugdirs()
         user_ids = []
         for bug_id in params['bug-id']:
-            bug,dummy_comment = libbe.command.util.bug_comment_from_user_id(
-                bugdir, bug_id)
+            bugdir,bug,comment = (
+                libbe.command.util.bugdir_bug_comment_from_user_id(
+                    bugdirs, bug_id))
             user_ids.append(bug.id.user())
             bugdir.remove_bug(bug)
         if len(user_ids) == 1:
