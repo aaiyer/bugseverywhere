@@ -278,7 +278,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         libbe.util.subproc.invoke(self.notify, stdin=message, shell=True)
 
 
-class Serve (libbe.util.wsgi.ServerCommand):
+class ServeStorage (libbe.util.wsgi.ServerCommand):
     """Serve bug directory storage over HTTP.
 
     This allows you to run local `be` commands interfacing with remote
@@ -288,7 +288,7 @@ class Serve (libbe.util.wsgi.ServerCommand):
     :class:`ServerApp`.
     """
 
-    name = 'serve'
+    name = 'serve-storage'
 
     def _get_app(self, logger, storage, **kwargs):
         return ServerApp(
@@ -298,7 +298,7 @@ class Serve (libbe.util.wsgi.ServerCommand):
         return """
 Example usage::
 
-    $ be serve
+    $ be serve-storage
 
 And in another terminal (or after backgrounding the server)::
 
@@ -312,6 +312,10 @@ for example::
 
     $ be --repo http://username:password@localhost:8000/ list
 """
+
+
+# alias for libbe.command.base.get_command_class()
+Serve_storage = ServeStorage
 
 
 if libbe.TESTING:

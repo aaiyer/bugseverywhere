@@ -21,7 +21,7 @@ implementation.
 
 See Also
 --------
-:mod:`libbe.command.serve` : the associated server
+:mod:`libbe.command.serve_storage` : the associated server
 """
 
 from __future__ import absolute_import
@@ -44,7 +44,7 @@ if TESTING == True:
     import unittest
 
     import libbe.bugdir
-    import libbe.command.serve
+    import libbe.command.serve_storage
     import libbe.util.http
     import libbe.util.wsgi
 
@@ -265,12 +265,12 @@ if TESTING == True:
         name = 'TestingHTTP'
         def __init__(self, repo, *args, **kwargs):
             self._storage_backend = base.VersionedStorage(repo)
-            app = libbe.command.serve.ServerApp(
+            app = libbe.command.serve_storage.ServerApp(
                 storage=self._storage_backend)
             self.app = libbe.util.wsgi.BEExceptionApp(app=app)
             HTTP.__init__(self, repo='http://localhost:8000/', *args, **kwargs)
             self.intitialized = False
-            # duplicated from libbe.command.serve.WSGITestCase
+            # duplicated from libbe.util.wsgi.WSGITestCase
             self.default_environ = {
                 'REQUEST_METHOD': 'GET', # 'POST', 'HEAD'
                 'REMOTE_ADDR': '192.168.0.123',
@@ -292,7 +292,7 @@ if TESTING == True:
                 }
         def getURL(self, app, path='/', method='GET', data=None,
                    scheme='http', environ={}):
-            # duplicated from libbe.command.serve.WSGITestCase
+            # duplicated from libbe.util.wsgi.WSGITestCase
             env = copy.copy(self.default_environ)
             env['PATH_INFO'] = path
             env['REQUEST_METHOD'] = method

@@ -144,7 +144,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         libbe.util.subproc.invoke(self.notify, stdin=message, shell=True)
 
 
-class Serve_Commands (libbe.util.wsgi.ServerCommand):
+class ServeCommands (libbe.util.wsgi.ServerCommand):
     """Serve commands over HTTP.
 
     This allows you to run local `be` commands interfacing with remote
@@ -181,7 +181,7 @@ for example::
 
 
 # alias for libbe.command.base.get_command_class()
-Serve_commands = Serve_Commands
+Serve_commands = ServeCommands
 
 
 if libbe.TESTING:

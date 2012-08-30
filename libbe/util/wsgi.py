@@ -4,7 +4,8 @@
 
 See Also
 --------
-:py:mod:`libbe.command.serve` and :py:mod:`libbe.command.serve_commands`.
+:py:mod:`libbe.command.serve_storage` and
+:py:mod:`libbe.command.serve_commands`.
 """
 
 import hashlib
