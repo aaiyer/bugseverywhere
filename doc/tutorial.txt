@@ -368,17 +368,31 @@ BE over HTTP
 Besides using BE to work directly with local VCS-based repositories,
 you can use::
 
-    $ be serve
+    $ be serve-storage
 
 To serve a repository over HTTP.  For example::
 
-    $ be serve > server.log 2>&1 &
+    $ be serve-storage > server.log 2>&1 &
     $ be --repo http://localhost:8000 list
 
 Of course, be careful about serving over insecure networks, since
 malicous users could fill your disk with endless bugs, etc.  You can
-dissable write access by using the ``--read-only`` option, which would
+disabled write access by using the ``--read-only`` option, which would
 make serving on a public network safer.
+
+Serving the storage interface is flexible, but it can be inefficient.
+For example, a call to ``be list`` against a remote backend requires
+all bug information to be transfered over the wire.  As a faster
+alternative, you may want to serve your repository at the command
+level::
+
+    $ be serve-commands > server.log 2>&1 &
+    $ be --server http://localhost:8000 list
+
+Take a look at the server logs to get a feel for the bandwidth you're
+saving!  Serving commands over insecure networks is at least as
+dangerous as serving storage.  Take appropriate precautions for your
+network.
 
 Driving the VCS through BE
 --------------------------
