@@ -233,7 +233,7 @@ class BE (libbe.command.Command):
                         completion_callback=libbe.command.util.complete_path)),
                 libbe.command.Option(name='server', short_name='s',
                     help='Select BE command server (see `be help '
-                         'command-server`) rather than executing commands '
+                         'server`) rather than executing commands '
                          'locally',
                     arg=libbe.command.Argument(
                         name='server', metavar='URL')),
