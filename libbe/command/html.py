@@ -830,8 +830,8 @@ class HTML (libbe.util.wsgi.ServerCommand):
             return 0
         # provide defaults for the dropped options
         params['read-only'] = True
-        params['notify'] = False
-        params['auth'] = False
+        params['notify'] = None
+        params['auth'] = None
         return super(HTML, self)._run(**params)
 
     def _get_app(self, logger, storage, index_file='', generation_time=None,
