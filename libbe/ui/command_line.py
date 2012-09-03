@@ -27,6 +27,7 @@ import sys
 import libbe
 import libbe.bugdir
 import libbe.command
+import libbe.command.help
 import libbe.command.util
 import libbe.storage
 import libbe.version
@@ -262,11 +263,22 @@ class BE (libbe.command.Command):
         cmdlist.sort()
         longest_cmd_len = max([len(name) for name,desc in cmdlist])
         ret = ['Bugs Everywhere - Distributed bug tracking',
-               '', 'Supported commands']
+               '', 'Commands:']
         for name, desc in cmdlist:
             numExtraSpaces = longest_cmd_len-len(name)
             ret.append('be {}{}    {}'.format(name, ' '*numExtraSpaces, desc))
-        ret.extend(['', 'Run', '  be help [command]', 'for more information.'])
+
+        ret.extend(['', 'Topics:'])
+        topic_list = [
+            (name,desc.splitlines()[0])
+            for name,desc in sorted(libbe.command.help.TOPICS.items())]
+        longest_topic_len = max([len(name) for name,desc in topic_list])
+        for name,desc in topic_list:
+            extra_spaces = longest_topic_len - len(name)
+            ret.append('{}{}    {}'.format(name, ' '*extra_spaces, desc))
+
+        ret.extend(['', 'Run', '  be help [command|topic]',
+                    'for more information.'])
         return '\n'.join(ret)
 
     def version(self, *args):
