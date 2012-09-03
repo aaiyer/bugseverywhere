@@ -832,7 +832,7 @@ class HTML (libbe.util.wsgi.ServerCommand):
         params['read-only'] = True
         params['notify'] = False
         params['auth'] = False
-        return super(HTML. self)._run(**params)
+        return super(HTML, self)._run(**params)
 
     def _get_app(self, logger, storage, index_file='', generation_time=None,
                  **kwargs):
