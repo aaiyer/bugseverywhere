@@ -71,7 +71,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
     The GET and HEAD requests are identical except that the HEAD
     request omits the actual content of the file.
     """
-    server_version = "BE-server/" + libbe.version.version()
+    server_version = 'BE-storage-server/' + libbe.version.version()
 
     def __init__(self, storage=None, notify=False, **kwargs):
         super(ServerApp, self).__init__(
