@@ -365,7 +365,8 @@ def main():
     ui.setup_command(command)
 
     if command.name in [
-        'new', 'comment', 'commit', 'import-xml', 'serve', 'serve-commands']:
+        'new', 'comment', 'commit', 'html', 'import-xml', 'serve-storage',
+        'serve-commands']:
         paginate = 'never'
     else:
         paginate = 'auto'
