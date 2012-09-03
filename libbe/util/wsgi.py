@@ -267,6 +267,18 @@ class ExceptionApp (WSGI_Middleware):
             raise
 
 
+class HandlerErrorApp (WSGI_Middleware):
+    """Catch HandlerErrors and return HTTP error pages.
+    """
+    def _call(self, environ, start_response):
+        try:
+            return self.app(environ, start_response)
+        except HandlerError, e:
+            self.log_request(environ, status=str(e), bytes=0)
+            start_response('{} {}'.format(e.code, e.msg), e.headers)
+            return []
+
+
 class BEExceptionApp (WSGI_Middleware):
     """Translate BE-specific exceptions
     """
@@ -620,6 +632,7 @@ class ServerCommand (libbe.command.base.Command):
             'port':params['port'],
             }
         app = BEExceptionApp(app, logger=self.logger)
+        app = HandlerErrorApp(app, logger=self.logger)
         app = ExceptionApp(app, logger=self.logger)
         if params['ssl'] == True:
             details['protocol'] = 'HTTPS'
