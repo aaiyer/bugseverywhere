@@ -483,7 +483,7 @@ class WSGI_AppObject (WSGI_Object):
                  *args, **kwargs):
         super(WSGI_AppObject, self).__init__(*args, **kwargs)
         self.urls = [(re.compile(regexp),callback) for regexp,callback in urls]
-        self.default_callback = default_handler
+        self.default_handler = default_handler
         self.setting = setting
 
     def _call(self, environ, start_response):
