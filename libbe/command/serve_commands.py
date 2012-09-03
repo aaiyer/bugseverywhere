@@ -85,8 +85,12 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         self.check_login(environ)
         data = self.post_data(environ)
         source = 'post'
-        name = data['command']
-        parameters = data['parameters']
+        try:
+            name = data['command']
+        except KeyError:
+            raise libbe.util.wsgi.HandlerError(
+                self.http_user_error, 'UnknownCommand')
+        parameters = data.get('parameters', {})
         try:
             Class = libbe.command.get_command_class(command_name=name)
         except libbe.command.UnknownCommand, e:
@@ -94,6 +98,12 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
                 self.http_user_error, 'UnknownCommand {}'.format(e))
         command = Class(ui=self.ui)
         self.ui.setup_command(command)
+        arguments = [option.arg for option in command.options
+                     if option.arg is not None]
+        arguments.extend(command.args)
+        for argument in arguments:
+            if argument.name not in parameters:
+                parameters[argument.name] = argument.default
         command.status = command._run(**parameters)  # already parsed params
         assert command.status == 0, command.status
         stdout = self.ui.io.get_stdout()
