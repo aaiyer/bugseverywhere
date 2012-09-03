@@ -1,0 +1,5 @@
+Currently one big feature gitorious lacks when compared to github is issue 
+tracker. Github issues makes it easy to report issues and map it to commits.
+It would be great if Bugs Everywhere can be integrated with gitorious interface
+so that every gitorious repo can have a Bugs Everywhere repo with it and can
+use gitorious web interface to see and report issues.
