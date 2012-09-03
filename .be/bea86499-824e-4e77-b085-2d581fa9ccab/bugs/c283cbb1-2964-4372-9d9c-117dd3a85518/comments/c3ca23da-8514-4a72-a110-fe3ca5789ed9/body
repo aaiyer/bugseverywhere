@@ -1,0 +1,16 @@
+Hi Lars,
+
+   > I've been playing with BE a bit and lurking on this list. I'm a
+   > Bitbucket user, and I like that each project can have source,
+   > wiki and bugtracking associated with it. Now source and wiki are
+   > two different plain mercurial repos. Bugtracking though, has no
+   > way to export or import. This is a shame, since important data is
+   > now locked into the site, which ultimately prevents competition.
+   > I'd be keen for an open source web interface which serves the
+   > holy trinity (source, wiki, bugs) and allows both private and
+   > public projects, as the proprietary sites do. BE seems a natural
+   > fit for the bugs component of a site like this. 
+
+Yeah, I totally agree.
+
+- Chris.

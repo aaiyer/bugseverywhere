@@ -1,0 +1,25 @@
+On 19 March 2010 08:02, Chris Ball <cjb@laptop.org> wrote:
+
+> I've noticed that github.com and bitbucket.org offer bugtracking, but
+> gitorious.org doesn't.  What do you think about attempting to work on
+> a bugtracker interface for a free code hosting site using BE as the
+> backend?  An awful lot of people (me included, occasionally!) are
+> using proprietary sites like github and entrusting their bugtracking
+> data to it; having a public hosting service that doesn't create a
+> dependency on that service for your bugtracking data would be pretty
+> compelling, I think.
+>
+
+I've been playing with BE a bit and lurking on this list. I'm a Bitbucket
+user, and I like that each project can have source, wiki and bugtracking
+associated with it. Now source and wiki are two different plain mercurial
+repos. Bugtracking though, has no way to export or import. This is a shame,
+since important data is now locked into the site, which ultimately prevents
+competition.
+
+I'd be keen for an open source web interface which serves the holy trinity
+(source, wiki, bugs) and allows both private and public projects, as the
+proprietary sites do. BE seems a natural fit for the bugs component of a
+site like this.
+
+Lars

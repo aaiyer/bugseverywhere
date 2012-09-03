@@ -1,0 +1,16 @@
+On Thu, Mar 18, 2010 at 05:02:13PM -0400, Chris Ball wrote:
+> The fact that gitorious is written in Ruby on Rails probably makes the
+> idea of using gitorious in particular a non-starter, but I thought I'd
+> throw it out there.
+> ...
+> (One way to get around the Ruby/Python problem would be to have the
+> bugtracker simply operate independently from the rest of the site,
+> which I suppose would work fine but wouldn't be elegant to use.)
+
+Another option would be to drive BE in a subprocess via Ruby's IO.popen.
+A proof-of-concept implementation could use our standard `be' command.
+A production implementation could be either of
+  * multi-command BE interface to avoid repeaded repository reloads
+    (may be too man process or too much memory for the server)
+  * better BE caching for faster reloads
+    (more work for us ;)

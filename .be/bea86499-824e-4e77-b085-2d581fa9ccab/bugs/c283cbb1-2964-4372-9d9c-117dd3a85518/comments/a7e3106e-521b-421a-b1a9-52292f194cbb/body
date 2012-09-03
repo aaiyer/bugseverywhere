@@ -1,0 +1,29 @@
+Hi folks,
+
+I've noticed that github.com and bitbucket.org offer bugtracking, but
+gitorious.org doesn't.  What do you think about attempting to work on
+a bugtracker interface for a free code hosting site using BE as the
+backend?  An awful lot of people (me included, occasionally!) are
+using proprietary sites like github and entrusting their bugtracking
+data to it; having a public hosting service that doesn't create a
+dependency on that service for your bugtracking data would be pretty
+compelling, I think.
+
+The fact that gitorious is written in Ruby on Rails probably makes the
+idea of using gitorious in particular a non-starter, but I thought I'd
+throw it out there.  There's a gitorious thread about the general idea
+here:
+
+http://groups.google.com/group/gitorious/browse_thread/thread/40a541377060cb34
+
+(One way to get around the Ruby/Python problem would be to have the
+bugtracker simply operate independently from the rest of the site,
+which I suppose would work fine but wouldn't be elegant to use.)
+
+Are there any other popular free code hosting sites out there, perhaps
+written in Python?  ;-)  If there was a site that allowed you to
+choose between different SCMs, that'd be even more suited to us..
+
+Just an idea,
+
+- Chris.

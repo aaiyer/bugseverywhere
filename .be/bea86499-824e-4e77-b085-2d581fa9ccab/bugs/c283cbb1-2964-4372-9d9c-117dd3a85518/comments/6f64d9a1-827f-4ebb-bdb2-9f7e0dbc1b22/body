@@ -1,0 +1,16 @@
+Hi,
+
+   >> Are there any other popular free code hosting sites out there,
+   >> perhaps written in Python?  ;-) If there was a site that allowed
+   >> you to choose between different SCMs, that'd be even more suited
+   >> to us..
+
+   > If you like Sourceforge, it supplies all:
+
+I don't think that sourceforge's issue tracking (or the sourceforge
+site itself these days) is free software, which was an unspoken (well,
+earlier-spoken) requirement.  We already know that some proprietary
+sites offer bug tracking -- we're trying to find an open-source one
+that does (or could).
+
+- Chris.

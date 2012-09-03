@@ -1,0 +1,15 @@
+> Are there any other popular free code hosting sites out there, perhaps
+> written in Python?  ;-)  If there was a site that allowed you to
+> choose between different SCMs, that'd be even more suited to us..
+
+If you like Sourceforge, it supplies all:
+* http://sourceforge.net/apps/trac/sourceforge/wiki/Bazaar
+* http://sourceforge.net/apps/trac/sourceforge/wiki/Mercurial
+
+Regards,
+Timmie
+
+_______________________________________________
+Be-devel mailing list
+Be-devel@bugseverywhere.org
+http://void.printf.net/cgi-bin/mailman/listinfo/be-devel
