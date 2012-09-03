@@ -32,178 +32,158 @@ from jinja2 import Environment, FileSystemLoader, DictLoader, ChoiceLoader
 
 import libbe
 import libbe.command
+import libbe.command.depend
 import libbe.command.util
 import libbe.comment
 import libbe.util.encoding
 import libbe.util.id
-import libbe.command.depend
+import libbe.util.wsgi
+import libbe.version
 
 
-class HTML (libbe.command.Command):
-    """Generate a static HTML dump of the current repository status
+class ServerApp (libbe.util.wsgi.WSGI_AppObject,
+                 libbe.util.wsgi.WSGI_DataObject):
+    """WSGI server for a BE Storage instance over HTML.
 
-    >>> import sys
-    >>> import libbe.bugdir
-    >>> bugdir = libbe.bugdir.SimpleBugDir(memory=False)
-    >>> io = libbe.command.StringInputOutput()
-    >>> io.stdout = sys.stdout
-    >>> ui = libbe.command.UserInterface(io=io)
-    >>> ui.storage_callbacks.set_storage(bugdir.storage)
-    >>> cmd = HTML(ui=ui)
-
-    >>> ret = ui.run(cmd, {
-    ...         'output':os.path.join(bugdir.storage.repo, 'html_export')})
-    >>> os.path.exists(os.path.join(bugdir.storage.repo, 'html_export'))
-    True
-    >>> os.path.exists(os.path.join(
-    ...         bugdir.storage.repo, 'html_export', 'index.html'))
-    True
-    >>> os.path.exists(os.path.join(
-    ...         bugdir.storage.repo, 'html_export', 'index_inactive.html'))
-    True
-    >>> os.path.exists(os.path.join(
-    ...         bugdir.storage.repo, 'html_export', 'bugs'))
-    True
-    >>> os.path.exists(os.path.join(
-    ...         bugdir.storage.repo, 'html_export', 'bugs', 'a', 'index.html'))
-    True
-    >>> os.path.exists(os.path.join(
-    ...         bugdir.storage.repo, 'html_export', 'bugs', 'b', 'index.html'))
-    True
-    >>> ui.cleanup()
-    >>> bugdir.cleanup()
+    Serve browsable HTML for public consumption.  Currently everything
+    is read-only.
     """
-    name = 'html'
+    server_version = 'BE-html-server/' + libbe.version.version()
 
-    def __init__(self, *args, **kwargs):
-        libbe.command.Command.__init__(self, *args, **kwargs)
-        self.options.extend([
-                libbe.command.Option(name='output', short_name='o',
-                    help='Set the output path (%default)',
-                    arg=libbe.command.Argument(
-                        name='output', metavar='DIR', default='./html_export',
-                        completion_callback=libbe.command.util.complete_path)),
-                libbe.command.Option(name='template-dir', short_name='t',
-                    help='Use a different template.  Defaults to internal templates',
-                    arg=libbe.command.Argument(
-                        name='template-dir', metavar='DIR',
-                        completion_callback=libbe.command.util.complete_path)),
-                libbe.command.Option(name='title',
-                    help='Set the bug repository title (%default)',
-                    arg=libbe.command.Argument(
-                        name='title', metavar='STRING',
-                        default='Bugs Everywhere Issue Tracker')),
-                libbe.command.Option(name='index-header',
-                    help='Set the index page headers (%default)',
-                    arg=libbe.command.Argument(
-                        name='index-header', metavar='STRING',
-                        default='Bugs Everywhere Bug List')),
-                libbe.command.Option(name='export-template', short_name='e',
-                    help='Export the default template and exit.'),
-                libbe.command.Option(name='export-template-dir', short_name='d',
-                    help='Set the directory for the template export (%default)',
-                    arg=libbe.command.Argument(
-                        name='export-template-dir', metavar='DIR',
-                        default='./default-templates/',
-                        completion_callback=libbe.command.util.complete_path)),
-                libbe.command.Option(name='min-id-length', short_name='l',
-                    help='Attempt to truncate bug and comment IDs to this length.  Set to -1 for non-truncated IDs (%default)',
-                    arg=libbe.command.Argument(
-                        name='min-id-length', metavar='INT',
-                        default=-1, type='int')),
-                libbe.command.Option(name='verbose', short_name='v',
-                    help='Verbose output, default is %default'),
-                ])
-
-    def _run(self, **params):
-        if params['export-template'] == True:
-            bugdirs = None
-        else:
-            bugdirs = self._get_bugdirs()
-            for bugdir in bugdirs.values():
-                bugdir.load_all_bugs()
-        html_gen = HTMLGen(bugdirs,
-                           template_dir=params['template-dir'],
-                           title=params['title'],
-                           header=params['index-header'],
-                           min_id_length=params['min-id-length'],
-                           verbose=params['verbose'],
-                           stdout=self.stdout)
-        if params['export-template'] == True:
-            html_gen.write_default_template(params['export-template-dir'])
-        else:
-            html_gen.run(params['output'])
-
-    def _long_help(self):
-        return """
-Generate a set of html pages representing the current state of the bug
-directory.
-"""
-
-Html = HTML # alias for libbe.command.base.get_command_class()
-
-class HTMLGen (object):
-    def __init__(self, bugdirs, template_dir=None,
-                 title="Site Title", header="Header",
-                 min_id_length=-1,
-                 verbose=False, encoding=None, stdout=None,
-                 ):
-        self.generation_time = time.ctime()
+    def __init__(self, bugdirs={}, template_dir=None, title='Site Title',
+                 header='Header', index_file='', min_id_length=-1,
+                 generation_time=None, **kwargs):
+        super(ServerApp, self).__init__(
+            urls=[
+                (r'^{}$'.format(index_file), self.index),
+                (r'^style.css$', self.style),
+                (r'^([^/]+)/([^/]+)/{}'.format(index_file), self.bug),
+                ],
+            **kwargs)
         self.bugdirs = bugdirs
         self.title = title
         self.header = header
-        self.verbose = verbose
-        self.stdout = stdout
-        if encoding != None:
-            self.encoding = encoding
-        else:
-            self.encoding = libbe.util.encoding.get_text_file_encoding()
-        self._load_templates(template_dir)
+        self._index_file = index_file
         self.min_id_length = min_id_length
+        self.generation_time = generation_time
+        self._refresh = 0
+        self.http_user_error = 418
+        self._load_templates(template_dir=template_dir)
+        self._filters = {
+            'active': lambda bug: bug.active and bug.severity != 'target',
+            'inactive': lambda bug: not bug.active and bug.severity !='target',
+            'target': lambda bug: bug.severity == 'target'
+            }
 
-    def run(self, out_dir):
-        if self.verbose == True:
-            print >> self.stdout, \
-                'Creating the html output in %s using templates in %s' \
-                % (out_dir, self.template)
+    # handlers
+    def style(self, environ, start_response): 
+        template = self.template.get_template('style.css')
+        content = template.render()
+        return self.ok_response(
+            environ, start_response, content, content_type='text/css')
 
-        bugs_active = []
-        bugs_inactive = []
-        bugs_target = []
+    def index(self, environ, start_response):
+        data = self.query_data(environ)
+        source = 'query'
+        bug_type = self.data_get_string(
+            data, 'type', default='active', source=source)
+        assert bug_type in ['active', 'inactive', 'target'], bug_type
+        self.refresh()
+        filter_ = self._filters.get(bug_type, self._filters['active'])
         bugs = list(itertools.chain(*list(
-                    [bug for bug in bugdir]
+                    [bug for bug in bugdir if filter_(bug)]
                     for bugdir in self.bugdirs.values())))
         bugs.sort()
-        
-        for b in bugs:
-            if  b.active == True and b.severity != 'target':
-                bugs_active.append(b)
-            if b.active != True and b.severity != 'target':
-                bugs_inactive.append(b)
-            if b.severity == 'target':
-                bugs_target.append(b)
-        
-        self._create_output_directories(out_dir)
-        self._write_css_file()
-        for b in bugs:
-            if b.severity == 'target':
-                up_link = '../../index_target.html'
-            elif b.active:
-                up_link = '../../index.html'
-            else:
-                up_link = '../../index_inactive.html'                
-            self._write_bug_file(
-                b, title=self.title, header=self.header,
-                up_link=up_link)
-        self._write_index_file(
-            bugs_active, title=self.title,
-            header=self.header, bug_type='active')
-        self._write_index_file(
-            bugs_inactive, title=self.title,
-            header=self.header, bug_type='inactive')
-        self._write_index_file(
-            bugs_target, title=self.title,
-            header=self.header, bug_type='target')
+        if self.logger:
+            self.logger.log(
+                self.log_level, 'generate {} index file for {} bugs'.format(
+                    bug_type, len(bugs)))
+        template_info = {
+            'title': self.title,
+            'charset': 'UTF-8',
+            'stylesheet': 'style.css',
+            'header': self.header,
+            'active_class': 'tab nsel',
+            'inactive_class': 'tab nsel',
+            'target_class': 'tab nsel',
+            'bugs': bugs,
+            'bug_entry': self.template.get_template('index_bug_entry.html'),
+            'bug_dir': self.bug_dir,
+            'index_file': self._index_file,
+            'generation_time': self._generation_time(),
+            }
+        template_info['{}_class'.format(bug_type)] = 'tab sel'
+        if bug_type == 'target':
+            template = self.template.get_template('target_index.html')
+            template_info['targets'] = [
+                (target, sorted(libbe.command.depend.get_blocked_by(
+                            self.bugdirs, target)))
+                for target in bugs]
+        else:
+            template = self.template.get_template('standard_index.html')           
+        content = template.render(template_info)+'\n'
+        return self.ok_response(
+            environ, start_response, content, content_type='text/html')
+
+    def bug(self, environ, start_response):
+        try:
+            bugdir_id,bug_id = environ['be-server.url_args']
+        except:
+            raise libbe.util.wsgi.HandlerError(404, 'Not Found')
+        user_id = '{}/{}'.format(bugdir_id, bug_id)
+        bugdir,bug,comment = (
+            libbe.command.util.bugdir_bug_comment_from_user_id(
+                self.bugdirs, user_id))
+        if self.logger:
+            self.logger.log(
+                self.log_level, 'generate bug file for {}/{}'.format(
+                    bugdir.uuid, bug.uuid))
+        if bug.severity == 'target':
+            index_type = 'target'
+        elif bug.active:
+            index_type = 'active'
+        else:
+            index_type = 'inactive'
+        up_link = '../../{}?type={}'.format(self._index_file, index_type)
+        bug.load_comments(load_full=True)
+        bug.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
+        template_info = {
+            'title': self.title,
+            'charset': 'UTF-8',
+            'stylesheet': '../../style.css',
+            'header': self.header,
+            'backlinks': self.template.get_template('bug_backlinks.html'),
+            'up_link': up_link,
+            'index_type': index_type.capitalize(),
+            'index_file': self._index_file,
+            'bug': bug,
+            'comment_entry': self.template.get_template(
+                'bug_comment_entry.html'),
+            'comments': [(depth,comment) for depth,comment
+                         in bug.comment_root.thread(flatten=False)],
+            'comment_dir': self._truncated_comment_id,
+            'format_body': self._format_comment_body,
+            'div_close': _DivCloser(),
+            'generation_time': self._generation_time(),
+            }
+        template = self.template.get_template('bug.html')
+        content = template.render(template_info)
+        return self.ok_response(
+            environ, start_response, content, content_type='text/html')
+
+    # helper functions
+    def refresh(self):
+        if time.time() > self._refresh:
+            if self.logger:
+                self.logger.log(self.log_level, 'refresh bugdirs')
+            for bugdir in self.bugdirs.values():
+                bugdir.load_all_bugs()
+            self._refresh = time.time() + 60
+
+    def _truncated_bugdir_id(self, bugdir):
+        return libbe.util.id._truncate(
+            bugdir.uuid, self.bugdirs.keys(),
+            min_length=self.min_id_length)
 
     def _truncated_bug_id(self, bug):
         return libbe.util.id._truncate(
@@ -215,108 +195,17 @@ class HTMLGen (object):
             comment.uuid, comment.sibling_uuids(),
             min_length=self.min_id_length)
 
-    def _create_output_directories(self, out_dir):
-        if self.verbose:
-            print >> self.stdout, 'Creating output directories'
-        self.out_dir = self._make_dir(out_dir)
-        self.out_dir_bugs = self._make_dir(
-            os.path.join(self.out_dir, 'bugs'))
-
-    def _write_css_file(self):
-        if self.verbose:
-            print >> self.stdout, 'Writing css file'
-        assert hasattr(self, 'out_dir'), \
-            'Must run after ._create_output_directories()'
-        template = self.template.get_template('style.css')
-        self._write_file(template.render(), [self.out_dir, 'style.css'])
-
-    def _write_bug_file(self, bug, title, header, up_link):
-        if self.verbose:
-            print >> self.stdout, '\tCreating bug file for %s' % bug.id.user()
-        assert hasattr(self, 'out_dir_bugs'), \
-            'Must run after ._create_output_directories()'
-        index_type = ''
-            
-        if bug.active == True:
-            index_type = 'Active'
-        else:
-            index_type = 'Inactive'
-        if bug.severity == 'target':
-            index_type = 'Target'
-                
-        bug.load_comments(load_full=True)
-        bug.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
-        dirname = self._truncated_bug_id(bug)
-        fullpath = os.path.join(self.out_dir_bugs, dirname, 'index.html')
-        template_info = {
-            'title': title,
-            'charset': self.encoding,
-            'stylesheet': '../../style.css',
-            'header': header,
-            'backlinks': self.template.get_template('bug_backlinks.html'),
-            'up_link': up_link,
-            'index_type': index_type,
-            'bug': bug,
-            'comment_entry': self.template.get_template(
-                'bug_comment_entry.html'),
-            'comments': [(depth,comment) for depth,comment
-                         in bug.comment_root.thread(flatten=False)],
-            'comment_dir': self._truncated_comment_id,
-            'format_body': self._format_comment_body,
-            'div_close': _DivCloser(),
-            'generation_time': self.generation_time,
-            }
-        fulldir = os.path.join(self.out_dir_bugs, dirname)
-        if not os.path.exists(fulldir):
-            os.mkdir(fulldir)
-        template = self.template.get_template('bug.html')
-        self._write_file(template.render(template_info), [fullpath])
-
-    def _write_index_file(self, bugs, title, header, bug_type='active'):
-        if self.verbose:
-            print >> self.stdout, 'Writing %s index file for %d bugs' % (bug_type, len(bugs))
-        assert hasattr(self, 'out_dir'), 'Must run after ._create_output_directories()'
-
-        if bug_type == 'active':
-            filename = 'index.html'
-        elif bug_type == 'inactive':
-            filename = 'index_inactive.html'
-        elif bug_type == 'target':
-            filename = 'index_by_target.html'
-        else:
-            raise ValueError('unrecognized bug_type: "%s"' % bug_type)
-
-        template_info = {
-            'title': title,
-            'charset': self.encoding,
-            'stylesheet': 'style.css',
-            'header': header,
-            'active_class': 'tab nsel',
-            'inactive_class': 'tab nsel',
-            'target_class': 'tab nsel',
-            'bugs': bugs,
-            'bug_entry': self.template.get_template('index_bug_entry.html'),
-            'bug_dir': self._truncated_bug_id,
-            'generation_time': self.generation_time,
-            }
-        template_info['%s_class' % bug_type] = 'tab sel'
-        if bug_type == 'target':
-            template = self.template.get_template('target_index.html')
-            template_info['targets'] = [
-                (target, sorted(libbe.command.depend.get_blocked_by(
-                            target.bugdir, target)))
-                for target in bugs]
-        else:
-            template = self.template.get_template('standard_index.html')           
-        self._write_file(
-            template.render(template_info)+'\n', [self.out_dir,filename])
+    def bug_dir(self, bug):
+        return '{}/{}'.format(
+            self._truncated_bugdir_id(bug.bugdir),
+            self._truncated_bug_id(bug))
 
     def _long_to_linked_user(self, text):
         """
         >>> import libbe.bugdir
         >>> bugdir = libbe.bugdir.SimpleBugDir(memory=False)
-        >>> h = HTMLGen({bugdir.uuid: bugdir})
-        >>> h._long_to_linked_user('A link #abc123/a#, and a non-link #x#y#.')
+        >>> a = ServerApp(bugdirs={bugdir.uuid: bugdir})
+        >>> a._long_to_linked_user('A link #abc123/a#, and a non-link #x#y#.')
         'A link <a href="./a/">abc/a</a>, and a non-link #x#y#.'
         >>> bugdir.cleanup()
         """
@@ -338,16 +227,16 @@ class HTMLGen (object):
         >>> libbe.util.id.uuid_gen = uuid_gen
         >>> c.uuid
         '0123'
-        >>> h = HTMLGen(bugdirs)
-        >>> h._long_to_linked_user_replacer(bugdirs, 'abc123')
+        >>> a = ServerApp(bugdirs=bugdirs)
+        >>> a._long_to_linked_user_replacer(bugdirs, 'abc123')
         '#abc123#'
-        >>> h._long_to_linked_user_replacer(bugdirs, 'abc123/a')
+        >>> a._long_to_linked_user_replacer(bugdirs, 'abc123/a')
         '<a href="./a/">abc/a</a>'
-        >>> h._long_to_linked_user_replacer(bugdirs, 'abc123/a/0123')
+        >>> a._long_to_linked_user_replacer(bugdirs, 'abc123/a/0123')
         '<a href="./a/#0123">abc/a/012</a>'
-        >>> h._long_to_linked_user_replacer(bugdirs, 'x')
+        >>> a._long_to_linked_user_replacer(bugdirs, 'x')
         '#x#'
-        >>> h._long_to_linked_user_replacer(bugdirs, '')
+        >>> a._long_to_linked_user_replacer(bugdirs, '')
         '##'
         >>> bugdir.cleanup()
         """
@@ -411,37 +300,15 @@ class HTMLGen (object):
                              [per_bug_dir, comment.uuid], mode='wb')
         return value
 
+    def _generation_time(self):
+        if self.generation_time:
+            return self.generation_time
+        return time.ctime()
+
     def _escape(self, string):
         if string == None:
             return ''
         return xml.sax.saxutils.escape(string)
-
-    def _make_dir(self, dir_path):
-        dir_path = os.path.abspath(os.path.expanduser(dir_path))
-        if not os.path.exists(dir_path):
-            try:
-                os.makedirs(dir_path)
-            except:
-                raise libbe.command.UserError(
-                    'Cannot create output directory "%s".' % dir_path)
-        return dir_path
-
-    def _write_file(self, content, path_array, mode='w'):
-        return libbe.util.encoding.set_file_contents(
-            os.path.join(*path_array), content, mode, self.encoding)
-
-    def _read_file(self, path_array, mode='r'):
-        return libbe.util.encoding.get_file_contents(
-            os.path.join(*path_array), mode, self.encoding, decode=True)
-
-    def write_default_template(self, out_dir):
-        if self.verbose:
-            print >> self.stdout, 'Creating output directories'
-        self.out_dir = self._make_dir(out_dir)
-        for filename,text in self.template_dict.iteritems():
-            if self.verbose:
-                print >> self.stdout, 'Creating %s file'
-            self._write_file(text, [self.out_dir, filename])
 
     def _load_templates(self, template_dir=None):
         if template_dir is not None:
@@ -677,6 +544,19 @@ div.root.comment {
   </body>
 </html>
 """,
+##
+            'bugdirs.html':
+"""{% extends "base.html" %}
+
+{% block content %}
+{% if bugdirss %}
+{% block bugdir_table %}{% endblock %}
+{% else %}
+<p>No bugdirs.</p>
+{% endif %}
+{% endblock %}
+""",
+##
             'index.html':
 """{% extends "base.html" %}
 
@@ -684,9 +564,9 @@ div.root.comment {
 <table>
   <tbody>
     <tr>
-      <td class="{{ active_class }}"><a href="index.html">Active Bugs</a></td>
-      <td class="{{ inactive_class }}"><a href="index_inactive.html">Inactive Bugs</a></td>
-      <td class="{{ target_class }}"><a href="index_by_target.html">Divided by target</a></td>
+      <td class="{{ active_class }}"><a href="{% if index_file %}{{ index_file }}{% else %}.{% endif %}">Active Bugs</a></td>
+      <td class="{{ inactive_class }}"><a href="{{ index_file }}?type=inactive">Inactive Bugs</a></td>
+      <td class="{{ target_class }}"><a href="{{ index_file }}?type=target">Divided by target</a></td>
     </tr>
   </tbody>
 </table>
@@ -714,7 +594,7 @@ div.root.comment {
   </thead>
   <tbody>
     {% for bug in bugs %}
-    {{ bug_entry.render({'bug':bug, 'dir':bug_dir(bug)}) }}
+    {{ bug_entry.render({'bug':bug, 'dir':bug_dir(bug), 'index_file':index_file}) }}
     {% endfor %}
   </tbody>
 </table>
@@ -743,7 +623,7 @@ div.root.comment {
   </thead>
   <tbody>
     {% for bug in bugs %}
-    {{ bug_entry.render({'bug':bug, 'dir':bug_dir(bug)}) }}
+    {{ bug_entry.render({'bug':bug, 'dir':bug_dir(bug), 'index_file':index_file}) }}
     {% endfor %}
   </tbody>
 </table>
@@ -753,11 +633,11 @@ div.root.comment {
 ##
             'index_bug_entry.html':
 """<tr class="{{ bug.severity }}">
-  <td class="uuid"><a href="bugs/{{ dir }}/index.html">{{ bug.id.user()|e }}</a></td>
-  <td class="status"><a href="bugs/{{ dir }}/index.html">{{ bug.status|e }}</a></td>
-  <td class="severity"><a href="bugs/{{ dir }}/index.html">{{ bug.severity|e }}</a></td>
-  <td class="summary"><a href="bugs/{{ dir }}/index.html">{{ bug.summary|e }}</a></td>
-  <td class="date"><a href="bugs/{{ dir }}/index.html">{{ (bug.time_string or '')|e }}</a></td>
+  <td class="uuid"><a href="{{ dir }}/{{ index_file }}">{{ bug.id.user()|e }}</a></td>
+  <td class="status"><a href="{{ dir }}/{{ index_file }}">{{ bug.status|e }}</a></td>
+  <td class="severity"><a href="{{ dir }}/{{ index_file }}">{{ bug.severity|e }}</a></td>
+  <td class="summary"><a href="{{ dir }}/{{ index_file }}">{{ bug.summary|e }}</a></td>
+  <td class="date"><a href="{{ dir }}/{{ index_file }}">{{ (bug.time_string or '')|e }}</a></td>
 </tr>
 """,
 ##
@@ -765,7 +645,7 @@ div.root.comment {
 """{% extends "base.html" %}
 
 {% block content %}
-{{ backlinks.render({'up_link': up_link, 'index_type':index_type}) }}
+{{ backlinks.render({'up_link': up_link, 'index_type':index_type, 'index_file':index_file}) }}
 <h1>Bug: {{ bug.id.user()|e }}</h1>
 
 <table>
@@ -817,7 +697,7 @@ div.root.comment {
 ##
             'bug_backlinks.html':
 """<p class="backlink"><a href="{{ up_link }}">Back to {{ index_type }} Index</a></p>
-<p class="backlink"><a href="../../index_by_target.html">Back to Target Index</a></p>
+<p class="backlink"><a href="../../{{ index_file }}?type=target">Back to Target Index</a></p>
 """,
 ##
             'bug_comment_entry.html':
@@ -845,8 +725,205 @@ div.root.comment {
         if template_dir:
             file_system_loader = FileSystemLoader(template_dir)
             loader = ChoiceLoader([file_system_loader, loader])
-
         self.template = Environment(loader=loader)
+
+
+class HTML (libbe.util.wsgi.ServerCommand):
+    """Serve or dump browsable HTML for the current repository
+
+    >>> import sys
+    >>> import libbe.bugdir
+    >>> bugdir = libbe.bugdir.SimpleBugDir(memory=False)
+    >>> io = libbe.command.StringInputOutput()
+    >>> io.stdout = sys.stdout
+    >>> ui = libbe.command.UserInterface(io=io)
+    >>> ui.storage_callbacks.set_storage(bugdir.storage)
+    >>> cmd = HTML(ui=ui)
+
+    >>> export_path = os.path.join(bugdir.storage.repo, 'html_export')
+    >>> ret = ui.run(cmd, {'output': export_path, 'export-html': True})
+    >>> os.path.exists(export_path)
+    True
+    >>> os.path.exists(os.path.join(export_path, 'index.html'))
+    True
+    >>> os.path.exists(os.path.join(export_path, 'index_inactive.html'))
+    True
+    >>> os.path.exists(os.path.join(export_path, bugdir.uuid))
+    True
+    >>> for bug in sorted(bugdir):
+    ...     if os.path.exists(os.path.join(
+    ...             export_path, bugdir.uuid, bug.uuid, 'index.html')):
+    ...         print('got {}'.format(bug.uuid))
+    ...     else:
+    ...         print('missing {}'.format(bug.uuid))
+    got a
+    got b
+
+    >>> ui.cleanup()
+    >>> bugdir.cleanup()
+    """
+    name = 'html'
+
+    def __init__(self, *args, **kwargs):
+        super(HTML, self).__init__(*args, **kwargs)
+        # ServerApp cannot write, so drop some security options
+        self.options = [
+            option for option in self.options
+            if option.name not in [
+                'read-only',
+                'notify',
+                'auth',
+                ]]
+
+        self.options.extend([
+                libbe.command.Option(name='template-dir', short_name='t',
+                    help=('Use different templates.  Defaults to internal '
+                          'templates'),
+                    arg=libbe.command.Argument(
+                        name='template-dir', metavar='DIR',
+                        completion_callback=libbe.command.util.complete_path)),
+                libbe.command.Option(name='title',
+                    help='Set the bug repository title (%default)',
+                    arg=libbe.command.Argument(
+                        name='title', metavar='STRING',
+                        default='Bugs Everywhere Issue Tracker')),
+                libbe.command.Option(name='index-header',
+                    help='Set the index page headers (%default)',
+                    arg=libbe.command.Argument(
+                        name='index-header', metavar='STRING',
+                        default='Bugs Everywhere Bug List')),
+                libbe.command.Option(name='min-id-length', short_name='l',
+                    help=('Attempt to truncate bug and comment IDs to this '
+                          'length.  Set to -1 for non-truncated IDs '
+                          '(%default)'),
+                    arg=libbe.command.Argument(
+                        name='min-id-length', metavar='INT',
+                        default=-1, type='int')),
+                libbe.command.Option(name='export-html', short_name='e',
+                    help='Export all HTML pages and exit.'),
+                libbe.command.Option(name='output', short_name='o',
+                    help='Set the output path for HTML export (%default)',
+                    arg=libbe.command.Argument(
+                        name='output', metavar='DIR', default='./html_export',
+                        completion_callback=libbe.command.util.complete_path)),
+                libbe.command.Option(name='export-template', short_name='E',
+                    help='Export the default template and exit.'),
+                libbe.command.Option(name='export-template-dir', short_name='d',
+                    help='Set the directory for the template export (%default)',
+                    arg=libbe.command.Argument(
+                        name='export-template-dir', metavar='DIR',
+                        default='./default-templates/',
+                        completion_callback=libbe.command.util.complete_path)),
+                ])
+
+    def _run(self, **params):
+        if True in [params['export-template'], params['export-html']]:
+            app = self._get_app(
+                logger=None, storage=None, index_file='index.html',
+                generation_time=time.ctime(), **params)
+            if params['export-template']:
+                self._write_default_template(
+                    template_dict=app.template_dict,
+                    out_dir=params['export-template-dir'])
+            elif params['export-html']:
+                self._write_static_pages(app=app, out_dir=params['output'])
+            return 0
+        # provide defaults for the dropped options
+        params['read-only'] = True
+        params['notify'] = False
+        params['auth'] = False
+        return super(HTML. self)._run(**params)
+
+    def _get_app(self, logger, storage, index_file='', generation_time=None,
+                 **kwargs):
+        return ServerApp(
+            logger=logger, bugdirs=self._get_bugdirs(),
+            template_dir=kwargs['template-dir'],
+            title=kwargs['title'],
+            header=kwargs['index-header'],
+            index_file=index_file,
+            min_id_length=kwargs['min-id-length'],
+            generation_time=generation_time)
+
+    def _long_help(self):
+        return """
+Example usage::
+
+    $ be html
+
+Then point your browser at ``http://localhost:8000/``.
+
+If either ``--export-html`` or ``export-template`` is set, the command
+will exit after the dump without serving anything over the wire.
+"""
+
+    def _write_default_template(self, template_dict, out_dir):
+        out_dir = self._make_dir(out_dir)
+        for filename,text in template_dict.iteritems():
+            self._write_file(text, [out_dir, filename])
+
+    def _write_static_pages(self, app, out_dir):
+        url_mappings = [
+            ('index.html?type=active', 'index.html'),
+            ('index.html?type=inactive', 'index_inactive.html'),
+            ('index.html?type=target', 'index_by_target.html'),
+            ]
+        out_dir = self._make_dir(out_dir)
+        caller = libbe.util.wsgi.WSGICaller()
+        self._write_file(
+            content=self._get_content(caller, app, 'style.css'),
+            path_array=[out_dir, 'style.css'])
+        for url,data_dict,path in [
+            ('index.html', {'type': 'active'}, 'index.html'),
+            ('index.html', {'type': 'inactive'}, 'index_inactive.html'),
+            ('index.html', {'type': 'target'}, 'index_by_target.html'),
+            ]:
+            content = self._get_content(caller, app, url, data_dict)
+            for url_,path_ in url_mappings:
+                content = content.replace(url_, path_)
+            self._write_file(content=content, path_array=[out_dir, path])
+        for bugdir in app.bugdirs.values():
+            for bug in bugdir:
+                bug_dir_url = app.bug_dir(bug=bug)
+                segments = bug_dir_url.split('/')
+                path_array = [out_dir]
+                path_array.extend(segments)
+                bug_dir_path = os.path.join(*path_array)
+                path_array.append(app._index_file)
+                url = '{}/{}'.format(bug_dir_url, app._index_file)
+                content = self._get_content(caller, app, url)
+                for url_,path_ in url_mappings:
+                    content = content.replace(url_, path_)
+                if not os.path.isdir(bug_dir_path):
+                    self._make_dir(bug_dir_path)                    
+                self._write_file(content=content, path_array=path_array)
+
+    def _get_content(self, caller, app, path, data_dict=None):
+        try:
+            return caller.getURL(app=app, path=path, data_dict=data_dict)
+        except libbe.util.wsgi.HandlerError:
+            self.stdout.write(
+                'error retrieving {} with {}\n'.format(path, data_dict))
+            raise
+
+    def _make_dir(self, dir_path):
+        dir_path = os.path.abspath(os.path.expanduser(dir_path))
+        if not os.path.exists(dir_path):
+            try:
+                os.makedirs(dir_path)
+            except:
+                raise libbe.command.UserError(
+                    'Cannot create output directory "{}".'.format(dir_path))
+        return dir_path
+
+    def _write_file(self, content, path_array, mode='w'):
+        if not hasattr(self, 'encoding'):
+            self.encoding = libbe.util.encoding.get_text_file_encoding()
+        return libbe.util.encoding.set_file_contents(
+            os.path.join(*path_array), content, mode, self.encoding)
+
+
+Html = HTML # alias for libbe.command.base.get_command_class()
 
 
 class _DivCloser (object):
