@@ -725,16 +725,16 @@ class WSGICaller (object):
                 env['QUERY_STRING'] = data
         for key,value in environ.items():
             env[key] = value
-        return ''.join(app(env, self._start_response))
+        return ''.join(app(env, self.start_response))
 
-    def _start_response(self, status, response_headers, exc_info=None):
+    def start_response(self, status, response_headers, exc_info=None):
         self.status = status
         self.response_headers = response_headers
         self.exc_info = exc_info
 
 
 if libbe.TESTING:
-    class WSGITestCase (unittest.TestCase, WSGICaller):
+    class WSGITestCase (unittest.TestCase):
         def setUp(self):
             self.logstream = StringIO.StringIO()
             self.logger = logging.getLogger('be-wsgi-test')
@@ -744,7 +744,14 @@ if libbe.TESTING:
             self.logger.propagate = False
             console.setLevel(logging.INFO)
             self.logger.setLevel(logging.INFO)
+            self.caller = WSGICaller()
 
+        def getURL(self, *args, **kwargs):
+            content = self.caller.getURL(*args, **kwargs)
+            self.status = self.caller.status
+            self.response_headers = self.caller.response_headers
+            self.exc_info = self.caller.exc_info
+            return content
 
     class WSGI_ObjectTestCase (WSGITestCase):
         def setUp(self):
@@ -753,22 +760,23 @@ if libbe.TESTING:
 
         def test_error(self):
             contents = self.app.error(
-                environ=self.default_environ,
-                start_response=self.start_response,
+                environ=self.caller.default_environ,
+                start_response=self.caller.start_response,
                 error=123,
                 message='Dummy Error',
                 headers=[('X-Dummy-Header','Dummy Value')])
             self.failUnless(contents == ['Dummy Error'], contents)
-            self.failUnless(self.status == '123 Dummy Error', self.status)
-            self.failUnless(self.response_headers == [
+            self.failUnless(
+                self.caller.status == '123 Dummy Error', self.caller.status)
+            self.failUnless(self.caller.response_headers == [
                     ('Content-Type','text/plain'),
                     ('X-Dummy-Header','Dummy Value')],
-                            self.response_headers)
-            self.failUnless(self.exc_info == None, self.exc_info)
+                            self.caller.response_headers)
+            self.failUnless(self.caller.exc_info == None, self.caller.exc_info)
 
         def test_log_request(self):
             self.app.log_request(
-                environ=self.default_environ, status='-1 OK', bytes=123)
+                environ=self.caller.default_environ, status='-1 OK', bytes=123)
             log = self.logstream.getvalue()
             self.failUnless(log.startswith('192.168.0.123 -'), log)
 
