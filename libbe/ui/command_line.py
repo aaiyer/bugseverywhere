@@ -258,14 +258,14 @@ class BE (libbe.command.Command):
             Class = libbe.command.get_command_class(command_name=name)
             assert hasattr(Class, '__doc__') and Class.__doc__ != None, \
                 'Command class %s missing docstring' % Class
-            cmdlist.append((name, Class.__doc__.splitlines()[0]))
+            cmdlist.append((Class.name, Class.__doc__.splitlines()[0]))
         cmdlist.sort()
         longest_cmd_len = max([len(name) for name,desc in cmdlist])
         ret = ['Bugs Everywhere - Distributed bug tracking',
                '', 'Supported commands']
         for name, desc in cmdlist:
             numExtraSpaces = longest_cmd_len-len(name)
-            ret.append('be %s%*s    %s' % (name, numExtraSpaces, '', desc))
+            ret.append('be {}{}    {}'.format(name, ' '*numExtraSpaces, desc))
         ret.extend(['', 'Run', '  be help [command]', 'for more information.'])
         return '\n'.join(ret)
 
