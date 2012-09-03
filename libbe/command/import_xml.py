@@ -368,13 +368,13 @@ Here's an example of import activity:
 
 Examples:
 
-Import comments (e.g. emails from an mbox) and append to bug /XYZ:
+Import comments (e.g. emails from a mailbox) and append to bug /XYZ:
 
-  $ be-mbox-to-xml mail.mbox | be import-xml --r /XYZ -
+  $ be-mail-to-xml mail.mbox | be import-xml --r /XYZ -
 
 Or you can append those emails underneath the prexisting comment /XYZ/3:
 
-  $ be-mbox-to-xml mail.mbox | be import-xml --r /XYZ/3 -
+  $ be-mail-to-xml mail.mbox | be import-xml --r /XYZ/3 -
 
 User creates a new bug:
 
