@@ -19,6 +19,7 @@
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
 import codecs
+import email.utils
 import htmlentitydefs
 import itertools
 import os
@@ -52,7 +53,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
 
     def __init__(self, bugdirs={}, template_dir=None, title='Site Title',
                  header='Header', index_file='', min_id_length=-1,
-                 generation_time=None, **kwargs):
+                 strip_email=False, generation_time=None, **kwargs):
         super(ServerApp, self).__init__(
             urls=[
                 (r'^{}$'.format(index_file), self.index),
@@ -65,6 +66,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         self.header = header
         self._index_file = index_file
         self.min_id_length = min_id_length
+        self.strip_email = strip_email
         self.generation_time = generation_time
         self._refresh = 0
         self.http_user_error = 418
@@ -164,6 +166,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             'comment_dir': self._truncated_comment_id,
             'format_body': self._format_comment_body,
             'div_close': _DivCloser(),
+            'strip_email': self._strip_email,
             'generation_time': self._generation_time(),
             }
         template = self.template.get_template('bug.html')
@@ -309,6 +312,14 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         if string == None:
             return ''
         return xml.sax.saxutils.escape(string)
+
+    def _strip_email(self, string):
+        if self.strip_email:
+            name,address = email.utils.parseaddr(string)
+            if name:
+                return name
+            return address
+        return string
 
     def _load_templates(self, template_dir=None):
         if template_dir is not None:
@@ -659,11 +670,11 @@ div.root.comment {
     <tr><td class="bug_detail_label">Severity :</td>
         <td class="bug_detail">{{ bug.severity|e }}</td></tr>
     <tr><td class="bug_detail_label">Assigned :</td>
-        <td class="bug_detail">{{ (bug.assigned or '')|e }}</td></tr>
+        <td class="bug_detail">{{ strip_email(bug.assigned or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Reporter :</td>
-        <td class="bug_detail">{{ (bug.reporter or '')|e }}</td></tr>
+        <td class="bug_detail">{{ strip_email(bug.reporter or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Creator :</td>
-        <td class="bug_detail">{{ (bug.creator or '')|e }}</td></tr>
+        <td class="bug_detail">{{ strip_email(bug.creator or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Created :</td>
         <td class="bug_detail">{{ (bug.time_string or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Summary :</td>
@@ -682,7 +693,8 @@ div.root.comment {
 {% endif %}
 {{ comment_entry.render({
        'depth':depth, 'bug': bug, 'comment':comment, 'comment_dir':comment_dir,
-       'format_body': format_body, 'div_close': div_close}) }}
+       'format_body': format_body, 'div_close': div_close,
+       'strip_email': strip_email}) }}
 {{ div_close(depth) }}
 {% endfor %}
 {% if comments[-1][0] > 0 %}
@@ -709,7 +721,7 @@ div.root.comment {
         --------- Comment ---------<br/>
         ID: {{ comment.uuid }}<br/>
         Short name: {{ comment.id.user() }}<br/>
-        From: {{ (comment.author or '')|e }}<br/>
+        From: {{ strip_email(comment.author or '')|e }}<br/>
         Date: {{ (comment.date or '')|e }}<br/>
         <br/>
         {{ format_body(bug, comment) }}
@@ -799,6 +811,8 @@ class HTML (libbe.util.wsgi.ServerCommand):
                     arg=libbe.command.Argument(
                         name='min-id-length', metavar='INT',
                         default=-1, type='int')),
+                libbe.command.Option(name='strip-email',
+                    help='Strip email addresses from person fields.'),
                 libbe.command.Option(name='export-html', short_name='e',
                     help='Export all HTML pages and exit.'),
                 libbe.command.Option(name='output', short_name='o',
@@ -843,6 +857,7 @@ class HTML (libbe.util.wsgi.ServerCommand):
             header=kwargs['index-header'],
             index_file=index_file,
             min_id_length=kwargs['min-id-length'],
+            strip_email=kwargs['strip-email'],
             generation_time=generation_time)
 
     def _long_help(self):
