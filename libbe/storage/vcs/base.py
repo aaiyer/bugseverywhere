@@ -1032,7 +1032,7 @@ class VCS (libbe.storage.base.VersionedStorage):
         return relpath
 
     def _u_abspath(self, path, root=None):
-        """Return the absolute path from a path realtive to root.
+        """Return the absolute path from a path relative to root.
 
         Examples
         --------
