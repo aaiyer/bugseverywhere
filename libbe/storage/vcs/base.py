@@ -1169,7 +1169,7 @@ if libbe.TESTING == True:
     class VCS_get_user_id_TestCase(VCSTestCase):
         """Test cases for VCS.get_user_id method."""
 
-        def test_gets_existing_user_id(self):
+        def test_get_existing_user_id(self):
             """Should get the existing user ID."""
             if self.s.installed():
                 user_id = self.s.get_user_id()
