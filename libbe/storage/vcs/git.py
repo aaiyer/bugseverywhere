@@ -30,8 +30,16 @@ import re
 import shutil
 import unittest
 
+try:
+    import pygit2 as _pygit2
+except ImportError, error:
+    _pygit2 = None
+    _pygit2_import_error = error
+
 import libbe
 from ...ui.util import user as _user
+from ...util import encoding as _encoding
+from ..base import EmptyCommit as _EmptyCommit
 from . import base
 
 if libbe.TESTING == True:
@@ -40,17 +48,235 @@ if libbe.TESTING == True:
 
 
 def new():
-    return Git()
+    if _pygit2:
+        return PygitGit()
+    else:
+        return ExecGit()
 
-class Git(base.VCS):
-    """:class:`base.VCS` implementation for Git.
+
+class PygitGit(base.VCS):
+    """:py:class:`base.VCS` implementation for Git.
+
+    Using :py:mod:`pygit2` for the Git activity.
     """
-    name='git'
-    client='git'
+    name='pygit2'
+    _null_hex = u'0' * 40
+    _null_oid = '\00' * 20
 
     def __init__(self, *args, **kwargs):
         base.VCS.__init__(self, *args, **kwargs)
         self.versioned = True
+        self._pygit_repository = None
+
+    def __getstate__(self):
+        """`pygit2.Repository`\s don't seem to pickle well.
+        """
+        attrs = dict(self.__dict__)
+        if self._pygit_repository is not None:
+            attrs['_pygit_repository'] = self._pygit_repository.path
+        return attrs
+
+    def __setstate__(self, state):
+        """`pygit2.Repository`\s don't seem to pickle well.
+        """
+        self.__dict__.update(state)
+        if self._pygit_repository is not None:
+            gitdir = self._pygit_repository
+            self._pygit_repository = _pygit2.Repository(gitdir)
+
+    def _vcs_version(self):
+        if _pygit2:
+            return getattr(_pygit2, '__verison__', '?')
+        return None
+
+    def _vcs_get_user_id(self):
+        try:
+            name = self._pygit_repository.config['user.name']
+        except KeyError:
+            name = ''
+        try:
+            email = self._pygit_repository.config['user.email']
+        except KeyError:
+            email = ''
+        if name != '' or email != '': # got something!
+            # guess missing info, if necessary
+            if name == '':
+                name = _user.get_fallback_fullname()
+            if email == '':
+                email = _user.get_fallback_email()
+            if '@' not in email:
+                raise ValueError((name, email))
+            return _user.create_user_id(name, email)
+        return None # Git has no infomation
+
+    def _vcs_detect(self, path):
+        try:
+            _pygit2.discover_repository(path)
+        except KeyError:
+            return False
+        return True
+
+    def _vcs_root(self, path):
+        """Find the root of the deepest repository containing path."""
+        # Assume that nothing funny is going on; in particular, that we aren't
+        # dealing with a bare repo.
+        gitdir = _pygit2.discover_repository(path)
+        self._pygit_repository = _pygit2.Repository(gitdir)
+        dirname,tip = os.path.split(gitdir)
+        if tip == '':  # split('x/y/z/.git/') == ('x/y/z/.git', '')
+            dirname,tip = os.path.split(dirname)
+        assert tip == '.git', tip
+        return dirname
+
+    def _vcs_init(self, path):
+        bare = False
+        self._pygit_repository = _pygit2.init_repository(path, bare)
+
+    def _vcs_destroy(self):
+        vcs_dir = os.path.join(self.repo, '.git')
+        if os.path.exists(vcs_dir):
+            shutil.rmtree(vcs_dir)
+
+    def _vcs_add(self, path):
+        abspath = self._u_abspath(path)
+        if os.path.isdir(abspath):
+            return
+        self._pygit_repository.index.read()
+        self._pygit_repository.index.add(path)
+        self._pygit_repository.index.write()
+
+    def _vcs_remove(self, path):
+        abspath = self._u_abspath(path)
+        if not os.path.isdir(self._u_abspath(abspath)):
+            self._pygit_repository.index.read()
+            del self._pygit_repository.index[path]
+            self._pygit_repository.index.write()
+            os.remove(os.path.join(self.repo, path))
+
+    def _vcs_update(self, path):
+        self._vcs_add(path)
+
+    def _git_get_commit(self, revision):
+        if isinstance(revision, str):
+            revision = unicode(revision, 'ascii')
+        commit = self._pygit_repository.revparse_single(revision)
+        assert commit.type == _pygit2.GIT_OBJ_COMMIT, commit
+        return commit
+
+    def _git_get_object(self, path, revision):
+        commit = self._git_get_commit(revision=revision)
+        tree = commit.tree
+        sections = path.split(os.path.sep)
+        for section in sections[:-1]:  # traverse trees
+            child_tree = None
+            for entry in tree:
+                if entry.name == section:
+                    eobj = entry.to_object()
+                    if eobj.type == _pygit2.GIT_OBJ_TREE:
+                        child_tree = eobj
+                        break
+                    else:
+                        raise ValueError(path)  # not a directory
+            if child_tree is None:
+                raise ValueError((path, sections, section, [e.name for e in tree]))
+                raise ValueError(path)  # not found
+            tree = child_tree
+        eobj = None
+        for entry in tree:
+            if entry.name == sections[-1]:
+                eobj = entry.to_object()
+        return eobj
+
+    def _vcs_get_file_contents(self, path, revision=None):
+        if revision == None:
+            return base.VCS._vcs_get_file_contents(self, path, revision)
+        else:
+            blob = self._git_get_object(path=path, revision=revision)
+            if blob.type != _pygit2.GIT_OBJ_BLOB:
+                raise ValueError(path)  # not a file
+            return blob.read_raw()
+
+    def _vcs_path(self, id, revision):
+        return self._u_find_id(id, revision)
+
+    def _vcs_isdir(self, path, revision):
+        obj = self._git_get_object(path=path, revision=revision)
+        return obj.type == _pygit2.GIT_OBJ_TREE
+
+    def _vcs_listdir(self, path, revision):
+        tree = self._git_get_object(path=path, revision=revision)
+        assert tree.type == _pygit2.GIT_OBJ_TREE, tree
+        return [e.name for e in tree]
+
+    def _vcs_commit(self, commitfile, allow_empty=False):
+        self._pygit_repository.index.read()
+        tree_oid = self._pygit_repository.index.write_tree()
+        try:
+            self._pygit_repository.head
+        except _pygit2.GitError:  # no head; this is the first commit
+            parents = []
+            tree = self._pygit_repository[tree_oid]
+            if not allow_empty and len(tree) == 0:
+                raise _EmptyCommit()
+        else:
+            parents = [self._pygit_repository.head.oid]
+            if (not allow_empty and
+                tree_oid == self._pygit_repository.head.tree.oid):
+                raise _EmptyCommit()
+        update_ref = 'HEAD'
+        user_id = self.get_user_id()
+        name,email = _user.parse_user_id(user_id)
+        # using default times is recent, see
+        #   https://github.com/libgit2/pygit2/pull/129
+        author = _pygit2.Signature(name, email)
+        committer = author
+        message = _encoding.get_file_contents(commitfile, decode=False)
+        encoding = _encoding.get_text_file_encoding()
+        commit_oid = self._pygit_repository.create_commit(
+            update_ref, author, committer, message, tree_oid, parents,
+            encoding)
+        commit = self._pygit_repository[commit_oid]
+        return commit.hex
+
+    def _vcs_revision_id(self, index):
+        walker = self._pygit_repository.walk(
+            self._pygit_repository.head.oid, _pygit2.GIT_SORT_TIME)
+        if index < 0:
+            target_i = -1 - index  # -1: 0, -2: 1, ...
+            for i,commit in enumerate(walker):
+                if i == target_i:
+                    return commit.hex
+        elif index > 0:
+            revisions = [commit.hex for commit in walker]
+            # revisions is [newest, older, ..., oldest]
+            if index > len(revisions):
+                return None
+            return revisions[len(revisions) - index]
+        else:
+            raise NotImplementedError('initial revision')
+        return None
+
+    def _vcs_changed(self, revision):
+        commit = self._git_get_commit(revision=revision)
+        diff = commit.tree.diff(self._pygit_repository.head.tree)
+        new = set()
+        modified = set()
+        removed = set()
+        for hunk in diff.changes['hunks']:
+            if hunk.old_oid == self._null_hex:  # pygit2 uses hex in hunk.*_oid
+                new.add(hunk.new_file)
+            elif hunk.new_oid == self._null_hex:
+                removed.add(hunk.old_file)
+            else:
+                modified.add(hunk.new_file)
+        return (list(new), list(modified), list(removed))
+
+
+class ExecGit (PygitGit):
+    """:class:`base.VCS` implementation for Git.
+    """
+    name='git'
+    client='git'
 
     def _vcs_version(self):
         try:
@@ -60,14 +286,14 @@ class Git(base.VCS):
         return output.strip()
 
     def _vcs_get_user_id(self):
-        status,output,error = \
-            self._u_invoke_client('config', 'user.name', expect=(0,1))
+        status,output,error = self._u_invoke_client(
+            'config', 'user.name', expect=(0,1))
         if status == 0:
             name = output.rstrip('\n')
         else:
             name = ''
-        status,output,error = \
-            self._u_invoke_client('config', 'user.email', expect=(0,1))
+        status,output,error = self._u_invoke_client(
+            'config', 'user.email', expect=(0,1))
         if status == 0:
             email = output.rstrip('\n')
         else:
@@ -251,7 +477,7 @@ class Git(base.VCS):
             assert file_a.startswith('a/'), \
                 'missformed file_a %s' % file_a
             assert file_b.startswith('b/'), \
-                'missformed file_a %s' % file_b
+                'missformed file_b %s' % file_b
             file = file_a[2:]
             assert file_b[2:] == file, \
                 'diff file missmatch %s != %s' % (file_a, file_b)
@@ -268,7 +494,8 @@ class Git(base.VCS):
 
 
 if libbe.TESTING == True:
-    base.make_vcs_testcase_subclasses(Git, sys.modules[__name__])
+    base.make_vcs_testcase_subclasses(PygitGit, sys.modules[__name__])
+    base.make_vcs_testcase_subclasses(ExecGit, sys.modules[__name__])
 
     unitsuite =unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
