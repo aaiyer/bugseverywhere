@@ -25,29 +25,19 @@ easy merging of independent/conflicting changes.
 """
 
 import errno
+import json
 import os.path
-import types
-import yaml
 
 import libbe
 if libbe.TESTING == True:
     import doctest
 
 
-class IllegalKey(Exception):
-    def __init__(self, key):
-        Exception.__init__(self, 'Illegal key "%s"' % key)
-        self.key = key
-
-class IllegalValue(Exception):
-    def __init__(self, value):
-        Exception.__init__(self, 'Illegal value "%s"' % value)
-        self.value = value
-
-class InvalidMapfileContents(Exception):
+class InvalidMapfileContents (Exception):
     def __init__(self, contents):
-        Exception.__init__(self, 'Invalid YAML contents')
+        super(InvalidMapfileContents, self).__init__('Invalid JSON contents')
         self.contents = contents
+
 
 def generate(map):
     """Generate a YAML mapfile content string.
@@ -55,56 +45,59 @@ def generate(map):
     Examples
     --------
 
-    >>> generate({'q':'p'})
-    'q: p\\n\\n'
+    >>> import sys
+    >>> sys.stdout.write(generate({'q':'p'}))
+    {
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+        "q": "p"
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    }
     >>> generate({'q':u'Fran\u00e7ais'})
-    'q: Fran\\xc3\\xa7ais\\n\\n'
+    '{\\n\\n\\n\\n\\n\\n\\n    "q": "Fran\\\\u00e7ais"\\n\\n\\n\\n\\n\\n\\n}\\n'
     >>> generate({'q':u'hello'})
-    'q: hello\\n\\n'
-    >>> generate({'q=':'p'})
-    Traceback (most recent call last):
-    IllegalKey: Illegal key "q="
-    >>> generate({'q:':'p'})
-    Traceback (most recent call last):
-    IllegalKey: Illegal key "q:"
-    >>> generate({'q\\n':'p'})
-    Traceback (most recent call last):
-    IllegalKey: Illegal key "q\\n"
-    >>> generate({'':'p'})
-    Traceback (most recent call last):
-    IllegalKey: Illegal key ""
-    >>> generate({'>q':'p'})
-    Traceback (most recent call last):
-    IllegalKey: Illegal key ">q"
-    >>> generate({'q':'p\\n'})
-    Traceback (most recent call last):
-    IllegalValue: Illegal value "p\\n"
+    '{\\n\\n\\n\\n\\n\\n\\n    "q": "hello"\\n\\n\\n\\n\\n\\n\\n}\\n'
+    >>> sys.stdout.write(generate(
+    ...         {'p':'really long line\\n'*10, 'q': 'the next entry'}))
+    {
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+        "p": "really long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\n", 
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+        "q": "the next entry"
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    <BLANKLINE>
+    }
 
     See Also
     --------
     parse : inverse
     """
-    keys = map.keys()
-    keys.sort()
-    for key in keys:
-        try:
-            assert not key.startswith('>')
-            assert('\n' not in key)
-            assert('=' not in key)
-            assert(':' not in key)
-            assert(len(key) > 0)
-        except AssertionError:
-            raise IllegalKey(unicode(key).encode('unicode_escape'))
-        if '\n' in map[key]:
-            raise IllegalValue(unicode(map[key]).encode('unicode_escape'))
-
-    lines = []
-    for key in keys:
-        lines.append(yaml.safe_dump({key: map[key]},
-                                    default_flow_style=False,
-                                    allow_unicode=True))
-        lines.append('')
-    return '\n'.join(lines)
+    lines = json.dumps(map, sort_keys=True, indent=4).splitlines()
+    # add blank lines for context-less merging
+    return '\n\n\n\n\n\n\n'.join(lines) + '\n'
 
 def parse(contents):
     """Parse a YAML mapfile string.
@@ -112,18 +105,16 @@ def parse(contents):
     Examples
     --------
 
-    >>> parse('q: p\\n\\n')['q']
-    'p'
-    >>> parse('q: \\'p\\'\\n\\n')['q']
-    'p'
+    >>> parse('{"q": "p"}')['q']
+    u'p'
     >>> contents = generate({'a':'b', 'c':'d', 'e':'f'})
     >>> dict = parse(contents)
     >>> dict['a']
-    'b'
+    u'b'
     >>> dict['c']
-    'd'
+    u'd'
     >>> dict['e']
-    'f'
+    u'f'
     >>> contents = generate({'q':u'Fran\u00e7ais'})
     >>> dict = parse(contents)
     >>> dict['q']
@@ -131,18 +122,17 @@ def parse(contents):
     >>> dict = parse('a!')
     Traceback (most recent call last):
       ...
-    InvalidMapfileContents: Invalid YAML contents
+    InvalidMapfileContents: Invalid JSON contents
 
     See Also
     --------
     generate : inverse
 
     """
-    c = yaml.load(contents)
-    if type(c) == types.StringType:
-        raise InvalidMapfileContents(
-            'Unable to parse YAML (BE format missmatch?):\n\n%s' % contents)
-    return c or {}
+    try:
+        return json.loads(contents)
+    except ValueError:
+        raise InvalidMapfileContents(contents)
 
 if libbe.TESTING == True:
     suite = doctest.DocTestSuite()

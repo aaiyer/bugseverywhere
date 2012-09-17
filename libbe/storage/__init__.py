@@ -47,6 +47,7 @@ STORAGE_VERSIONS = ['Bugs Everywhere Tree 1 0',
                     'Bugs Everywhere Directory v1.2',
                     'Bugs Everywhere Directory v1.3',
                     'Bugs Everywhere Directory v1.4',
+                    'Bugs Everywhere Directory v1.5',
                     ]
 
 # the current version

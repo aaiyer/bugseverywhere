@@ -22,8 +22,12 @@ Handle conversion between the various BE storage formats.
 """
 
 import codecs
+import json
 import os, os.path
 import sys
+import types
+
+import yaml
 
 import libbe
 import libbe.bug
@@ -34,6 +38,66 @@ import libbe.ui.util.editor
 import libbe.util
 import libbe.util.encoding as encoding
 import libbe.util.id
+
+
+def generate_yaml_mapfile(map):
+    """From v1.1 to v1.5, BE dirs used YAML mapfiles
+
+    >>> generate_yaml_mapfile({'q':'p'})
+    'q: p\\n\\n'
+    >>> generate_yaml_mapfile({'q':u'Fran\u00e7ais'})
+    'q: Fran\\xc3\\xa7ais\\n\\n'
+    >>> generate_yaml_mapfile({'q':u'hello'})
+    'q: hello\\n\\n'
+    """
+    keys = map.keys()
+    keys.sort()
+    for key in keys:
+        try:
+            assert not key.startswith('>')
+            assert('\n' not in key)
+            assert('=' not in key)
+            assert(':' not in key)
+            assert(len(key) > 0)
+        except AssertionError:
+            raise ValueError(unicode(key).encode('unicode_escape'))
+        if '\n' in map[key]:
+            raise ValueError(unicode(map[key]).encode('unicode_escape'))
+
+    lines = []
+    for key in keys:
+        lines.append(yaml.safe_dump({key: map[key]},
+                                    default_flow_style=False,
+                                    allow_unicode=True))
+        lines.append('')
+    return '\n'.join(lines)
+
+
+def parse_yaml_mapfile(contents):
+    """From v1.1 to v1.5, BE dirs used YAML mapfiles
+
+    >>> parse_yaml_mapfile('q: p\\n\\n')['q']
+    'p'
+    >>> parse_yaml_mapfile('q: \\'p\\'\\n\\n')['q']
+    'p'
+    >>> contents = generate_yaml_mapfile({'a':'b', 'c':'d', 'e':'f'})
+    >>> dict = parse_yaml_mapfile(contents)
+    >>> dict['a']
+    'b'
+    >>> dict['c']
+    'd'
+    >>> dict['e']
+    'f'
+    >>> contents = generate_yaml_mapfile({'q':u'Fran\u00e7ais'})
+    >>> dict = parse_yaml_mapfile(contents)
+    >>> dict['q']
+    u'Fran\\xe7ais'
+    """
+    c = yaml.safe_load(contents)
+    if type(c) == types.StringType:
+        raise mapfile.InvalidMapfileContents(
+            'Unable to parse YAML (BE format missmatch?):\n\n%s' % contents)
+    return c or {}
 
 
 class Upgrader (object):
@@ -118,8 +182,10 @@ class Upgrade_1_0_to_1_1 (Upgrader):
                     newlines.append(line)
             contents = '\n'.join(newlines)
             # load the YAML and save
-            map = mapfile.parse(contents)
-            contents = mapfile.generate(map)
+            map = parse_yaml_mapfile(contents)
+            if type(map) == types.StringType:
+                raise ValueError((path, contents))
+            contents = generate_yaml_mapfile(map)
             encoding.set_file_contents(path, contents)
             self.vcs._vcs_update(path)
 
@@ -145,7 +211,7 @@ class Upgrade_1_0_to_1_1 (Upgrader):
                 if 'From' in settings:
                     settings['Author'] = settings.pop('From')
                     encoding.set_file_contents(
-                        path, mapfile.generate(settings))
+                        path, generate_yaml_mapfile(settings))
                     self.vcs._vcs_update(path)
 
 
@@ -154,7 +220,7 @@ class Upgrade_1_1_to_1_2 (Upgrader):
     final_version = "Bugs Everywhere Directory v1.2"
     def _get_vcs_name(self):
         path = self.get_path('settings')
-        settings = mapfile.parse(encoding.get_file_contents(path))
+        settings = parse_yaml_mapfile(encoding.get_file_contents(path))
         if 'rcs_name' in settings:
             return settings['rcs_name']
         return None
@@ -164,10 +230,10 @@ class Upgrade_1_1_to_1_2 (Upgrader):
         BugDir settings field "rcs_name" -> "vcs_name".
         """
         path = self.get_path('settings')
-        settings = mapfile.parse(encoding.get_file_contents(path))
+        settings = parse_yaml_mapfile(encoding.get_file_contents(path))
         if 'rcs_name' in settings:
             settings['vcs_name'] = settings.pop('rcs_name')
-            encoding.set_file_contents(path, mapfile.generate(settings))
+            encoding.set_file_contents(path, generate_yaml_mapfile(settings))
             self.vcs._vcs_update(path)
 
 class Upgrade_1_2_to_1_3 (Upgrader):
@@ -179,7 +245,7 @@ class Upgrade_1_2_to_1_3 (Upgrader):
 
     def _get_vcs_name(self):
         path = self.get_path('settings')
-        settings = mapfile.parse(encoding.get_file_contents(path))
+        settings = parse_yaml_mapfile(encoding.get_file_contents(path))
         if 'vcs_name' in settings:
             return settings['vcs_name']
         return None
@@ -190,7 +256,7 @@ class Upgrade_1_2_to_1_3 (Upgrader):
         if not os.path.exists(path):
             self.vcs._add_path(path, directory=False)
         path = self.get_path('bugs', bug.uuid, 'values')
-        mf = mapfile.generate(bug._get_saved_settings())
+        mf = generate_yaml_mapfile(bug._get_saved_settings())
         encoding.set_file_contents(path, mf)
         self.vcs._vcs_update(path)
 
@@ -206,10 +272,10 @@ class Upgrade_1_2_to_1_3 (Upgrader):
         mf = encoding.get_file_contents(path)
         if mf == libbe.util.InvalidObject:
             return # settings file does not exist
-        settings = mapfile.parse(mf)
+        settings = parse_yaml_mapfile(mf)
         if 'target' in settings:
             settings['target'] = self._target_bug(settings['target']).uuid
-            mf = mapfile.generate(settings)
+            mf = generate_yaml_mapfile(settings)
             encoding.set_file_contents(path, mf)
             self.vcs._vcs_update(path)
 
@@ -219,7 +285,7 @@ class Upgrade_1_2_to_1_3 (Upgrader):
         mf = encoding.get_file_contents(path)
         if mf == libbe.util.InvalidObject:
             return # settings file does not exist
-        settings = mapfile.parse(mf)
+        settings = parse_yaml_mapfile(mf)
         if 'target' in settings:
             target_bug = self._target_bug(settings['target'])
 
@@ -231,7 +297,7 @@ class Upgrade_1_2_to_1_3 (Upgrader):
             settings['extra_strings'] = sorted(estrs)
 
             settings.pop('target')
-            mf = mapfile.generate(settings)
+            mf = generate_yaml_mapfile(settings)
             encoding.set_file_contents(path, mf)
             self.vcs._vcs_update(path)
 
@@ -251,7 +317,7 @@ class Upgrade_1_3_to_1_4 (Upgrader):
     final_version = "Bugs Everywhere Directory v1.4"
     def _get_vcs_name(self):
         path = self.get_path('settings')
-        settings = mapfile.parse(encoding.get_file_contents(path))
+        settings = parse_yaml_mapfile(encoding.get_file_contents(path))
         if 'vcs_name' in settings:
             return settings['vcs_name']
         return None
@@ -288,10 +354,50 @@ class Upgrade_1_3_to_1_4 (Upgrader):
         raise Exception('Need user assistance\n%s' % '\n'.join(msg))
 
 
+class Upgrade_1_4_to_1_5 (Upgrader):
+    initial_version = "Bugs Everywhere Directory v1.4"
+    final_version = "Bugs Everywhere Directory v1.5"
+    def _get_vcs_name(self):
+        path = self.get_path('settings')
+        for p in os.listdir(self.get_path()):  # check each bugdir's settings
+            path = os.path.join(self.get_path(), p)
+            if os.path.isdir(path):
+                settings_path = os.path.join(path, 'settings')
+                if os.path.isfile(settings_path):
+                    settings = parse_yaml_mapfile(encoding.get_file_contents(
+                            settings_path))
+                    if 'vcs_name' in settings:
+                        return settings['vcs_name']  # first entry we found
+        return None
+
+    def _upgrade(self):
+        """
+        convert YAML settings to JSON (much faster parsing)
+        "./be/BUGDIR-UUID/settings"
+        "./be/BUGDIR-UUID/bugs/BUG-UUID/values"
+        "./be/BUGDIR-UUID/bugs/BUG-UUID/comments/COMMENT-UUID/values"
+        """
+        self.repo = os.path.abspath(self.repo)
+        basenames = [p for p in os.listdir(self.get_path())]
+        for dirpath,dirnames,filenames in os.walk(self.get_path()):
+            for filename in filenames:
+                if filename in ['settings', 'values']:
+                    self._upgrade_mapfile(os.path.join(dirpath, filename))
+
+    def _upgrade_mapfile(self, path):
+        contents = encoding.get_file_contents(path)
+        data = parse_yaml_mapfile(contents)
+        contents = mapfile.generate(data)
+        encoding.set_file_contents(path, contents)
+        self.vcs._vcs_update(path)
+
+
 upgraders = [Upgrade_1_0_to_1_1,
              Upgrade_1_1_to_1_2,
              Upgrade_1_2_to_1_3,
-             Upgrade_1_3_to_1_4]
+             Upgrade_1_3_to_1_4,
+             Upgrade_1_4_to_1_5]
+
 upgrade_classes = {}
 for upgrader in upgraders:
     upgrade_classes[(upgrader.initial_version,upgrader.final_version)]=upgrader
