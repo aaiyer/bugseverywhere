@@ -376,7 +376,7 @@ th.target_name {
     border-color: #305275;
     background-color: #305275;
     color: #fff;
-    width: auto%;
+    width: auto;
     -moz-border-radius-topleft: 8px;
     -moz-border-radius-topright: 8px;
     padding-left: 5px;
@@ -418,7 +418,7 @@ td {
     border-collapse: collapse;
     padding-left: 5px;
     padding-right: 5px;
-    width: auto%;
+    width: auto;
 }
 
 img { border-style: none; }
