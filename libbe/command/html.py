@@ -348,7 +348,7 @@ div.main {
   padding-top: 0;
   margin-top: 1em;
   background-color: #fcfcfc;
-  -moz-border-radius: 10px;
+  border-radius: 10px;
   
 }
 
@@ -361,7 +361,7 @@ div.footer {
   margin: auto;
   background: #305275;
   color: #fffee7;
-  -moz-border-radius: 10px;
+  border-radius: 10px;
 }
 
 div.header {
@@ -373,7 +373,7 @@ div.header {
     padding-bottom: 10px;
     background: #305275;
     color: #fffee7;
-    -moz-border-radius: 10px;
+    border-radius: 10px;
 }
 
 th.target_name {
@@ -383,8 +383,8 @@ th.target_name {
     background-color: #305275;
     color: #fff;
     width: auto;
-    -moz-border-radius-topleft: 8px;
-    -moz-border-radius-topright: 8px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
     padding-left: 5px;
     padding-right: 5px;
 }
@@ -462,15 +462,15 @@ td.sel.tab {
     background-color: #c3d9ff ;
     border: 1px solid #c3d9ff;
     font-weight:bold;    
-    -moz-border-radius-topleft: 15px;
-    -moz-border-radius-topright: 15px;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
 }
 
 td.nsel.tab { 
     border: 1px solid #c3d9ff;
     font-weight:bold;    
-    -moz-border-radius-topleft: 5px;
-    -moz-border-radius-topright: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
 }
 
 table.bug_list {
