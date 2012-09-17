@@ -34,6 +34,7 @@ from jinja2 import Environment, FileSystemLoader, DictLoader, ChoiceLoader
 import libbe
 import libbe.command
 import libbe.command.depend
+import libbe.command.target
 import libbe.command.util
 import libbe.comment
 import libbe.util.encoding
@@ -146,6 +147,9 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             index_type = 'active'
         else:
             index_type = 'inactive'
+        target = libbe.command.target.bug_target(self.bugdirs, bug)
+        if target == bug:  # e.g. when bug.severity == 'target'
+            target = None
         up_link = '../../{}?type={}'.format(self._index_file, index_type)
         bug.load_comments(load_full=True)
         bug.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
@@ -159,10 +163,12 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             'index_type': index_type.capitalize(),
             'index_file': self._index_file,
             'bug': bug,
+            'target': target,
             'comment_entry': self.template.get_template(
                 'bug_comment_entry.html'),
             'comments': [(depth,comment) for depth,comment
                          in bug.comment_root.thread(flatten=False)],
+            'bug_dir': self.bug_dir,
             'comment_dir': self._truncated_comment_id,
             'format_body': self._format_comment_body,
             'div_close': _DivCloser(),
@@ -677,6 +683,10 @@ div.root.comment {
         <td class="bug_detail">{{ strip_email(bug.creator or '')|e }}</td></tr>
     <tr><td class="bug_detail_label">Created :</td>
         <td class="bug_detail">{{ (bug.time_string or '')|e }}</td></tr>
+{% if target %}
+    <tr><td class="bug_detail_label">Target :</td>
+        <td class="bug_detail"><a href="../../{{ bug_dir(target) }}/{{ index_file }}">{{ target.summary }}</a></td></tr>
+{% endif %}
     <tr><td class="bug_detail_label">Summary :</td>
         <td class="bug_detail">{{ bug.summary|e }}</td></tr>
   </tbody>
