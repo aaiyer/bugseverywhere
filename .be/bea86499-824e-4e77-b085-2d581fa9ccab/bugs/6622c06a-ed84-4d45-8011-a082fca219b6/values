@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: Better word wrapping in comments.  (kill <pre>.)
+    "creator": "abentley", 
 
 
-time: Mon, 30 Jan 2006 20:03:25 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Better word wrapping in comments.  (kill <pre>.)", 
+
+
+
+
+
+
+    "time": "Mon, 30 Jan 2006 20:03:25 +0000"
+
+
+
+
+
+
+}

@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: prevent collisions in different branches
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "prevent collisions in different branches"
+
+
+
+
+
+
+}

@@ -1,8 +1,29 @@
-Author: W. Trevor King <wking@example.com>
+{
 
 
-Content-type: text/plain
 
 
-Date: Wed, 19 Nov 2008 01:12:37 +0000
 
+
+    "Author": "W. Trevor King <wking@example.com>", 
+
+
+
+
+
+
+    "Content-type": "text/plain", 
+
+
+
+
+
+
+    "Date": "Wed, 19 Nov 2008 01:12:37 +0000"
+
+
+
+
+
+
+}

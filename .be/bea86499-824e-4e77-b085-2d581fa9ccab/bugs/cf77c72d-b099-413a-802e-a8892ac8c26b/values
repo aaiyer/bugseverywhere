@@ -1,14 +1,43 @@
-assigned: abentley
+{
 
 
-creator: abentley
 
 
-severity: minor
 
 
-status: fixed
+    "assigned": "abentley", 
 
 
-summary: date-stamp bugs
 
+
+
+
+    "creator": "abentley", 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "date-stamp bugs"
+
+
+
+
+
+
+}

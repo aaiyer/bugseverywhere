@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: Customizable severity levels?
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Customizable severity levels?"
+
+
+
+
+
+
+}

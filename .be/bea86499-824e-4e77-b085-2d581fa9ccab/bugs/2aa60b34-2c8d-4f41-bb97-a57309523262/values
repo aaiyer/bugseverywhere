@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: implement message-change log
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "implement message-change log"
+
+
+
+
+
+
+}

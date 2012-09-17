@@ -1,14 +1,43 @@
-assigned: abentley
+{
 
 
-creator: abentley
 
 
-severity: minor
 
 
-status: closed
+    "assigned": "abentley", 
 
 
-summary: Organize list by whether it's assigned to the current target
 
+
+
+
+    "creator": "abentley", 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Organize list by whether it's assigned to the current target"
+
+
+
+
+
+
+}

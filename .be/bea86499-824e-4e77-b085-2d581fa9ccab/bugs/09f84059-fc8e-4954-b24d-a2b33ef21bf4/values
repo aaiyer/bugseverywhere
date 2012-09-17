@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: Support RST
+    "creator": "abentley", 
 
 
-time: Thu, 06 Apr 2006 16:45:52 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Support RST", 
+
+
+
+
+
+
+    "time": "Thu, 06 Apr 2006 16:45:52 +0000"
+
+
+
+
+
+
+}

@@ -1,15 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: there's a tyop in the wx example gui (in the line that appends ../../ to
-  sys.path)
+    "creator": "abentley", 
 
 
-time: Tue, 27 Dec 2005 16:59:49 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "there's a tyop in the wx example gui (in the line that appends ../../ to sys.path)", 
+
+
+
+
+
+
+    "time": "Tue, 27 Dec 2005 16:59:49 +0000"
+
+
+
+
+
+
+}

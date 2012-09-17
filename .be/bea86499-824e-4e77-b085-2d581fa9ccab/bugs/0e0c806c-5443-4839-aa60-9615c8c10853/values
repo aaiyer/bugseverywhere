@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: fix up command listings
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "fix up command listings"
+
+
+
+
+
+
+}

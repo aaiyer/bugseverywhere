@@ -1,17 +1,50 @@
-creator: Praveen Arimbrathodiyil <pravi.a@gmail.com>
+{
 
 
-reporter: Praveen Arimbrathodiyil <pravi.a@gmail.com>
 
 
-severity: wishlist
 
 
-status: open
+    "creator": "Praveen Arimbrathodiyil <pravi.a@gmail.com>", 
 
 
-summary: 'Integrate BE with gitorious'
 
 
-time: Wed, 25 Jul 2012 13:03:24 +0000
 
+
+    "reporter": "Praveen Arimbrathodiyil <pravi.a@gmail.com>", 
+
+
+
+
+
+
+    "severity": "wishlist", 
+
+
+
+
+
+
+    "status": "open", 
+
+
+
+
+
+
+    "summary": "Integrate BE with gitorious", 
+
+
+
+
+
+
+    "time": "Wed, 25 Jul 2012 13:03:24 +0000"
+
+
+
+
+
+
+}

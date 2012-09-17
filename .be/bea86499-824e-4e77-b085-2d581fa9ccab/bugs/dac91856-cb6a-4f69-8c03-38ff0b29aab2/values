@@ -1,14 +1,43 @@
-creator: wking
+{
 
 
-severity: serious
 
 
-status: fixed
 
 
-summary: BE not notifying git of some changed files
+    "creator": "wking", 
 
 
-time: Mon, 17 Nov 2008 15:02:15 +0000
 
+
+
+
+    "severity": "serious", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "BE not notifying git of some changed files", 
+
+
+
+
+
+
+    "time": "Mon, 17 Nov 2008 15:02:15 +0000"
+
+
+
+
+
+
+}

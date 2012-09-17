@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: Add last-modified field to bugs
+    "creator": "abentley", 
 
 
-time: Thu, 14 Sep 2006 18:08:53 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Add last-modified field to bugs", 
+
+
+
+
+
+
+    "time": "Thu, 14 Sep 2006 18:08:53 +0000"
+
+
+
+
+
+
+}

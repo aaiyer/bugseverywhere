@@ -1,23 +1,78 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: Steve Losh <steve@stevelosh.com>
 
 
-extra_strings:
-- BLOCKS:76a6140e-0800-453c-9720-29cc161663d1
-- TAG:CFBE
 
 
-severity: minor
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: open
 
 
-summary: Assignee default selection is broken if two people have the same name but
-  different emails.
 
 
-time: Mon, 02 Feb 2009 00:38:49 +0000
+    "creator": "Steve Losh <steve@stevelosh.com>", 
 
+
+
+
+
+
+    "extra_strings": [
+
+
+
+
+
+
+        "BLOCKS:76a6140e-0800-453c-9720-29cc161663d1", 
+
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "open", 
+
+
+
+
+
+
+    "summary": "Assignee default selection is broken if two people have the same name but different emails.", 
+
+
+
+
+
+
+    "time": "Mon, 02 Feb 2009 00:38:49 +0000"
+
+
+
+
+
+
+}

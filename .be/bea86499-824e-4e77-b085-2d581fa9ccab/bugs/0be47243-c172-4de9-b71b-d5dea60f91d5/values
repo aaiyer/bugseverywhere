@@ -1,23 +1,78 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: Steve Losh <steve@stevelosh.com>
 
 
-extra_strings:
-- BLOCKS:76a6140e-0800-453c-9720-29cc161663d1
-- TAG:CFBE
 
 
-severity: minor
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: open
 
 
-summary: Fix the null creation date bug.  See bug ee6 in the BE repo for an example
-  that breaks things.
 
 
-time: Sun, 01 Feb 2009 21:26:49 +0000
+    "creator": "Steve Losh <steve@stevelosh.com>", 
 
+
+
+
+
+
+    "extra_strings": [
+
+
+
+
+
+
+        "BLOCKS:76a6140e-0800-453c-9720-29cc161663d1", 
+
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "open", 
+
+
+
+
+
+
+    "summary": "Fix the null creation date bug.  See bug ee6 in the BE repo for an example that breaks things.", 
+
+
+
+
+
+
+    "time": "Sun, 01 Feb 2009 21:26:49 +0000"
+
+
+
+
+
+
+}

@@ -1,14 +1,43 @@
-creator: jelmer
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: should check not just EDITOR but also VISUAL.
+    "creator": "jelmer", 
 
 
-time: Sun, 15 Jul 2007 13:33:03 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "should check not just EDITOR but also VISUAL.", 
+
+
+
+
+
+
+    "time": "Sun, 15 Jul 2007 13:33:03 +0000"
+
+
+
+
+
+
+}

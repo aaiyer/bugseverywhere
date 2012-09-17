@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: implement severity on bug creation
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "implement severity on bug creation"
+
+
+
+
+
+
+}

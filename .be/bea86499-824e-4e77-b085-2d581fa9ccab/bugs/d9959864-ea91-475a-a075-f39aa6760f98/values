@@ -1,20 +1,57 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: W. Trevor King <wking@drexel.edu>
 
 
-reporter: Steve Losh <steve@stevelosh.com>
 
 
-severity: wishlist
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: fixed
 
 
-summary: CherryPy interface "Cherry-flavored BE"
 
 
-time: Tue, 21 Jul 2009 18:52:44 +0000
+    "creator": "W. Trevor King <wking@drexel.edu>", 
 
+
+
+
+
+
+    "reporter": "Steve Losh <steve@stevelosh.com>", 
+
+
+
+
+
+
+    "severity": "wishlist", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "CherryPy interface \"Cherry-flavored BE\"", 
+
+
+
+
+
+
+    "time": "Tue, 21 Jul 2009 18:52:44 +0000"
+
+
+
+
+
+
+}

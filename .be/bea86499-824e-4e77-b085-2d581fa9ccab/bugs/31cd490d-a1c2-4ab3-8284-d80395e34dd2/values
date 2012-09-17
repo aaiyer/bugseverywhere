@@ -1,14 +1,43 @@
-creator: wking
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: elementtree module moved in Python 2.5
+    "creator": "wking", 
 
 
-time: Thu, 13 Nov 2008 16:45:24 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "elementtree module moved in Python 2.5", 
+
+
+
+
+
+
+    "time": "Thu, 13 Nov 2008 16:45:24 +0000"
+
+
+
+
+
+
+}

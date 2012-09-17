@@ -1,21 +1,71 @@
-creator: gour <gour@gaura-nitai>
+{
 
 
-extra_strings:
-- TAG:CFBE
 
 
-reporter: gour <gour@gaura-nitai>
 
 
-severity: minor
+    "creator": "gour <gour@gaura-nitai>", 
 
 
-status: fixed
 
 
-summary: '''BugDir'' object has no attribute ''bug_shortname'' (cfbe)'
 
 
-time: Sun, 11 Jul 2010 17:46:52 +0000
+    "extra_strings": [
 
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "reporter": "gour <gour@gaura-nitai>", 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "'BugDir' object has no attribute 'bug_shortname' (cfbe)", 
+
+
+
+
+
+
+    "time": "Sun, 11 Jul 2010 17:46:52 +0000"
+
+
+
+
+
+
+}

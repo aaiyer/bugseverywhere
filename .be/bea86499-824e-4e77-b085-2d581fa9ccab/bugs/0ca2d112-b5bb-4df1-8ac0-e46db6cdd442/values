@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: Organize list by target, and whether it's assigned to current be id
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Organize list by target, and whether it's assigned to current be id"
+
+
+
+
+
+
+}

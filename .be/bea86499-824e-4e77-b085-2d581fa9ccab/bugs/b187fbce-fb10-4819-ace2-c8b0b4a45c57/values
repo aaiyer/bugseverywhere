@@ -1,17 +1,50 @@
-assigned: benf
+{
 
 
-creator: benf
 
 
-severity: minor
 
 
-status: fixed
+    "assigned": "benf", 
 
 
-summary: Manual page for 'be' command
 
 
-time: Mon, 21 Apr 2008 03:21:35 +0000
 
+
+    "creator": "benf", 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Manual page for 'be' command", 
+
+
+
+
+
+
+    "time": "Mon, 21 Apr 2008 03:21:35 +0000"
+
+
+
+
+
+
+}

@@ -1,21 +1,71 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: Steve Losh <steve@stevelosh.com>
 
 
-extra_strings:
-- TAG:CFBE
 
 
-severity: minor
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: open
 
 
-summary: The bug editing/comment forms break the rhythm.
 
 
-time: Sun, 01 Feb 2009 23:59:17 +0000
+    "creator": "Steve Losh <steve@stevelosh.com>", 
 
+
+
+
+
+
+    "extra_strings": [
+
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "open", 
+
+
+
+
+
+
+    "summary": "The bug editing/comment forms break the rhythm.", 
+
+
+
+
+
+
+    "time": "Sun, 01 Feb 2009 23:59:17 +0000"
+
+
+
+
+
+
+}

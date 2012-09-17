@@ -1,22 +1,78 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: Steve Losh <steve@stevelosh.com>
 
 
-extra_strings:
-- BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7
-- TAG:CFBE
 
 
-severity: minor
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: closed
 
 
-summary: Refactor the web interface into its own file.
 
 
-time: Sat, 07 Feb 2009 17:27:48 +0000
+    "creator": "Steve Losh <steve@stevelosh.com>", 
 
+
+
+
+
+
+    "extra_strings": [
+
+
+
+
+
+
+        "BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7", 
+
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Refactor the web interface into its own file.", 
+
+
+
+
+
+
+    "time": "Sat, 07 Feb 2009 17:27:48 +0000"
+
+
+
+
+
+
+}

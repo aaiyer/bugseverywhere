@@ -1,14 +1,43 @@
-creator: W. Trevor King <wking@drexel.edu>
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: Allow user id to be cached in settings for duplicate bugdirs
+    "creator": "W. Trevor King <wking@drexel.edu>", 
 
 
-time: Sat, 22 Nov 2008 21:36:06 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Allow user id to be cached in settings for duplicate bugdirs", 
+
+
+
+
+
+
+    "time": "Sat, 22 Nov 2008 21:36:06 +0000"
+
+
+
+
+
+
+}

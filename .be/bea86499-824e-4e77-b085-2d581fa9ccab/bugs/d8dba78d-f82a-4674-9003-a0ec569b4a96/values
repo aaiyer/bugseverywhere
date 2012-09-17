@@ -1,17 +1,50 @@
-creator: gianluca <gian@galactica>
+{
 
 
-reporter: gianluca <gian@galactica>
 
 
-severity: wishlist
 
 
-status: fixed
+    "creator": "gianluca <gian@galactica>", 
 
 
-summary: Add the possibility to specify the repository directory to "be html"?
 
 
-time: Fri, 03 Jul 2009 21:18:13 +0000
 
+
+    "reporter": "gianluca <gian@galactica>", 
+
+
+
+
+
+
+    "severity": "wishlist", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Add the possibility to specify the repository directory to \"be html\"?", 
+
+
+
+
+
+
+    "time": "Fri, 03 Jul 2009 21:18:13 +0000"
+
+
+
+
+
+
+}

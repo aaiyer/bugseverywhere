@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: 'Beweb: New comment button should save any changes'
+    "creator": "abentley", 
 
 
-time: Wed, 04 Jan 2006 21:05:20 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Beweb: New comment button should save any changes", 
+
+
+
+
+
+
+    "time": "Wed, 04 Jan 2006 21:05:20 +0000"
+
+
+
+
+
+
+}

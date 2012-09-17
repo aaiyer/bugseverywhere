@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: target (and others?) aren't parsed properly
+    "creator": "abentley", 
 
 
-time: Sat, 01 Apr 2006 18:29:33 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "target (and others?) aren't parsed properly", 
+
+
+
+
+
+
+    "time": "Sat, 01 Apr 2006 18:29:33 +0000"
+
+
+
+
+
+
+}

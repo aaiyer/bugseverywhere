@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: BEweb fails to set bug creation date
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "BEweb fails to set bug creation date"
+
+
+
+
+
+
+}

@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: Do we need a severity between serious and minor? EG "Moderate"?
+    "creator": "abentley", 
 
 
-time: Wed, 25 Jan 2006 23:14:07 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Do we need a severity between serious and minor? EG \"Moderate\"?", 
+
+
+
+
+
+
+    "time": "Wed, 25 Jan 2006 23:14:07 +0000"
+
+
+
+
+
+
+}

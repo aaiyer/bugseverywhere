@@ -1,15 +1,43 @@
-creator: abentley
+{
 
 
-severity: critical
 
 
-status: closed
 
 
-summary: OK, maybe not fatal, but how about a new name that suggests process tracking,
-  not just bugs?
+    "creator": "abentley", 
 
 
-time: Fri, 27 Jan 2006 14:37:25 +0000
 
+
+
+
+    "severity": "critical", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "OK, maybe not fatal, but how about a new name that suggests process tracking, not just bugs?", 
+
+
+
+
+
+
+    "time": "Fri, 27 Jan 2006 14:37:25 +0000"
+
+
+
+
+
+
+}

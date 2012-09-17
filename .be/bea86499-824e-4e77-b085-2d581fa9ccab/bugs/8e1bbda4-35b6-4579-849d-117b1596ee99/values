@@ -1,14 +1,43 @@
-creator: W. Trevor King <wking@drexel.edu>
+{
 
 
-severity: serious
 
 
-status: fixed
 
 
-summary: be <cmmd> <argopt> --options doesn't raise GetOptions
+    "creator": "W. Trevor King <wking@drexel.edu>", 
 
 
-time: Thu, 27 Nov 2008 13:39:25 +0000
 
+
+
+
+    "severity": "serious", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "be <cmmd> <argopt> --options doesn't raise GetOptions", 
+
+
+
+
+
+
+    "time": "Thu, 27 Nov 2008 13:39:25 +0000"
+
+
+
+
+
+
+}

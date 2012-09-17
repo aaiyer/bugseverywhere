@@ -1,22 +1,78 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: Steve Losh <steve@stevelosh.com>
 
 
-extra_strings:
-- BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7
-- TAG:CFBE
 
 
-severity: minor
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: closed
 
 
-summary: Document the code for the alpha release.
 
 
-time: Sat, 31 Jan 2009 05:17:34 +0000
+    "creator": "Steve Losh <steve@stevelosh.com>", 
 
+
+
+
+
+
+    "extra_strings": [
+
+
+
+
+
+
+        "BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7", 
+
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Document the code for the alpha release.", 
+
+
+
+
+
+
+    "time": "Sat, 31 Jan 2009 05:17:34 +0000"
+
+
+
+
+
+
+}

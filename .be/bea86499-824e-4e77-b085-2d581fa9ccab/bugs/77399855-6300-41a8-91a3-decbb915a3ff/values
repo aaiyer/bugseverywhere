@@ -1,15 +1,57 @@
-extra_strings:
-- BLOCKED-BY:27549110-e491-4651-81ab-84de2ed8e14a
+{
 
 
-severity: target
 
 
-status: fixed
 
 
-summary: '1.0'
+    "extra_strings": [
 
 
-time: Thu, 24 Jun 2010 22:19:20 +0000
 
+
+
+
+        "BLOCKED-BY:27549110-e491-4651-81ab-84de2ed8e14a"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "target", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "1.0", 
+
+
+
+
+
+
+    "time": "Thu, 24 Jun 2010 22:19:20 +0000"
+
+
+
+
+
+
+}

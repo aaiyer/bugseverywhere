@@ -1,11 +1,36 @@
-creator: abentley
+{
 
 
-severity: wishlist
 
 
-status: closed
 
 
-summary: Support per-tree settings for severity, target, BE ids
+    "creator": "abentley", 
 
+
+
+
+
+
+    "severity": "wishlist", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Support per-tree settings for severity, target, BE ids"
+
+
+
+
+
+
+}

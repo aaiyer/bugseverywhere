@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: be diff doesn't work with bzr in directories that have no commits
+    "creator": "abentley", 
 
 
-time: Mon, 10 Apr 2006 23:22:17 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "be diff doesn't work with bzr in directories that have no commits", 
+
+
+
+
+
+
+    "time": "Mon, 10 Apr 2006 23:22:17 +0000"
+
+
+
+
+
+
+}

@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: closed
 
 
-summary: Arbitrary numerical priorities?
+    "creator": "abentley", 
 
 
-time: Wed, 04 Jan 2006 21:09:30 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Arbitrary numerical priorities?", 
+
+
+
+
+
+
+    "time": "Wed, 04 Jan 2006 21:09:30 +0000"
+
+
+
+
+
+
+}

@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: More types of closed bugs
+    "creator": "abentley", 
 
 
-time: Wed, 04 Jan 2006 21:03:27 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "More types of closed bugs", 
+
+
+
+
+
+
+    "time": "Wed, 04 Jan 2006 21:03:27 +0000"
+
+
+
+
+
+
+}

@@ -1,15 +1,43 @@
-creator: abentley
+{
 
 
-severity: serious
 
 
-status: closed
 
 
-summary: On a new bug, if I add or edit a comment, then click "Update", the Summary
-  goes missing.
+    "creator": "abentley", 
 
 
-time: Fri, 27 Jan 2006 14:29:51 +0000
 
+
+
+
+    "severity": "serious", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "On a new bug, if I add or edit a comment, then click \"Update\", the Summary goes missing.", 
+
+
+
+
+
+
+    "time": "Fri, 27 Jan 2006 14:29:51 +0000"
+
+
+
+
+
+
+}

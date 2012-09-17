@@ -1,22 +1,78 @@
-assigned: Steve Losh <steve@stevelosh.com>
+{
 
 
-creator: Steve Losh <steve@stevelosh.com>
 
 
-extra_strings:
-- BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7
-- TAG:CFBE
 
 
-severity: minor
+    "assigned": "Steve Losh <steve@stevelosh.com>", 
 
 
-status: closed
 
 
-summary: Package everything into something easy to download and use.
 
 
-time: Fri, 30 Jan 2009 03:19:19 +0000
+    "creator": "Steve Losh <steve@stevelosh.com>", 
 
+
+
+
+
+
+    "extra_strings": [
+
+
+
+
+
+
+        "BLOCKS:e23d7982-7e32-4c78-b62e-83ecc42b4cd7", 
+
+
+
+
+
+
+        "TAG:CFBE"
+
+
+
+
+
+
+    ], 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "closed", 
+
+
+
+
+
+
+    "summary": "Package everything into something easy to download and use.", 
+
+
+
+
+
+
+    "time": "Fri, 30 Jan 2009 03:19:19 +0000"
+
+
+
+
+
+
+}

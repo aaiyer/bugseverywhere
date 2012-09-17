@@ -1,14 +1,43 @@
-creator: abentley
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: Select severity filter
+    "creator": "abentley", 
 
 
-time: Wed, 04 Jan 2006 21:07:08 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Select severity filter", 
+
+
+
+
+
+
+    "time": "Wed, 04 Jan 2006 21:07:08 +0000"
+
+
+
+
+
+
+}

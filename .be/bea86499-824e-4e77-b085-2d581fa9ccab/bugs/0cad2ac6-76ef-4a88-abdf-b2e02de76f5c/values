@@ -1,14 +1,43 @@
-creator: hubert
+{
 
 
-severity: minor
 
 
-status: fixed
 
 
-summary: set-root in git repository fails
+    "creator": "hubert", 
 
 
-time: Mon, 23 Jun 2008 04:57:22 +0000
 
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "set-root in git repository fails", 
+
+
+
+
+
+
+    "time": "Mon, 23 Jun 2008 04:57:22 +0000"
+
+
+
+
+
+
+}

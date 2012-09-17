@@ -1,17 +1,50 @@
-creator: W. Trevor King <wking@drexel.edu>
+{
 
 
-reporter: W. Trevor King <wking@drexel.edu>
 
 
-severity: minor
 
 
-status: fixed
+    "creator": "W. Trevor King <wking@drexel.edu>", 
 
 
-summary: Add docstrings explaining role of the libbe submodules.
 
 
-time: Mon, 31 Aug 2009 13:57:54 +0000
 
+
+    "reporter": "W. Trevor King <wking@drexel.edu>", 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Add docstrings explaining role of the libbe submodules.", 
+
+
+
+
+
+
+    "time": "Mon, 31 Aug 2009 13:57:54 +0000"
+
+
+
+
+
+
+}
