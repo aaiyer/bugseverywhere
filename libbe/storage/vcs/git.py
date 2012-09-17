@@ -35,6 +35,11 @@ try:
 except ImportError, error:
     _pygit2 = None
     _pygit2_import_error = error
+else:
+    if not hasattr(_pygit2, '__version__'):
+        _pygit2 = None
+        _pygit2_import_error = NotImplementedError(
+            'pygit2 <= 0.17.2 not supported')
 
 import libbe
 from ...ui.util import user as _user
