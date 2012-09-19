@@ -163,15 +163,16 @@ an editor automatically (using your environment's ``VISUAL`` or
 You can also pipe the comment body in on stdin, which is especially
 useful for binary attachments, etc.::
 
-    $ cat screenshot.png | be comment --content-type image/png bea/28f
+    $ cat screenshot.png | be comment --content-type image/png bea/28f -
     Created comment with ID bea/28f/35d
 
 It's polite to insert binary attachments under comments that explain
-the content and why you're attaching it, so the above should have been
+the content and why you're attaching it, so the above should have
+been::
 
     $ be comment bea/28f "Whosit dissapears when you mouse-over whatsit."
     Created comment with ID bea/28f/41d
-    $ cat screenshot.png | be comment --content-type image/png bea/28f/41d
+    $ cat screenshot.png | be comment --content-type image/png bea/28f/41d -
     Created comment with ID bea/28f/35d
 
 For more details, see ``be help comment``.
