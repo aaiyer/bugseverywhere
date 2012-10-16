@@ -4,7 +4,7 @@
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Marien Zwart <marien.zwart@gmail.com>
 #                         Phil Schumm <philschumm@gmail.com>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

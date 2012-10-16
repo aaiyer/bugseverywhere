@@ -1,7 +1,7 @@
 # Copyright (C) 2009-2012 Chris Ball <cjb@laptop.org>
 #                         Phil Schumm <philschumm@gmail.com>
 #                         Robert Lehmann <mail@robertlehmann.de>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

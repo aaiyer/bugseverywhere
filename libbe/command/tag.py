@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2012 Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

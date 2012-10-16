@@ -1,8 +1,9 @@
 # Copyright (C) 2005-2012 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
+#                         Niall Douglas (s_sourceforge@nedprod.com) <spam@spamtrap.com>
 #                         Robert Lehmann <mail@robertlehmann.de>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

@@ -10,7 +10,7 @@
 #                         Eric Kow <eric.kow@gmail.com>
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Matěj Cepl <mcepl@redhat.com>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

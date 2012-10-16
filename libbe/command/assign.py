@@ -4,7 +4,7 @@
 #                         Marien Zwart <marien.zwart@gmail.com>
 #                         Robert Lehmann <mail@robertlehmann.de>
 #                         Thomas Gerigk <tgerigk@gmx.de>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

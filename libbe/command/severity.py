@@ -4,7 +4,7 @@
 #                         Marien Zwart <marien.zwart@gmail.com>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         Tim Guirgies <lt.infiltrator@gmail.com>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

@@ -2,7 +2,8 @@
 #                         Andrew Cooper <andrew.cooper@hkcreations.org>
 #                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
-#                         W. Trevor King <wking@drexel.edu>
+#                         Niall Douglas (s_sourceforge@nedprod.com) <spam@spamtrap.com>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

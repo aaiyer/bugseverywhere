@@ -1,6 +1,6 @@
 # Copyright (C) 2005-2012 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Chris Ball <cjb@laptop.org>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

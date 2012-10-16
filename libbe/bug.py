@@ -1,9 +1,10 @@
 # Copyright (C) 2008-2012 Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
+#                         Niall Douglas (s_sourceforge@nedprod.com) <spam@spamtrap.com>
 #                         Robert Lehmann <mail@robertlehmann.de>
 #                         Thomas Habets <thomas@habets.pp.se>
 #                         Valtteri Kokkoniemi <rvk@iki.fi>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

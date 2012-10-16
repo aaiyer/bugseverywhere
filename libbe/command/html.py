@@ -1,7 +1,10 @@
-# Copyright (C) 2009-2012 Chris Ball <cjb@laptop.org>
+# Copyright (C) 2005-2012 Aaron Bentley <abentley@panoramicfeedback.com>
+#                         Chris Ball <cjb@laptop.org>
 #                         Gianluca Montecchi <gian@grys.it>
+#                         Marien Zwart <marien.zwart@gmail.com>
 #                         Mathieu Clabaut <mathieu.clabaut@gmail.com>
-#                         W. Trevor King <wking@drexel.edu>
+#                         Thomas Gerigk <tgerigk@gmx.de>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #

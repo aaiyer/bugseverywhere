@@ -3,7 +3,7 @@
 #                         Gianluca Montecchi <gian@grys.it>
 #                         Thomas Gerigk <tgerigk@gmx.de>
 #                         Thomas Habets <thomas@habets.pp.se>
-#                         W. Trevor King <wking@drexel.edu>
+#                         W. Trevor King <wking@tremily.us>
 #
 # This file is part of Bugs Everywhere.
 #
