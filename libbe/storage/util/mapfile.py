@@ -40,12 +40,14 @@ class InvalidMapfileContents (Exception):
 
 
 def generate(map):
-    """Generate a YAML mapfile content string.
+    """Generate a JSON mapfile content string.
 
     Examples
     --------
 
     >>> import sys
+    >>> sys.stdout.write(generate({}))
+    {}
     >>> sys.stdout.write(generate({'q':'p'}))
     {
     <BLANKLINE>
@@ -100,7 +102,7 @@ def generate(map):
     return '\n\n\n\n\n\n\n'.join(lines) + '\n'
 
 def parse(contents):
-    """Parse a YAML mapfile string.
+    """Parse a JSON mapfile string.
 
     Examples
     --------
