@@ -24,7 +24,7 @@ import shutil
 import string
 import sys
 
-from libbe.util.subproc import Pipe, invoke
+from libbe.util.subproc import invoke
 
 
 INITIAL_COMMIT = '1bf1ec598b436f41ff27094eddf0b28c797e359d'
@@ -86,9 +86,10 @@ def export(target_dir):
     if not target_dir.endswith(os.path.sep):
         target_dir += os.path.sep
     print 'export current revision to', target_dir
-    p = Pipe([['git', 'archive', '--prefix', target_dir, 'HEAD'],
-              ['tar', '-xv']])
-    assert p.status == 0, p.statuses
+    status,stdout,stderr = invoke(
+        ['git', 'archive', '--prefix', target_dir, 'HEAD'],
+        unicode_output=False)
+    status,stdout,stderr = invoke(['tar', '-xv'], stdin=stdout)
 
 def make_version():
     print 'generate libbe/_version.py'
