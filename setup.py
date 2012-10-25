@@ -3,10 +3,11 @@
 from distutils.core import setup
 import os.path
 
-from libbe import _version, version
+from libbe import version
 
-rev_id = _version.version_info["revision"]
-rev_date = _version.version_info["date"]
+
+rev_id = version.version_info['revision']
+rev_date = version.version_info['date']
 
 data_files = []
 
