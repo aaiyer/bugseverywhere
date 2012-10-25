@@ -748,7 +748,7 @@ class Bug (settings_object.SavedSettingsObject):
     def load_settings(self, settings_mapfile=None):
         if settings_mapfile == None:
             settings_mapfile = self.storage.get(
-                self.id.storage('values'), '\n')
+                self.id.storage('values'), '{}\n')
         try:
             settings = mapfile.parse(settings_mapfile)
         except mapfile.InvalidMapfileContents, e:
