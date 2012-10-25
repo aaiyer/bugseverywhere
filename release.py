@@ -124,7 +124,7 @@ def set_vcs_name(be_dir, vcs_name='None'):
 def make_id_cache():
     """Generate .be/id-cache so users won't need to.
     """
-    invoke(['./be', 'list'])
+    invoke([sys.executable, './be', 'list'])
 
 def create_tarball(tag):
     release_name='be-%s' % tag
