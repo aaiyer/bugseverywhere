@@ -17,7 +17,7 @@ if os.path.exists(man_path):
 
 setup(
     name='Bugs Everywhere',
-    version='{} ({})'.format(version.version(), rev_date),
+    version='{}'.format(version.version()),
     description='Bugtracker supporting distributed revision control',
     url='http://bugseverywhere.org/',
     packages=['libbe',
