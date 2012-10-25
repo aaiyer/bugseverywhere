@@ -81,7 +81,7 @@ def commit(commit_message):
 
 def tag(tag):
     print 'tag current revision', tag
-    invoke(['git', 'tag', tag])
+    invoke(['git', 'tag', '-s', '-m', 'version {}'.format(tag), tag])
 
 def export(target_dir):
     if not target_dir.endswith(os.path.sep):
