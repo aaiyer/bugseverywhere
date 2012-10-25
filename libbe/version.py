@@ -41,7 +41,7 @@ except ImportError, e:
         }
 
 # Manually set a version string (optional, defaults to bzr revision id)
-_VERSION = '1.0.0'
+#_VERSION = '1.2.3'
 
 def version(verbose=False):
     """
@@ -52,7 +52,7 @@ def version(verbose=False):
     if "_VERSION" in globals():
         string = _VERSION
     else:
-        string = version_info['revision']
+        string = version_info['revision'][:8]
     if verbose == True:
         info = copy.copy(version_info)
         info['storage'] = libbe.storage.STORAGE_VERSION
