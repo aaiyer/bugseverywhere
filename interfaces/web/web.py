@@ -9,7 +9,7 @@ from libbe import bugdir
 from libbe.command.depend import get_blocked_by, get_blocks
 from libbe.command.target import add_target, remove_target
 from libbe.command.target import bug_from_target_summary, bug_target
-from libbe.command.util import bug_comment_from_user_id
+from libbe.command.util import bugdir_bug_comment_from_user_id
 from libbe.storage.util import settings_object
 import libbe.command.tag
 
@@ -136,7 +136,8 @@ class WebInterface:
 
         self.bd.load_all_bugs()
 
-        bug, comment = bug_comment_from_user_id(self.bd, id)
+        bugdir, bug, comment = bugdir_bug_comment_from_user_id(
+            {self.bd.uuid: self.bd}, id)
 
         template = self.env.get_template('bug.html')
         common_info = self.get_common_information()
