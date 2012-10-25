@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
+import optparse
 import os
 import os.path
 import shutil
@@ -151,8 +152,7 @@ def test():
     import doctest
     doctest.testmod() 
 
-if __name__ == '__main__':
-    import optparse
+def main(*args, **kwargs):
     usage = """%prog [options] TAG
 
 Create a git tag and a release tarball from the current revision.
@@ -166,7 +166,7 @@ If you don't like what got committed, you can undo the release with
     p = optparse.OptionParser(usage)
     p.add_option('--test', dest='test', default=False,
                  action='store_true', help='Run internal tests and exit')
-    options,args = p.parse_args()
+    options,args = p.parse_args(*args, **kwargs)
 
     if options.test == True:
         test()
@@ -193,3 +193,7 @@ If you don't like what got committed, you can undo the release with
     commit("Bumped to version %s" % _tag)
     tag(_tag)
     create_tarball(_tag)
+
+
+if __name__ == '__main__':
+    main()
