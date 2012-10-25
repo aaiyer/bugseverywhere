@@ -16,7 +16,7 @@ if os.path.exists(man_path):
     data_files.append(('share/man/man1', [man_path]))
 
 setup(
-    name='Bugs Everywhere',
+    name='bugs-everywhere',
     version='{}'.format(version.version()),
     description='Bugtracker supporting distributed revision control',
     url='http://bugseverywhere.org/',
