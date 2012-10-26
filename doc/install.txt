@@ -135,9 +135,8 @@ Release tarballs
 ================
 
 For those not interested in the cutting edge, or those who don't want
-to worry about installing Git, we'll `post release tarballs`_
-(once we actually make a release).  After you've downloaded the
-release tarball, unpack it with::
+to worry about installing Git, we'll `post release tarballs`_.  After
+you've downloaded the release tarball, unpack it with::
 
     $ tar -xzvf be-<VERSION>.tar.gz
 
