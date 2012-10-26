@@ -27,7 +27,11 @@ import os, os.path
 import sys
 import types
 
-import yaml
+try:
+    import yaml
+except ImportError as e:
+    yaml = None
+    _yaml_import_error = e
 
 import libbe
 import libbe.bug
@@ -50,6 +54,8 @@ def generate_yaml_mapfile(map):
     >>> generate_yaml_mapfile({'q':u'hello'})
     'q: hello\\n\\n'
     """
+    if yaml is None:
+        raise _yaml_import_error
     keys = map.keys()
     keys.sort()
     for key in keys:
@@ -93,6 +99,8 @@ def parse_yaml_mapfile(contents):
     >>> dict['q']
     u'Fran\\xe7ais'
     """
+    if yaml is None:
+        raise _yaml_import_error
     c = yaml.safe_load(contents)
     if type(c) == types.StringType:
         raise mapfile.InvalidMapfileContents(
