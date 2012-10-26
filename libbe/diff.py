@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tools for comparing two :py:class:`libbe.bug.BugDir`\s.
+"""Tools for comparing two :py:class:`~libbe.bugdir.BugDir`\s.
 """
 
 import difflib

@@ -18,12 +18,13 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Store version info for this BE installation.  By default, use the
-bzr-generated information in _version.py, but allow manual overriding
-by setting _VERSION.  This allows support of both the "I don't want to
-be bothered setting version strings" and the "I want complete control
-over the version strings" workflows.
+"""Store version info for this BE installation.
+
+By default, use the Git-generated information in
+:py:mod:`~libbe._version`, but allow manual overriding by setting
+:py:data:`libbe.version._VERSION`.  This allows support of both the "I
+don't want to be bothered setting version strings" and the "I want
+complete control over the version strings" workflows.
 """
 
 import copy

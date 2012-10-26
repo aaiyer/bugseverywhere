@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the :py:class:`BugDir` class for storing a collection of bugs.
+"""Define :py:class:`BugDir` for storing a collection of bugs.
 """
 
 import copy
