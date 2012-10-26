@@ -225,7 +225,7 @@ binary attachments::
     $ be show --only-raw-body bea/28f/35d > screenshot.png
 
 There is also an XML output format, which can be useful for emailing
-entries around, scripting BE, etc.
+entries around, scripting BE, etc.::
 
     $ be show --xml bea/35d
     <?xml version="1.0" encoding="UTF-8" ?>
