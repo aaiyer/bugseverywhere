@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create, save, and load the per-user config file at :func:`path`.
+"""Create, save, and load the per-user config file at :py:func:`path`.
 """
 
 import ConfigParser
@@ -35,7 +35,7 @@ if libbe.TESTING == True:
 default_encoding = libbe.util.encoding.get_text_file_encoding()
 """Default filesystem encoding.
 
-Initialized with :func:`libbe.util.encoding.get_text_file_encoding`.
+Initialized with :py:func:`libbe.util.encoding.get_text_file_encoding`.
 """
 
 def path():

@@ -127,7 +127,7 @@ def get_user_id(storage=None):
 
     1. Global BE configuration [#]_ (default section, setting 'user').
     2. `storage.get_user_id`, if that function is defined.
-    3. :func:`get_fallback_username` and :func:`get_fallback_email`.
+    3. :py:func:`get_fallback_username` and :py:func:`get_fallback_email`.
 
     .. [#] See :mod:`libbe.storage.util.config`.
 

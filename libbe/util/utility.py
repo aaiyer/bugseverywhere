@@ -103,8 +103,8 @@ class Dir (object):
         return self.path
 
 RFC_2822_TIME_FMT = "%a, %d %b %Y %H:%M:%S +0000"
-"""RFC 2822 [#]_ format string for :func:`time.strftime` and
-:func:`time.strptime`.
+"""RFC 2822 [#]_ format string for :py:func:`time.strftime` and
+:py:func:`time.strptime`.
 
 .. [#] See `RFC 2822`_, sections 3.3 and A.1.1.
 .. _RFC 2822: http://www.faqs.org/rfcs/rfc2822.html
@@ -116,7 +116,7 @@ def time_to_str(time_val):
     Parameters
     ----------
     time_val : float
-      Float seconds since the Epoc, see :func:`time.time`.
+      Float seconds since the Epoc, see :py:func:`time.time`.
       Note that while `time_val` may contain sub-second data,
       the output string will not.
 
@@ -168,13 +168,13 @@ def str_to_time(str_time):
 def handy_time(time_val):
     """Convert a time number into a useful localtime.
 
-    Where :func:`time_to_str` returns GMT +0000, `handy_time` returns
+    Where :py:func:`time_to_str` returns GMT +0000, `handy_time` returns
     a string in local time.  This may be more accessible for the user.
 
     Parameters
     ----------
     time_val : float
-      Float seconds since the Epoc, see :func:`time.time`.
+      Float seconds since the Epoc, see :py:func:`time.time`.
     """
     return time.strftime("%a, %d %b %Y %H:%M", time.localtime(time_val))
 

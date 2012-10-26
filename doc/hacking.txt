@@ -72,7 +72,7 @@ execution + childrens' times)::
     $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_stats(20)"
 
 If you want to find out who's calling your expensive function
-(e.g. :func:`libbe.util.subproc.invoke`), try::
+(e.g. :py:func:`libbe.util.subproc.invoke`), try::
 
     $ python -c "import pstats; p=pstats.Stats('profile'); p.sort_stats('cumulative').print_callers(20)"
 
