@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the :class:`Comment` class for representing bug comments.
+"""Define the :py:class:`Comment` class for representing bug comments.
 """
 
 import base64
@@ -93,7 +93,7 @@ def save_comments(bug):
 
 
 class Comment (Tree, settings_object.SavedSettingsObject):
-    """Comments are a notes that attach to :class:`~libbe.bug.Bug`\s in
+    """Comments are a notes that attach to :py:class:`~libbe.bug.Bug`\s in
     threaded trees.  In mailing-list terms, a comment is analogous to
     a single part of an email.
 

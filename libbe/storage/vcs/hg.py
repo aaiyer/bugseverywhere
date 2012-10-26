@@ -63,7 +63,7 @@ def new():
     return Hg()
 
 class Hg(base.VCS):
-    """:class:`base.VCS` implementation for Mercurial.
+    """:py:class:`base.VCS` implementation for Mercurial.
     """
     name='hg'
     client=None # mercurial module

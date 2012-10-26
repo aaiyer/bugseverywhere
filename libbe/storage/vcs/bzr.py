@@ -54,7 +54,7 @@ def new():
     return Bzr()
 
 class Bzr(base.VCS):
-    """:class:`base.VCS` implementation for Bazaar.
+    """:py:class:`base.VCS` implementation for Bazaar.
     """
     name = 'bzr'
     client = None # bzrlib module

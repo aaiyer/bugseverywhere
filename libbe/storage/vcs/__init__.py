@@ -17,17 +17,17 @@
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
 """Define the Version Controlled System (VCS)-based
-:class:`~libbe.storage.base.Storage` and
-:class:`~libbe.storage.base.VersionedStorage` implementations.
+:py:class:`~libbe.storage.base.Storage` and
+:py:class:`~libbe.storage.base.VersionedStorage` implementations.
 
-There is a base class (:class:`~libbe.storage.vcs.VCS`) translating 
+There is a base class (:py:class:`~libbe.storage.vcs.VCS`) translating 
 Storage language to VCS language, and a number of `VCS` implementations:
 
-* :class:`~libbe.storage.vcs.arch.Arch`
-* :class:`~libbe.storage.vcs.bzr.Bzr`
-* :class:`~libbe.storage.vcs.darcs.Darcs`
-* :class:`~libbe.storage.vcs.git.Git`
-* :class:`~libbe.storage.vcs.hg.Hg`
+* :py:class:`~libbe.storage.vcs.arch.Arch`
+* :py:class:`~libbe.storage.vcs.bzr.Bzr`
+* :py:class:`~libbe.storage.vcs.darcs.Darcs`
+* :py:class:`~libbe.storage.vcs.git.Git`
+* :py:class:`~libbe.storage.vcs.hg.Hg`
 
 The base `VCS` class also serves as a filesystem Storage backend (not
 versioning) in the event that a user has no VCS installed.

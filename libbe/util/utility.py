@@ -45,7 +45,7 @@ class InvalidXML(ValueError):
     ----------
     type : str
         String identifying `*`, e.g. "bug", "comment", ...
-    element : :class:`ElementTree.Element`
+    element : :py:class:`ElementTree.Element`
         ElementTree.Element instance which caused the error.
     error : str
         Error description.

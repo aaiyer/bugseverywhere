@@ -21,7 +21,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the :class:`Bug` class for representing bugs.
+"""Define the :py:class:`Bug` class for representing bugs.
 """
 
 import copy
@@ -122,9 +122,9 @@ load_status(active_status_def, inactive_status_def)
 
 class Bug (settings_object.SavedSettingsObject):
     """A bug (or issue) is a place to store attributes and attach
-    :class:`~libbe.comment.Comment`\s.  In mailing-list terms, a bug is
+    :py:class:`~libbe.comment.Comment`\s.  In mailing-list terms, a bug is
     analogous to a thread.  Bugs are normally stored in
-    :class:`~libbe.bugdir.BugDir`\s.
+    :py:class:`~libbe.bugdir.BugDir`\s.
 
     >>> b = Bug()
     >>> print b.status

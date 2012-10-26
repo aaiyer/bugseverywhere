@@ -42,7 +42,7 @@ def new():
     return Monotone()
 
 class Monotone (base.VCS):
-    """:class:`base.VCS` implementation for Monotone.
+    """:py:class:`base.VCS` implementation for Monotone.
     """
     name='monotone'
     client='mtn'

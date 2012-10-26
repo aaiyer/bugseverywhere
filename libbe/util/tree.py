@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define :class:`Tree`, a traversable tree structure.
+"""Define :py:class:`Tree`, a traversable tree structure.
 """
 
 import libbe

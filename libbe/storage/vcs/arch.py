@@ -59,7 +59,7 @@ def new():
     return Arch()
 
 class Arch(base.VCS):
-    """:class:`base.VCS` implementation for GNU Arch.
+    """:py:class:`base.VCS` implementation for GNU Arch.
     """
     name = 'arch'
     client = client

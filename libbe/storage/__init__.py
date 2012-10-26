@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the :class:`~libbe.storage.base.Storage` and
-:class:`~libbe.storage.base.VersionedStorage` classes for storing BE
+"""Define the :py:class:`~libbe.storage.base.Storage` and
+:py:class:`~libbe.storage.base.VersionedStorage` classes for storing BE
 data.
 
 Also define assorted implementations for the Storage classes:

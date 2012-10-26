@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the base :class:`VCS` (Version Control System) class, which
+"""Define the base :py:class:`VCS` (Version Control System) class, which
 should be subclassed by other Version Control System backends.  The
 base class implements a "do not version" VCS.
 """

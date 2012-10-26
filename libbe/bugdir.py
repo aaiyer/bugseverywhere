@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the :class:`BugDir` class for storing a collection of bugs.
+"""Define the :py:class:`BugDir` class for storing a collection of bugs.
 """
 
 import copy
@@ -65,12 +65,12 @@ class NoBugMatches(libbe.util.id.NoIDMatches):
 
 
 class BugDir (list, settings_object.SavedSettingsObject):
-    """A BugDir is a container for :class:`~libbe.bug.Bug`\s, with some
+    """A BugDir is a container for :py:class:`~libbe.bug.Bug`\s, with some
     additional attributes.
 
     Parameters
     ----------
-    storage : :class:`~libbe.storage.base.Storage`
+    storage : :py:class:`~libbe.storage.base.Storage`
        Storage instance containing the bug directory.  If
        `from_storage` is `False`, `storage` may be `None`.
     uuid : str, optional
@@ -83,7 +83,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     See Also
     --------
-    :class:`SimpleBugDir` for some bugdir manipulation exampes.
+    :py:class:`SimpleBugDir` for some bugdir manipulation exampes.
     """
 
     settings_properties = []

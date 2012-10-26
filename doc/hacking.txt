@@ -11,13 +11,13 @@ plugins (e.g. :py:mod:`libbe.command.remove`) for an example of how that
 looks, and to start getting a feel for the libbe interface.
 
 See :py:mod:`libbe.command.base` for the definition of the important
-classes :class:`~libbe.command.base.Option`,
-:class:`~libbe.command.base.Argument`,
-:class:`~libbe.command.base.Command`,
-:class:`~libbe.command.base.InputOutput`,
-:class:`~libbe.command.base.StorageCallbacks`, and
-:class:`~libbe.command.base.UserInterface`.  You'll be subclassing
-:class:`~libbe.command.base.Command` for your command, but all those
+classes :py:class:`~libbe.command.base.Option`,
+:py:class:`~libbe.command.base.Argument`,
+:py:class:`~libbe.command.base.Command`,
+:py:class:`~libbe.command.base.InputOutput`,
+:py:class:`~libbe.command.base.StorageCallbacks`, and
+:py:class:`~libbe.command.base.UserInterface`.  You'll be subclassing
+:py:class:`~libbe.command.base.Command` for your command, but all those
 classes will be important.
 
 
@@ -26,12 +26,12 @@ Command completion
 
 BE implements a general framework to make it easy to support command
 completion for arbitrary plugins.  In order to support this system,
-any of your completable :class:`~libbe.command.base.Argument`
+any of your completable :py:class:`~libbe.command.base.Argument`
 instances (in your command's ``.options`` or ``.args``) should be
 initialized with some valid completion_callback function.  Some common
 cases are defined in :py:mod:`libbe.command.util`.  If you need more
 flexibility, see :py:mod:`libbe.command.list`\'s ``--sort`` option for an
-example of extensions via :class:`libbe.command.util.Completer`, or
+example of extensions via :py:class:`libbe.command.util.Completer`, or
 write a custom completion function from scratch.
 
 
@@ -40,7 +40,7 @@ Adding user interfaces
 
 Take a look at :py:mod:`libbe.ui.command_line` for an example.
 Basically you'll need to setup a
-:class:`~libbe.command.base.UserInterface` instance for running
+:py:class:`~libbe.command.base.UserInterface` instance for running
 commands.  More details to come after I write an HTML UI...
 
 

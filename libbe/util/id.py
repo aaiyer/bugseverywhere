@@ -294,7 +294,7 @@ class ID (object):
 
     Parameters
     ----------
-    object : :class:`~libbe.bugdir.BugDir` or :class:`~libbe.bug.Bug` or :class:`~libbe.comment.Comment`
+    object : :py:class:`~libbe.bugdir.BugDir` or :py:class:`~libbe.bug.Bug` or :py:class:`~libbe.comment.Comment`
       The object that the ID applies to.
     type : 'bugdir' or 'bug' or 'comment'
       The type of the object.
@@ -389,7 +389,7 @@ def child_uuids(child_storage_ids):
 
     This is useful for separating data belonging to a particular
     object directly from entries for its child objects.  Since the
-    :class:`~libbe.storage.base.Storage` backend doesn't distinguish
+    :py:class:`~libbe.storage.base.Storage` backend doesn't distinguish
     between the two.
 
     Examples
@@ -404,7 +404,7 @@ def child_uuids(child_storage_ids):
             yield fields[0]
 
 def long_to_short_user(bugdirs, id):
-    """Convert a long user ID to a short user ID (see :class:`ID`).
+    """Convert a long user ID to a short user ID (see :py:class:`ID`).
     The list of bugdirs allows uniqueness-maintaining truncation of
     the bugdir portion of the ID.
 
@@ -432,7 +432,7 @@ def long_to_short_user(bugdirs, id):
     return _assemble(ids)
 
 def short_to_long_user(bugdirs, id):
-    """Convert a short user ID to a long user ID (see :class:`ID`).  The
+    """Convert a short user ID to a long user ID (see :py:class:`ID`).  The
     list of bugdirs allows uniqueness-checking during expansion of the
     bugdir portion of the ID.
 
@@ -494,7 +494,7 @@ class IDreplacer (object):
         return replacement
 
 def short_to_long_text(bugdirs, text):
-    """Convert short user IDs to long user IDs in text (see :class:`ID`).
+    """Convert short user IDs to long user IDs in text (see :py:class:`ID`).
     The list of bugdirs allows uniqueness-checking during expansion of
     the bugdir portion of the ID.
 
@@ -507,7 +507,7 @@ def short_to_long_text(bugdirs, text):
         REGEXP, IDreplacer(bugdirs, short_to_long_user, strict=False), text)
 
 def long_to_short_text(bugdirs, text):
-    """Convert long user IDs to short user IDs in text (see :class:`ID`).
+    """Convert long user IDs to short user IDs in text (see :py:class:`ID`).
     The list of bugdirs allows uniqueness-maintaining truncation of
     the bugdir portion of the ID.
 
@@ -542,7 +542,7 @@ def residual(base, fragment):
     return ('/'.join(root_ids), '/'.join(residual_ids))
 
 def _parse_user(id):
-    """Parse a user ID (see :class:`ID`), returning a dict of parsed
+    """Parse a user ID (see :py:class:`ID`), returning a dict of parsed
     information.
 
     The returned dict will contain a value for "type" (from
@@ -585,7 +585,7 @@ def _parse_user(id):
     return ret
 
 def parse_user(bugdirs, id):
-    """Parse a user ID (see :class:`ID`), returning a dict of parsed
+    """Parse a user ID (see :py:class:`ID`), returning a dict of parsed
     information.
 
     The returned dict will contain a value for "type" (from

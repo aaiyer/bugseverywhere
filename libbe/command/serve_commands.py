@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define the :class:`ServeCommands` serving BE Commands over HTTP.
+"""Define the :py:class:`ServeCommands` serving BE Commands over HTTP.
 
 See Also
 --------
@@ -160,8 +160,8 @@ class ServeCommands (libbe.util.wsgi.ServerCommand):
     This allows you to run local `be` commands interfacing with remote
     data, transmitting command requests over the network.
 
-    :class:`~libbe.command.base.Command` wrapper around
-    :class:`ServerApp`.
+    :py:class:`~libbe.command.base.Command` wrapper around
+    :py:class:`ServerApp`.
     """
 
     name = 'serve-commands'

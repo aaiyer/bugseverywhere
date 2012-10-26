@@ -278,7 +278,7 @@ class PygitGit(base.VCS):
 
 
 class ExecGit (PygitGit):
-    """:class:`base.VCS` implementation for Git.
+    """:py:class:`base.VCS` implementation for Git.
     """
     name='git'
     client='git'

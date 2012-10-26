@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Define an HTTP-based :class:`~libbe.storage.base.VersionedStorage`
+"""Define an HTTP-based :py:class:`~libbe.storage.base.VersionedStorage`
 implementation.
 
 See Also
@@ -50,7 +50,7 @@ if TESTING == True:
 
 
 class HTTP (base.VersionedStorage):
-    """:class:`~libbe.storage.base.VersionedStorage` implementation over
+    """:py:class:`~libbe.storage.base.VersionedStorage` implementation over
     HTTP.
 
     Uses GET to retrieve information and POST to set information.

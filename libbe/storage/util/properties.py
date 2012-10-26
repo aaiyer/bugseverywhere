@@ -364,7 +364,7 @@ def change_hook_property(hook, mutable=False, default=None):
       t.x.append(5) # external modification
       t.x           # dummy access notices change and triggers hook
 
-    See :class:`testChangeHookMutableProperty` for an example of the
+    See :py:class:`testChangeHookMutableProperty` for an example of the
     expected behavior.
 
     Parameters

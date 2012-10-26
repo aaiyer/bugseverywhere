@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Provides :class:`SavedSettingsObject` implementing settings-dict
+"""Provides :py:class:`SavedSettingsObject` implementing settings-dict
 based property storage.
 
 See Also
@@ -198,8 +198,8 @@ class SavedSettingsObject(object):
     properties.
 
     This is useful for BE objects with saved properties
-    (e.g. :class:`~libbe.bugdir.BugDir`, :class:`~libbe.bug.Bug`,
-    :class:`~libbe.comment.Comment`).  For example usage, consider the
+    (e.g. :py:class:`~libbe.bugdir.BugDir`, :py:class:`~libbe.bug.Bug`,
+    :py:class:`~libbe.comment.Comment`).  For example usage, consider the
     unittests at the end of the module.
 
     See Also

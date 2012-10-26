@@ -48,7 +48,7 @@ def new():
     return Darcs()
 
 class Darcs(base.VCS):
-    """:class:`base.VCS` implementation for Darcs.
+    """:py:class:`base.VCS` implementation for Darcs.
     """
     name='darcs'
     client='darcs'
