@@ -144,7 +144,7 @@ Commenting on bugs
 ------------------
 
 Bugs are like little mailing lists, and you can comment on the bug
-itself or previous comments, attach files, etc.  For example
+itself or previous comments, attach files, etc.  For example::
 
     $ be comment abc/28f "Thoughts about demuxalizers..."
     Created comment with ID abc/28f/97a
