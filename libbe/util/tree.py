@@ -149,13 +149,13 @@ class Tree(list):
     def sort(self, *args, **kwargs):
         """Sort the tree recursively.
 
-        This method extends :meth:`list.sort` to Trees.
+        This method extends :py:meth:`list.sort` to Trees.
 
         Notes
         -----
-        This method can be slow, e.g. on a :meth:`branch_len` sort,
+        This method can be slow, e.g. on a :py:meth:`branch_len` sort,
         since a node at depth `N` from the root has it's
-        :meth:`branch_len` method called `N` times.
+        :py:meth:`branch_len` method called `N` times.
         """
         list.sort(self, *args, **kwargs)
         for child in self:
@@ -170,7 +170,7 @@ class Tree(list):
           Depth first by default, but you can set `depth_first` to
           `False` for breadth first ordering.  Siblings are returned
           in the order they are stored, so you might want to
-          :meth:`sort` your tree first.
+          :py:meth:`sort` your tree first.
         """
         if depth_first == True:
             yield self
@@ -202,7 +202,7 @@ class Tree(list):
                     a-+-c        and     a-+
                       +-d-e-f              +-d-e-f
 
-        would both produce (after sorting by :meth:`branch_len`)::
+        would both produce (after sorting by :py:meth:`branch_len`)::
 
             (0, a)
             (1, b)

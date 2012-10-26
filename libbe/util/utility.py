@@ -89,7 +89,7 @@ def search_parent_directories(path, filename):
 class Dir (object):
     """A temporary directory for testing use.
 
-    Make sure you run :meth:`cleanup` after you're done using the
+    Make sure you run :py:meth:`cleanup` after you're done using the
     directory.
     """
     def __init__(self):

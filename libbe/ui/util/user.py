@@ -134,7 +134,7 @@ def get_user_id(storage=None):
     Notes
     -----
     Sometimes the storage will keep track of the user ID (e.g. most
-    VCSs, see :meth:`libbe.storage.vcs.base.VCS.get_user_id`).  If so,
+    VCSs, see :py:meth:`libbe.storage.vcs.base.VCS.get_user_id`).  If so,
     we prefer that ID to the fallback, since the user has likely
     configured it directly.
     """

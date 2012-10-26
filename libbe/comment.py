@@ -200,7 +200,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         ``from_storage==True``, they are loaded from the bug database.
         ``content_type`` decides if the body should be run through
         :py:func:`util.id.short_to_long_text` before saving.  See
-        :meth:`_set_comment_body` for details.
+        :py:meth:`_set_comment_body` for details.
 
         ``in_reply_to`` should be the uuid string of the parent comment.
         """
