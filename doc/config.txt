@@ -15,7 +15,7 @@ stored in an `INI-style config file`__::
 
 __ configparser_
 
-The config file is located at ``~/.config/bugs-everywhere`` by
+The config file is located at :file:`~/.config/bugs-everywhere` by
 default, but you can override the path by setting environment
 variables (see :py:func:`~libbe.storage.util.config.path` for
 details).
