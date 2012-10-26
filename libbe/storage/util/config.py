@@ -23,6 +23,7 @@
 
 import ConfigParser
 import codecs
+import os
 import os.path
 
 import libbe
@@ -40,9 +41,19 @@ Initialized with :func:`libbe.util.encoding.get_text_file_encoding`.
 def path():
     """Return the path to the per-user config file.
 
-    Defaults to :file:`~/.bugs_everywhere`.
+    Defaults to :file:`~/.config/bugs-everywhere`, but you can
+    override the directory with ``XDG_CONFIG_HOME`` from the `XDG Base
+    Directory Specification`_.  You can also override the entire path
+    by setting the ``BE_CONFIG_PATH`` environment variable.
+
+    .. _XDG Base Directory Specification:
+      http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
     """
-    return os.path.expanduser(os.path.join('~','.bugs_everywhere'))
+    default_dir = os.path.join('~', '.config')
+    dirname = os.path.expanduser(
+        os.environ.get('XDG_CONFIG_HOME', default_dir))
+    default = os.path.join(dirname, 'bugs-everywhere')
+    return os.path.expanduser(os.environ.get('BE_CONFIG_PATH', default))
 
 def set_val(name, value, section="DEFAULT", encoding=None):
     """Set a value in the per-user config file.

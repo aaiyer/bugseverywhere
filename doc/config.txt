@@ -1,0 +1,34 @@
+*************
+Configuration
+*************
+
+Config file format and location
+===============================
+
+Most of the information that BE needs lives in the bug repository
+itself, but there is user-specific information that does not fit into
+a shared repository.  This per-user configuration information is
+stored in an `INI-style config file`__::
+
+  [default]
+  user = 'John Doe <jdoe@example.com>'
+
+__ configparser_
+
+The config file is located at ``~/.config/bugs-everywhere`` by
+default, but you can override the path by setting environment
+variables (see :py:func:`~libbe.storage.util.config.path` for
+details).
+
+Settings
+========
+
+Currently the only information stored in the configuration file is a
+user ID (see :py:func:`~libbe.ui.util.user.get_user_id`), as shown in
+the example above.  However, many version control systems allow you to
+specify your name and email address, and BE will fall back to the
+VCS-configured values, so you probably don't need to set a BE-specific
+configuration.
+
+
+.. _configparser: http://docs.python.org/library/configparser.html
