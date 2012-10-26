@@ -23,7 +23,7 @@ based property storage.
 
 See Also
 --------
-:mod:`libbe.storage.util.properties` : underlying property definitions
+:py:mod:`libbe.storage.util.properties` : underlying property definitions
 """
 
 import libbe

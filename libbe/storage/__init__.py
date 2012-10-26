@@ -22,12 +22,12 @@ data.
 
 Also define assorted implementations for the Storage classes:
 
-* :mod:`libbe.storage.vcs`
-* :mod:`libbe.storage.http`
+* :py:mod:`libbe.storage.vcs`
+* :py:mod:`libbe.storage.http`
 
 Also define an assortment of storage-related tools and utilities:
 
-* :mod:`libbe.storage.util`
+* :py:mod:`libbe.storage.util`
 """
 
 import base

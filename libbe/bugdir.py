@@ -74,7 +74,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
        Storage instance containing the bug directory.  If
        `from_storage` is `False`, `storage` may be `None`.
     uuid : str, optional
-       Set the bugdir UUID (see :mod:`libbe.util.id`).
+       Set the bugdir UUID (see :py:mod:`libbe.util.id`).
        Useful if you are loading one of several bugdirs
        stored in a single Storage instance.
     from_storage : bool, optional

@@ -9,5 +9,5 @@ You can run it from the BE source directory with::
 
     $ python interfaces/web/cfbe.py PATH_TO_REPO
 
-Eventually we'll move it into :mod:`libbe.ui` so it will be installed
+Eventually we'll move it into :py:mod:`libbe.ui` so it will be installed
 automatically with every BE installation.

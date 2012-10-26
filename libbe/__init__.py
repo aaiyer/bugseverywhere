@@ -24,17 +24,17 @@
 To facilitate faster loading, submodules are not imported by default.
 The available submodules are:
 
-* :mod:`libbe.bugdir`
-* :mod:`libbe.bug`
-* :mod:`libbe.comment`
-* :mod:`libbe.command`
-* :mod:`libbe.diff`
-* :mod:`libbe.error`
-* :mod:`libbe.storage`
-* :mod:`libbe.ui`
-* :mod:`libbe.util`
-* :mod:`libbe.version`
-* :mod:`libbe._version`
+* :py:mod:`libbe.bugdir`
+* :py:mod:`libbe.bug`
+* :py:mod:`libbe.comment`
+* :py:mod:`libbe.command`
+* :py:mod:`libbe.diff`
+* :py:mod:`libbe.error`
+* :py:mod:`libbe.storage`
+* :py:mod:`libbe.ui`
+* :py:mod:`libbe.util`
+* :py:mod:`libbe.version`
+* :py:mod:`libbe._version`
 """
 
 TESTING = False
@@ -42,7 +42,7 @@ TESTING = False
 
 To reduce module load time, test suite generation is turned of by
 default.  If you *do* want to generate the test suites, set
-``TESTING=True`` before loading any :mod:`libbe` submodules.
+``TESTING=True`` before loading any :py:mod:`libbe` submodules.
 
 Examples
 --------

@@ -21,7 +21,7 @@ implementation.
 
 See Also
 --------
-:mod:`libbe.command.serve_storage` : the associated server
+:py:mod:`libbe.command.serve_storage` : the associated server
 """
 
 from __future__ import absolute_import

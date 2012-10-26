@@ -20,7 +20,7 @@
 
 See Also
 --------
-:mod:`libbe.storage.http` : the associated client
+:py:mod:`libbe.storage.http` : the associated client
 """
 
 import logging

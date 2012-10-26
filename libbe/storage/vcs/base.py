@@ -143,7 +143,7 @@ class CachedPathID (object):
        .../.be/BUGDIR/bugs/BUG/comments/COMMENT
           ^-- root path
 
-    See :mod:`libbe.util.id` for a discussion of ID formats.
+    See :py:mod:`libbe.util.id` for a discussion of ID formats.
 
     Examples
     --------
@@ -1069,7 +1069,7 @@ class VCS (libbe.storage.base.VersionedStorage):
 
         See Also
         --------
-        :mod:`libbe.storage.util.upgrade`
+        :py:mod:`libbe.storage.util.upgrade`
         """
         if path == None:
             path = os.path.join(self.repo, '.be', 'version')

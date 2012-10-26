@@ -34,7 +34,7 @@ more information on decorators.
 
 See Also
 --------
-:mod:`libbe.storage.util.settings_object` : bundle properties into a convenient package
+:py:mod:`libbe.storage.util.settings_object` : bundle properties into a convenient package
 
 """
 

@@ -7,10 +7,10 @@ Adding commands
 
 To write a plugin, you simply create a new file in the
 :file:`libbe/command/` directory.  Take a look at one of the simpler
-plugins (e.g. :mod:`libbe.command.remove`) for an example of how that
+plugins (e.g. :py:mod:`libbe.command.remove`) for an example of how that
 looks, and to start getting a feel for the libbe interface.
 
-See :mod:`libbe.command.base` for the definition of the important
+See :py:mod:`libbe.command.base` for the definition of the important
 classes :class:`~libbe.command.base.Option`,
 :class:`~libbe.command.base.Argument`,
 :class:`~libbe.command.base.Command`,
@@ -29,8 +29,8 @@ completion for arbitrary plugins.  In order to support this system,
 any of your completable :class:`~libbe.command.base.Argument`
 instances (in your command's ``.options`` or ``.args``) should be
 initialized with some valid completion_callback function.  Some common
-cases are defined in :mod:`libbe.command.util`.  If you need more
-flexibility, see :mod:`libbe.command.list`\'s ``--sort`` option for an
+cases are defined in :py:mod:`libbe.command.util`.  If you need more
+flexibility, see :py:mod:`libbe.command.list`\'s ``--sort`` option for an
 example of extensions via :class:`libbe.command.util.Completer`, or
 write a custom completion function from scratch.
 
@@ -38,7 +38,7 @@ write a custom completion function from scratch.
 Adding user interfaces
 ======================
 
-Take a look at :mod:`libbe.ui.command_line` for an example.
+Take a look at :py:mod:`libbe.ui.command_line` for an example.
 Basically you'll need to setup a
 :class:`~libbe.command.base.UserInterface` instance for running
 commands.  More details to come after I write an HTML UI...

@@ -66,7 +66,7 @@ need to run::
 
     $ make
 
-to build some auto-generated files (e.g. :mod:`libbe._version`), and::
+to build some auto-generated files (e.g. :py:mod:`libbe._version`), and::
 
     $ make install
 

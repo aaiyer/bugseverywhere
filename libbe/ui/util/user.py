@@ -19,11 +19,11 @@
 """Tools for getting, setting, creating, and parsing the user's ID.
 
 IDs will look like 'John Doe <jdoe@example.com>'.  Note that the
-:mod:`libbe.storage.vcs.arch <Arch VCS backend>` *enforces* IDs with
+:py:mod:`libbe.storage.vcs.arch <Arch VCS backend>` *enforces* IDs with
 this format.
 
 Do not confuse the user IDs discussed in this module, which refer to
-humans, with the "user IDs" discussed in :mod:`libbe.util.id`, which
+humans, with the "user IDs" discussed in :py:mod:`libbe.util.id`, which
 are human-readable tags refering to objects.
 """
 
@@ -129,7 +129,7 @@ def get_user_id(storage=None):
     2. `storage.get_user_id`, if that function is defined.
     3. :py:func:`get_fallback_username` and :py:func:`get_fallback_email`.
 
-    .. [#] See :mod:`libbe.storage.util.config`.
+    .. [#] See :py:mod:`libbe.storage.util.config`.
 
     Notes
     -----

@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath('..'))
 from test import python_tree
 
 def title(modname):
-    t = ':mod:`%s`' % modname
+    t = ':py:mod:`%s`' % modname
     delim = '*'*len(t)
     return '\n'.join([delim, t, delim, '', ''])
 
