@@ -1069,7 +1069,7 @@ class VCS (libbe.storage.base.VersionedStorage):
 
         See Also
         --------
-        :py:mod:`libbe.storage.util.upgrade`
+        libbe.storage.util.upgrade
         """
         if path == None:
             path = os.path.join(self.repo, '.be', 'version')
