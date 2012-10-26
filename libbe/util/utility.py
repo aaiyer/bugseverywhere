@@ -199,7 +199,7 @@ def iterable_full_of_strings(value, alternative=None):
     """Require an iterable full of strings.
 
     This is useful, for example, in validating `*.extra_strings`.
-    See :attr:`libbe.bugdir.BugDir.extra_strings`
+    See :py:attr:`libbe.bugdir.BugDir.extra_strings`
 
     Parameters
     ----------
