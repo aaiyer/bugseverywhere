@@ -39,7 +39,7 @@ class InvalidMapfileContents (Exception):
         self.contents = contents
 
 
-def generate(map):
+def generate(map, context=6):
     """Generate a JSON mapfile content string.
 
     Examples
@@ -64,32 +64,28 @@ def generate(map):
     <BLANKLINE>
     <BLANKLINE>
     }
-    >>> generate({'q':u'Fran\u00e7ais'})
-    '{\\n\\n\\n\\n\\n\\n\\n    "q": "Fran\\\\u00e7ais"\\n\\n\\n\\n\\n\\n\\n}\\n'
-    >>> generate({'q':u'hello'})
-    '{\\n\\n\\n\\n\\n\\n\\n    "q": "hello"\\n\\n\\n\\n\\n\\n\\n}\\n'
-    >>> sys.stdout.write(generate(
-    ...         {'p':'really long line\\n'*10, 'q': 'the next entry'}))
+
+    The blank lines ensure that merging occurs independent of
+    surrounding content.  Because the mapfile format is also used by
+    the :py:mod:`~libbe.command.serve_commands` where merging is not
+    important, the amount of context is controllable.
+
+    >>> sys.stdout.write(generate({'q':u'Fran\u00e7ais'}, context=0))
     {
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
+        "q": "Fran\\u00e7ais"
+    }
+    >>> sys.stdout.write(generate({'q':u'hello'}, context=0))
+    {
+        "q": "hello"
+    }
+    >>> sys.stdout.write(generate(
+    ...         {'p':'really long line\\n'*10, 'q': 'the next entry'},
+    ...         context=1))
+    {
     <BLANKLINE>
         "p": "really long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\nreally long line\\n", 
     <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
         "q": "the next entry"
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
-    <BLANKLINE>
     <BLANKLINE>
     }
 
@@ -98,8 +94,8 @@ def generate(map):
     parse : inverse
     """
     lines = json.dumps(map, sort_keys=True, indent=4).splitlines()
-    # add blank lines for context-less merging
-    return '\n\n\n\n\n\n\n'.join(lines) + '\n'
+    sep = '\n' * (1 + context)
+    return sep.join(lines) + '\n'
 
 def parse(contents):
     """Parse a JSON mapfile string.
