@@ -263,14 +263,20 @@ compare your working tree with the last commit::
         Changed bug settings:
           creator: None -> W. Trevor King <wking@drexel.edu>
 
-Compare with a previous revision ``480``::
+Compare with a previous revision ``1.1.0``::
 
-    $ be diff 480
+    $ be diff 1.1.0
     ...
+
+The format of revision names passed to ``diff`` will depend on your
+VCS.  For Git, look to gitrevisions_ for inspiration.
 
 Compare your BE branch with the trunk::
 
     $ be diff --repo http://bugs.bugseverywhere.org/
+
+.. _gitrevisions:
+   http://www.kernel.org/pub/software/scm/git/docs/gitrevisions.html
 
 Manipulating bugs
 -----------------
