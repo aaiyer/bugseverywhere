@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # Bugs Everywhere.  If not, see <http://www.gnu.org/licenses/>.
 
+import codecs
 import optparse
 import os
 import os.path
@@ -103,9 +104,12 @@ def make_changelog(filename, tag):
     by hand is just too slow.
     """
     print 'generate ChangeLog file', filename, 'up to tag', tag
-    invoke(['git', 'log', '--no-merges',
-            '%s..%s' % (INITIAL_COMMIT, tag)],
-           stdout=open(filename, 'w')),
+    status,stdout,stderr = invoke(
+        ['git', 'log', '--no-merges', '{}..{}'.format(INITIAL_COMMIT, tag)])
+    with codecs.open(filename, 'w', 'utf-8') as f:
+        for line in stdout.splitlines():
+            f.write(line.rstrip())
+            f.write(u'\n')
 
 def set_vcs_name(be_dir, vcs_name='None'):
     """Exported directory is not a git repository, so set vcs_name to
