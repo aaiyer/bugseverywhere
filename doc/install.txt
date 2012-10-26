@@ -97,7 +97,7 @@ the man page (``doc/man/be.1``) if it exists, so::
     $ make DOC= install
 
 *will* build (first ``make``) and install (second ``make``) the man
- page.
+page.
 
 Also note that there is no need to edit the ``Makefile`` to change any
 of its internal variables.  You can `override them from the command
