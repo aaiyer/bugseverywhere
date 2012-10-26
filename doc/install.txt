@@ -36,7 +36,7 @@ required.  See `Minimal installs`_ for possible shortcuts.
 ==============  =======================  ================  ===========================
 Package         Role                     Debian_           Gentoo_
 ==============  =======================  ================  ===========================
-PyYAML_         serialized data storage  python-yaml       dev-python/pyyaml
+PyYAML_         upgrade old BE storage   python-yaml       dev-python/pyyaml
 Jinja_          HTML templating          python-jinja2     dev-python/jinja
 CherryPy_       serve repos over HTTPS   python-cherrypy3  dev-python/cherrypy
 Sphinx_         see :doc:`doc`           python-sphinx     dev-python/sphinx
@@ -117,8 +117,11 @@ See::
 
 for a list of installation options.
 
-You will still need to install PyYAML.  Jinja is only used by the
-``html`` command, so feel free to skip Jinja if you don't mind
+You only need YAML support if you will be upgrading a BE repository
+based on ``Bugs Everywhere Directory v1.4`` or earlier (see
+:file:`.be/version`).  If you're installing a fresh instance of BE,
+there's no need to install PyYAML.  Jinja is only used by the ``html``
+command, so there's no need to install Jinja if you don't mind
 avoiding that command.  Similarly, CherryPy is only used for the
 ``serve-*`` commands.  The other dependencies are only used for
 :doc:`building these docs <doc>`, so feel free to skip them and just
