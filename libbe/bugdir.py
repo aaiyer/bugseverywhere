@@ -83,7 +83,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
 
     See Also
     --------
-    :py:class:`SimpleBugDir` for some bugdir manipulation exampes.
+    SimpleBugDir : bugdir manipulation exampes.
     """
 
     settings_properties = []
