@@ -33,8 +33,8 @@ If your distribution does not package BE, you'll have to install it
 yourself, along with its dependencies.  Not all of these are strictly
 required.  See `Minimal installs`_ for possible shortcuts.
 
-==============  =======================  ===============  ===========================
-Package         Role                     Debian_          Gentoo_
+==============  =======================  ================  ===========================
+Package         Role                     Debian_           Gentoo_
 ==============  =======================  ================  ===========================
 PyYAML_         serialized data storage  python-yaml       dev-python/pyyaml
 Jinja_          HTML templating          python-jinja2     dev-python/jinja
