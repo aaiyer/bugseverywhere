@@ -46,6 +46,9 @@ Docutils_       manpage generation       python-docutils   dev-python/docutils
 
 .. [#npd] In the science_ overlay.
 
+.. Debian has a stale ITP for python-numpydoc http://bugs.debian.org/631877
+   which caused BE to be dropped  http://bugs.debian.org/609519
+
 .. _PyYAML: http://pyyaml.org/
 .. _Jinja: http://jinja.pocoo.org/
 .. _CherryPy: http://cherrypy.org/
