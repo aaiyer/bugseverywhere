@@ -57,7 +57,7 @@ Don't list this module, it is implicitly last.
 """
 
 def set_preferred_vcs(name):
-    """Manipulate :data:`VCS_ORDER` to place `name` first.
+    """Manipulate :py:data:`VCS_ORDER` to place `name` first.
 
     This is primarily indended for testing purposes.
     """
@@ -70,7 +70,7 @@ def set_preferred_vcs(name):
 def _get_matching_vcs(matchfn):
     """Return the first module for which matchfn(VCS_instance) is True.
 
-    Searches in :data:`VCS_ORDER`.
+    Searches in :py:data:`VCS_ORDER`.
     """
     for submodname in VCS_ORDER:
         module = import_by_name('libbe.storage.vcs.%s' % submodname)
@@ -82,7 +82,7 @@ def _get_matching_vcs(matchfn):
 def vcs_by_name(vcs_name):
     """Return the module for the VCS with the given name.
 
-    Searches in :data:`VCS_ORDER`.
+    Searches in :py:data:`VCS_ORDER`.
     """
     if vcs_name == VCS.name:
         return new()
@@ -91,14 +91,14 @@ def vcs_by_name(vcs_name):
 def detect_vcs(dir):
     """Return an VCS instance for the vcs being used in this directory.
 
-    Searches in :data:`VCS_ORDER`.
+    Searches in :py:data:`VCS_ORDER`.
     """
     return _get_matching_vcs(lambda vcs: vcs._detect(dir))
 
 def installed_vcs():
     """Return an instance of an installed VCS.
 
-    Searches in :data:`VCS_ORDER`.
+    Searches in :py:data:`VCS_ORDER`.
     """
     return _get_matching_vcs(lambda vcs: vcs.installed())
 

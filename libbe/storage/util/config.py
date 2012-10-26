@@ -67,7 +67,7 @@ def set_val(name, value, section="DEFAULT", encoding=None):
     section : str
       The section to store the name/value in.
     encoding : str
-      The config file's encoding, defaults to :data:`default_encoding`.
+      The config file's encoding, defaults to :py:data:`default_encoding`.
     """
     if encoding == None:
         encoding = default_encoding
@@ -97,7 +97,7 @@ def get_val(name, section="DEFAULT", default=None, encoding=None):
     default :
       The value to return if `name` is not set.
     encoding : str
-      The config file's encoding, defaults to :data:`default_encoding`.
+      The config file's encoding, defaults to :py:data:`default_encoding`.
 
     Examples
     --------

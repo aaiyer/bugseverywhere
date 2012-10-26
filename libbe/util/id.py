@@ -464,7 +464,7 @@ REGEXP = '#([-a-f0-9]*)(/[-a-g0-9]*)?(/[-a-g0-9]*)?#'
 class IDreplacer (object):
     """Helper class for ID replacement in text.
 
-    Reassembles the match elements from :data:`REGEXP` matching
+    Reassembles the match elements from :py:data:`REGEXP` matching
     into the original ID, for easier replacement.
 
     See Also
@@ -546,7 +546,7 @@ def _parse_user(id):
     information.
 
     The returned dict will contain a value for "type" (from
-    :data:`HIERARCHY`) and values for the levels that are defined.
+    :py:data:`HIERARCHY`) and values for the levels that are defined.
 
     Examples
     --------
@@ -589,7 +589,7 @@ def parse_user(bugdirs, id):
     information.
 
     The returned dict will contain a value for "type" (from
-    :data:`HIERARCHY`) and values for the levels that are defined.
+    :py:data:`HIERARCHY`) and values for the levels that are defined.
 
     Notes
     -----
