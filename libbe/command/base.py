@@ -24,10 +24,10 @@ import os.path
 import StringIO
 import sys
 import urlparse
-import yaml
 
 import libbe
 import libbe.storage
+import libbe.storage.util.mapfile
 import libbe.ui.util.user
 import libbe.util.encoding
 import libbe.util.http
@@ -348,10 +348,10 @@ class Command (object):
         raise NotImplementedError
 
     def _run_remote(self, **kwargs):
-        data = yaml.safe_dump({
+        data = libbe.storage.util.mapfile.generate({
                 'command': self.name,
                 'parameters': kwargs,
-                })
+                }, context=0)
         url = urlparse.urljoin(self.server, 'run')
         page,final_url,info = libbe.util.http.get_post_url(
             url=url, get=False, data=data, agent=self.user_agent)

@@ -30,11 +30,10 @@ import re
 import urllib
 import wsgiref.simple_server
 
-import yaml
-
 import libbe
 import libbe.command
 import libbe.command.base
+import libbe.storage.util.mapfile
 import libbe.util.wsgi
 import libbe.version
 
@@ -113,7 +112,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
 
     # handler utility functions
     def _parse_post(self, post):
-        return yaml.safe_load(post)
+        return libbe.storage.util.mapfile.parse(post)
 
     def check_login(self, environ):
         user = environ.get('be-auth.user', None)
@@ -208,10 +207,10 @@ if libbe.TESTING:
         def test_run_list(self):
             list = libbe.command.list.List()
             params = list._parse_options_args()
-            data = yaml.safe_dump({
+            data = libbe.storage.util.mapfile.generate({
                     'command': 'list',
                     'parameters': params,
-                    })
+                    }, context=0)
             self.getURL(self.app, '/run', method='POST', data=data)
             self.failUnless(self.status.startswith('200 '), self.status)
             self.failUnless(
