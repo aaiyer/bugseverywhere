@@ -14,7 +14,9 @@ function with no VCS at all.
 .. _Monotone: http://www.monotone.ca/
 
 The idea is to package the bug information with the source code, so
-that bugs can be marked "fixed" in the branches that fix them.
+that bugs can be marked "fixed" in the branches that fix them.  Other
+architectures---such as keeping all the bugs in their own branch---are
+also possible.
 
 
 Contents:
