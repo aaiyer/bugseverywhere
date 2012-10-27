@@ -135,7 +135,7 @@ be --no-pager show $BUG            # show bug details & comments
 OUT=`be new 'yet more fun'`
 BUGC=`echo "$OUT" | sed -n 's/Created bug with ID //p'`
 be comment $BUGC "The ants go marching..."
-be show --xml $BUGC/ | be import-xml --add-only --comment-root $BUG -
+be show --xml $BUGC/ | be import-xml --add-only --root $BUG -
 be remove $BUG # decide that you don't like that bug after all
 be commit "You can even commit using BE"
 be commit --allow-empty "And you can add empty commits if you like"
