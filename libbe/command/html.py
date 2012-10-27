@@ -808,19 +808,18 @@ class HTML (libbe.util.wsgi.ServerCommand):
                         name='template-dir', metavar='DIR',
                         completion_callback=libbe.command.util.complete_path)),
                 libbe.command.Option(name='title',
-                    help='Set the bug repository title (%default)',
+                    help='Set the bug repository title',
                     arg=libbe.command.Argument(
                         name='title', metavar='STRING',
                         default='Bugs Everywhere Issue Tracker')),
                 libbe.command.Option(name='index-header',
-                    help='Set the index page headers (%default)',
+                    help='Set the index page headers',
                     arg=libbe.command.Argument(
                         name='index-header', metavar='STRING',
                         default='Bugs Everywhere Bug List')),
                 libbe.command.Option(name='min-id-length', short_name='l',
                     help=('Attempt to truncate bug and comment IDs to this '
-                          'length.  Set to -1 for non-truncated IDs '
-                          '(%default)'),
+                          'length.  Set to -1 for non-truncated IDs'),
                     arg=libbe.command.Argument(
                         name='min-id-length', metavar='INT',
                         default=-1, type='int')),
@@ -829,14 +828,14 @@ class HTML (libbe.util.wsgi.ServerCommand):
                 libbe.command.Option(name='export-html', short_name='e',
                     help='Export all HTML pages and exit.'),
                 libbe.command.Option(name='output', short_name='o',
-                    help='Set the output path for HTML export (%default)',
+                    help='Set the output path for HTML export',
                     arg=libbe.command.Argument(
                         name='output', metavar='DIR', default='./html_export',
                         completion_callback=libbe.command.util.complete_path)),
                 libbe.command.Option(name='export-template', short_name='E',
                     help='Export the default template and exit.'),
                 libbe.command.Option(name='export-template-dir', short_name='d',
-                    help='Set the directory for the template export (%default)',
+                    help='Set the directory for the template export',
                     arg=libbe.command.Argument(
                         name='export-template-dir', metavar='DIR',
                         default='./default-templates/',
