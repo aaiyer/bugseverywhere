@@ -686,7 +686,7 @@ class ServerCommand (libbe.command.base.Command):
             server.serve_forever()
 
     def _stop_server(self, params, server):
-        self.logger.log(self.log_level, 'Clossing server')
+        self.logger.log(self.log_level, 'Closing server')
         if params['ssl'] == True:
             server.stop()
         else:
