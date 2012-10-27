@@ -185,7 +185,7 @@ options so other people can't mess with your repository.  If you do use
 authentication, you'll need to send in your username and password with,
 for example::
 
-    $ be --repo http://username:password@localhost:8000/ list
+    $ be --server http://username:password@localhost:8000/ list
 """
 
 
