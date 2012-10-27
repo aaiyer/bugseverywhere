@@ -138,7 +138,7 @@ _be-html () {
 
 _be-import_xml () {
   local curcontext="$curcontext" state line expl ret=1
-  ids=("${(f)$(be import_xml --comment-root --complete)}")
+  ids=("${(f)$(be import_xml --root --complete)}")
 
   _arguments -C \
     '(-h --help)'{-h,--help}'[Print a help message]' \
@@ -146,7 +146,7 @@ _be-import_xml () {
     '(-i --ignore-missing-references)'{-i,--ignore-missing-references}'[Ignore unknown <in-reply-to> elements]' \
     '(-a --add-only)'{-a,--add-only}'[Cancel when bugs already exist]' \
     '(-p --preserve-uuids)'{-p,--preserve-uuids}'[Preserve UUIDs for trusted input (potential name collisions)]' \
-    '(-c --comment-root)'{-c,--comment-root=-}'[Supply a bug or comment ID as the root of any standalon <comment> elements]:ID:($ids)' \
+    '(-r --root)'{-r,--root=-}'[Supply a bug or comment ID as the root of any standalon <comment> elements]:ID:($ids)' \
     && return 0
 }
 
