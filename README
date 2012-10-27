@@ -57,8 +57,8 @@ If ``be help`` isn't scratching your itch, the full documentation is
 available in the doc directory as reStructuredText_ .  You can build
 the full documentation with Sphinx_ , convert single files with
 docutils_ , or browse through the doc directory by hand.
-doc/index.txt is a good place to start.  If you do use Sphinx, you'll
-need to install numpydoc_ for automatically generating API
+``doc/index.txt`` is a good place to start.  If you do use Sphinx,
+you'll need to install numpydoc_ for automatically generating API
 documentation.  See the ``NumPy/SciPy documentation guide``_ for an
 introduction to the syntax.
 
