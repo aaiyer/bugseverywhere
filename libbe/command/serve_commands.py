@@ -182,8 +182,7 @@ And in another terminal (or after backgrounding the server)::
 If you bind your server to a public interface, take a look at the
 ``--read-only`` option or the combined ``--ssl --auth FILE``
 options so other people can't mess with your repository.  If you do use
-authentication, you'll need to send in your username and password with,
-for example::
+authentication, you'll need to send in your username and password::
 
     $ be --server http://username:password@localhost:8000/ list
 """
