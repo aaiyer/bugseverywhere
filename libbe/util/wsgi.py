@@ -905,7 +905,7 @@ if libbe.TESTING:
     suite = unittest.TestSuite([unitsuite, doctest.DocTestSuite()])
 
 
-# The following certificate-creation code is adapted From pyOpenSSL's
+# The following certificate-creation code is adapted from pyOpenSSL's
 # examples.
 
 def _get_cert_filenames(server_name, autogenerate=True, logger=None):
