@@ -1015,7 +1015,7 @@ def _make_certs(server_name, logger=None) :
     if OpenSSL == None:
         raise libbe.command.UserError(
             'SSL certificate generation requires the OpenSSL module')
-    pkey_file,cert_file = get_cert_filenames(
+    pkey_file,cert_file = _get_cert_filenames(
         server_name, autogenerate=False)
     if logger != None:
         logger.log(logger._server_level,
