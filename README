@@ -68,4 +68,4 @@ introduction to the syntax.
 .. _docutils: http://docutils.sourceforge.net/
 .. _numpydoc: http://pypi.python.org/pypi/numpydoc
 .. _NumPy/SciPy documentation guide:
-  http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines
+  https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
