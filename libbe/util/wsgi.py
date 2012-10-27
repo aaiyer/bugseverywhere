@@ -576,11 +576,11 @@ class ServerCommand (libbe.command.base.Command):
         super(ServerCommand, self).__init__(*args, **kwargs)
         self.options.extend([
                 libbe.command.Option(name='port',
-                    help='Bind server to port (%default)',
+                    help='Bind server to port',
                     arg=libbe.command.Argument(
                         name='port', metavar='INT', type='int', default=8000)),
                 libbe.command.Option(name='host',
-                    help='Set host string (blank for localhost, %default)',
+                    help='Set host string (blank for localhost)',
                     arg=libbe.command.Argument(
                         name='host', metavar='HOST', default='localhost')),
                 libbe.command.Option(name='read-only', short_name='r',
