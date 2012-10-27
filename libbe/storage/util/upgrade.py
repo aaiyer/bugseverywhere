@@ -214,7 +214,7 @@ class Upgrade_1_0_to_1_1 (Upgrader):
                 path_list = c_path + [comment_uuid, 'values']
                 path = self.get_path(*path_list)
                 self._upgrade_mapfile(path)
-                settings = mapfile.parse(
+                settings = parse_yaml_mapfile(
                     encoding.get_file_contents(path))
                 if 'From' in settings:
                     settings['Author'] = settings.pop('From')
