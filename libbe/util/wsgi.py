@@ -27,6 +27,7 @@ See Also
 import copy
 import hashlib
 import logging
+import os.path
 import re
 import StringIO
 import sys
