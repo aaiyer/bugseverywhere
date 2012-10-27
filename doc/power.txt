@@ -15,7 +15,9 @@ one!).  Basic instructions for installing the completion file for a
 given shell should be given in the completion script comments.
 
 Packagers should install these completion scripts in their system's
-usual spot (on Gentoo it's :file:`/etc/bash_completion.d/`).
+usual spot (on Gentoo, the Bash completion script should be installed
+as :file:`/usr/share/bash_completion/be` and Z shell completion script
+should be installed as :file:`/usr/share/zsh/site-functions/_be`).
 
 XML-handling utilities
 ======================
