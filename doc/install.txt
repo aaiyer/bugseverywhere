@@ -123,9 +123,10 @@ based on ``Bugs Everywhere Directory v1.4`` or earlier (see
 there's no need to install PyYAML.  Jinja is only used by the ``html``
 command, so there's no need to install Jinja if you don't mind
 avoiding that command.  Similarly, CherryPy is only used for the
-``serve-*`` commands.  The other dependencies are only used for
-:doc:`building these docs <doc>`, so feel free to skip them and just
-use the docs wherever you're currently reading them.
+``html`` and ``serve-*`` commands with the ``--ssl`` option set.  The
+other dependencies are only used for :doc:`building these docs <doc>`,
+so feel free to skip them and just use the docs wherever you're
+currently reading them.
 
 .. _homepage: http://bugseverywhere.org/
 .. _overriding: http://www.gnu.org/software/make/manual/html_node/Overriding.html
