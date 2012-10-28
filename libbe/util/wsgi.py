@@ -60,6 +60,7 @@ except ImportError:
 
 
 import libbe.util.encoding
+import libbe.util.id
 import libbe.command
 import libbe.command.base
 import libbe.command.util
@@ -318,6 +319,9 @@ class BEExceptionApp (WSGI_Middleware):
         except libbe.storage.InvalidID as e:
             raise libbe.util.wsgi.HandlerError(
                 self.http_user_error, 'InvalidID {}'.format(e))
+        except libbe.util.id.NoIDMatches as e:
+            raise libbe.util.wsgi.HandlerError(
+                self.http_user_error, 'NoIDMatches {}'.format(e))
 
 
 class UppercaseHeaderApp (WSGI_Middleware):
