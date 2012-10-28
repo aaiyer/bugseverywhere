@@ -73,7 +73,6 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         self.strip_email = strip_email
         self.generation_time = generation_time
         self._refresh = 0
-        self.http_user_error = 418
         self._load_templates(template_dir=template_dir)
         self._filters = {
             'active': lambda bug: bug.active and bug.severity != 'target',

@@ -60,6 +60,7 @@ except ImportError:
 
 
 import libbe.util.encoding
+import libbe.util.http
 import libbe.util.id
 import libbe.command
 import libbe.command.base
@@ -307,7 +308,6 @@ class BEExceptionApp (WSGI_Middleware):
     """
     def __init__(self, *args, **kwargs):
         super(BEExceptionApp, self).__init__(*args, **kwargs)
-        self.http_user_error = 418
 
     def _call(self, environ, start_response):
         try:
@@ -318,10 +318,10 @@ class BEExceptionApp (WSGI_Middleware):
             raise libbe.util.wsgi.HandlerError(403, 'Write permission denied')
         except libbe.storage.InvalidID as e:
             raise libbe.util.wsgi.HandlerError(
-                self.http_user_error, 'InvalidID {}'.format(e))
+                libbe.util.http.HTTP_USER_ERROR, 'InvalidID {}'.format(e))
         except libbe.util.id.NoIDMatches as e:
             raise libbe.util.wsgi.HandlerError(
-                self.http_user_error, 'NoIDMatches {}'.format(e))
+                libbe.util.http.HTTP_USER_ERROR, 'NoIDMatches {}'.format(e))
 
 
 class UppercaseHeaderApp (WSGI_Middleware):

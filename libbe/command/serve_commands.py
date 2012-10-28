@@ -77,7 +77,6 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         self.storage = storage
         self.ui = libbe.command.base.UserInterface()
         self.notify = notify
-        self.http_user_error = 418
 
     # handlers
     def run(self, environ, start_response):
@@ -88,13 +87,13 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             name = data['command']
         except KeyError:
             raise libbe.util.wsgi.HandlerError(
-                self.http_user_error, 'UnknownCommand')
+                libbe.util.http.HTTP_USER_ERROR, 'UnknownCommand')
         parameters = data.get('parameters', {})
         try:
             Class = libbe.command.get_command_class(command_name=name)
         except libbe.command.UnknownCommand, e:
             raise libbe.util.wsgi.HandlerError(
-                self.http_user_error, 'UnknownCommand {}'.format(e))
+                libbe.util.http.HTTP_USER_ERROR, 'UnknownCommand {}'.format(e))
         command = Class(ui=self.ui)
         self.ui.setup_command(command)
         arguments = [option.arg for option in command.options

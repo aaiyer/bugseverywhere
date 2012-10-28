@@ -29,6 +29,7 @@ import os.path
 import libbe
 import libbe.command
 import libbe.command.util
+import libbe.util.http
 import libbe.util.subproc
 import libbe.util.wsgi
 import libbe.version
@@ -91,7 +92,6 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             **kwargs)
         self.storage = storage
         self.notify = notify
-        self.http_user_error = 418
 
     # handlers
     def add(self, environ, start_response):
@@ -203,7 +203,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             revision = self.storage.commit(summary, body, allow_empty)
         except libbe.storage.EmptyCommit, e:
             raise libbe.util.wsgi.HandlerError(
-                self.http_user_error, 'EmptyCommit')
+                libbe.util.http.HTTP_USER_ERROR, 'EmptyCommit')
         if self.notify:
             self._notify(environ, 'commit', id,
                          [('allow_empty', allow_empty), ('summary', summary),
