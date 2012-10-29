@@ -105,10 +105,11 @@ def get_post_url(url, get=True, data=None, data_dict=None, headers=[],
     try:
         response = urllib2.urlopen(req)
     except urllib2.HTTPError, e:
-        lines = [
-            'We failed to connect to the server (HTTPError).',
-            'URL: {}'.format(url),
-            ]
+        if e.code == HTTP_USER_ERROR:
+            lines = ['The server reported a user error (HTTPError)']
+        else:
+            lines = ['The server reported an error (HTTPError)']
+        lines.append('URL: {}'.format(url))
         if hasattr(e, 'reason'):
             lines.append('Reason: {}'.format(e.reason))
         lines.append('Error code: {}'.format(e.code))
