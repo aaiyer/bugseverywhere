@@ -58,14 +58,13 @@ try:
 except ImportError:
     OpenSSL = None
 
-
-import libbe.util.encoding
-import libbe.util.http
-import libbe.util.id
 import libbe.command
 import libbe.command.base
 import libbe.command.util
 import libbe.storage
+import libbe.util.encoding
+import libbe.util.http
+import libbe.util.id
 
 
 if libbe.TESTING == True:
@@ -316,12 +315,19 @@ class BEExceptionApp (WSGI_Middleware):
             raise libbe.util.wsgi.HandlerError(403, 'Read permission denied')
         except libbe.storage.NotWriteable as e:
             raise libbe.util.wsgi.HandlerError(403, 'Write permission denied')
-        except libbe.storage.InvalidID as e:
+        except (libbe.command.UsageError,
+                libbe.command.UserError,
+                OSError,
+                libbe.storage.ConnectionError,
+                libbe.util.http.HTTPError,
+                libbe.util.id.MultipleIDMatches,
+                libbe.util.id.NoIDMatches,
+                libbe.util.id.InvalidIDStructure,
+                libbe.storage.InvalidID,
+                ) as e:
+            msg = '{} {}'.format(type(e).__name__, format(e))
             raise libbe.util.wsgi.HandlerError(
-                libbe.util.http.HTTP_USER_ERROR, 'InvalidID {}'.format(e))
-        except libbe.util.id.NoIDMatches as e:
-            raise libbe.util.wsgi.HandlerError(
-                libbe.util.http.HTTP_USER_ERROR, 'NoIDMatches {}'.format(e))
+                libbe.util.http.HTTP_USER_ERROR, msg)
 
 
 class UppercaseHeaderApp (WSGI_Middleware):
