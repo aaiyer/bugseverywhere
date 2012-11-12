@@ -563,18 +563,20 @@ if TESTING == True:
 
         def fail(self, msg=None):
             """Fail immediately, with the given message."""
-            raise self.failureException, \
-                '(%s) %s' % (self._classname(), msg)
+            raise self.failureException(
+                '({0}) {1}'.format(self._classname(), msg))
 
         def failIf(self, expr, msg=None):
             "Fail the test if the expression is true."
-            if expr: raise self.failureException, \
-                '(%s) %s' % (self._classname(), msg)
+            if expr:
+                raise self.failureException(
+                    '({0}) {1}'.format(self._classname(), msg))
 
         def failUnless(self, expr, msg=None):
             """Fail the test unless the expression is true."""
-            if not expr: raise self.failureException, \
-                '(%s) %s' % (self._classname(), msg)
+            if not expr:
+                raise self.failureException(
+                    '({0}) {1}'.format(self._classname(), msg))
 
         def setUp(self):
             """Set up test fixtures for Storage test case."""
