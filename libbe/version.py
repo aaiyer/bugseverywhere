@@ -32,9 +32,9 @@ import copy
 import libbe.storage
 try:
     from ._version import version_info    
-except ImportError, e:
+except ImportError as e:
     import logging
-    logging.warn('unable to import libbe._version: %s' % e)
+    logging.warn('unable to import libbe._version: {0}'.format(e))
     version_info = {
         'revision': 'unknown',
         'date': 'unknown',
@@ -57,13 +57,15 @@ def version(verbose=False):
     if verbose == True:
         info = copy.copy(version_info)
         info['storage'] = libbe.storage.STORAGE_VERSION
-        string += ("\n"
-                   "revision: %(revision)s\n"
-                   "date: %(date)s\n"
-                   "committer: %(committer)s\n"
-                   "storage version: %(storage)s"
-                   % info)
+        string += (
+            '\n'
+            'revision: {revision}\n'
+            'date: {date}\n'
+            'committer: {committer}\n'
+            'storage version: {storage}'
+            ).format(**info)
     return string
 
-if __name__ == "__main__":
-    print version(verbose=True)
+
+if __name__ == '__main__':
+    print(version(verbose=True))
