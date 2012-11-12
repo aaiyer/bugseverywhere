@@ -92,4 +92,4 @@ doctest: libbe
 
 .PHONY : libbe
 libbe :
-	python generate-libbe-txt.py
+	python2.7 generate-libbe-txt.py
