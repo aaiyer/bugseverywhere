@@ -30,16 +30,16 @@ Also define an assortment of storage-related tools and utilities:
 * :py:mod:`libbe.storage.util`
 """
 
-import base
+from . import base as _base
 
-ConnectionError = base.ConnectionError
-InvalidStorageVersion = base.InvalidStorageVersion
-InvalidID = base.InvalidID
-InvalidRevision = base.InvalidRevision
-InvalidDirectory = base.InvalidDirectory
-NotWriteable = base.NotWriteable
-NotReadable = base.NotReadable
-EmptyCommit = base.EmptyCommit
+ConnectionError = _base.ConnectionError
+InvalidStorageVersion = _base.InvalidStorageVersion
+InvalidID = _base.InvalidID
+InvalidRevision = _base.InvalidRevision
+InvalidDirectory = _base.InvalidDirectory
+NotWriteable = _base.NotWriteable
+NotReadable = _base.NotReadable
+EmptyCommit = _base.EmptyCommit
 
 # a list of all past versions
 STORAGE_VERSIONS = ['Bugs Everywhere Tree 1 0',
