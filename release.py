@@ -134,7 +134,8 @@ def make_html_docs(docdir):
     """Generate docs so users won't need to install Sphinx, etc.
     """
     print('generate HTML docs in {}'.format(docdir))
-    status,stdout,stderr = invoke(['make', 'dirhtml'], cwd=docdir)
+    status,stdout,stderr = invoke(
+        ['make', 'SPHINXBUILD=sphinx-build-2.7', 'dirhtml'], cwd=docdir)
 
 def create_tarball(tag):
     release_name='be-%s' % tag
