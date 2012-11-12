@@ -62,8 +62,8 @@ def python_tree(root_path='libbe', root_modname='libbe'):
 def add_module_tests(suite, modname):
     try:
         mod = import_by_name(modname)
-    except ValueError, e:
-        print >> sys.stderr, 'Failed to import "%s"' % (modname)
+    except ValueError as e:
+        sys.stderr.write('Failed to import "{}"\n'.format(modname))
         raise e
     if hasattr(mod, 'suite'):
         s = mod.suite
@@ -92,7 +92,7 @@ those modules and their submodules.  For example::
     parser.add_option('-q', '--quiet', action='store_true', default=False,
                       help='Run unittests in quiet mode (verbosity 1).')
     options,args = parser.parse_args()
-    print >> sys.stderr, 'Testing BE\n%s' % version(verbose=True)
+    sys.stderr.write('Testing BE\n{}\n'.format(version(verbose=True)))
 
     verbosity = 2
     if options.quiet == True:
