@@ -130,6 +130,12 @@ def make_id_cache():
     """
     invoke([sys.executable, './be', 'list'])
 
+def make_html_docs(docdir):
+    """Generate docs so users won't need to install Sphinx, etc.
+    """
+    print('generate HTML docs in {}'.format(docdir))
+    status,stdout,stderr = invoke(['make', 'dirhtml'], cwd=docdir)
+
 def create_tarball(tag):
     release_name='be-%s' % tag
     export_dir = release_name
@@ -142,6 +148,7 @@ def create_tarball(tag):
                 os.path.join(export_dir, 'libbe', '_version.py'))
     make_changelog(os.path.join(export_dir, 'ChangeLog'), tag)
     make_id_cache()
+    make_html_docs(os.path.join(export_dir, 'doc'))
     print 'copy .be/id-cache to %s/.be/id-cache' % export_dir
     shutil.copy(os.path.join('.be', 'id-cache'),
                 os.path.join(export_dir, '.be', 'id-cache'))
