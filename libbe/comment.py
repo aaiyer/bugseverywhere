@@ -471,7 +471,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
                         setattr(self, attr, new)
                     elif change_exception:
                         raise ValueError(
-                            ('Merge would change {} "{}"->"{}" for comment {}'
+                            ('Merge would change {0} "{1}"->"{2}" for comment {3}'
                              ).format(attr, old, new, self.uuid))
         if self.alt_id == self.uuid:
             self.alt_id = None

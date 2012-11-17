@@ -266,7 +266,8 @@ class BE (libbe.command.Command):
                '', 'Commands:']
         for name, desc in cmdlist:
             numExtraSpaces = longest_cmd_len-len(name)
-            ret.append('be {}{}    {}'.format(name, ' '*numExtraSpaces, desc))
+            ret.append('be {0}{1}    {2}'.format(
+                    name, ' '*numExtraSpaces, desc))
 
         ret.extend(['', 'Topics:'])
         topic_list = [
@@ -275,7 +276,7 @@ class BE (libbe.command.Command):
         longest_topic_len = max([len(name) for name,desc in topic_list])
         for name,desc in topic_list:
             extra_spaces = longest_topic_len - len(name)
-            ret.append('{}{}    {}'.format(name, ' '*extra_spaces, desc))
+            ret.append('{0}{1}    {2}'.format(name, ' '*extra_spaces, desc))
 
         ret.extend(['', 'Run', '  be help [command|topic]',
                     'for more information.'])

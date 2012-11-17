@@ -60,9 +60,9 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
                  strip_email=False, generation_time=None, **kwargs):
         super(ServerApp, self).__init__(
             urls=[
-                (r'^{}$'.format(index_file), self.index),
+                (r'^{0}$'.format(index_file), self.index),
                 (r'^style.css$', self.style),
-                (r'^([^/]+)/([^/]+)/{}'.format(index_file), self.bug),
+                (r'^([^/]+)/([^/]+)/{0}'.format(index_file), self.bug),
                 ],
             **kwargs)
         self.bugdirs = bugdirs
@@ -101,7 +101,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         bugs.sort()
         if self.logger:
             self.logger.log(
-                self.log_level, 'generate {} index file for {} bugs'.format(
+                self.log_level, 'generate {0} index file for {1} bugs'.format(
                     bug_type, len(bugs)))
         template_info = {
             'title': self.title,
@@ -117,7 +117,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             'index_file': self._index_file,
             'generation_time': self._generation_time(),
             }
-        template_info['{}_class'.format(bug_type)] = 'tab sel'
+        template_info['{0}_class'.format(bug_type)] = 'tab sel'
         if bug_type == 'target':
             template = self.template.get_template('target_index.html')
             template_info['targets'] = [
@@ -135,13 +135,13 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             bugdir_id,bug_id = environ['be-server.url_args']
         except:
             raise libbe.util.wsgi.HandlerError(404, 'Not Found')
-        user_id = '{}/{}'.format(bugdir_id, bug_id)
+        user_id = '{0}/{1}'.format(bugdir_id, bug_id)
         bugdir,bug,comment = (
             libbe.command.util.bugdir_bug_comment_from_user_id(
                 self.bugdirs, user_id))
         if self.logger:
             self.logger.log(
-                self.log_level, 'generate bug file for {}/{}'.format(
+                self.log_level, 'generate bug file for {0}/{1}'.format(
                     bugdir.uuid, bug.uuid))
         if bug.severity == 'target':
             index_type = 'target'
@@ -152,7 +152,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
         target = libbe.command.target.bug_target(self.bugdirs, bug)
         if target == bug:  # e.g. when bug.severity == 'target'
             target = None
-        up_link = '../../{}?type={}'.format(self._index_file, index_type)
+        up_link = '../../{0}?type={1}'.format(self._index_file, index_type)
         bug.load_comments(load_full=True)
         bug.comment_root.sort(cmp=libbe.comment.cmp_time, reverse=True)
         template_info = {
@@ -207,7 +207,7 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             min_length=self.min_id_length)
 
     def bug_dir(self, bug):
-        return '{}/{}'.format(
+        return '{0}/{1}'.format(
             self._truncated_bugdir_id(bug.bugdir),
             self._truncated_bug_id(bug))
 
@@ -777,9 +777,9 @@ class HTML (libbe.util.wsgi.ServerCommand):
     >>> for bug in sorted(bugdir):
     ...     if os.path.exists(os.path.join(
     ...             export_path, bugdir.uuid, bug.uuid, 'index.html')):
-    ...         print('got {}'.format(bug.uuid))
+    ...         print('got {0}'.format(bug.uuid))
     ...     else:
-    ...         print('missing {}'.format(bug.uuid))
+    ...         print('missing {0}'.format(bug.uuid))
     got a
     got b
 
@@ -916,7 +916,7 @@ will exit after the dump without serving anything over the wire.
                 path_array.extend(segments)
                 bug_dir_path = os.path.join(*path_array)
                 path_array.append(app._index_file)
-                url = '{}/{}'.format(bug_dir_url, app._index_file)
+                url = '{0}/{1}'.format(bug_dir_url, app._index_file)
                 content = self._get_content(caller, app, url)
                 for url_,path_ in url_mappings:
                     content = content.replace(url_, path_)
@@ -929,7 +929,7 @@ will exit after the dump without serving anything over the wire.
             return caller.getURL(app=app, path=path, data_dict=data_dict)
         except libbe.util.wsgi.HandlerError:
             self.stdout.write(
-                'error retrieving {} with {}\n'.format(path, data_dict))
+                'error retrieving {0} with {1}\n'.format(path, data_dict))
             raise
 
     def _make_dir(self, dir_path):
@@ -939,7 +939,7 @@ will exit after the dump without serving anything over the wire.
                 os.makedirs(dir_path)
             except:
                 raise libbe.command.UserError(
-                    'Cannot create output directory "{}".'.format(dir_path))
+                    'Cannot create output directory "{0}".'.format(dir_path))
         return dir_path
 
     def _write_file(self, content, path_array, mode='w'):
