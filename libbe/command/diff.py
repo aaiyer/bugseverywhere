@@ -113,7 +113,7 @@ class Diff (libbe.command.Command):
             else:
                 if old_bd_current.storage.versioned == False:
                     raise libbe.command.UserError(
-                        '{} is not revision-controlled.'.format(
+                        '{0} is not revision-controlled.'.format(
                             bugdir.storage.repo))
                 old_bd = libbe.bugdir.RevisionedBugDir(old_bd_current,revision)
         d = libbe.diff.Diff(old_bd, bugdir)

@@ -93,7 +93,8 @@ class ServerApp (libbe.util.wsgi.WSGI_AppObject,
             Class = libbe.command.get_command_class(command_name=name)
         except libbe.command.UnknownCommand, e:
             raise libbe.util.wsgi.HandlerError(
-                libbe.util.http.HTTP_USER_ERROR, 'UnknownCommand {}'.format(e))
+                libbe.util.http.HTTP_USER_ERROR,
+                'UnknownCommand {0}'.format(e))
         command = Class(ui=self.ui)
         self.ui.setup_command(command)
         arguments = [option.arg for option in command.options

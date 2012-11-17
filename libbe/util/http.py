@@ -59,7 +59,7 @@ class HTTPError (Exception):
     def __str__(self):
         if self.msg is None:
             if self.error is None:
-                return 'Unknown HTTP error: {}'.format(self.url)
+                return 'Unknown HTTP error: {0}'.format(self.url)
             return str(self.error)
         return self.msg
 
@@ -93,7 +93,7 @@ def get_post_url(url, get=True, data=None, data_dict=None, headers=[],
             if data_dict != {}:
                 # encode get parameters in the url
                 param_string = urllib.urlencode(data_dict)
-                url = '{}?{}'.format(url, param_string)
+                url = '{0}?{1}'.format(url, param_string)
         else:
             data = urllib.urlencode(data_dict)
     else:
@@ -109,15 +109,15 @@ def get_post_url(url, get=True, data=None, data_dict=None, headers=[],
             lines = ['The server reported a user error (HTTPError)']
         else:
             lines = ['The server reported an error (HTTPError)']
-        lines.append('URL: {}'.format(url))
+        lines.append('URL: {0}'.format(url))
         if hasattr(e, 'reason'):
-            lines.append('Reason: {}'.format(e.reason))
-        lines.append('Error code: {}'.format(e.code))
+            lines.append('Reason: {0}'.format(e.reason))
+        lines.append('Error code: {0}'.format(e.code))
         msg = '\n'.join(lines)
         raise HTTPError(error=e, url=url, msg=msg)
     except urllib2.URLError, e:
-        msg = ('We failed to connect to the server (URLError).\nURL: {}\n'
-               'Reason: {}').format(url, e.reason)
+        msg = ('We failed to connect to the server (URLError).\nURL: {0}\n'
+               'Reason: {1}').format(url, e.reason)
         raise HTTPError(error=e, url=url, msg=msg)
     page = response.read()
     final_url = response.geturl()
@@ -133,7 +133,7 @@ if TESTING:
             url = 'http://bugseverywhere.org/'
             page,final_url,info = get_post_url(url=url)
             self.failUnless(final_url == url,
-                'Redirect?\n  Expected: "{}"\n  Got:      "{}"'.format(
+                'Redirect?\n  Expected: "{0}"\n  Got:      "{1}"'.format(
                     url, final_url))
 
         def test_get_redirect(self):
@@ -141,5 +141,5 @@ if TESTING:
             expected = 'http://physics.drexel.edu/~wking/'
             page,final_url,info = get_post_url(url=url)
             self.failUnless(final_url == expected,
-                'Redirect?\n  Expected: "{}"\n  Got:      "{}"'.format(
+                'Redirect?\n  Expected: "{0}"\n  Got:      "{1}"'.format(
                     expected, final_url))

@@ -369,22 +369,22 @@ class BugDir (list, settings_object.SavedSettingsObject):
         for (k,v) in info:
             if v is not None:
                 if k in ['severities', 'active-status', 'inactive-status']:
-                    lines.append('  <{}>'.format(k))
+                    lines.append('  <{0}>'.format(k))
                     for vk,vv in v:
                         lines.extend([
                                 '    <entry>',
-                                '      <key>{}</key>'.format(
+                                '      <key>{0}</key>'.format(
                                     xml.sax.saxutils.escape(vk)),
-                                '      <value>{}</value>'.format(
+                                '      <value>{0}</value>'.format(
                                     xml.sax.saxutils.escape(vv)),
                                 '    </entry>',
                                 ])
-                    lines.append('  </{}>'.format(k))
+                    lines.append('  </{0}>'.format(k))
                 else:
                     v = xml.sax.saxutils.escape(v)
                     lines.append('  <{0}>{1}</{0}>'.format(k, v))
         for estr in self.extra_strings:
-            lines.append('  <extra-string>{}</extra-string>'.format(estr))
+            lines.append('  <extra-string>{0}</extra-string>'.format(estr))
         if show_bugs:
             for bug in self:
                 bug_xml = bug.xml(indent=indent+2, show_comments=show_comments)
@@ -470,33 +470,34 @@ class BugDir (list, settings_object.SavedSettingsObject):
                     for entry in child.getchildren():
                         if entry.tag != 'entry':
                             raise utility.InvalidXML(
-                                '{} child element {} must be <entry>'.format(
+                                '{0} child element {1} must be <entry>'.format(
                                     child.tag, entry))
                         key = value = None
                         for kv in entry.getchildren():
                             if kv.tag == 'key':
                                 if key is not None:
                                     raise utility.InvalidXML(
-                                        ('duplicate keys ({} and {}) in {}'
+                                        ('duplicate keys ({0} and {1}) in {2}'
                                          ).format(key, kv.text, child.tag))
                                 key = xml.sax.saxutils.unescape(kv.text)
                             elif kv.tag == 'value':
                                 if value is not None:
                                     raise utility.InvalidXML(
-                                        ('duplicate values ({} and {}) in {}'
+                                        ('duplicate values ({0} and {1}) '
+                                         'in {2}'
                                          ).format(
                                             value, kv.text, child.tag))
                                 value = xml.sax.saxutils.unescape(kv.text)
                             else:
                                 raise utility.InvalidXML(
-                                    ('{} child element {} must be <key> or '
+                                    ('{0} child element {1} must be <key> or '
                                      '<value>').format(child.tag, kv))
                         if key is None:
                             raise utility.InvalidXML(
-                                'no key for {}'.format(child.tag))
+                                'no key for {0}'.format(child.tag))
                         if value is None:
                             raise utility.InvalidXML(
-                                'no key for {}'.format(child.tag))
+                                'no key for {0}'.format(child.tag))
                         entries.append((key, value))
                     text = entries
                 else:
@@ -514,7 +515,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                 self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
             elif verbose == True:
-                sys.stderr.write('Ignoring unknown tag {} in {}\n'.format(
+                sys.stderr.write('Ignoring unknown tag {0} in {1}\n'.format(
                         child.tag, bugdir.tag))
         if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:
@@ -633,7 +634,8 @@ class BugDir (list, settings_object.SavedSettingsObject):
                         setattr(self, attr, new)
                     elif change_exception:
                         raise ValueError(
-                            ('Merge would change {} "{}"->"{}" for bugdir {}'
+                            ('Merge would change {0} "{1}"->"{2}" '
+                             'for bugdir {3}'
                              ).format(attr, old, new, self.uuid))
         for estr in other.extra_strings:
             if not estr in self.extra_strings:
@@ -641,7 +643,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                     self.extra_strings += [estr]
                 elif change_exception:
                     raise ValueError(
-                        ('Merge would add extra string "{}" for bugdir {}'
+                        ('Merge would add extra string "{0}" for bugdir {1}'
                          ).format(estr, self.uuid))
         for o_bug in other:
             try:
@@ -659,7 +661,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                     self.append(o_bug_copy)
                 elif change_exception:
                     raise ValueError(
-                        ('Merge would add bug {} (alt: {}) to bugdir {}'
+                        ('Merge would add bug {0} (alt: {1}) to bugdir {2}'
                          ).format(o_bug.uuid, o_bug.alt_id, self.uuid))
             else:
                 s_bug.merge(o_bug, accept_changes=accept_changes,

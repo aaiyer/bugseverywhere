@@ -710,7 +710,7 @@ class Bug (settings_object.SavedSettingsObject):
                         setattr(self, attr, new)
                     elif change_exception:
                         raise ValueError(
-                            ('Merge would change {} "{}"->"{}" for bug {}'
+                            ('Merge would change {0} "{1}"->"{2}" for bug {3}'
                              ).format(attr, old, new, self.uuid))
         for estr in other.extra_strings:
             if not estr in self.extra_strings:

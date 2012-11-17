@@ -80,7 +80,7 @@ if libbe.TESTING == True:
 
 class HandlerError (Exception):
     def __init__(self, code, msg, headers=[]):
-        super(HandlerError, self).__init__('{} {}'.format(code, msg))
+        super(HandlerError, self).__init__('{0} {1}'.format(code, msg))
         self.code = code
         self.msg = msg
         self.headers = headers
@@ -89,7 +89,7 @@ class HandlerError (Exception):
 class Unauthenticated (HandlerError):
     def __init__(self, realm, msg='User Not Authenticated', headers=[]):
         super(Unauthenticated, self).__init__(401, msg, headers+[
-                ('WWW-Authenticate','Basic realm="{}"'.format(realm))])
+                ('WWW-Authenticate','Basic realm="{0}"'.format(realm))])
 
 
 class Unauthorized (HandlerError):
@@ -107,7 +107,7 @@ class User (object):
                 self.passhash = self.hash(password)
         else:
             assert password is None, (
-                'Redundant password {} with passhash {}'.format(
+                'Redundant password {0} with passhash {1}'.format(
                     password, passhash))
         self.users = None
 
@@ -115,7 +115,7 @@ class User (object):
         string = string.strip()
         fields = string.split(':')
         if len(fields) != 3:
-            raise ValueError, '{}!=3 fields in "{}"'.format(
+            raise ValueError, '{0}!=3 fields in "{1}"'.format(
                 len(fields), string)
         self.uname,self.name,self.passhash = fields
 
@@ -142,7 +142,7 @@ class User (object):
     def _set_property(self, property, value):
         if self.uname == 'guest':
             raise Unauthorized(
-                'guest user not allowed to change {}'.format(property))
+                'guest user not allowed to change {0}'.format(property))
         if (getattr(self, property) != value and
             self.users is not None):
             self.users.changed = True
@@ -205,11 +205,11 @@ class WSGI_Object (object):
     def __call__(self, environ, start_response):
         if self.logger is not None:
             self.logger.log(
-                logging.DEBUG, 'entering {}'.format(self.__class__.__name__))
+                logging.DEBUG, 'entering {0}'.format(self.__class__.__name__))
         ret = self._call(environ, start_response)
         if self.logger is not None:
             self.logger.log(
-                logging.DEBUG, 'leaving {}'.format(self.__class__.__name__))
+                logging.DEBUG, 'leaving {0}'.format(self.__class__.__name__))
         return ret
 
     def _call(self, environ, start_response):
@@ -226,7 +226,7 @@ class WSGI_Object (object):
 
     def error(self, environ, start_response, error, message, headers=[]):
         """Make it easy to call start_response for errors."""
-        response = '{} {}'.format(error, message)
+        response = '{0} {1}'.format(error, message)
         self.log_request(environ, status=response, bytes=len(message))
         start_response(response,
                        [('Content-Type', 'text/plain')]+headers)
@@ -245,9 +245,9 @@ class WSGI_Object (object):
         else:
             offset = time.timezone / 60 / 60 * -100
         if offset >= 0:
-            offset = '+{:04d}'.format(offset)
+            offset = '+{0:04d}'.format(offset)
         elif offset < 0:
-            offset = '{:04d}'.format(offset)
+            offset = '{0:04d}'.format(offset)
         d = {
             'REMOTE_ADDR': environ.get('REMOTE_ADDR', '-'),
             'REMOTE_USER': environ.get('REMOTE_USER', '-'),
@@ -298,7 +298,7 @@ class HandlerErrorApp (WSGI_Middleware):
             return self.app(environ, start_response)
         except HandlerError, e:
             self.log_request(environ, status=str(e), bytes=0)
-            start_response('{} {}'.format(e.code, e.msg), e.headers)
+            start_response('{0} {1}'.format(e.code, e.msg), e.headers)
             return []
 
 
@@ -325,7 +325,7 @@ class BEExceptionApp (WSGI_Middleware):
                 libbe.util.id.InvalidIDStructure,
                 libbe.storage.InvalidID,
                 ) as e:
-            msg = '{} {}'.format(type(e).__name__, format(e))
+            msg = '{0} {1}'.format(type(e).__name__, format(e))
             raise libbe.util.wsgi.HandlerError(
                 libbe.util.http.HTTP_USER_ERROR, msg)
 
@@ -362,11 +362,12 @@ class AuthenticationApp (WSGI_Middleware):
         self.users = users
 
     def _call(self, environ, start_response):
-        environ['{}.realm'.format(self.setting)] = self.realm
+        environ['{0}.realm'.format(self.setting)] = self.realm
         try:
             username = self.authenticate(environ)
-            environ['{}.user'.format(self.setting)] = username
-            environ['{}.user.name'.format(self.setting)] = self.users[username].name
+            environ['{0}.user'.format(self.setting)] = username
+            environ['{0}.user.name'.format(self.setting)
+                    ] = self.users[username].name
             return self.app(environ, start_response)
         except Unauthorized, e:
             return self.error(environ, start_response,
@@ -422,7 +423,7 @@ class AuthenticationApp (WSGI_Middleware):
         if self.users[username].valid_login(password):
             if self.logger is not None:
                 self.logger.log(self.log_level,
-                    'Authenticated {}'.format(self.users[username].name))
+                    'Authenticated {0}'.format(self.users[username].name))
             return True
         return False
 
@@ -500,7 +501,7 @@ class WSGI_DataObject (WSGI_Object):
         if not key in data or data[key] in [None, 'None']:
             if default == HandlerError:
                 raise HandlerError(
-                    406, 'Missing {} key {}'.format(source, key))
+                    406, 'Missing {0} key {1}'.format(source, key))
             return default
         return data[key]
 
@@ -535,7 +536,7 @@ class WSGI_AppObject (WSGI_Object):
         for regexp,callback in self.urls:
             match = regexp.match(path)
             if match is not None:
-                setting = '{}.url_args'.format(self.setting)
+                setting = '{0}.url_args'.format(self.setting)
                 environ[setting] = match.groups()
                 return callback(environ, start_response)
         if self.default_handler is None:
@@ -559,10 +560,10 @@ class AdminApp (WSGI_AppObject, WSGI_DataObject, WSGI_Middleware):
         self.setting = setting
 
     def admin(self, environ, start_response):
-        if not '{}.user'.format(self.setting) in environ:
-            realm = envirion.get('{}.realm'.format(self.setting))
+        if not '{0}.user'.format(self.setting) in environ:
+            realm = envirion.get('{0}.realm'.format(self.setting))
             raise Unauthenticated(realm=realm)
-        uname = environ.get('{}.user'.format(self.setting))
+        uname = environ.get('{0}.user'.format(self.setting))
         user = self.users[uname]
         data = self.post_data(environ)
         source = 'post'
@@ -644,7 +645,7 @@ class ServerCommand (libbe.command.base.Command):
     def _run(self, **params):
         if params['daemon'] not in self._daemon_actions + [None]:
             raise libbe.command.UserError(
-                'Invalid daemon action "{}".\nValid actions:\n  {}'.format(
+                'Invalid daemon action "{0}".\nValid actions:\n  {1}'.format(
                     params['daemon'], self._daemon_actions))
         self._setup_logging(params)
         if params['daemon'] not in [None, 'start']:
@@ -678,7 +679,7 @@ class ServerCommand (libbe.command.base.Command):
         raise NotImplementedError()
 
     def _setup_logging(self, params, log_level=logging.INFO):
-        self.logger = logging.getLogger('be.{}'.format(self.name))
+        self.logger = logging.getLogger('be.{0}'.format(self.name))
         self.log_level = log_level
         if params['logfile']:
             path = os.path.abspath(os.path.expanduser(
@@ -742,21 +743,21 @@ class ServerCommand (libbe.command.base.Command):
         if pid > 0:
             os._exit(0)
         self.logger.log(
-            self.log_level, 'Daemonized with PID {}'.format(os.getpid()))
+            self.log_level, 'Daemonized with PID {0}'.format(os.getpid()))
 
     def _get_pidfile(self, params):
         params['pidfile'] = os.path.abspath(os.path.expanduser(
                 params['pidfile']))
         self.logger.log(
-            self.log_level, 'Get PID file at {}'.format(params['pidfile']))
+            self.log_level, 'Get PID file at {0}'.format(params['pidfile']))
         if os.path.exists(params['pidfile']):
             raise libbe.command.UserError(
-                'PID file {} already exists'.format(params['pidfile']))
+                'PID file {0} already exists'.format(params['pidfile']))
         pid = os.getpid()
         with open(params['pidfile'], 'w') as f:  # race between exist and open
             f.write(str(os.getpid()))            
         self.logger.log(
-            self.log_level, 'Got PID file as {}'.format(pid))
+            self.log_level, 'Got PID file as {0}'.format(pid))
 
     def _start_server(self, params, server, details):
         if params['daemon']:
@@ -800,7 +801,7 @@ class ServerCommand (libbe.command.base.Command):
         if f is None:
             self.logger.log(
                 self.log_level,
-                'SIGTERM from outside _start_server(): {}'.format(
+                'SIGTERM from outside _start_server(): {0}'.format(
                     frame.f_code))
             return  # where did this signal come from?
         params = f.f_locals['params']
@@ -817,11 +818,12 @@ class ServerCommand (libbe.command.base.Command):
                 pid = f.read().strip()
         except IOError as e:
             raise libbe.command.UserError(
-                'could not find PID file: {}'.format(e))
+                'could not find PID file: {0}'.format(e))
         pid = int(pid)
         pp = self._daemon_action_present_participle[params['daemon']].title()
         self.logger.log(
-            self.log_level, '{} daemon running on process {}'.format(pp, pid))
+            self.log_level,
+            '{0} daemon running on process {1}'.format(pp, pid))
         if params['daemon'] == 'stop':
             os.kill(pid, signal.SIGTERM)
         else:
@@ -969,8 +971,8 @@ if libbe.TESTING:
 
         def basic_auth(self, uname, password):
             """HTTP basic authorization string"""
-            return 'Basic {}'.format(
-                '{}:{}'.format(uname, password).encode('base64'))
+            return 'Basic {0}'.format(
+                '{0}:{1}'.format(uname, password).encode('base64'))
 
         def test_new_name(self):
             self.getURL(
@@ -1048,8 +1050,8 @@ def _get_cert_filenames(server_name, autogenerate=True, logger=None,
     Generate private key and certification filenames.
     get_cert_filenames(server_name) -> (pkey_filename, cert_filename)
     """
-    pkey_file = '{}.pkey'.format(server_name)
-    cert_file = '{}.cert'.format(server_name)
+    pkey_file = '{0}.pkey'.format(server_name)
+    cert_file = '{0}.cert'.format(server_name)
     if autogenerate:
         for file in [pkey_file, cert_file]:
             if not os.path.exists(file):
@@ -1154,7 +1156,7 @@ def _make_certs(server_name, logger=None, level=None):
         server_name, autogenerate=False)
     if logger != None:
         logger.log(
-            level, 'Generating certificates {} {}'.format(
+            level, 'Generating certificates {0} {1}'.format(
                 pkey_file, cert_file))
     cakey = _create_key_pair(OpenSSL.crypto.TYPE_RSA, 1024)
     careq = _create_cert_request(cakey, CN='Certificate Authority')

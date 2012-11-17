@@ -155,11 +155,11 @@ class Import_XML (libbe.command.Command):
                     libbe.command.util.bug_from_uuid(bugdirs, new.alt_id)
                 except libbe.bugdir.NoBugMatches:
                     raise AssertionError(
-                        "bug {} (alt: {}) wasn't added to {}".format(
+                        "bug {0} (alt: {1}) wasn't added to {2}".format(
                             new.uuid, new.alt_id, root_bugdir.id.user()))
         for new in root_bugdirs:
             assert new.uuid in bugdirs or new.alt_id in bugdirs, (
-                "bugdir {} wasn't added to {}".format(
+                "bugdir {0} wasn't added to {1}".format(
                     new.uuid, sorted(bugdirs.keys())))
 
         # save new information
@@ -204,10 +204,10 @@ class Import_XML (libbe.command.Command):
                         version[child.tag] = text
                     else:
                         sys.stderr.write(
-                            'ignoring unknown tag {} in {}\n'.format(
+                            'ignoring unknown tag {0} in {1}\n'.format(
                                 gchild.tag, child.tag))
             else:
-                sys.stderr.write('ignoring unknown tag {} in {}\n'.format(
+                sys.stderr.write('ignoring unknown tag {0} in {1}\n'.format(
                         child.tag, be_xml.tag))
         return (version, root_bugdirs, root_bugs, root_comments)
 
@@ -218,7 +218,7 @@ class Import_XML (libbe.command.Command):
             return
         if bug is None:
             raise libbe.command.UserError(
-                'No root bug for merging comments:\n{}'.format(
+                'No root bug for merging comments:\n{0}'.format(
                     '\n\n'.join([c.string() for c in comments])))
         bug.load_comments(load_full=True)
         if root_comment.uuid == libbe.comment.INVALID_UUID:

@@ -19,12 +19,12 @@ if os.path.exists(man_path):
 
 setup(
     name='bugs-everywhere',
-    version='{}'.format(version.version()),
+    version='{0}'.format(version.version()),
     maintainer='W. Trevor King',
     maintainer_email='wking@tremily.us',
     url='http://bugseverywhere.org/',
     download_url=(
-        'http://downloads.bugseverywhere.org/releases/be-{}.tar.gz'.format(
+        'http://downloads.bugseverywhere.org/releases/be-{0}.tar.gz'.format(
             version.version())),
     license='GNU General Public License (GPL)',
     platforms=['all'],

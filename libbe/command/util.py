@@ -203,11 +203,11 @@ def bugdir_bug_comment_from_user_id(bugdirs, id):
     p = libbe.util.id.parse_user(bugdirs, id)
     if not p['type'] in ['bugdir', 'bug', 'comment']:
         raise libbe.command.UserError(
-            '{} is a {} id, not a bugdir, bug, or comment id'.format(
+            '{0} is a {1} id, not a bugdir, bug, or comment id'.format(
                 id, p['type']))
     if p['bugdir'] not in bugdirs:
         raise libbe.command.UserError(
-            "{} doesn't belong to any bugdirs in {}".format(
+            "{0} doesn't belong to any bugdirs in {1}".format(
                 id, sorted(bugdirs.keys())))
     bugdir = bugdirs[p['bugdir']]
     if p['bugdir'] != bugdir.uuid:
