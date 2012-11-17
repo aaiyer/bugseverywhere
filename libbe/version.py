@@ -42,7 +42,7 @@ except ImportError as e:
         }
 
 # Manually set a version string (optional, defaults to bzr revision id)
-_VERSION = '1.1.0'
+_VERSION = '1.1.1'
 
 def version(verbose=False):
     """
