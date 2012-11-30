@@ -22,7 +22,8 @@ Automatic pager for terminal output (a la Git).
 
 import sys, os, select
 
-# see http://nex-3.com/posts/73-git-style-automatic-paging-in-ruby
+# Inspired by Nathan Weizenbaum's
+#   http://nex-3.com/posts/73-git-style-automatic-paging-in-ruby
 def run_pager(paginate='auto'):
     """
     paginate should be one of 'never', 'auto', or 'always'.
