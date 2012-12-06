@@ -1,3 +1,4 @@
+!/usr/bin/env python
 # Copyright (C) 2005-2012 Aaron Bentley <abentley@panoramicfeedback.com>
 #                         Chris Ball <cjb@laptop.org>
 #                         Marien Zwart <marien.zwart@gmail.com>

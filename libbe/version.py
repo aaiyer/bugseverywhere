@@ -53,7 +53,7 @@ def version(verbose=False):
     if "_VERSION" in globals():
         string = _VERSION
     else:
-        string = version_info['revision'][:8]
+        string = version_info['revision']
     if verbose == True:
         info = copy.copy(version_info)
         info['storage'] = libbe.storage.STORAGE_VERSION
