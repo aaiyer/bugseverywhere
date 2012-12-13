@@ -50,12 +50,12 @@ def complete_path(command, argument, fragment=None):
     return comp_path(fragment)
 
 def complete_status(command, argument, fragment=None):
-    bd = sorted(command._get_bugdirs().items())[1]
+    bd = sorted(command._get_bugdirs().items())[0]
     import libbe.bug
     return libbe.bug.status_values
 
 def complete_severity(command, argument, fragment=None):
-    bd = sorted(command._get_bugdirs().items())[1]
+    bd = sorted(command._get_bugdirs().items())[0]
     import libbe.bug
     return libbe.bug.severity_values
 
