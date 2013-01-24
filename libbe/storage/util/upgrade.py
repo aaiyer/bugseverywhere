@@ -137,7 +137,7 @@ class Upgrader (object):
 
     def check_initial_version(self):
         path = self.get_path('version')
-        version = encoding.get_file_contents(path, decode=True).rstrip('\n')
+        version = encoding.get_file_contents(path, decode=True).rstrip()
         assert version == self.initial_version, '%s: %s' % (path, version)
 
     def set_version(self):
