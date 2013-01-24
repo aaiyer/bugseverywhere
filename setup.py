@@ -47,7 +47,6 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Topic :: Software Development :: Bug Tracking',
         ],
-
     packages=['libbe',
               'libbe.command',
               'libbe.storage',
@@ -58,4 +57,8 @@ setup(
               'libbe.util'],
     scripts=['be'],
     data_files=data_files,
+    requires=[
+        'Jinja2 (>=2.6)',
+        'CherryPy (>=3.2)',
+        ]
     )
