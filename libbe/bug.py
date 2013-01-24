@@ -439,7 +439,7 @@ class Bug (settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def from_xml(self, xml_string, preserve_uuids=False, verbose=True):
+    def from_xml(self, xml_string, preserve_uuids=False):
         u"""
         Note: If a bug uuid is given, set .alt_id to it's value.
         >>> bugA = Bug(uuid="0123", summary="Need to test Bug.from_xml()")
@@ -451,7 +451,7 @@ class Bug (settings_object.SavedSettingsObject):
         >>> commC = commA.new_reply(body='comment C')
         >>> xml = bugA.xml(show_comments=True)
         >>> bugB = Bug()
-        >>> bugB.from_xml(xml, verbose=True)
+        >>> bugB.from_xml(xml)
         >>> bugB.xml(show_comments=True) == xml
         False
         >>> bugB.uuid = bugB.alt_id
@@ -489,8 +489,7 @@ class Bug (settings_object.SavedSettingsObject):
                 pass
             elif child.tag == 'comment':
                 comm = comment.Comment(bug=self)
-                comm.from_xml(
-                    child, preserve_uuids=preserve_uuids, verbose=verbose)
+                comm.from_xml(child, preserve_uuids=preserve_uuids)
                 comments.append(comm)
                 continue
             elif child.tag in tags:
@@ -515,9 +514,10 @@ class Bug (settings_object.SavedSettingsObject):
                 attr_name = child.tag.replace('-','_')
                 self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
-            elif verbose == True:
-                print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
-                    % (child.tag, comment.tag)
+            else:
+                libbe.LOG.warning(
+                    'ignoring unknown tag {0} in {1}'.format(
+                        child.tag, comment.tag))
         if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:
                 self.alt_id = uuid
@@ -610,8 +610,9 @@ class Bug (settings_object.SavedSettingsObject):
                 parent = uuid_map[c.in_reply_to]
             except KeyError:
                 if ignore_missing_references == True:
-                    print >> sys.stderr, \
-                        'Ignoring missing reference to %s' % c.in_reply_to
+                    libbe.LOG.warning(
+                        'ignoring missing reference to {0}'.format(
+                            c.in_reply_to))
                     parent = default_parent
                     if parent.uuid != comment.INVALID_UUID:
                         c.in_reply_to = parent.uuid

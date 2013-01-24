@@ -37,6 +37,14 @@ The available submodules are:
 * :py:mod:`libbe._version`
 """
 
+import logging as _logging
+
+
+LOG = _logging.getLogger('be')
+LOG.addHandler(_logging.StreamHandler())
+LOG.setLevel(_logging.ERROR)
+
+
 TESTING = False
 """Flag controlling test-suite generation.
 

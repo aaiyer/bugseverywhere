@@ -396,7 +396,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def from_xml(self, xml_string, preserve_uuids=False, verbose=True):
+    def from_xml(self, xml_string, preserve_uuids=False):
         """
         Note: If a bugdir uuid is given, set .alt_id to it's value.
         >>> bug.load_severities(bug.severity_def)
@@ -457,8 +457,7 @@ class BugDir (list, settings_object.SavedSettingsObject):
                 pass
             elif child.tag == 'bug':
                 bg = bug.Bug(bugdir=self)
-                bg.from_xml(
-                    child, preserve_uuids=preserve_uuids, verbose=verbose)
+                bg.from_xml(child, preserve_uuids=preserve_uuids)
                 self.append(bg, update=True)
                 continue
             elif child.tag in tags:
@@ -513,8 +512,9 @@ class BugDir (list, settings_object.SavedSettingsObject):
                 attr_name = child.tag.replace('-','_')
                 self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
-            elif verbose == True:
-                sys.stderr.write('Ignoring unknown tag {} in {}\n'.format(
+            else:
+                libbe.LOG.warning(
+                    'ignoring unknown tag {0} in {1}'.format(
                         child.tag, bugdir.tag))
         if uuid != self.uuid:
             if not hasattr(self, 'alt_id') or self.alt_id == None:

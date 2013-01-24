@@ -207,7 +207,7 @@ class CachedPathID (object):
         self._cache_path = os.path.join(
             self._root, self._spacer_dirs[0], 'id-cache')
 
-    def init(self, verbose=True, cache=None):
+    def init(self, cache=None):
         """Create cache file for an existing .be directory.
 
         The file contains multiple lines of the form::
@@ -227,8 +227,10 @@ class CachedPathID (object):
                 id = self.id(dirpath)
                 relpath = dirpath[len(self._root + os.path.sep):]
                 if id.count('/') == 0:
-                    if verbose == True and id in self._cache:
-                        print >> sys.stderr, 'Multiple paths for %s: \n  %s\n  %s' % (id, self._cache[id], relpath)
+                    if id in self._cache:
+                        libbe.LOG.warning(
+                            'multiple paths for {0}:\n  {1}\n  {2}'.format(
+                                id, self._cache[id], relpath))
                     self._cache[id] = relpath
             except InvalidPath:
                 pass
@@ -271,7 +273,7 @@ class CachedPathID (object):
         else:
             extra = fields[1:]
         if uuid not in self._cache:
-            self.init(verbose=False, cache=self._cache)
+            self.init(cache=self._cache)
             if uuid not in self._cache:
                 raise InvalidID(uuid)
         if relpath == True:
@@ -355,7 +357,6 @@ class VCS (libbe.storage.base.VersionedStorage):
         libbe.storage.base.VersionedStorage.__init__(self, *args, **kwargs)
         self.versioned = False
         self.interspersed_vcs_files = False
-        self.verbose_invoke = False
         self._cached_path_id = CachedPathID()
         self._rooted = False
 
@@ -923,8 +924,6 @@ class VCS (libbe.storage.base.VersionedStorage):
     def _u_invoke(self, *args, **kwargs):
         if 'cwd' not in kwargs:
             kwargs['cwd'] = self.repo
-        if 'verbose' not in kwargs:
-            kwargs['verbose'] = self.verbose_invoke
         if 'encoding' not in kwargs:
             kwargs['encoding'] = self.encoding
         return invoke(*args, **kwargs)

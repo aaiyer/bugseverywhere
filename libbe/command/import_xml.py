@@ -203,11 +203,11 @@ class Import_XML (libbe.command.Command):
                         text = text.decode('unicode_escape').strip()
                         version[child.tag] = text
                     else:
-                        sys.stderr.write(
-                            'ignoring unknown tag {} in {}\n'.format(
+                        libbe.LOG.warning(
+                            'ignoring unknown tag {0} in {1}\n'.format(
                                 gchild.tag, child.tag))
             else:
-                sys.stderr.write('ignoring unknown tag {} in {}\n'.format(
+                libbe.LOG.warning('ignoring unknown tag {0} in {1}\n'.format(
                         child.tag, be_xml.tag))
         return (version, root_bugdirs, root_bugs, root_comments)
 

@@ -333,7 +333,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         sep = '\n' + istring
         return istring + sep.join(lines).rstrip('\n')
 
-    def from_xml(self, xml_string, preserve_uuids=False, verbose=True):
+    def from_xml(self, xml_string, preserve_uuids=False):
         u"""
         Note: If alt-id is not given, translates any <uuid> fields to
         <alt-id> fields.
@@ -344,7 +344,7 @@ class Comment (Tree, settings_object.SavedSettingsObject):
         >>> commA.extra_strings += ['TAG: very helpful']
         >>> xml = commA.xml()
         >>> commB = Comment()
-        >>> commB.from_xml(xml, verbose=True)
+        >>> commB.from_xml(xml)
         >>> commB.explicit_attrs
         ['author', 'date', 'content_type', 'body', 'alt_id']
         >>> commB.xml() == xml
@@ -397,9 +397,10 @@ class Comment (Tree, settings_object.SavedSettingsObject):
                 attr_name = child.tag.replace('-','_')
                 self.explicit_attrs.append(attr_name)
                 setattr(self, attr_name, text)
-            elif verbose == True:
-                print >> sys.stderr, 'Ignoring unknown tag %s in %s' \
-                    % (child.tag, comment.tag)
+            else:
+                libbe.LOG.warning(
+                    'ignoring unknown tag {0} in {1}'.format(
+                        child.tag, comment.tag))
         if uuid != self.uuid and self.alt_id == None:
             self.explicit_attrs.append('alt_id')
             self.alt_id = uuid

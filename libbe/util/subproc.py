@@ -47,8 +47,7 @@ class CommandError(Exception):
         self.stderr = stderr
 
 def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
-           cwd=None, shell=None, unicode_output=True, verbose=False,
-           encoding=None, **kwargs):
+           cwd=None, shell=None, unicode_output=True, encoding=None, **kwargs):
     """
     expect should be a tuple of allowed exit codes.  cwd should be
     the directory from which the command will be executed.  When
@@ -63,8 +62,7 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
     else:
         list_args = args
         str_args = ' '.join(args)  # sloppy, but just for logging
-    if verbose == True:
-        print >> sys.stderr, '%s$ %s' % (cwd, str_args)
+    libbe.LOG.debug('{0}$ {1}'.format(cwd, str_args))
     try :
         if _POSIX:
             if shell is None:
@@ -89,8 +87,7 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
             stdout = unicode(stdout, encoding)
         if stderr != None:
             stderr = unicode(stderr, encoding)
-    if verbose == True:
-        print >> sys.stderr, '%d\n%s%s' % (status, stdout, stderr)
+    libbe.LOG.debug('{0}\n{1}{2}'.format(status, stdout, stderr))
     if status not in expect:
         raise CommandError(list_args, status, stdout, stderr)
     return status, stdout, stderr
