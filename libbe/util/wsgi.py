@@ -58,6 +58,7 @@ try:
 except ImportError:
     OpenSSL = None
 
+import libbe
 import libbe.command
 import libbe.command.base
 import libbe.command.util
@@ -686,6 +687,10 @@ class ServerCommand (libbe.command.base.Command):
             handler = logging.handlers.TimedRotatingFileHandler(
                 path, when='w6', interval=1, backupCount=4,
                 encoding=libbe.util.encoding.get_text_file_encoding())
+            while libbe.LOG.handlers:
+                handler = libbe.LOG.handlers[0]
+                libbe.LOG.removeHandler(handler)
+            libbe.LOG.addHandler(handler)
         else:
             handler = logging.StreamHandler(self.stdout)
         handler.setFormatter(logging.Formatter('%(message)s'))
