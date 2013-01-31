@@ -688,8 +688,8 @@ class ServerCommand (libbe.command.base.Command):
                 path, when='w6', interval=1, backupCount=4,
                 encoding=libbe.util.encoding.get_text_file_encoding())
             while libbe.LOG.handlers:
-                handler = libbe.LOG.handlers[0]
-                libbe.LOG.removeHandler(handler)
+                h = libbe.LOG.handlers[0]
+                libbe.LOG.removeHandler(h)
             libbe.LOG.addHandler(handler)
         else:
             handler = logging.StreamHandler(self.stdout)
