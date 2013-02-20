@@ -251,7 +251,7 @@ Showing changes
 Often you will want to see what's going on in another dev's branch or
 remind yourself what you've been working on recently.  All VCSs have
 some sort of ``diff`` command that shows what's changed since revision
-``XYZ``.  BE has it's own command that formats the bug-repository
+``XYZ``.  BE has its own command that formats the bug-repository
 portion of those changes in an easy-to-understand summary format.  To
 compare your working tree with the last commit::
 
