@@ -698,6 +698,7 @@ div.root.comment {
 
 {% if comments %}
 {% for depth,comment in comments %}
+{{ div_close(depth) }}
 {% if depth == 0 %}
 <div class="comment root" id="C{{ comment_dir(comment) }}">
 {% else %}
@@ -707,11 +708,8 @@ div.root.comment {
        'depth':depth, 'bug': bug, 'comment':comment, 'comment_dir':comment_dir,
        'format_body': format_body, 'div_close': div_close,
        'strip_email': strip_email}) }}
-{{ div_close(depth) }}
 {% endfor %}
-{% if comments[-1][0] > 0 %}
 {{ div_close(0) }}
-{% endif %}
 {% else %}
 <p>No comments.</p>
 {% endif %}
@@ -953,7 +951,7 @@ Html = HTML # alias for libbe.command.base.get_command_class()
 
 
 class _DivCloser (object):
-    def __init__(self, depth=0):
+    def __init__(self, depth=-1):
         self.depth = depth
 
     def __call__(self, depth):
