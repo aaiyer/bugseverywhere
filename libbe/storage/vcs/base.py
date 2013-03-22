@@ -1129,6 +1129,9 @@ if libbe.TESTING == True:
         def test_installed(self):
             """See if the VCS is installed.
             """
+            # pygit2 is optional, failing over to ExecGit
+            if self.s.name == 'pygit2':
+                return
             self.failUnless(self.s.installed() == True,
                             '%(name)s VCS not found' % vars(self.Class))
 
