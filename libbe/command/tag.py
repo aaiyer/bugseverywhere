@@ -48,7 +48,7 @@ class Tag (libbe.command.Command):
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
-    ['%(tag_tag)sGUI']
+    [u'%(tag_tag)sGUI']
     >>> ret = ui.run(cmd, args=['/a', 'later'])
     Tags for abc/a:
     GUI
@@ -68,7 +68,7 @@ class Tag (libbe.command.Command):
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
-    ['%(tag_tag)sAlphabetically first', '%(tag_tag)sGUI', '%(tag_tag)slater']
+    [u'%(tag_tag)sAlphabetically first', u'%(tag_tag)sGUI', u'%(tag_tag)slater']
     >>> a.extra_strings = []
     >>> print a.extra_strings
     []

@@ -44,7 +44,7 @@ class Severity (libbe.command.Command):
     >>> ret = ui.run(cmd, args=['wishlist', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').severity
-    'wishlist'
+    u'wishlist'
     >>> ret = ui.run(cmd, args=['none', '/a'])
     Traceback (most recent call last):
     UserError: Invalid severity level: none

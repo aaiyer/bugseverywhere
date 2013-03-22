@@ -49,9 +49,9 @@ class Assign (libbe.command.Command):
     >>> ret = ui.run(cmd, args=['someone', '/a', '/b'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').assigned
-    'someone'
+    u'someone'
     >>> bd.bug_from_uuid('b').assigned
-    'someone'
+    u'someone'
 
     >>> ret = ui.run(cmd, args=['none', '/a'])
     >>> bd.flush_reload()
