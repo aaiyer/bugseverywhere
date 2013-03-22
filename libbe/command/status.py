@@ -45,7 +45,7 @@ class Status (libbe.command.Command):
     >>> ret = ui.run(cmd, args=['closed', '/a'])
     >>> bd.flush_reload()
     >>> bd.bug_from_uuid('a').status
-    'closed'
+    u'closed'
     >>> ret = ui.run(cmd, args=['none', '/a'])
     Traceback (most recent call last):
     UserError: Invalid status level: none

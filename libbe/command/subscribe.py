@@ -53,7 +53,7 @@ class Subscribe (libbe.command.Command):
     >>> bd.flush_reload()
     >>> a = bd.bug_from_uuid('a')
     >>> print a.extra_strings
-    ['SUBSCRIBE:John Doe <j@doe.com>\\tall\\t*']
+    [u'SUBSCRIBE:John Doe <j@doe.com>\\tall\\t*']
     >>> ret = ui.run(cmd, {'subscriber':'Jane Doe <J@doe.com>', 'servers':'a.com,b.net'}, ['/a']) # doctest: +NORMALIZE_WHITESPACE
     Subscriptions for abc/a:
     Jane Doe <J@doe.com>    all    a.com,b.net
