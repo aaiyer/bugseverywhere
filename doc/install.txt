@@ -117,6 +117,10 @@ See::
 
 for a list of installation options.
 
+If you're developing BE, you might want to install the development version.::
+
+    $ python setup.py develop
+
 You only need YAML support if you will be upgrading a BE repository
 based on ``Bugs Everywhere Directory v1.4`` or earlier (see
 :file:`.be/version`).  If you're installing a fresh instance of BE,

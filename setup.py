@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import setuptools # so we can `./setup.py develop`
 from distutils.core import setup
 import os.path
 
