@@ -21,8 +21,10 @@ if os.path.exists(man_path):
 setup(
     name='bugs-everywhere',
     version='{}'.format(version.version()),
-    maintainer='W. Trevor King',
-    maintainer_email='wking@tremily.us',
+    author='W. Trevor King',
+    author_email='wking@tremily.us',
+    maintainer='Thomas Levine',
+    maintainer_email='wildebeest@thomaslevine.com',
     url='http://bugseverywhere.org/',
     download_url=(
         'http://downloads.bugseverywhere.org/releases/be-{}.tar.gz'.format(

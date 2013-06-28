@@ -12,6 +12,10 @@ distros, that's::
 
     $ apt-get install bugs-everywhere
 
+If you have pip, you can install it from pypi.::
+
+    $ pip install bugs-everywhere
+
 However, the official packages can lag behind current development.
 
 If you're running Gentoo_, I've got a live ebuild in my overlay_ that
