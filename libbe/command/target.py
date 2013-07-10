@@ -109,7 +109,7 @@ class Target (libbe.command.Command):
             if bug == None:
                 print >> self.stdout, 'No target assigned.'
             else:
-                print >> self.stdout, bug.uuid
+                print >> self.stdout, bug.id.long_user()
             return 0
         bugdir,bug,comment = (
             libbe.command.util.bugdir_bug_comment_from_user_id(
