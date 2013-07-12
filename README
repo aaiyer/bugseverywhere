@@ -69,3 +69,11 @@ introduction to the syntax.
 .. _numpydoc: http://pypi.python.org/pypi/numpydoc
 .. _NumPy/SciPy documentation guide:
   https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+
+Development
+============
+Tests are spread across two test suites. One is ``test_usage.sh``,
+and the other is the ``tests`` folder, which you can run with
+[urchin](https://github.com/scraperwiki/urchin).
+
+    $ urchin ./tests
