@@ -7,3 +7,4 @@ doc/libbe/
 .be/id-cache
 libbe/_version.py
 bugs_everywhere.egg-info
+.urchin.log

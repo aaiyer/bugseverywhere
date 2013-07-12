@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+mkdir -p /tmp/be-test
+cd /tmp/be-test
+git init
+be init

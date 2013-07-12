@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+cd /tmp/be-test
+observed="$bug"
+expected=$(be new 'I am a banana.' | sed 's/^.*ID //')
+[ "$observed" = "$expected" ]
