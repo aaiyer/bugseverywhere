@@ -23,6 +23,7 @@ A command line interface to Bugs Everywhere.
 import optparse
 import os
 import sys
+import locale
 
 import libbe
 import libbe.bugdir
@@ -340,6 +341,7 @@ def dispatch(ui, command, args):
     return ret
 
 def main():
+    locale.setlocale(locale.LC_ALL, '')
     io = libbe.command.StdInputOutput()
     ui = CommandLine(io)
     be = BE(ui=ui)

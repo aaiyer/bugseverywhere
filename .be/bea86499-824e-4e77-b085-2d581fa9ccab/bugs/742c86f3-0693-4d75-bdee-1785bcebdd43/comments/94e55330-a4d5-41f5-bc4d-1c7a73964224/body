@@ -1,0 +1,49 @@
+matej@wycliff: CZEKMS-CSP_Bible (master *+%)$ locale
+LANG=en_US.utf8
+LC_CTYPE="en_US.utf8"
+LC_NUMERIC="en_US.utf8"
+LC_TIME="en_US.utf8"
+LC_COLLATE="en_US.utf8"
+LC_MONETARY="en_US.utf8"
+LC_MESSAGES="en_US.utf8"
+LC_PAPER="en_US.utf8"
+LC_NAME="en_US.utf8"
+LC_ADDRESS="en_US.utf8"
+LC_TELEPHONE="en_US.utf8"
+LC_MEASUREMENT="en_US.utf8"
+LC_IDENTIFICATION="en_US.utf8"
+LC_ALL=
+matej@wycliff: CZEKMS-CSP_Bible (master *+%)$ be new 'Incorporate errata into our texts'
+Traceback (most recent call last):
+  File "/home/matej/.local/bin/be", line 26, in <module>
+    sys.exit(libbe.ui.command_line.main())
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/ui/command_line.py", line 391, in main
+    ret = dispatch(ui, command, args)
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/ui/command_line.py", line 304, in dispatch
+    ret = ui.run(command, options, args)
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/command/base.py", line 590, in run
+    return command.run(options, args)
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/command/base.py", line 302, in run
+    self.status = self._run(**params)
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/command/new.py", line 132, in _run
+    bug.creator = self._get_user_id()
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/command/base.py", line 606, in _get_user_id
+    self.storage_callbacks.get_storage())
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/ui/util/user.py", line 145, in get_user_id
+    user = storage.get_user_id()
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/storage/vcs/base.py", line 630, in get_user_id
+    self.user_id = self._vcs_get_user_id()
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/storage/vcs/git.py", line 295, in _vcs_get_user_id
+    'config', 'user.name', expect=(0,1))
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/storage/vcs/base.py", line 934, in _u_invoke_client
+    return self._u_invoke(cl_args, **kwargs)
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/storage/vcs/base.py", line 929, in _u_invoke
+    return invoke(*args, **kwargs)
+  File "/home/matej/.local/lib/python2.7/site-packages/libbe/util/subproc.py", line 90, in invoke
+    libbe.LOG.debug('{0}\n{1}{2}'.format(status, stdout, stderr))
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u011b' in position 3: ordinal not in range(128)
+matej@wycliff: CZEKMS-CSP_Bible (master *+%)$ git config user.name
+Matěj Cepl
+matej@wycliff: CZEKMS-CSP_Bible (master *+%)$ 
+
+
