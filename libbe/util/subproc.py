@@ -87,7 +87,9 @@ def invoke(args, stdin=None, stdout=PIPE, stderr=PIPE, expect=(0,),
             stdout = unicode(stdout, encoding)
         if stderr != None:
             stderr = unicode(stderr, encoding)
-    libbe.LOG.debug('{0}\n{1}{2}'.format(status, stdout, stderr))
+        libbe.LOG.debug(u'{0}\n{1}{2}'.format(status, stdout, stderr))
+    else:
+        libbe.LOG.debug('{0}\n{1}{2}'.format(status, stdout, stderr))
     if status not in expect:
         raise CommandError(list_args, status, stdout, stderr)
     return status, stdout, stderr

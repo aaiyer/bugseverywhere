@@ -1,0 +1,50 @@
+{
+
+
+
+
+
+
+    "creator": "Matej Cepl <mcepl@redhat.com>", 
+
+
+
+
+
+
+    "reporter": "Matej Cepl <mcepl@redhat.com>", 
+
+
+
+
+
+
+    "severity": "minor", 
+
+
+
+
+
+
+    "status": "fixed", 
+
+
+
+
+
+
+    "summary": "Crash of 'be new' with non-ASCII user name", 
+
+
+
+
+
+
+    "time": "Mon, 22 Jul 2013 17:59:19 +0000"
+
+
+
+
+
+
+}
