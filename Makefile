@@ -1,4 +1,3 @@
-#! /usr/bin/make -f
 # :vim: filetype=make : -*- makefile; coding: utf-8; -*-
 
 # Makefile
