@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#
+# Copyright
 
 from distutils.core import setup
 import os.path
