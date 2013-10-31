@@ -118,7 +118,7 @@ class New (libbe.command.Command):
         storage = self._get_storage()
         bugdirs = self._get_bugdirs()
         if params['bugdir']:
-            bugdir = bugdirs[bugdir]
+            bugdir = bugdirs[params['bugdir']]
         elif len(bugdirs) == 1:
             bugdir = bugdirs.values()[0]
         else:

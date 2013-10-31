@@ -99,7 +99,7 @@ class Target (libbe.command.Command):
         bugdirs = self._get_bugdirs()
         if params['resolve'] == True:
             if params['bugdir']:
-                bugdir = bugdirs[bugdir]
+                bugdir = bugdirs[params['bugdir']]
             elif len(bugdirs) == 1:
                 bugdir = bugdirs.values()[0]
             else:

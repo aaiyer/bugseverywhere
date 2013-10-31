@@ -77,7 +77,7 @@ class Set (libbe.command.Command):
     def _run(self, **params):
         bugdirs = self._get_bugdirs()
         if params['bugdir']:
-            bugdir = bugdirs[bugdir]
+            bugdir = bugdirs[params['bugdir']]
         elif len(bugdirs) == 1:
             bugdir = bugdirs.values()[0]
         else:
