@@ -159,7 +159,7 @@ def str_to_time(str_time):
     timezone_str = str_time[-5:]
     if timezone_str != "+0000":
         str_time = str_time.replace(timezone_str, "+0000")
-    time_val = calendar.timegm(time.strptime(str_time, RFC_2822_TIME_FMT))
+    time_val = calendar.timegm(time.strptime(str_time, unicode(RFC_2822_TIME_FMT)))
     timesign = -int(timezone_str[0]+"1") # "+" -> time_val ahead of GMT
     timezone_tuple = time.strptime(timezone_str[1:], "%H%M")
     timezone = timezone_tuple.tm_hour*3600 + timezone_tuple.tm_min*60
