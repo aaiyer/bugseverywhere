@@ -16,7 +16,7 @@ Getting BE
 
 BE is available as a Git repository::
 
-    $ git clone git://gitorious.org/be/be.git be
+    $ git clone https://gitlab.com/bugseverywhere/bugseverywhere.git be
 
 See the homepage_ for details.  If you do branch the Git repo, you'll
 need to run::
