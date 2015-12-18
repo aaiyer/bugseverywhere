@@ -28,8 +28,8 @@ to build some auto-generated files (e.g. ``libbe/_version.py``), and::
     $ make install
 
 to install BE.  By default BE will install into your home directory,
-but you can tweak the ``PREFIX`` variable in ``Makefile`` to install
-to another location.
+but you can tweak the ``INSTALL_OPTIONS`` variable in ``Makefile``
+to install to another location.
 
 .. _homepage: http://bugseverywhere.org/
 
