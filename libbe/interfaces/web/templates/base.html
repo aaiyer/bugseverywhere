@@ -54,7 +54,7 @@
     <body>
         <div id="main-pane">
             <div id="header" class="inside-main-pane">
-                <h1>{{ repository_name }}</h1>
+		<h1><a href="/">{{ repository_name }}</a></h1>
             </div>
             <div id="navigation" class="inside-main-pane">
                 <span id="filters">
@@ -84,13 +84,7 @@
                 {% block content %}{% endblock %}
             </div>
             <div id="footer" class="inside-main-pane">
-                <p>
-                    <a href="">Cherry Flavored Bugs Everywhere</a>
-                    was created by <a href="http://stevelosh.com">Steve Losh</a> and a very nice <a href="http://fecklessmind.com/2009/01/20/aardvark-css-framework/">aardvark</a>
-                    using <a href="http://cherrypy.org">CherryPy</a>,
-                    <a href="http://jinja.pocoo.org/2/">Jinja2</a>,
-                    and <a href="http://jquery.com">jQuery</a>.
-                </p>
+                <p>Bugs Everywhere</p>
             </div>
         </div>
         <div id="assignees">
