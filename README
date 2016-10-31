@@ -16,7 +16,7 @@ Getting BE
 
 BE is available as a Git repository::
 
-    $ git clone https://gitlab.com/bugseverywhere/bugseverywhere.git be
+    $ git clone https://github.com/aaiyer/bugseverywhere.git be
 
 See the homepage_ for details.  If you do branch the Git repo, you'll
 need to run::
@@ -31,7 +31,7 @@ to install BE.  By default BE will install into your home directory,
 but you can tweak the ``INSTALL_OPTIONS`` variable in ``Makefile``
 to install to another location.
 
-.. _homepage: http://bugseverywhere.org/
+.. _homepage: https://github.com/aaiyer/bugseverywhere
 
 
 Getting started

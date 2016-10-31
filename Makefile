@@ -35,7 +35,7 @@ RST2HTML = /usr/bin/rst2html
 #PATH = /usr/bin:/bin  # must include sphinx-build for 'sphinx' target.
 
 #INSTALL_OPTIONS = "--prefix=/usr/local"
-INSTALL_OPTIONS = "--user"
+#INSTALL_OPTIONS = "--user"
 
 # Select the documentation you wish to build
 DOC = sphinx man
@@ -59,17 +59,17 @@ all: build
 
 .PHONY: build
 build: $(LIBBE_VERSION)
-	python setup.py build
+	python2 setup.py build
 
 .PHONY: doc
 doc: $(DOC)
 
 .PHONY: install
 install: build doc
-	python setup.py install ${INSTALL_OPTIONS}
+	python2 setup.py install ${INSTALL_OPTIONS}
 
 test: build
-	python test.py
+	python2 test.py
 
 .PHONY: clean
 clean:

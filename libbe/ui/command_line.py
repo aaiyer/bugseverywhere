@@ -380,7 +380,7 @@ def main():
 
     if command.name in [
         'new', 'comment', 'commit', 'html', 'import-xml', 'serve-storage',
-        'serve-commands']:
+        'serve-commands', 'web']:
         paginate = 'never'
     else:
         paginate = 'auto'

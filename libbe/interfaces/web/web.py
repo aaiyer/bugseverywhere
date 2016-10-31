@@ -36,6 +36,10 @@ class WebInterface:
         self.env = Environment(loader=FileSystemLoader(template_root))
         self.env.filters['datetimeformat'] = datetimeformat
 
+    @property
+    def bds(self):
+        return {self.bd.uuid: self.bd}
+
     def get_common_information(self):
         """Returns a dict of common information that most pages will need."""
         possible_assignees = list(set(
@@ -200,9 +204,10 @@ class WebInterface:
             if current_target:
                 remove_target(self.bd, bug)
                 if target != "None":
-                    add_target(self.bd, bug, target)
+                    add_target(self.bds, self.bd, bug, target)
             else:
-                add_target(self.bd, bug, target)
+                if target != "None":
+                    add_target(self.bds, self.bd, bug, target)
 
         bug.save()
 
