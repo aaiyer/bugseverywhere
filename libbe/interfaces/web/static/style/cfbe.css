@@ -28,6 +28,10 @@ div#header h1 {
     letter-spacing: 1px;
 }
 
+div#header h1 a {
+    color: #fff;
+}
+
 div#navigation {
     height: 3em;
     line-height: 3em;
