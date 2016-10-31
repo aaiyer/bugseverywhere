@@ -56,7 +56,10 @@ setup(
               'libbe.storage.vcs',
               'libbe.ui',
               'libbe.ui.util',
-              'libbe.util'],
+              'libbe.util',
+              'libbe.interfaces',
+              'libbe.interfaces.web'],
+    package_data={'libbe.interfaces.web': ['templates/*.html', 'static/**/*.js', 'static/**/*.css']},
     scripts=['be'],
     data_files=data_files,
     requires=[
