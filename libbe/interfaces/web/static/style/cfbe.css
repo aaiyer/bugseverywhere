@@ -129,7 +129,7 @@ div.bug-comment {
     margin-left: 2em;
 }
 p.bug-comment-body {
-    white-space: pre;
+    white-space: pre-wrap;
     margin: 0em 0em 0em 0em;
 }
 p.bug-comment-footer {
